@@ -26,6 +26,7 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
     MPI_Type_size(datatype, &datatype_size);
     len = datatype_size * count;
 
+
     ret = PVFS_Request_contiguous(len, PVFS_BYTE, &mem_req);
     /* --BEGIN ERROR HANDLING-- */
     if (ret != 0) {
@@ -49,6 +50,9 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
 	return;
     }
     /* --END ERROR HANDLING-- */
+
+    if (fd->atomicity)
+	ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, 0);
 
     if (file_ptr_type == ADIO_EXPLICIT_OFFSET) {
 	ret = PVFS_sys_write(pvfs_fs->object_ref, file_req, offset,  buf, 
@@ -87,6 +91,8 @@ void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count,
 #endif
     *error_code = MPI_SUCCESS;
 fn_exit:
+    if (fd->atomicity)
+	ADIOI_UNLOCK(fd, offset, SEEK_SET, 0);
     PVFS_Request_free(&file_req);
     PVFS_Request_free(&mem_req);
     return;
@@ -141,17 +147,6 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
      * assume this limit*/
 #define MAX_ARRAY_SIZE 64
 
-    /* --BEGIN ERROR HANDLING-- */
-    if (fd->atomicity) {
-	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
-					   MPIR_ERR_RECOVERABLE,
-					   myname, __LINE__,
-					   MPI_ERR_ARG,
-					   "Atomic noncontiguous writes are not supported by PVFS2", 0);
-	return;
-    }
-    /* --END ERROR HANDLING-- */
-
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
 
@@ -179,6 +174,13 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
     bufsize = buftype_size * count;
 
     pvfs_fs = (ADIOI_PVFS2_fs*)fd->fs_ptr;
+
+    /* XXX: not sure how fine grained we can make the atomic locks.  need to
+     * brush up on what the standard gaurantees.  Locking here will be safe 
+     * XXX: be sure to unlock at every exit path */
+    if (fd->atomicity) 
+	ADIOI_WRITE_LOCK(fd, offset, SEEK_SET, 0);
+		  
 
     if (!buftype_is_contig && filetype_is_contig) {
 
@@ -264,7 +266,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 					      &(pvfs_fs->credentials),
 					      &resp_io);
 		    total_bytes_written += resp_io.total_completed;
-		  
+
 		    /* in the case of error or the last write list call, 
 		     * leave here */
 		    /* --BEGIN ERROR HANDLING-- */
@@ -304,6 +306,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 #endif
 
 	ADIOI_Delete_flattened(datatype);
+	if (fd->atomicity)
+	    ADIOI_UNLOCK(fd, file_offsets, SEEK_SET, 0);
 	return;
     } /* if (!buftype_is_contig && filetype_is_contig) */
 
@@ -750,6 +754,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		    (new_buffer_write < flat_file->blocklens[0])) )
 	{
 	    ADIOI_Delete_flattened(datatype);
+	    if (fd->atomicity) 
+		ADIOI_UNLOCK(fd, initial_off, SEEK_SET, 0);
 	    ADIOI_GEN_WriteStrided_naive(fd, buf, count, datatype,
 		    file_ptr_type, initial_off, status, error_code);
 	    return;
@@ -990,6 +996,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
     *error_code = MPI_SUCCESS;
 
 error_state:
+    if (fd->atomicity)
+	ADIOI_UNLOCK(fd, offset, SEEK_SET, 0);
     fd->fp_sys_posn = -1;   /* set it to null. */
 
 #ifdef HAVE_STATUS_SET_BYTES

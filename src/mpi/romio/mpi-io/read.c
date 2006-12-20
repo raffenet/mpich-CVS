@@ -129,7 +129,7 @@ int MPIOI_File_read(MPI_File mpi_fh,
 
         /* if atomic mode requested, lock (exclusive) the region, because
            there could be a concurrent noncontiguous request. Locking doesn't
-           work on PIOFS and PVFS, and on NFS it is done in the
+           work on PIOFS and PVFS, and on NFS and PVFS v2 it is done in the
            ADIO_ReadContig.
 	 */
 
