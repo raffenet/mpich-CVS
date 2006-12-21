@@ -43,9 +43,9 @@ int MPI_File_write_ordered(MPI_File mpi_fh, void *buf, int count,
 			   MPI_Datatype datatype, MPI_Status *status)
 {
     int error_code, datatype_size, nprocs, myrank, incr;
-    int source, dest;
+    int source, dest, dummy;
     static char myname[] = "MPI_FILE_WRITE_ORDERED";
-    ADIO_Offset shared_fp;
+    ADIO_Offset shared_fp, new_shared_fp=0;
     ADIO_File fh;
 
     MPIU_THREAD_SINGLE_CS_ENTER("io");
@@ -63,7 +63,6 @@ int MPI_File_write_ordered(MPI_File mpi_fh, void *buf, int count,
 
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_INTEGRAL_ETYPE(fh, count, datatype_size, myname, error_code);
-    MPIO_CHECK_FS_SUPPORTS_SHARED(fh, myname, error_code);
     /* --END ERROR HANDLING-- */
 
     ADIOI_TEST_DEFERRED(fh, myname, &error_code);
@@ -72,6 +71,27 @@ int MPI_File_write_ordered(MPI_File mpi_fh, void *buf, int count,
     MPI_Comm_rank(fh->comm, &myrank);
 
     incr = (count*datatype_size)/fh->etype_size;
+
+    /* use the "ordered mode with RMA operations" algorithm outlined in the
+     * shared file pointer paper */
+
+    if (myrank == 0) {
+	    ADIOI_MPIMUTEX_FP_Get(mpi_fh->fp_mutex, &shared_fp);
+	    MPI_Scan(&shared_fp, &new_shared_fp, 1, MPI_INT, MPI_SUM, 
+			    MPI_COMM_WORLD);
+    } else {
+	    MPI_Scan( &incr, &new_shared_fp, 1, MPI_INT, MPI_SUM, 
+			    MPI_COMM_WORLD);
+    }
+    if (myrank == nprocs - 1) {
+	    ADIOI_MPIMUTEX_FP_Set(mpi_fh->fp_mutex, new_shared_fp + incr);
+    }
+
+    /* weak syncronization to prevent one process from racing ahead before rank
+     * N-1 has updated shared fp value */
+    MPI_Bcast(&dummy, 1, MPI_INT, nprocs -1, mpi_fh->comm);
+
+#if 0
     /* Use a message as a 'token' to order the operations */
     source = myrank - 1;
     dest   = myrank + 1;
@@ -92,6 +112,7 @@ int MPI_File_write_ordered(MPI_File mpi_fh, void *buf, int count,
     /* --END ERROR HANDLING-- */
 
     MPI_Send(NULL, 0, MPI_BYTE, dest, 0, fh->comm);
+#endif
 
     ADIO_WriteStridedColl(fh, buf, count, datatype, ADIO_EXPLICIT_OFFSET,
                           shared_fp, status, &error_code);

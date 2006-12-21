@@ -48,7 +48,8 @@ int MPI_File_get_position_shared(MPI_File mpi_fh, MPI_Offset *offset)
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
     MPIO_CHECK_NOT_SEQUENTIAL_MODE(fh, myname, error_code);
-    MPIO_CHECK_FS_SUPPORTS_SHARED(fh, myname, error_code);
+    /* When integrating for real, use RMA methods if available and fcntl
+     * methods are not, or if a hint says to use RMA methods */
     /* --END ERROR HANDLING-- */
 
     ADIOI_TEST_DEFERRED(fh, myname, &error_code);

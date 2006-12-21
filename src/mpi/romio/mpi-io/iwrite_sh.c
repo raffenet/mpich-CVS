@@ -154,7 +154,7 @@ int MPI_File_iwrite_shared(MPI_File mpi_fh, void *buf, int count,
 
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_INTEGRAL_ETYPE(fh, count, datatype_size, myname, error_code);
-    MPIO_CHECK_FS_SUPPORTS_SHARED(fh, myname, error_code);
+    /* some sort of shared file pointer handling here */
     /* --END ERROR HANDLING-- */
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);

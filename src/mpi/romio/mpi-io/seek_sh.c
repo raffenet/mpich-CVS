@@ -47,7 +47,7 @@ int MPI_File_seek_shared(MPI_File mpi_fh, MPI_Offset offset, int whence)
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_FILE_HANDLE(fh, myname, error_code);
     MPIO_CHECK_NOT_SEQUENTIAL_MODE(fh, myname, error_code);
-    MPIO_CHECK_FS_SUPPORTS_SHARED(fh, myname, error_code);
+    /* code here to pick a syncronization method */
     /* --END ERROR HANDLING-- */
 
     tmp_offset = offset;
