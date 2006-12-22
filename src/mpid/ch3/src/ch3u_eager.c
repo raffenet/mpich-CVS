@@ -353,7 +353,8 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		/* user buffer is not contiguous.  Use the segment
 		   code to unpack it, handling various errors and 
 		   exceptional cases */
-		printf( "Surprise!\n" ); fflush(stdout);
+		/* FIXME: The MPICH2 test do not exercise this branch */
+		/* printf( "Surprise!\n" ); fflush(stdout);*/
 		MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, 
 				  rreq->dev.datatype, &rreq->dev.segment, 0);
 
