@@ -31,6 +31,8 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     int rank_ct, max_error_code;
     int *tmp_ranklist;
     MPI_Comm aggregator_comm = MPI_COMM_NULL; /* just for deferred opens */
+    mpimutex_t atomic_mutex;
+    mpimutex_fp_t fp_mutex;
 
     *error_code = MPI_SUCCESS;
 
@@ -65,6 +67,11 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     fd->fortran_handle = -1;
 
     fd->err_handler = ADIOI_DFLT_ERR_HANDLER;
+
+    MPI_Comm_rank(comm, &rank);
+    /* create RMA-based mutexes for atomic and shared fp modes */
+    ADIOI_MPIMUTEX_Create(rank, fd->comm, atomic_mutex);
+    ADIOI_MPIMUTEX_FP_Create(rank, fd->comm, fp_mutex);
 
 /* create and initialize info object */
     fd->hints = (ADIOI_Hints *)ADIOI_Malloc(sizeof(struct ADIOI_Hints_struct));
@@ -102,7 +109,6 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     ADIOI_cb_gather_name_array(orig_comm, comm, &array);
 
 /* parse the cb_config_list and create a rank map on rank 0 */
-    MPI_Comm_rank(comm, &rank);
     if (rank == 0) {
 	MPI_Comm_size(comm, &procs);
 	tmp_ranklist = (int *) ADIOI_Malloc(sizeof(int) * procs);

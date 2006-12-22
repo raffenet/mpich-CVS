@@ -20,7 +20,7 @@
 
 #define WAKEUP 13
 
-int ADIO_MPIMUTEX_Create(int rank, MPI_Comm comm, mpimutex_t *mutex_p)
+int ADIOI_MPIMUTEX_Create(int rank, MPI_Comm comm, mpimutex_t *mutex_p)
 {
     int nprocs, myrank, mpi_err;
     mpimutex_t mutex = NULL;
@@ -104,7 +104,7 @@ int ADIO_MPIMUTEX_Create(int rank, MPI_Comm comm, mpimutex_t *mutex_p)
  * all others), we have the lock.  If contention, ANY_SRC recieve and whomever
  * holds the lock will tell us when
  * they are done */
-int ADIO_MPIMUTEX_Lock(mpimutex_t mutex)
+int ADIOI_MPIMUTEX_Lock(mpimutex_t mutex)
 {
     int mpi_err, i;
     unsigned char val = 1;
@@ -228,7 +228,7 @@ int ADIOI_MPIMUTEX_Unlock(mpimutex_t mutex)
 
 }
 
-int ADIO_MPIMUTEX_Free(mpimutex_t *mutex_p)
+int ADIOI_MPIMUTEX_Free(mpimutex_t *mutex_p)
 {
     mpimutex_t mutex = *mutex_p;
 
