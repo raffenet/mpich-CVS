@@ -483,6 +483,10 @@ int ADIOI_MPIMUTEX_FP_Free(mpimutex_fp_t *mutex_p)
 	    MPI_Free_mem(mutex->data);
 	}
 
+	if (mutex->fptype != MPI_DATATYPE_NULL) {
+	    MPI_Type_free(&mutex->fptype);
+	}
+
 	if (mutex->waitlisttype != MPI_DATATYPE_NULL) {
 	    MPI_Type_free(&mutex->waitlisttype);
 	}
