@@ -68,8 +68,8 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 
     MPI_Comm_rank(comm, &rank);
     /* create RMA-based mutexes for atomic and shared fp modes */
-    ADIOI_MPIMUTEX_Create(rank, fd->comm, &(fd->atomic_mutex));
-    ADIOI_MPIMUTEX_FP_Create(rank, fd->comm, &(fd->fp_mutex));
+    ADIOI_MPIMUTEX_Create(0, fd->comm, &(fd->atomic_mutex));
+    ADIOI_MPIMUTEX_FP_Create(0, fd->comm, &(fd->fp_mutex));
 
 /* create and initialize info object */
     fd->hints = (ADIOI_Hints *)ADIOI_Malloc(sizeof(struct ADIOI_Hints_struct));

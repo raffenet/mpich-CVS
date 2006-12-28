@@ -48,7 +48,7 @@ int ADIOI_MPIMUTEX_Create(int rank, MPI_Comm comm, mpimutex_t *mutex_p)
     blklens[0] = mutex->myrank;
     disps[0] = 0;
     blklens[1] = mutex->nprocs - mutex->myrank - 1;
-    disps[0] = mutex->myrank + 1;
+    disps[1] = mutex->myrank + 1;
 
     mpi_err = MPI_Type_indexed(2, blklens, disps, MPI_BYTE,
 	    &mutex->waitlisttype);
