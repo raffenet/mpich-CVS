@@ -412,7 +412,7 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    /* printf( "Unexpected eager short\n" ); fflush(stdout); */
 	    /* The request is still complete (in the sense of 
 	       having all data) */
-	    /* MPIDI_CH3U_Request_complete(rreq); */
+	    MPIDI_CH3U_Request_complete(rreq);
 	    /* These next two indicate that once matched, there is
 	       one more step (the unpack into the user buffer) to perform. */
 	    rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_UnpackUEBufComplete;
