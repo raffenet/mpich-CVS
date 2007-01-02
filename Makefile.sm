@@ -166,6 +166,13 @@ dist-with-version:
 	    if [ ! -d tmpdir2/man ] ; then echo "WARNING: unable to build manpages" ; \
 		(cd tmpdir2 && ls ) ; \
 	    fi ; \
+	    if [ ! -s tmpdir2/man/man3/MPI_Init.3 ] ; then \
+		echo "Unable to build requested man pages" ; \
+		echo "Fix the problem (e.g., make sure doctext is available)" ;\
+		echo "or add doc=no to the make command line if man pages are";\
+		echo "not required" ;\
+		exit 1; \
+	    fi ; \
 	    cp -r tmpdir2/man tmpdir/${PACKAGE}-${version}/man ; \
 	    cp -r tmpdir2/www tmpdir/${PACKAGE}-${version}/www ; \
 	    cp tmpdir2/doc/userguide/user.pdf tmpdir/${PACKAGE}-${version}/doc/userguide/user.pdf ; \
