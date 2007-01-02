@@ -33,6 +33,7 @@ simple-pack_SOURCES = simple-pack.c
 contig-zero-count_SOURCES = contig-zero-count.c
 
 lots-of-types_SOURCES = lots-of-types.c
+lots-of-types_LDADD = ../util/mtest.o 
 
 simple-pack-external_SOURCES = simple-pack-external.c
 
