@@ -2,6 +2,7 @@ sendrecv1 4
 sendrecv2 2
 sendrecv3 2
 sendself 1
+sendall 4
 eagerdt 2
 pingping 2
 bottom 2

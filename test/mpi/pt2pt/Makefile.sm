@@ -40,6 +40,7 @@ probe-unexp_SOURCES  = probe-unexp.c
 probenull_SOURCES    = probenull.c
 inactivereq_SOURCES  = inactivereq.c
 waittestnull_SOURCES = waittestnull.c
+sendall_SOURCES      = sendall.c
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o)
