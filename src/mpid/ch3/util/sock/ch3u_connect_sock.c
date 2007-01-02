@@ -87,6 +87,7 @@ int MPIDU_CH3I_ShutdownListener( void )
     int mpi_errno;
     MPID_Progress_state progress_state;
 
+    MPIU_DBG_MSG(CH3_DISCONNECT,TYPICAL,"Closing listener sock (Post_close)");
     mpi_errno = MPIDU_Sock_post_close(MPIDI_CH3I_listener_conn->sock);
     if (mpi_errno != MPI_SUCCESS) {
 	return mpi_errno;
@@ -800,7 +801,11 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 					"because ack on OPEN_CRECV was false");
 	    conn->state = CONN_STATE_CLOSING;
 	    /* FIXME: What does post close do here? */
+	    MPIU_DBG_MSG(CH3_DISCONNECT,TYPICAL,"CLosing sock (Post_close)");
 	    mpi_errno = MPIDU_Sock_post_close(conn->sock);
+	    if (mpi_errno != MPI_SUCCESS) {
+		MPIU_ERR_POP(mpi_errno);
+	    }
 	}
     }
     /* --BEGIN ERROR HANDLING-- */
@@ -970,6 +975,7 @@ int MPIDI_CH3_Sockconn_handle_connwrite( MPIDI_CH3I_Connection_t * conn )
 	       conn == NULL to identify intentional close, which this 
 	       appears to be. */
 	    conn->state = CONN_STATE_CLOSING;
+	    MPIU_DBG_MSG(CH3_DISCONNECT,TYPICAL,"Closing sock2 (Post_close)");
 	    mpi_errno = MPIDU_Sock_post_close(conn->sock);
 	    if (mpi_errno != MPI_SUCCESS) {
 		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
@@ -1119,7 +1125,8 @@ static int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn)
     MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_POST_SEND_PKT);
  
     MPIU_DBG_PKT(conn,&conn->pkt,"connect");
-    mpi_errno = MPIDU_Sock_post_write(conn->sock, &conn->pkt, sizeof(conn->pkt), sizeof(conn->pkt), NULL);
+    mpi_errno = MPIDU_Sock_post_write(conn->sock, &conn->pkt, sizeof(conn->pkt),
+				      sizeof(conn->pkt), NULL);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -1174,7 +1181,10 @@ static int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
     if (conn->send_active != NULL)
     {
 	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"conn=%p: Posting message from connection send queue", conn );
-	mpi_errno = MPIDU_Sock_post_writev(conn->sock, conn->send_active->dev.iov, conn->send_active->dev.iov_count, NULL);
+	mpi_errno = MPIDU_Sock_post_writev(conn->sock, 
+					   conn->send_active->dev.iov, 
+					   conn->send_active->dev.iov_count, 
+					   NULL);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_POP(mpi_errno);
 	}
