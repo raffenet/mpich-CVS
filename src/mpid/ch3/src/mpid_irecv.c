@@ -82,7 +82,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	    if (!recv_pending)
 	    {
 		/* All of the data has arrived, we need to copy the data and 
-		   then free the buffer and the request. */
+		   then free the buffer. */
 		/* FIXME: if the user buffer is contiguous, just move the
 		   data without using a separate routine call */
 		if (rreq->dev.recv_data_sz > 0)
