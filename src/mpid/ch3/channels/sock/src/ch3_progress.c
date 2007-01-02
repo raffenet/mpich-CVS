@@ -256,6 +256,7 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 
     MPIU_DBG_CONNSTATECHANGE(vc,vc->ch.conn,CONN_STATE_CLOSING);
     vc->ch.conn->state = CONN_STATE_CLOSING;
+    MPIU_DBG_MSG(CH3_DISCONNECT,TYPICAL,"Closing sock (Post_close)");
     mpi_errno = MPIDU_Sock_post_close(vc->ch.sock);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
