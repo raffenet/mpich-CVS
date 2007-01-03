@@ -270,6 +270,9 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     MPIDI_Request_set_seqnum((rreq), (eagershort_pkt)->seqnum);
     /* FIXME: Why do we set the message type? */
     MPIDI_Request_set_msg_type((rreq), MPIDI_REQUEST_EAGER_MSG);
+    /* The request is still complete (in the sense of 
+       having all data) */
+    MPIDI_CH3U_Request_complete(rreq);
 
     /* This packed completes the reception of the indicated data.
        The packet handler returns null for a request that requires
@@ -277,24 +280,18 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     *rreqp = NULL;
 
     /* Extract the data from the packet */
-    if (rreq->dev.recv_data_sz == 0) {
-	MPIDI_CH3U_Request_complete(rreq);
-    }
-    else {
+    /* Note that if the data size if zero, we're already done */
+    if (rreq->dev.recv_data_sz > 0) {
 	if (found) {
-	    int dt_contig;
-	    MPI_Aint dt_true_lb;
+	    int            dt_contig;
+	    MPI_Aint       dt_true_lb;
 	    MPIDI_msg_sz_t userbuf_sz;
-	    MPID_Datatype * dt_ptr;
+	    MPID_Datatype *dt_ptr;
 	    MPIDI_msg_sz_t data_sz;
-
-	    /* printf( "Received eager short message and found matching receive\n" ); fflush(stdout); */
 
 	    /* Make sure that we handle the general (non-contiguous)
 	       datatypes correctly while optimizing for the 
 	       special case */
- 	    /* mpi_errno = MPIDI_CH3U_Post_data_receive_found( rreq ); */
-	    /* Here begins the code from receive_found */
 	    MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, 
 				    dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
 		
@@ -303,8 +300,9 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    }
 	    else {
 		MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-		    "receive buffer too small; message truncated, msg_sz=" MPIDI_MSG_SZ_FMT ", userbuf_sz="
-						    MPIDI_MSG_SZ_FMT,
+		    "receive buffer too small; message truncated, msg_sz=" 
+					  MPIDI_MSG_SZ_FMT ", userbuf_sz="
+				          MPIDI_MSG_SZ_FMT,
 				 rreq->dev.recv_data_sz, userbuf_sz));
 		rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
                      MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
@@ -319,7 +317,6 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		/* user buffer is contiguous and large enough to store the
 		   entire message.  We can just copy the code */
 
-		/* printf( "Copying %d bytes\n", data_sz ); fflush(stdout); */
 		/* Copy the payload. We could optimize this 
 		   if data_sz & 0x3 == 0 
 		   (copy (data_sz >> 2) ints, inline that since data size is 
@@ -339,20 +336,16 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		   function, which depends on whether this is an RMA 
 		   request or a pt-to-pt request. */
 		rreq->dev.OnDataAvail = 0;
-		/* rreq->dev.recv_pending_count = 1; */
-		if (rreq->dev.recv_pending_count != 1) {
-		    printf( "pending count is %d\n",
-			    rreq->dev.recv_pending_count );
-		    fflush(stdout);
-		}
-		MPIDI_CH3U_Request_complete(rreq);
+		/* The recv_pending_count must be one here (!) because of
+		   the way the pending count is queried.  We may want 
+		   to fix this, but it will require a sweep of the code */
 	    }
 	    else {
 		MPIDI_msg_sz_t data_sz, last;
 		/* user buffer is not contiguous.  Use the segment
 		   code to unpack it, handling various errors and 
 		   exceptional cases */
-		/* FIXME: The MPICH2 test do not exercise this branch */
+		/* FIXME: The MPICH2 tests do not exercise this branch */
 		/* printf( "Surprise!\n" ); fflush(stdout);*/
 		MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, 
 				  rreq->dev.datatype, &rreq->dev.segment, 0);
@@ -363,17 +356,17 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 				     &last, eagershort_pkt->data );
 		if (last != data_sz) {
 		    /* --BEGIN ERROR HANDLING-- */
-		    /* received data was not entirely consumed by unpack() 
-		       because too few bytes remained to fill the next basic
-		       datatype */
+		    /* There are two cases:  a datatype mismatch (could
+		       not consume all data) or a too-short buffer. We
+		       need to distinguish between these two types. */
 		    rreq->status.count = (int)last;
-		    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
-                         MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
-			 "**dtypemismatch", 0);
+		    if (rreq->dev.recv_data_sz <= userbuf_sz) {
+			MPIU_ERR_SETSIMPLE(rreq->status.MPI_ERROR,MPI_ERR_TYPE,
+					   "**dtypemismatch");
+		    }
 		    /* --END ERROR HANDLING-- */
 		}
 		rreq->dev.OnDataAvail = 0;
-		MPIDI_CH3U_Request_complete(rreq);
 	    }
 	}
 	else {
@@ -409,9 +402,6 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		}
 	    }
 	    /* printf( "Unexpected eager short\n" ); fflush(stdout); */
-	    /* The request is still complete (in the sense of 
-	       having all data) */
-	    MPIDI_CH3U_Request_complete(rreq);
 	    /* These next two indicate that once matched, there is
 	       one more step (the unpack into the user buffer) to perform. */
 	    rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_UnpackUEBufComplete;
@@ -620,9 +610,12 @@ int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	/* We need to consume any outstanding associated data and 
 	   mark the request with an error. */
 	
-	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-						      "**rsendnomatch", "**rsendnomatch %d %d", ready_pkt->match.rank,
-						      ready_pkt->match.tag);
+	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
+				      MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
+				      MPI_ERR_OTHER, "**rsendnomatch", 
+				      "**rsendnomatch %d %d", 
+				      ready_pkt->match.rank,
+				      ready_pkt->match.tag);
 	rreq->status.count = 0;
 	if (rreq->dev.recv_data_sz > 0)
 	{
