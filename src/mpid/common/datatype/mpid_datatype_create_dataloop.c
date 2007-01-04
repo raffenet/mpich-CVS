@@ -152,7 +152,6 @@ void MPID_Datatype_create_dataloop(MPI_Datatype type,
 	    break;
 	case MPI_COMBINER_RESIZED:
 	    if (type0_combiner != MPI_COMBINER_NAMED) {
-		/* TODO: UPDATE TYPE REFERENCE IN DATALOOP? */
 		MPID_Dataloop_dup(old_dlp, old_dlsz, dlp_p);
 		*dlsz_p    = old_dlsz;
 		*dldepth_p = old_dldepth;
