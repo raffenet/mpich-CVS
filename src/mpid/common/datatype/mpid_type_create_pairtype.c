@@ -66,9 +66,12 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
     new_dtp->name[0]      = 0;
     new_dtp->contents     = NULL;
 
-    new_dtp->dataloop_size  = -1;
     new_dtp->dataloop       = NULL;
+    new_dtp->dataloop_size  = -1;
     new_dtp->dataloop_depth = -1;
+    new_dtp->hetero_dloop       = NULL;
+    new_dtp->hetero_dloop_size  = -1;
+    new_dtp->hetero_dloop_depth = -1;
 
     /* TODO: perhaps clean this up with a macro? */
     switch(type) {
@@ -217,7 +220,7 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
     new_dtp->is_contig       = (type_size == type_extent) ? 1 : 0;
     new_dtp->n_contig_blocks = (type_size == type_extent) ? 1 : 2;
 
-    /* fill in dataloop(s) */
+    /* fill in dataloop(s) -- only case where we precreate dataloops */
     err = MPID_Dataloop_create_struct(2,
 				      blocks,
 				      disps,

@@ -5,7 +5,6 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include <mpiimpl.h>
 #include <mpid_dataloop.h>
 
 int MPIDI_Type_blockindexed_count_contig(int count,

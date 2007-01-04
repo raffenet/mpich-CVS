@@ -6,7 +6,6 @@
  */
 
 #include <mpid_dataloop.h>
-#include <mpiimpl.h>
 
 /*@
    Dataloop_contiguous - create the dataloop representation for a

@@ -5,7 +5,6 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
 

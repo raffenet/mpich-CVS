@@ -6,7 +6,6 @@
  */
 
 #include <mpid_dataloop.h>
-#include <mpiimpl.h>
 
 /*@
    Dataloop_create_vector

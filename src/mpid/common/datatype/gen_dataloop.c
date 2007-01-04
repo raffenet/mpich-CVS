@@ -70,6 +70,8 @@
 void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop **dataloop)
 {
 
+    if (*dataloop == NULL) return;
+
 #ifdef DLOOP_DEBUG_MEMORY
     DLOOP_dbg_printf("DLOOP_Dataloop_free: freeing loop @ %x.\n",
 		     (int) *dataloop);

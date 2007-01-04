@@ -526,6 +526,8 @@ int MPID_Type_contiguous(int count,
 			 MPI_Datatype oldtype,
 			 MPI_Datatype *newtype);
 
+int MPID_Type_zerolen(MPI_Datatype *newtype);
+
 int MPID_Type_create_resized(MPI_Datatype oldtype,
 			     MPI_Aint lb,
 			     MPI_Aint extent,

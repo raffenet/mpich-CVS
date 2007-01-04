@@ -131,4 +131,6 @@ int MPID_Dataloop_create_struct(int count,
 #define MPID_DATALOOP_HOMOGENEOUS 1
 #define MPID_DATALOOP_ALL_BYTES   2
 
+#include <mpiimpl.h>
+
 #endif

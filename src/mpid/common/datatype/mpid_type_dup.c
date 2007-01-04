@@ -93,11 +93,17 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	new_dtp->dataloop_depth = old_dtp->dataloop_depth;
 	new_dtp->dataloop_size  = old_dtp->dataloop_size;
 
+#if 0
 #if defined(MPID_HAS_HETERO) || 1
 	MPID_Dataloop_dup(old_dtp->dataloop, old_dtp->dataloop_size, 
 			  &new_dtp->hetero_dloop);
 	new_dtp->hetero_dloop_depth = old_dtp->hetero_dloop_depth;
 	new_dtp->hetero_dloop_size  = old_dtp->hetero_dloop_size;
+#endif
+#else
+    new_dtp->dataloop       = NULL;
+    new_dtp->dataloop_size  = 0;
+    new_dtp->dataloop_depth = 0;
 #endif
 	
 	*newtype = new_dtp->handle;
