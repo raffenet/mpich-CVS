@@ -21,7 +21,6 @@ typedef struct mpimutex_fp {
 	MPI_Win waitlistwin;
 	MPI_Datatype waitlisttype, fptype;
 	fp_data_t *data;
-	int fd;    /* XXX: unused? */
 } *mpimutex_fp_t;
 
 
