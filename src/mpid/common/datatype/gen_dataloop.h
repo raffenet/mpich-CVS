@@ -272,8 +272,6 @@ typedef struct DLOOP_Dataloop_stackelm {
     struct DLOOP_Dataloop *loop_p;
 } DLOOP_Dataloop_stackelm;
 
-
-
 /*S
   DLOOP_Segment - Description of the Segment datatype
 
@@ -354,40 +352,41 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 struct DLOOP_Segment *segp,
 				 int hetero);
 
-void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
-					DLOOP_Offset first, 
-					DLOOP_Offset *lastp, 
-					int (*piecefn) (DLOOP_Offset *blocks_p,
-							DLOOP_Type el_type,
-							DLOOP_Offset rel_off,
-							void *bufp,
-							void *v_paramp),
-					int (*vectorfn) (DLOOP_Offset *blocks_p,
-							 int count,
-							 int blklen,
-							 DLOOP_Offset stride,
-							 DLOOP_Type el_type,
-							 DLOOP_Offset rel_off,
-							 void *bufp,
-							 void *v_paramp),
-					int (*blkidxfn) (DLOOP_Offset *blocks_p,
-							 int count,
-							 int blklen,
-							 DLOOP_Offset *offsetarray,
-							 DLOOP_Type el_type,
-							 DLOOP_Offset rel_off,
-							 void *bufp,
-							 void *v_paramp),
-					int (*indexfn) (DLOOP_Offset *blocks_p,
-							int count,
-							int *blockarray,
-							DLOOP_Offset *offsetarray,
-							DLOOP_Type el_type,
-							DLOOP_Offset rel_off,
-							void *bufp,
-							void *v_paramp),
-					DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
-					void *pieceparams);
+void
+PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
+				   DLOOP_Offset first, 
+				   DLOOP_Offset *lastp, 
+				   int (*piecefn) (DLOOP_Offset *blocks_p,
+						   DLOOP_Type el_type,
+						   DLOOP_Offset rel_off,
+						   void *bufp,
+						   void *v_paramp),
+				   int (*vectorfn) (DLOOP_Offset *blocks_p,
+						    int count,
+						    int blklen,
+						    DLOOP_Offset stride,
+						    DLOOP_Type el_type,
+						    DLOOP_Offset rel_off,
+						    void *bufp,
+						    void *v_paramp),
+				   int (*blkidxfn) (DLOOP_Offset *blocks_p,
+						    int count,
+						    int blklen,
+						    DLOOP_Offset *offsetarray,
+						    DLOOP_Type el_type,
+						    DLOOP_Offset rel_off,
+						    void *bufp,
+						    void *v_paramp),
+				   int (*indexfn) (DLOOP_Offset *blocks_p,
+						   int count,
+						   int *blockarray,
+						   DLOOP_Offset *offsetarray,
+						   DLOOP_Type el_type,
+						   DLOOP_Offset rel_off,
+						   void *bufp,
+						   void *v_paramp),
+				   DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
+				   void *pieceparams);
 
 #endif
 

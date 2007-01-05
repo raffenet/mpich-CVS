@@ -31,7 +31,7 @@ int PREPEND_PREFIX(Type_convert_darray)(int size,
 					int *array_of_psizes, 
 					int order,
 					MPI_Datatype oldtype, 
-					MPI_Datatype *newtype) 
+					MPI_Datatype *newtype)
 {
     MPI_Datatype type_old, type_new=MPI_DATATYPE_NULL, types[3];
     int procs, tmp_rank, i, tmp_size, blklens[3], *coords;

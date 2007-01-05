@@ -131,9 +131,9 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 
     /* note on optimizations:
      *
-     * because we handle LB, UB, and extent calculations as part of
-     * the MPID_Datatype, we can safely ignore them in all our
-     * calculations here.
+     * because LB, UB, and extent calculations are handled as part of
+     * the Datatype, we can safely ignore them in all our calculations
+     * here.
      */
 
     /* optimization:
@@ -210,8 +210,8 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
      * homogeneous system or the "all bytes" conversion, convert
      * everything to bytes and use an indexed type.
      */
-    if (nr_derived == 0 && ((flags & MPID_DATALOOP_HOMOGENEOUS) ||
-			    (flags & MPID_DATALOOP_ALL_BYTES)))
+    if (nr_derived == 0 && ((flags & DLOOP_DATALOOP_HOMOGENEOUS) ||
+			    (flags & DLOOP_DATALOOP_ALL_BYTES)))
     {
 	return DLOOP_Dataloop_create_basic_all_bytes_struct(count,
 							    blklens,
@@ -229,8 +229,8 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
      * flatten the type and store it as an indexed type so that
      * there are no branches in the dataloop tree.
      */
-    if ((flags & MPID_DATALOOP_HOMOGENEOUS) ||
-	     (flags & MPID_DATALOOP_ALL_BYTES))
+    if ((flags & DLOOP_DATALOOP_HOMOGENEOUS) ||
+	     (flags & DLOOP_DATALOOP_ALL_BYTES))
     {
 	return DLOOP_Dataloop_create_flattened_struct(count,
 						      blklens,
@@ -528,8 +528,8 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
     /* arbitrary types, convert to bytes and use indexed */
     int i, err, *tmp_blklens, nr_blks = 0;
     DLOOP_Offset *tmp_disps, bytes;
-    MPID_IOV *iov_array;
-    MPID_Segment *segp;
+    DLOOP_VECTOR *iov_array;
+    DLOOP_Segment *segp;
 
     int first_ind, last_ind;
 
@@ -577,7 +577,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 
     nr_blks += 2; /* safety measure */
 
-    iov_array = (MPID_IOV *) DLOOP_Malloc(nr_blks * sizeof(MPID_IOV));
+    iov_array = (DLOOP_VECTOR *) DLOOP_Malloc(nr_blks * sizeof(DLOOP_VECTOR));
     /* --BEGIN ERROR HANDLING-- */
     if (!iov_array) {
 	return DLOOP_Dataloop_create_struct_memory_error();
@@ -641,8 +641,8 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
         for (i=0; i < nr_blks; i++) {
 	MPIU_DBG_OUT_FMT(DATATYPE,(MPIU_DBG_FDEST,
 				   "a[%d] = (%d, %d)\n", i,
-				   iov_array[i].MPID_IOV_BUF,
-				   iov_array[i].MPID_IOV_LEN));
+				   iov_array[i].DLOOP_VECTOR_BUF,
+				   iov_array[i].DLOOP_VECTOR_LEN));
 	}
 	MPIU_DBG_OUT(DATATYPE,"--- end of flattened type ---");
     }
@@ -650,8 +650,8 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 
     for (i=0; i < nr_blks; i++)
     {
-	tmp_blklens[i]  = iov_array[i].MPID_IOV_LEN;
-	tmp_disps[i] = (DLOOP_Offset) iov_array[i].MPID_IOV_BUF;
+	tmp_blklens[i]  = iov_array[i].DLOOP_VECTOR_LEN;
+	tmp_disps[i] = (DLOOP_Offset) iov_array[i].DLOOP_VECTOR_BUF;
     }
 
     PREPEND_PREFIX(Segment_free)(segp);

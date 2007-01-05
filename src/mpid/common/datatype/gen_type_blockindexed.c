@@ -27,7 +27,7 @@ static void DLOOP_Type_blockindexed_array_copy(int count,
 .  void *displacement_array
 .  int displacement_in_bytes (boolean)
 .  MPI_Datatype old_type
-.  MPID_Dataloop **output_dataloop_ptr
+.  DLOOP_Dataloop **output_dataloop_ptr
 .  int output_dataloop_size
 .  int output_dataloop_depth
 -  int flags
@@ -183,8 +183,7 @@ int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
 
 	new_dlp->kind = DLOOP_KIND_BLOCKINDEXED | DLOOP_FINAL_MASK;
 
-	/* TODO: MPID FLAGS? */
-	if (flags & MPID_DATALOOP_ALL_BYTES)
+	if (flags & DLOOP_DATALOOP_ALL_BYTES)
 	{
 	    blklen            *= old_extent;
 	    new_dlp->el_size   = 1;

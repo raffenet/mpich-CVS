@@ -16,7 +16,7 @@
 .  MPI_Aint stride
 .  int strideinbytes
 .  MPI_Datatype oldtype
-.  MPID_Dataloop **dlp_p
+.  DLOOP_Dataloop **dlp_p
 .  int *dlsz_p
 .  int *dldepth_p
 -  int flags
@@ -100,7 +100,7 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 	DLOOP_Handle_get_size_macro(oldtype, basic_sz);
 	new_dlp->kind = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK;
 
-	if (flags & MPID_DATALOOP_ALL_BYTES)
+	if (flags & DLOOP_DATALOOP_ALL_BYTES)
 	{
 
 	    blocklength       *= basic_sz;

@@ -198,7 +198,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 
 	new_dlp->kind = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK;
 
-	if (flags & MPID_DATALOOP_ALL_BYTES)
+	if (flags & DLOOP_DATALOOP_ALL_BYTES)
 	{
 	    /* blocklengths are modified below */
 	    new_dlp->el_size   = 1;
@@ -253,7 +253,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 				  dispinbytes,
 				  old_extent);
 
-    if (is_builtin && (flags & MPID_DATALOOP_ALL_BYTES))
+    if (is_builtin && (flags & DLOOP_DATALOOP_ALL_BYTES))
     {
 	int *tmp_blklen_array = new_dlp->loop_params.i_t.blocksize_array;
 

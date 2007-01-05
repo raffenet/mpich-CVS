@@ -26,7 +26,7 @@ lib${MPILIBNAME}_a_SOURCES = \
 	gen_type_blockindexed.c \
 	gen_type_indexed.c \
 	gen_type_struct.c \
-	mpid_datatype_create_dataloop.c \
+	gen_dataloop_create.c \
 	gen_subarray_support.c \
 	gen_darray_support.c \
 
