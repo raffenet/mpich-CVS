@@ -34,12 +34,16 @@
 
 /*
  * Get a pointer to the thread's private data
+ * Also define a macro to release any storage that may be allocated
+ * by Malloc to ensure that memory leak tools don't report this when
+ * there is no real leak.
  */
 #ifndef MPICH_IS_THREADED
 #define MPIR_GetPerThread(pt_)			\
 {						\
     *(pt_) = &MPIR_Thread;			\
 }
+#define MPIR_ReleasePerThread
 #else
 /* Define a macro to acquire or create the thread private storage */
 #define MPIR_GetOrInitThreadPriv( pt_ ) \
@@ -61,9 +65,16 @@
  if (MPIR_Process.isThreaded) { MPIR_GetOrInitThreadPriv( pt_ ); } \
  else { *(pt_) = &MPIR_ThreadSingle; } \
  }
+#define MPIR_ReleasePerThread { \
+	if (MPIR_Process.isThreaded) { \
+         MPICH_PerThread_t *pt_; \
+         MPIR_GetOrInitThreadPriv( &pt_ ); MPIU_Free( pt_ ); } }
 #else
 #define MPIR_GetPerThread(pt_) MPIR_GetOrInitThreadPriv( pt_ )
+#define MPIR_ReleasePerThread { \
+MPICH_PerThread_t *pt_; MPIR_GetOrInitThreadPriv( &pt_ ); MPIU_Free( pt_ ); }
 #endif /* HAVE_RUNTIME_THREADCHECK */
+
 #endif /* MPICH_IS_THREADED */
 
 
@@ -87,6 +98,7 @@
 #define MPID_CS_FINALIZE()						\
 {									\
     MPIU_DBG_MSG(THREAD,TYPICAL,"Freeing global mutex and private storage");\
+    MPIR_ReleasePerThread;                                              \
     MPID_Thread_tls_destroy(&MPIR_Process.thread_storage, NULL);	\
     MPID_Thread_mutex_destroy(&MPIR_Process.global_mutex, NULL);	\
 }

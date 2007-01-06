@@ -37,6 +37,7 @@ int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     if (request_ptr) {
         mpi_errno = MPIC_Wait(request_ptr);
 	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	MPID_Request_release(request_ptr);
     }
  fn_exit:
     MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SEND);

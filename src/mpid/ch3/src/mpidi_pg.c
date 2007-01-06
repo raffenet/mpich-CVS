@@ -73,7 +73,6 @@ int MPIDI_PG_Init(int *argc_p, char ***argv_p,
 int MPIDI_PG_Finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    int inuse;
     MPIDI_PG_t *pg, *pgNext;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_FINALIZE);
 
@@ -84,7 +83,7 @@ int MPIDI_PG_Finalize(void)
 	MPIU_PG_Printall( stdout );
     }
 
-    /* FIXME - straighten out the use of PG_Finalize - no use after 
+    /* FIXME - straighten out the use of PMI_Finalize - no use after 
        PG_Finalize */
     if (pg_world->connData) {
 	int rc;
@@ -97,16 +96,30 @@ int MPIDI_PG_Finalize(void)
     }
 
     /* Free the storage associated with the process groups */
-    MPIDI_PG_release_ref(MPIDI_Process.my_pg, &inuse);
     pg = MPIDI_PG_list;
     while (pg) {
 	pgNext = pg->next;
 	
-	if (pg->ref_count == 0) {
+	/* In finalize, we free all process group information, even if
+	   the ref count is not zero.  This can happen if the user
+	   fails to use MPI_Comm_disconnect on communicators that
+	   were created with the dynamic process routines.*/
+	if (pg->ref_count == 0 || 1) {
+	    if (pg == MPIDI_Process.my_pg)
+		MPIDI_Process.my_pg = NULL;
 	    MPIDI_PG_Destroy(pg);
 	}
 	pg     = pgNext;
     }
+
+    /* If COMM_WORLD is still around (it normally should be), 
+       try to free it here.  The reason that we need to free it at this 
+       point is that comm_world (and comm_self) still exist, and 
+       hence the usual process to free the related VC structures will
+       not be invoked. */
+    if (MPIDI_Process.my_pg) {
+	MPIDI_PG_Destroy(MPIDI_Process.my_pg);
+    } 
     MPIDI_Process.my_pg = NULL;
 
     /* ifdefing out this check because the list will not be NULL in 
@@ -120,6 +133,7 @@ int MPIDI_PG_Finalize(void)
 
     if (MPIDI_PG_list != NULL)
     { 
+	
 	/* --BEGIN ERROR HANDLING-- */
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN,
         "**dev|pg_finalize|list_not_empty", NULL); 
@@ -234,7 +248,6 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 {
-    /*int i;*/
     MPIDI_PG_t * pg_prev;
     MPIDI_PG_t * pg_cur;
     int mpi_errno = MPI_SUCCESS;
@@ -258,14 +271,6 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
             else
                 pg_prev->next = pg->next;
 
-	    /*
-	    for (i=0; i<pg->size; i++)
-	    {
-		printf("[%s%d]freeing vc%d - %p (%s)\n", MPIU_DBG_parent_str, 
-		MPIR_Process.comm_world->rank, i, &pg->vct[i], pg->id);
-		fflush(stdout);
-	    }
-	    */
 	    if (verbose) {
 		fprintf( stdout, "Destroying process group %s\n", 
 			 (char *)pg->id ); fflush(stdout);
@@ -273,7 +278,12 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 	    MPIDI_PG_Destroy_fn(pg);
 	    MPIU_Free(pg->vct);
 	    if (pg->connData) {
-		MPIU_Free(pg->connData);
+		if (pg->freeConnInfo) {
+		    (*pg->freeConnInfo)( pg );
+		}
+		else {
+		    MPIU_Free(pg->connData);
+		}
 	    }
 	    MPIU_Free(pg);
 
@@ -676,7 +686,9 @@ static int connFromStringKVS( const char *buf, MPIDI_PG_t *pg )
 }
 static int connFreeKVS( MPIDI_PG_t *pg )
 {
-    /* In this implementation, there is no local data */
+    if (pg->connData) {
+	MPIU_Free( pg->connData );
+    }
     return MPI_SUCCESS;
 }
 

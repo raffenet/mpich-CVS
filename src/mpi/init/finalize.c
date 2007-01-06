@@ -180,10 +180,10 @@ int MPI_Finalize( void )
        go to separate files or to be sorted by rank (note that
        the rank is at the head of the line) */
     if (1) {
-	/* FIXME: The second argument is the min id to print; memory allocated 
+	/* The second argument is the min id to print; memory allocated 
 	   after MPI_Init is given an id of one.  This allows us to
-	   ignore, for the moment, memory leaks in the MPID_Init call */
-	MPIU_trdump( (void *)0, 1 );
+	   ignore, if desired, memory leaks in the MPID_Init call */
+	MPIU_trdump( (void *)0, -1 );
     }
 #endif
 #ifdef MPICH_DEBUG_NESTING

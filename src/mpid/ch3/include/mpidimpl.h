@@ -41,7 +41,6 @@ typedef struct MPIDI_Process
 {
     MPIDI_PG_t * my_pg;
     int my_pg_rank;
-    int lpid_counter;
 }
 MPIDI_Process_t;
 

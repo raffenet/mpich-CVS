@@ -646,8 +646,12 @@ int MPIDI_CH3U_Comm_FinishPending( MPID_Comm *comm_ptr )
 /* ----------------------------------------------------------------------- */
 /* Routines to initialize a VC */
 
+/*
+ * The lpid counter counts new processes that this process knows about.
+ */
+static int lpid_counter = 0;
+
 /* FIXME: Should this fully initialize the vc_ entry? */
-/* Make lpid_counter static and local to this routine/file */
 int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
 {
     vc->state = MPIDI_VC_STATE_INACTIVE;
@@ -655,7 +659,7 @@ int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
     vc->handle  = MPID_VCONN;
     vc->pg      = pg;
     vc->pg_rank = rank;
-    vc->lpid = MPIDI_Process.lpid_counter++;
+    vc->lpid    = lpid_counter++;
     MPIDI_VC_Init_seqnum_send(vc);
     MPIDI_VC_Init_seqnum_recv(vc);
     MPIU_DBG_PrintVCState(vc);

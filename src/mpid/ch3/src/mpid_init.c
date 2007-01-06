@@ -48,11 +48,6 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_INIT);
 
-    /*
-     * Initialize the device's process information structure
-     */
-    MPIDI_Process.lpid_counter = 0;
-
     /* FIXME: This is a good place to check for environment variables
        and command line options that may control the device */
 
