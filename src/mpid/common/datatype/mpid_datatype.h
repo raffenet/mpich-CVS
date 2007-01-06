@@ -255,29 +255,6 @@
             break;							\
     }									\
 }
-
-#if defined(MPID_HAS_HETERO) || 1
-#define MPID_Datatype_get_hetero_loopptr_macro(a,lptr_)                \
-{                                                                    \
-    void *ptr;                                                          \
-    switch (HANDLE_GET_KIND(a)) {                                       \
-        case HANDLE_KIND_DIRECT:                                        \
-            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
-            lptr_ = ((MPID_Datatype *) ptr)->hetero_dloop;             \
-            break;                                                      \
-        case HANDLE_KIND_INDIRECT:                                      \
-            ptr = ((MPID_Datatype *)                                    \
-		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
-            lptr_ = ((MPID_Datatype *) ptr)->hetero_dloop;             \
-            break;                                                      \
-        case HANDLE_KIND_INVALID:                                       \
-        case HANDLE_KIND_BUILTIN:                                       \
-        default:                                                        \
-            lptr_ = 0;                                                 \
-            break;                                                      \
-    }                                                                   \
-}
-#endif /* MPID_HAS_HETERO */
         
 #define MPID_Datatype_get_extent_macro(a,extent_)			    \
 {									    \
