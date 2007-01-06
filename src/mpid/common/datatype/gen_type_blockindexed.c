@@ -7,11 +7,11 @@
 
 #include <mpid_dataloop.h>
 
-int MPIDI_Type_blockindexed_count_contig(int count,
-					 int blklen,
-					 void *disp_array,
-					 int dispinbytes,
-					 MPI_Aint old_extent);
+static int DLOOP_Type_blockindexed_count_contig(int count,
+						int blklen,
+						void *disp_array,
+						int dispinbytes,
+						MPI_Aint old_extent);
 
 static void DLOOP_Type_blockindexed_array_copy(int count,
 					       void *disp_array,
@@ -69,7 +69,7 @@ int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
 
     if (is_builtin)
     {
-	old_extent     = MPID_Datatype_get_basic_size(oldtype);
+	DLOOP_Handle_get_size_macro(oldtype, old_extent);
 	old_loop_depth = 0;
     }
     else
@@ -79,7 +79,7 @@ int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
     }
 
     /* TODO: WHAT DO WE DO ABOUT THIS? */
-    contig_count = MPIDI_Type_blockindexed_count_contig(count,
+    contig_count = DLOOP_Type_blockindexed_count_contig(count,
 							blklen,
 							disp_array,
 							dispinbytes,
@@ -270,4 +270,42 @@ static void DLOOP_Type_blockindexed_array_copy(int count,
 	}
     }
     return;
+}
+
+static int DLOOP_Type_blockindexed_count_contig(int count,
+						int blklen,
+						void *disp_array,
+						int dispinbytes,
+						MPI_Aint old_extent)
+{
+    int i, contig_count = 1;
+
+    if (!dispinbytes)
+    {
+	int cur_tdisp = ((int *) disp_array)[0];
+
+	for (i=1; i < count; i++)
+	{
+	    if (cur_tdisp + blklen != ((int *) disp_array)[i])
+	    {
+		contig_count++;
+	    }
+	    cur_tdisp = ((int *) disp_array)[i];
+	}
+    }
+    else
+    {
+	int cur_bdisp = ((MPI_Aint *) disp_array)[0];
+
+	for (i=1; i < count; i++)
+	{
+	    if (cur_bdisp + blklen * old_extent !=
+		((MPI_Aint *) disp_array)[i])
+	    {
+		contig_count++;
+	    }
+	    cur_bdisp = ((MPI_Aint *) disp_array)[i];
+	}
+    }
+    return contig_count;
 }

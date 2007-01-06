@@ -248,7 +248,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 	/* ignore type elements with a zero blklen */
 	if (blklens[i] == 0) continue;
 
-	if (HANDLE_GET_KIND(oldtypes[i]) != HANDLE_KIND_BUILTIN)
+	if (DLOOP_Handle_hasloop_macro(oldtypes[i]))
 	{
 	    int tmp_loop_depth, tmp_loop_sz;
 
@@ -475,7 +475,8 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
     tmp_blklens = (int *) DLOOP_Malloc(count * sizeof(int));
 
     /* --BEGIN ERROR HANDLING-- */
-    if (!tmp_blklens) {
+    if (!tmp_blklens)
+    {
 	return DLOOP_Dataloop_create_struct_memory_error();
     }
     /* --END ERROR HANDLING-- */
@@ -483,7 +484,8 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
     tmp_disps = (DLOOP_Offset *) DLOOP_Malloc(count * sizeof(DLOOP_Offset));
 
     /* --BEGIN ERROR HANDLING-- */
-    if (!tmp_disps) {
+    if (!tmp_disps)
+    {
 	MPIU_Free(tmp_blklens);
 	return DLOOP_Dataloop_create_struct_memory_error();
     }
@@ -493,8 +495,9 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
     {
 	if (oldtypes[i] != MPI_LB && oldtypes[i] != MPI_UB && blklens[i] != 0)
 	{
-	    int sz = MPID_Datatype_get_basic_size(oldtypes[i]);
+	    int sz;
 
+	    DLOOP_Handle_get_size_macro(oldtypes[i], sz);
 	    tmp_blklens[cur_pos] = sz * blklens[i];
 	    tmp_disps[cur_pos]   = disps[i];
 	    cur_pos++;

@@ -8,11 +8,11 @@
 #include <mpid_dataloop.h>
 #include <stdlib.h>
 
-int MPIDI_Type_indexed_count_contig(int count,
-				    int *blocklength_array,
-				    void *displacement_array,
-				    int dispinbytes,
-				    MPI_Aint old_extent);
+static int DLOOP_Type_indexed_count_contig(int count,
+					   int *blocklength_array,
+					   void *displacement_array,
+					   int dispinbytes,
+					   MPI_Aint old_extent);
 
 static void DLOOP_Type_indexed_array_copy(int count,
 					  int contig_count,
@@ -90,7 +90,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
     }
 
     /* TODO: WHAT DO WE DO ABOUT THIS? */
-    contig_count = MPIDI_Type_indexed_count_contig(count,
+    contig_count = DLOOP_Type_indexed_count_contig(count,
 						   blocklength_array,
 						   displacement_array,
 						   dispinbytes,
@@ -351,4 +351,71 @@ static void DLOOP_Type_indexed_array_copy(int count,
 	}
     }
     return;
+}
+
+/* DLOOP_Type_indexed_count_contig()
+ *
+ * Determines the actual number of contiguous blocks represented by the
+ * blocklength/displacement arrays.  This might be less than count (as
+ * few as 1).
+ *
+ * Extent passed in is for the original type.
+ */
+static int DLOOP_Type_indexed_count_contig(int count,
+					   int *blocklength_array,
+					   void *displacement_array,
+					   int dispinbytes,
+					   MPI_Aint old_extent)
+{
+    int i, contig_count = 1;
+    int cur_blklen = blocklength_array[0];
+
+    if (!dispinbytes)
+    {
+	int cur_tdisp = ((int *) displacement_array)[0];
+	
+	for (i = 1; i < count; i++)
+	{
+	    if (blocklength_array[i] == 0)
+	    {
+		continue;
+	    }
+	    else if (cur_tdisp + cur_blklen == ((int *) displacement_array)[i])
+	    {
+		/* adjacent to current block; add to block */
+		cur_blklen += blocklength_array[i];
+	    }
+	    else
+	    {
+		cur_tdisp  = ((int *) displacement_array)[i];
+		cur_blklen = blocklength_array[i];
+		contig_count++;
+	    }
+	}
+    }
+    else
+    {
+	MPI_Aint cur_bdisp = ((MPI_Aint *) displacement_array)[0];
+	
+	for (i = 1; i < count; i++)
+	{
+	    if (blocklength_array[i] == 0)
+	    {
+		continue;
+	    }
+	    else if (cur_bdisp + cur_blklen * old_extent ==
+		     ((MPI_Aint *) displacement_array)[i])
+	    {
+		/* adjacent to current block; add to block */
+		cur_blklen += blocklength_array[i];
+	    }
+	    else
+	    {
+		cur_bdisp  = ((MPI_Aint *) displacement_array)[i];
+		cur_blklen = blocklength_array[i];
+		contig_count++;
+	    }
+	}
+    }
+    return contig_count;
 }
