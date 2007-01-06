@@ -13,7 +13,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 				     DLOOP_Dataloop **dlp_p,
 				     int *dlsz_p,
 				     int *dldepth_p,
-				     int flags)
+				     int flag)
 {
     int i;
 
@@ -25,7 +25,6 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 
     MPID_Datatype_contents *cp;
     MPID_Datatype *dtp;
-    MPID_Datatype *old_dtp;
     DLOOP_Dataloop *old_dlp;
     int old_dlsz, old_dldepth;
 
@@ -99,7 +98,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 							   dlp_p,
 							   dlsz_p,
 							   dldepth_p,
-							   flags);
+							   flag);
 		return;
 	    }
 	    break;
@@ -116,19 +115,18 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 			   &type0_combiner);
     if (type0_combiner != MPI_COMBINER_NAMED)
     {
-	MPID_Datatype_get_ptr(types[0], old_dtp);
-	if (old_dtp->dataloop == NULL)
+	DLOOP_Handle_get_loopptr_macro(types[0], old_dlp, flag);
+	if (old_dlp == NULL)
 	{
 	    PREPEND_PREFIX(Dataloop_create)(types[0],
 					    &old_dlp,
 					    &old_dlsz,
 					    &old_dldepth,
-					    flags);
+					    flag);
 
-	    /* TODO: MACROIZE */
-	    old_dtp->dataloop = old_dlp;
-	    old_dtp->dataloop_size = old_dlsz;
-	    old_dtp->dataloop_depth = old_dldepth;
+	    DLOOP_Handle_set_loopptr_macro(types[0], old_dlp, flag);
+	    DLOOP_Handle_set_loopsize_macro(types[0], old_dlsz, flag);
+	    DLOOP_Handle_set_loopdepth_macro(types[0], old_dldepth, flag);
 	}
     }
        
@@ -145,7 +143,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 							   types[0], 
 							   dlp_p, dlsz_p,
 							   dldepth_p,
-							   flags);
+							   flag);
 	    }
 	    break;
 	case MPI_COMBINER_RESIZED:
@@ -159,7 +157,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 							   types[0], 
 							   dlp_p, dlsz_p,
 							   dldepth_p,
-							   flags);
+							   flag);
 
 		(*dlp_p)->el_extent = aints[1]; /* extent */
 	    }
@@ -169,7 +167,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 						       types[0] /* oldtype */,
 						       dlp_p, dlsz_p,
 						       dldepth_p,
-						       flags);
+						       flag);
 	    break;
 	case MPI_COMBINER_VECTOR:
 	    PREPEND_PREFIX(Dataloop_create_vector)(ints[0] /* count */,
@@ -178,7 +176,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 						   0 /* stride not bytes */,
 						   types[0] /* oldtype */,
 						   dlp_p, dlsz_p, dldepth_p,
-						   flags);
+						   flag);
 	    break;
 	case MPI_COMBINER_HVECTOR_INTEGER:
 	case MPI_COMBINER_HVECTOR:
@@ -196,7 +194,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 						   1 /* stride in bytes */,
 						   types[0] /* oldtype */,
 						   dlp_p, dlsz_p, dldepth_p,
-						   flags);
+						   flag);
 	    break;
 	case MPI_COMBINER_INDEXED_BLOCK:
 	    PREPEND_PREFIX(Dataloop_create_blockindexed)(ints[0] /* count */,
@@ -206,7 +204,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 							 types[0] /* oldtype */,
 							 dlp_p, dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	    break;
 	case MPI_COMBINER_INDEXED:
 	    PREPEND_PREFIX(Dataloop_create_indexed)(ints[0] /* count */,
@@ -215,7 +213,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 						    0 /* disp not in bytes */,
 						    types[0] /* oldtype */,
 						    dlp_p, dlsz_p, dldepth_p,
-						    flags);
+						    flag);
 	    break;
 	case MPI_COMBINER_HINDEXED_INTEGER:
 	case MPI_COMBINER_HINDEXED:
@@ -236,7 +234,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 						    1 /* disp in bytes */,
 						    types[0] /* oldtype */,
 						    dlp_p, dlsz_p, dldepth_p,
-						    flags);
+						    flag);
 
 	    if (combiner == MPI_COMBINER_HINDEXED_INTEGER) {
 		DLOOP_Free(disps);
@@ -251,19 +249,21 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 				       &type_combiner);
 
 		if (type_combiner != MPI_COMBINER_NAMED) {
-		    MPID_Datatype_get_ptr(types[i], old_dtp);
-		    if (old_dtp->dataloop == NULL)
+		    DLOOP_Handle_get_loopptr_macro(types[i], old_dlp, flag);
+		    if (old_dlp == NULL)
 		    {
 			PREPEND_PREFIX(Dataloop_create)(types[i],
 							&old_dlp,
 							&old_dlsz,
 							&old_dldepth,
-							flags);
+							flag);
 			
-			/* TODO: MACROIZE */
-			old_dtp->dataloop = old_dlp;
-			old_dtp->dataloop_size = old_dlsz;
-			old_dtp->dataloop_depth = old_dldepth;
+			DLOOP_Handle_set_loopptr_macro(types[i], old_dlp,
+						       flag);
+			DLOOP_Handle_set_loopsize_macro(types[i], old_dlsz,
+							flag);
+			DLOOP_Handle_set_loopdepth_macro(types[i], old_dldepth,
+							 flag);
 		    }
 		}
 	    }
@@ -283,7 +283,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 						   disps,
 						   types /* oldtype array */,
 						   dlp_p, dlsz_p, dldepth_p,
-						   flags);
+						   flag);
 
 	    if (combiner == MPI_COMBINER_STRUCT_INTEGER) {
 		MPIU_Free(disps);
@@ -304,7 +304,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 					    dlp_p,
 					    dlsz_p,
 					    dldepth_p,
-					    flags);
+					    flag);
 	    
 	    PMPI_Type_free(&tmptype);
 	    break;
@@ -325,7 +325,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 					    dlp_p,
 					    dlsz_p,
 					    dldepth_p,
-					    flags);
+					    flag);
 
 	    PMPI_Type_free(&tmptype);
 	    break;

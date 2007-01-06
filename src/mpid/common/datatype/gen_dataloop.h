@@ -44,6 +44,18 @@
 #define DLOOP_Segment               PREPEND_PREFIX(Segment)
 #define DLOOP_Dataloop_stackelm     PREPEND_PREFIX(Dataloop_stackelm)
 
+/* These flags are used at creation time to specify what types of
+ * optimizations may be applied. They are also passed in at Segment_init
+ * time to specify which dataloop to use.
+ *
+ * Note: The flag to MPID_Segment_init() was originally simply "hetero"
+ * and was a boolean value (0 meaning homogeneous). Some MPICH2 code
+ * may still rely on HOMOGENEOUS being "0" and HETEROGENEOUS being "1".
+ */
+#define DLOOP_DATALOOP_HOMOGENEOUS   0
+#define DLOOP_DATALOOP_HETEROGENEOUS 1
+#define DLOOP_DATALOOP_ALL_BYTES     2
+
 /* NOTE: ASSUMING LAST TYPE IS SIGNED */
 #define SEGMENT_IGNORE_LAST ((DLOOP_Offset) -1)
 /*

@@ -35,7 +35,7 @@ static void DLOOP_Type_indexed_array_copy(int count,
 .  DLOOP_Dataloop **dlp_p
 .  int *dlsz_p
 .  int *dldepth_p
--  int flags
+-  int flag
 
 .N Errors
 .N Returns 0 on success, -1 on error.
@@ -49,7 +49,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 					    DLOOP_Dataloop **dlp_p,
 					    int *dlsz_p,
 					    int *dldepth_p,
-					    int flags)
+					    int flag)
 {
     int err, is_builtin;
     int i, new_loop_sz, old_loop_depth, blksz;
@@ -67,7 +67,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -81,7 +81,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
     else
     {
 	DLOOP_Handle_get_extent_macro(oldtype, old_extent);
-	DLOOP_Handle_get_loopdepth_macro(oldtype, old_loop_depth, 0);
+	DLOOP_Handle_get_loopdepth_macro(oldtype, old_loop_depth, flag);
     }
 
     for (i=0; i < count; i++)
@@ -104,7 +104,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -122,7 +122,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -142,7 +142,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 							   dlp_p,
 							   dlsz_p,
 							   dldepth_p,
-							   flags);
+							   flag);
 
 	return err;
     }
@@ -171,7 +171,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 							   dlp_p,
 							   dlsz_p,
 							   dldepth_p,
-							   flags);
+							   flag);
 
 	return err;
     }
@@ -198,7 +198,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 
 	new_dlp->kind = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK;
 
-	if (flags & DLOOP_DATALOOP_ALL_BYTES)
+	if (flag == DLOOP_DATALOOP_ALL_BYTES)
 	{
 	    /* blocklengths are modified below */
 	    new_dlp->el_size   = 1;
@@ -217,8 +217,8 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 	DLOOP_Dataloop *old_loop_ptr = NULL;
 	int old_loop_sz = 0;
 
-	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
-	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
+	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, flag);
+	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, flag);
 
 	PREPEND_PREFIX(Dataloop_alloc_and_copy)(DLOOP_KIND_INDEXED,
 						contig_count,
@@ -253,7 +253,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 				  dispinbytes,
 				  old_extent);
 
-    if (is_builtin && (flags & DLOOP_DATALOOP_ALL_BYTES))
+    if (is_builtin && (flag == DLOOP_DATALOOP_ALL_BYTES))
     {
 	int *tmp_blklen_array = new_dlp->loop_params.i_t.blocksize_array;
 

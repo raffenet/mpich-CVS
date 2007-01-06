@@ -30,7 +30,7 @@ static void DLOOP_Type_blockindexed_array_copy(int count,
 .  DLOOP_Dataloop **output_dataloop_ptr
 .  int output_dataloop_size
 .  int output_dataloop_depth
--  int flags
+-  int flag
 
 .N Errors
 .N Returns 0 on success, -1 on failure.
@@ -43,7 +43,7 @@ int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
 						 DLOOP_Dataloop **dlp_p,
 						 int *dlsz_p,
 						 int *dldepth_p,
-						 int flags)
+						 int flag)
 {
     int err, is_builtin, is_vectorizable = 1;
     int i, new_loop_sz, old_loop_depth;
@@ -61,7 +61,7 @@ int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -75,7 +75,7 @@ int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
     else
     {
 	DLOOP_Handle_get_extent_macro(oldtype, old_extent);
-	DLOOP_Handle_get_loopdepth_macro(oldtype, old_loop_depth, 0);
+	DLOOP_Handle_get_loopdepth_macro(oldtype, old_loop_depth, flag);
     }
 
     /* TODO: WHAT DO WE DO ABOUT THIS? */
@@ -99,7 +99,7 @@ int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -148,7 +148,7 @@ int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	    return err;
 	}
     }
@@ -183,7 +183,7 @@ int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
 
 	new_dlp->kind = DLOOP_KIND_BLOCKINDEXED | DLOOP_FINAL_MASK;
 
-	if (flags & DLOOP_DATALOOP_ALL_BYTES)
+	if (flag == DLOOP_DATALOOP_ALL_BYTES)
 	{
 	    blklen            *= old_extent;
 	    new_dlp->el_size   = 1;
@@ -202,8 +202,8 @@ int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
 	DLOOP_Dataloop *old_loop_ptr = NULL;
 	int old_loop_sz = 0;
 
-	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
-	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
+	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, flag);
+	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, flag);
 
 	PREPEND_PREFIX(Dataloop_alloc_and_copy)(DLOOP_KIND_BLOCKINDEXED,
 						count,

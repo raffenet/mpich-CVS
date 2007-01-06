@@ -113,9 +113,19 @@
  */
 #if defined(MPID_HAS_HETERO) || 1
 #define MPID_GET_FIELD(hetero_,value_,fieldname_) \
-  if (!(hetero_))						\
+  if (hetero_ == MPID_DATALOOP_HOMOGENEOUS)			\
       value_ = ((MPID_Datatype *)ptr)->dataloop##fieldname_;	\
   else value_ = ((MPID_Datatype *) ptr)->hetero_dloop##fieldname_;
+#else
+#define MPID_GET_FIELD(hetero_,value_,fieldname_) \
+      value_ = ((MPID_Datatype *)ptr)->dataloop##fieldname_
+#endif
+
+#if defined(MPID_HAS_HETERO) || 1
+#define MPID_SET_FIELD(hetero_,value_,fieldname_) \
+  if (hetero_ == MPID_DATALOOP_HOMOGENEOUS)			\
+      ((MPID_Datatype *)ptr)->dataloop##fieldname_ = value_;	\
+  else ((MPID_Datatype *) ptr)->hetero_dloop##fieldname_ = value_;
 #else
 #define MPID_GET_FIELD(hetero_,value_,fieldname_) \
       value_ = ((MPID_Datatype *)ptr)->dataloop##fieldname_
@@ -175,6 +185,68 @@
             ptr = ((MPID_Datatype *)					\
 		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	\
             MPID_GET_FIELD(hetero_,lptr_,);                             \
+            break;							\
+        case HANDLE_KIND_INVALID:					\
+        case HANDLE_KIND_BUILTIN:					\
+        default:							\
+            lptr_ = 0;							\
+            break;							\
+    }									\
+}
+#define MPID_Datatype_set_loopdepth_macro(a,depth_,hetero_)		\
+{									\
+    void *ptr;								\
+    switch (HANDLE_GET_KIND(a)) {					\
+        case HANDLE_KIND_DIRECT:					\
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);			\
+            MPID_SET_FIELD(hetero_,depth_,_depth);                      \
+            break;							\
+        case HANDLE_KIND_INDIRECT:					\
+            ptr = ((MPID_Datatype *)					\
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	\
+            MPID_SET_FIELD(hetero_,depth_,_depth);                      \
+            break;							\
+        case HANDLE_KIND_INVALID:					\
+        case HANDLE_KIND_BUILTIN:					\
+        default:							\
+            depth_ = 0;						\
+            break;							\
+    }                                                                   \
+}
+
+#define MPID_Datatype_set_loopsize_macro(a,depth_,hetero_)		\
+{									\
+    void *ptr;								\
+    switch (HANDLE_GET_KIND(a)) {					\
+        case HANDLE_KIND_DIRECT:					\
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);			\
+            MPID_SET_FIELD(hetero_,depth_,_size);                       \
+            break;							\
+        case HANDLE_KIND_INDIRECT:					\
+            ptr = ((MPID_Datatype *)					\
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	\
+            MPID_SET_FIELD(hetero_,depth_,_size);                       \
+            break;							\
+        case HANDLE_KIND_INVALID:					\
+        case HANDLE_KIND_BUILTIN:					\
+        default:							\
+            depth_ = 0;						\
+            break;							\
+    }                                                                   \
+}
+
+#define MPID_Datatype_set_loopptr_macro(a,lptr_,hetero_)		\
+{									\
+    void *ptr;								\
+    switch (HANDLE_GET_KIND(a)) {					\
+        case HANDLE_KIND_DIRECT:					\
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);			\
+            MPID_SET_FIELD(hetero_,lptr_,);                             \
+            break;							\
+        case HANDLE_KIND_INDIRECT:					\
+            ptr = ((MPID_Datatype *)					\
+		   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem));	\
+            MPID_SET_FIELD(hetero_,lptr_,);                             \
             break;							\
         case HANDLE_KIND_INVALID:					\
         case HANDLE_KIND_BUILTIN:					\

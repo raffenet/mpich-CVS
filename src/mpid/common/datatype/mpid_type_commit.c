@@ -46,7 +46,7 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
 			     &datatype_ptr->hetero_dloop,
 			     &datatype_ptr->hetero_dloop_size,
 			     &datatype_ptr->hetero_dloop_depth,
-			     0);
+			     MPID_DATALOOP_HETEROGENEOUS);
 
 #if 0
 	/* determine number of contiguous blocks in the type */

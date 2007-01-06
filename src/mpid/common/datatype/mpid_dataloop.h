@@ -29,16 +29,12 @@
 
 /* The following accessor functions must also be defined:
  *
- * DLOOP_Handle_extent()    *
- * DLOOP_Handle_size()      *
+ * DLOOP_Handle_extent()
+ * DLOOP_Handle_size()
  * DLOOP_Handle_loopptr()
- * DLOOP_Handle_loopdepth() *
+ * DLOOP_Handle_loopdepth()
  * DLOOP_Handle_hasloop()
- * DLOOP_Handle_true_lb()
- * DLOOP_Handle_mpi1_lb()
- * DLOOP_Handle_mpi1_ub()
  *
- * Q: Do we really need ALL of these? *'d ones we need for sure.
  */
 
 /* USE THE NOTATION THAT BILL USED IN MPIIMPL.H AND MAKE THESE MACROS */
@@ -46,14 +42,23 @@
 /* NOTE: put get size into mpiimpl.h; the others go here until such time
  * as we see that we need them elsewhere.
  */
-#define DLOOP_Handle_get_loopdepth_macro(handle_,depth_,hetero_) \
-    MPID_Datatype_get_loopdepth_macro(handle_,depth_,hetero_)
+#define DLOOP_Handle_get_loopdepth_macro(handle_,depth_,flag_) \
+    MPID_Datatype_get_loopdepth_macro(handle_,depth_,flag_)
 
-#define DLOOP_Handle_get_loopsize_macro(handle_,size_,hetero_) \
-    MPID_Datatype_get_loopsize_macro(handle_,size_,hetero_)
+#define DLOOP_Handle_get_loopsize_macro(handle_,size_,flag_) \
+    MPID_Datatype_get_loopsize_macro(handle_,size_,flag_)
 
-#define DLOOP_Handle_get_loopptr_macro(handle_,lptr_,hetero_) \
-    MPID_Datatype_get_loopptr_macro(handle_,lptr_,hetero_)
+#define DLOOP_Handle_set_loopptr_macro(handle_,lptr_,flag_) \
+    MPID_Datatype_set_loopptr_macro(handle_,lptr_,flag_)
+
+#define DLOOP_Handle_set_loopdepth_macro(handle_,depth_,flag_) \
+    MPID_Datatype_set_loopdepth_macro(handle_,depth_,flag_)
+
+#define DLOOP_Handle_set_loopsize_macro(handle_,size_,flag_) \
+    MPID_Datatype_set_loopsize_macro(handle_,size_,flag_)
+
+#define DLOOP_Handle_get_loopptr_macro(handle_,lptr_,flag_) \
+    MPID_Datatype_get_loopptr_macro(handle_,lptr_,flag_)
 
 #define DLOOP_Handle_get_size_macro(handle_,size_) \
     MPID_Datatype_get_size_macro(handle_,size_)
@@ -83,9 +88,12 @@
 #include <gen_dataloop.h>
 #include <gen_dataloop_create.h>
 
-/* These values are defined by DLOOP code. */
-#define MPID_DATALOOP_HOMOGENEOUS DLOOP_DATALOOP_HOMOGENEOUS
-#define MPID_DATALOOP_ALL_BYTES   DLOOP_DATALOOP_ALL_BYTES
+/* These values are defined by DLOOP code.
+ *
+ * Note: DLOOP_DATALOOP_ALL_BYTES not currently used in MPICH2.
+ */
+#define MPID_DATALOOP_HETEROGENEOUS DLOOP_DATALOOP_HETEROGENEOUS
+#define MPID_DATALOOP_HOMOGENEOUS   DLOOP_DATALOOP_HOMOGENEOUS
 
 #include <mpiimpl.h>
 

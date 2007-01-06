@@ -19,7 +19,7 @@
 .  DLOOP_Dataloop **dlp_p
 .  int *dlsz_p
 .  int *dldepth_p
--  int flags
+-  int flag
 
    Returns 0 on success, -1 on failure.
 
@@ -32,7 +32,7 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 					   DLOOP_Dataloop **dlp_p,
 					   int *dlsz_p,
 					   int *dldepth_p,
-					   int flags)
+					   int flag)
 {
     int err, is_builtin;
     int new_loop_sz, new_loop_depth;
@@ -50,7 +50,7 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -64,7 +64,7 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -77,8 +77,8 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
     else {
 	int old_loop_sz = 0, old_loop_depth = 0;
 
-	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
-	DLOOP_Handle_get_loopdepth_macro(oldtype, old_loop_depth, 0);
+	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, flag);
+	DLOOP_Handle_get_loopdepth_macro(oldtype, old_loop_depth, flag);
 
 	/* TODO: ACCOUNT FOR PADDING IN LOOP_SZ HERE */
 	new_loop_sz = sizeof(DLOOP_Dataloop) + old_loop_sz;
@@ -100,7 +100,7 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 	DLOOP_Handle_get_size_macro(oldtype, basic_sz);
 	new_dlp->kind = DLOOP_KIND_VECTOR | DLOOP_FINAL_MASK;
 
-	if (flags & DLOOP_DATALOOP_ALL_BYTES)
+	if (flag == DLOOP_DATALOOP_ALL_BYTES)
 	{
 
 	    blocklength       *= basic_sz;
@@ -119,8 +119,8 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 	DLOOP_Dataloop *old_loop_ptr;
 	int old_loop_sz = 0;
 
-	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
-	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
+	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, flag);
+	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, flag);
 
 	PREPEND_PREFIX(Dataloop_alloc_and_copy)(DLOOP_KIND_VECTOR,
 						count,

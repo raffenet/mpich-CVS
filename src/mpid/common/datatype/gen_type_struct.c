@@ -20,7 +20,7 @@ static int DLOOP_Dataloop_create_unique_type_struct(int count,
 						    DLOOP_Dataloop **dlp_p,
 						    int *dlsz_p,
 						    int *dldepth_p,
-						    int flags);
+						    int flag);
 static int DLOOP_Dataloop_create_basic_all_bytes_struct(
 	       int count,
 	       int *blklens,
@@ -29,7 +29,7 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
 	       DLOOP_Dataloop **dlp_p,
 	       int *dlsz_p,
 	       int *dldepth_p,
-	       int flags);
+	       int flag);
 static int DLOOP_Dataloop_create_flattened_struct(int count,
 						  int *blklens,
 						  DLOOP_Offset *disps,
@@ -37,7 +37,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 						  DLOOP_Dataloop **dlp_p,
 						  int *dlsz_p,
 						  int *dldepth_p,
-						  int flags);
+						  int flag);
 
 /*@
   Dataloop_create_struct - create the dataloop representation for a
@@ -63,7 +63,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 					   DLOOP_Dataloop **dlp_p,
 					   int *dlsz_p,
 					   int *dldepth_p,
-					   int flags)
+					   int flag)
 {
     int err, i, nr_basics = 0, nr_derived = 0, type_pos = 0;
 
@@ -83,7 +83,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -148,7 +148,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -174,7 +174,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 	     dlp_p,
 	     dlsz_p,
 	     dldepth_p,
-	     flags);
+	     flag);
 
 	return err;
     }
@@ -201,7 +201,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 							dlp_p,
 							dlsz_p,
 							dldepth_p,
-							flags);
+							flag);
     }
 
     /* optimization:
@@ -210,8 +210,8 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
      * homogeneous system or the "all bytes" conversion, convert
      * everything to bytes and use an indexed type.
      */
-    if (nr_derived == 0 && ((flags & DLOOP_DATALOOP_HOMOGENEOUS) ||
-			    (flags & DLOOP_DATALOOP_ALL_BYTES)))
+    if (nr_derived == 0 && ((flag == DLOOP_DATALOOP_HOMOGENEOUS) ||
+			    (flag == DLOOP_DATALOOP_ALL_BYTES)))
     {
 	return DLOOP_Dataloop_create_basic_all_bytes_struct(count,
 							    blklens,
@@ -220,7 +220,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 							    dlp_p,
 							    dlsz_p,
 							    dldepth_p,
-							    flags);
+							    flag);
     }
 
     /* optimization:
@@ -229,8 +229,8 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
      * flatten the type and store it as an indexed type so that
      * there are no branches in the dataloop tree.
      */
-    if ((flags & DLOOP_DATALOOP_HOMOGENEOUS) ||
-	     (flags & DLOOP_DATALOOP_ALL_BYTES))
+    if ((flag == DLOOP_DATALOOP_HOMOGENEOUS) ||
+	     (flag == DLOOP_DATALOOP_ALL_BYTES))
     {
 	return DLOOP_Dataloop_create_flattened_struct(count,
 						      blklens,
@@ -239,7 +239,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 						      dlp_p,
 						      dlsz_p,
 						      dldepth_p,
-						      flags);
+						      flag);
     }
 
     /* scan through types and gather derived type info */
@@ -252,8 +252,8 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 	{
 	    int tmp_loop_depth, tmp_loop_sz;
 
-	    DLOOP_Handle_get_loopdepth_macro(oldtypes[i], tmp_loop_depth, 0);
-	    DLOOP_Handle_get_loopsize_macro(oldtypes[i], tmp_loop_sz, 0);
+	    DLOOP_Handle_get_loopdepth_macro(oldtypes[i], tmp_loop_depth, flag);
+	    DLOOP_Handle_get_loopsize_macro(oldtypes[i], tmp_loop_sz, flag);
 
 	    if (tmp_loop_depth > old_loop_depth)
 	    {
@@ -337,7 +337,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 							     &dummy_dlp,
 							     &dummy_sz,
 							     &dummy_depth,
-							     flags);
+							     flag);
 	    
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (err) {
@@ -365,8 +365,8 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 	    int old_loop_sz;
 	    DLOOP_Offset old_extent;
 
-	    DLOOP_Handle_get_loopptr_macro(oldtypes[i], old_loop_ptr, 0);
-	    DLOOP_Handle_get_loopsize_macro(oldtypes[i], old_loop_sz, 0);
+	    DLOOP_Handle_get_loopptr_macro(oldtypes[i], old_loop_ptr, flag);
+	    DLOOP_Handle_get_loopsize_macro(oldtypes[i], old_loop_sz, flag);
 	    DLOOP_Handle_get_extent_macro(oldtypes[i], old_extent);
 
 	    PREPEND_PREFIX(Dataloop_copy)(curpos, old_loop_ptr, old_loop_sz);
@@ -404,7 +404,7 @@ static int DLOOP_Dataloop_create_unique_type_struct(int count,
 						    DLOOP_Dataloop **dlp_p,
 						    int *dlsz_p,
 						    int *dldepth_p,
-						    int flags)
+						    int flag)
 {
     /* the same type used more than once in the array; type_pos
      * indexes to the first of these.
@@ -449,7 +449,7 @@ static int DLOOP_Dataloop_create_unique_type_struct(int count,
 						  dlp_p,
 						  dlsz_p,
 						  dldepth_p,
-						  flags);
+						  flag);
 
     MPIU_Free(tmp_blklens);
     MPIU_Free(tmp_disps);
@@ -466,7 +466,7 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
 	       DLOOP_Dataloop **dlp_p,
 	       int *dlsz_p,
 	       int *dldepth_p,
-	       int flags)
+	       int flag)
 {
     int i, err, *tmp_blklens, cur_pos = 0;
     DLOOP_Offset *tmp_disps;
@@ -508,7 +508,7 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
 						  dlp_p,
 						  dlsz_p,
 						  dldepth_p,
-						  flags);
+						  flag);
     
     MPIU_Free(tmp_blklens);
     MPIU_Free(tmp_disps);
@@ -523,7 +523,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 						  DLOOP_Dataloop **dlp_p,
 						  int *dlsz_p,
 						  int *dldepth_p,
-						  int flags)
+						  int flag)
 {
     /* arbitrary types, convert to bytes and use indexed */
     int i, err, *tmp_blklens, nr_blks = 0;
@@ -563,7 +563,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 					 blklens[i],
 					 oldtypes[i],
 					 segp,
-					 0 /* homogeneous */);
+					 flag);
 	    bytes = SEGMENT_IGNORE_LAST;
 
 	    PREPEND_PREFIX(Segment_count_contig_blocks)(segp,
@@ -665,7 +665,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 						  dlp_p,
 						  dlsz_p,
 						  dldepth_p,
-						  flags);
+						  flag);
     
     MPIU_Free(tmp_blklens);
     MPIU_Free(tmp_disps);
