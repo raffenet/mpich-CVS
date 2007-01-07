@@ -86,6 +86,7 @@ int MPI_File_read_ordered(MPI_File mpi_fh, void *buf, int count,
     }
     if (myrank == nprocs - 1) {
 	    ADIOI_MPIMUTEX_FP_Set(mpi_fh->fp_mutex, new_shared_fp + incr);
+	    shared_fp = new_shared_fp;
     }
 
     /* weak syncronization to prevent one process from racing ahead before rank
