@@ -22,7 +22,7 @@
 #
 # Set the characteristics of the shared library support, determined 
 # by configure
-CC="@CC@"
+CC="@CC@ @CFLAGS@"
 C_LINK_SHL="@C_LINK_SHL@"
 SHLIB_EXT="@SHLIB_EXT@"
 INSTALL="@INSTALL@"
