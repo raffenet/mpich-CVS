@@ -16,8 +16,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pman_vis", "windows\pmandel
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MandelViewer", "windows\pmandel_vis_net\MandelViewer.csproj", "{D979FA77-DC9A-4869-B42D-27F4E6B76B29}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mpiexec", "mpiexec\mpiexec.vcproj", "{AA4FCEC7-CF15-42DD-8B50-C724973F1E9A}"
-EndProject
 Project("{6989167D-11E4-40FE-8C1A-2192A86A7E90}") = "fpi", "f77\fpi.vfproj", "{8E333EAC-3206-42CD-B401-FE1921D21D83}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "netpipe", "..\test\mpi\basic\netpipe.vcproj", "{FF13401B-AB0F-4659-823E-E3AA20D85E8B}"
@@ -112,12 +110,6 @@ Global
 		{D979FA77-DC9A-4869-B42D-27F4E6B76B29}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{D979FA77-DC9A-4869-B42D-27F4E6B76B29}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{D979FA77-DC9A-4869-B42D-27F4E6B76B29}.Release|Win32.ActiveCfg = Release|Any CPU
-		{AA4FCEC7-CF15-42DD-8B50-C724973F1E9A}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{AA4FCEC7-CF15-42DD-8B50-C724973F1E9A}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{AA4FCEC7-CF15-42DD-8B50-C724973F1E9A}.Debug|Win32.ActiveCfg = Debug|Win32
-		{AA4FCEC7-CF15-42DD-8B50-C724973F1E9A}.Release|Any CPU.ActiveCfg = Release|Win32
-		{AA4FCEC7-CF15-42DD-8B50-C724973F1E9A}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{AA4FCEC7-CF15-42DD-8B50-C724973F1E9A}.Release|Win32.ActiveCfg = Release|Win32
 		{8E333EAC-3206-42CD-B401-FE1921D21D83}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{8E333EAC-3206-42CD-B401-FE1921D21D83}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{8E333EAC-3206-42CD-B401-FE1921D21D83}.Debug|Mixed Platforms.Build.0 = Debug|Win32
