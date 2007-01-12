@@ -92,6 +92,23 @@ MPICH_PerThread_t  MPIR_Thread = { 0 };
 MPICH_PerThread_t  MPIR_ThreadSingle = { 0 };
 #endif
 
+#if defined(MPICH_IS_THREADED)
+/* This routine is called when a thread exits; it is passed the value 
+   associated with the key.  In our case, this is simply storage allocated
+   with MPIU_Calloc */
+void MPIR_CleanupThreadStorage( void *a )
+{
+    /* 
+    int *aa = (int *)a;
+    printf( "perthread info %d %d\n", aa[0], aa[1] );
+    printf( "Cleaning %x\n", a ); fflush(stdout); 
+    */
+    if (a != 0) {
+	MPIU_Free( a );
+    }
+}
+#endif /* MPICH_IS_THREADED */
+
 
 int MPIR_Init_thread(int * argc, char ***argv, int required,
 		     int * provided)

@@ -169,23 +169,14 @@ int MPI_Finalize( void )
     /* Call the low-priority (post Finalize) callbacks */
     MPIR_Call_finalize_callbacks( 0, MPIR_FINALIZE_CALLBACK_PRIO-1 );
 
+    /* At this point, if there has been a failure, exit before 
+       completing the finalize */
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
     /* FIXME: Both the memory tracing and debug nesting code blocks should
        be finalize callbacks */
     /* If memory debugging is enabled, check the memory here, after all
        finalize callbacks */
-#ifdef USE_MEMORY_TRACING
-    /* FIXME: the (1) in the if test should be replaced by a 
-       parameter call */
-    /* FIXME: We'd like to arrange for the mem dump output to
-       go to separate files or to be sorted by rank (note that
-       the rank is at the head of the line) */
-    if (1) {
-	/* The second argument is the min id to print; memory allocated 
-	   after MPI_Init is given an id of one.  This allows us to
-	   ignore, if desired, memory leaks in the MPID_Init call */
-	MPIU_trdump( (void *)0, -1 );
-    }
-#endif
 #ifdef MPICH_DEBUG_NESTING
     /* FIXME: the (1) in the if test should be replaced by a 
        parameter call */
@@ -210,20 +201,41 @@ int MPI_Finalize( void )
 
     MPIR_Process.initialized = MPICH_POST_FINALIZED;
 
+    /* At this point, we end the critical section for the Finalize call.
+       Since we've set MPIR_Process.initialized value to POST_FINALIZED, 
+       if the user erroneously calls Finalize from another thread, an
+       error message will be issued. */
+    MPIU_THREAD_SINGLE_CS_EXIT("init");
+    MPIU_THREAD_SINGLE_CS_FINALIZE;
+
+    /* We place the memory tracing at the very end because any of the other
+       steps may have allocated memory that they still need to release*/
+#ifdef USE_MEMORY_TRACING
+    /* FIXME: the (1) in the if test should be replaced by a 
+       parameter call */
+    /* FIXME: We'd like to arrange for the mem dump output to
+       go to separate files or to be sorted by rank (note that
+       the rank is at the head of the line) */
+    if (1) {
+	/* The second argument is the min id to print; memory allocated 
+	   after MPI_Init is given an id of one.  This allows us to
+	   ignore, if desired, memory leaks in the MPID_Init call */
+	MPIU_trdump( (void *)0, -1 );
+    }
+#endif
+
 #if defined(HAVE_USLEEP) && defined(USE_COVERAGE)
     /* If performing coverage analysis, make each process sleep for
        rank * 100 ms, to give time for the coverage tool to write out
-       any files */
+       any files.  It would be better if the coverage tool and runtime 
+       was more careful about */
     usleep( rank * 100000 );
 #endif
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
-    MPIU_THREAD_SINGLE_CS_EXIT("init");
-    MPIU_THREAD_SINGLE_CS_FINALIZE;
     return mpi_errno;
 
   fn_fail:
@@ -235,6 +247,7 @@ int MPI_Finalize( void )
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    MPIU_THREAD_SINGLE_CS_EXIT("init");
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -1833,9 +1833,11 @@ extern MPICH_PerThread_t MPIR_Thread;
    This structure is allocated in src/mpi/init/initthread.c */
 extern MPICH_PerThread_t MPIR_ThreadSingle;
 
+/* We need to provide a function that will cleanup the storage attached
+   to the key.  */
 #define MPIU_THREADPRIV_INITKEY  \
     {if (MPIR_Process.isThreaded) {\
-    MPID_Thread_tls_create(NULL,&MPIR_Process.thread_storage,NULL);}}
+	    MPID_Thread_tls_create(MPIR_CleanupThreadStorage,&MPIR_Process.thread_storage,NULL);}}
 #define MPIU_THREADPRIV_INIT {if (MPIR_Process.isThreaded) {\
 	MPICH_PerThread_t *(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
 	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) (pt_)); \
@@ -1854,7 +1856,7 @@ extern MPICH_PerThread_t MPIR_ThreadSingle;
    in an invocation of a routine.  */
 
 #define MPIU_THREADPRIV_INITKEY  \
-    MPID_Thread_tls_create(NULL,&MPIR_Process.thread_storage,NULL)
+    MPID_Thread_tls_create(MPIR_CleanupThreadStorage,&MPIR_Process.thread_storage,NULL)
 #define MPIU_THREADPRIV_INIT {\
 	MPICH_PerThread_t *(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
 	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) (pt_)); \
