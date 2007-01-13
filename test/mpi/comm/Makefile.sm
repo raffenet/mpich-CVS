@@ -8,6 +8,7 @@ dupic_SOURCES    = dupic.c
 ic1_SOURCES      = ic1.c
 commname_SOURCES = commname.c
 ctxalloc_SOURCES = ctxalloc.c
+ctxsplit_SOURCES = ctxsplit.c
 icgroup_SOURCES  = icgroup.c
 cmfree_SOURCES   = cmfree.c
 icm_SOURCES      = icm.c
