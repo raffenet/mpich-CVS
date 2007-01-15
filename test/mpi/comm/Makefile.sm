@@ -13,6 +13,7 @@ icgroup_SOURCES  = icgroup.c
 cmfree_SOURCES   = cmfree.c
 icm_SOURCES      = icm.c
 cmsplit_SOURCES  = cmsplit.c
+probe-intercomm_SOURCES = probe-intercomm.c
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o )
