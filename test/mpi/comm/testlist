@@ -8,3 +8,4 @@ ctxalloc 2
 ctxsplit 4
 cmfree 4
 cmsplit 4
+probe-intercomm 2
