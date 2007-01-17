@@ -167,7 +167,11 @@ bf77_name_upper = True
 bf77_name_mixed = False
 b77_name_mixed_uscore = False
 unhandled_definitions = ""
+unhandled_definitions_count = 0
+unhandled_definitions_instances = 0
 unhandled_ats = ""
+unhandled_ats_count = 0
+unhandled_ats_instances = 0
 ' variables for creating the nmake file
 Dim bfile
 Dim mfile
@@ -1914,6 +1918,25 @@ Function RegExpFind(pattern, str)
    Next
 End Function
 
+' Append appendString to origString only if appendString is not
+' already present in origString
+
+Function appendUniqueString(ByRef origString, ByVal appendString) 
+	Dim regExpObj, matchesCollection
+	Set regExpObj = New regexp
+	regExpObj.Pattern = Trim(appendString) & vbNewLine
+	regExpObj.Global  = True
+	regExpObj.IgnoreCase = False
+	
+	Set matchesCollection = regExpObj.Execute(origString)
+	If(matchesCollection.Count = 0) Then
+		origString = origString & appendString & vbNewLine
+		appendUniqueString = True
+	Else
+		appendUniqueString = False
+	End If
+End Function
+
 Function ReplaceAts( str, use_f77, b64 )
 	Dim regEx, Match, Matches
 	Set regEx = New RegExp
@@ -2272,11 +2295,17 @@ Function ReplaceAts( str, use_f77, b64 )
 			Case "@mpe_int64_fmt@"
 				str = Replace(str, "@mpe_int64_fmt@", """%lld""")
 			Case Else
-				unhandled_ats = unhandled_ats & Match & vbNewLine
+			'	unhandled_ats = unhandled_ats & Match & vbNewLine
+			'	unhandled_ats_count = unhandled_ats_count + 1
+				If appendUniqueString(unhandled_ats, Match) Then
+					unhandled_ats_count = unhandled_ats_count + 1
+				End If	
+				unhandled_ats_instances = unhandled_ats_instances + 1
 		End Select
 	Next
 	ReplaceAts = str
 End Function
+
 
 Sub AddDefinitions( fout, filename, b64 )
 	If f.FileExists( filename ) Then
@@ -3157,7 +3186,12 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("#undef HAVE_SYS_SYSCTL_H")
 				Case Else
 					'MsgBox("Unhandled definition <" & define & ">")
-					unhandled_definitions = unhandled_definitions & define & vbNewLine
+					'unhandled_definitions = unhandled_definitions & define & vbNewLine
+					'unhandled_definitions_count = unhandled_definitions_count + 1
+					If appendUniqueString(unhandled_definitions, define) Then
+						unhandled_definitions_count = unhandled_definitions_count + 1
+					End If
+					unhandled_definitions_instances = unhandled_definitions_instances + 1
 					fout.WriteLine("/* unknown definition: " & define & " */")
 			End Select
 			fout.WriteLine("")
@@ -5815,6 +5849,8 @@ Call UpdateSMPDVersion()
 If unhandled_definitions <> "" Then
 	If bEcho Then
 		WScript.Echo "Unhandled definitions:" & vbNewLine & unhandled_definitions
+		WScript.Echo "ERROR: " & unhandled_definitions_count & " definitions not handled"
+		WScript.Echo "(" & unhandled_definitions_instances & " instances of unhandled definitions)"
 	else
 		MsgBox "Unhandled definitions:" & vbNewLine & unhandled_definitions
 	End If
@@ -5822,6 +5858,8 @@ End If
 If unhandled_ats <> "" Then
 	If bEcho Then
 		WScript.Echo "Unhandled @foo@'s:" & vbNewLine & unhandled_ats
+		WScript.Echo "ERROR: " & unhandled_ats_count & " @foo@'s not handled"
+		WScript.Echo "(" & unhandled_ats_instances & " instances of unhandled @foo@'s)" 
 	else
 		MsgBox "Unhandled @foo@'s:" & vbNewLine & unhandled_ats
 	End If
