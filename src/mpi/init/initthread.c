@@ -98,11 +98,6 @@ MPICH_PerThread_t  MPIR_ThreadSingle = { 0 };
    with MPIU_Calloc */
 void MPIR_CleanupThreadStorage( void *a )
 {
-    /* 
-    int *aa = (int *)a;
-    printf( "perthread info %d %d\n", aa[0], aa[1] );
-    printf( "Cleaning %x\n", a ); fflush(stdout); 
-    */
     if (a != 0) {
 	MPIU_Free( a );
     }
