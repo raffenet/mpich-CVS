@@ -165,7 +165,7 @@ typedef int MPI_Op;
 
 /* These are only guesses; make sure you change them in mpif.h as well */
 #define MPI_MAX_PROCESSOR_NAME @MPI_MAX_PROCESSOR_NAME@
-#define MPI_MAX_ERROR_STRING   512
+#define MPI_MAX_ERROR_STRING  1024 
 #define MPI_MAX_NAME_STRING     63
 #define MPI_MAX_PORT_NAME      256
 #define MPI_MAX_OBJECT_NAME    128
@@ -246,6 +246,7 @@ typedef int (MPI_Delete_function) ( MPI_Comm, int, void *, void * );
 #define MPICH_NAME     2
 #define MPICH2         1
 #define MPICH_HAS_C2F  1
+#define MPICH2_VERSION "@VERSION@"
 
 /* for the datatype decoders */
 enum MPI_COMBINER_ENUM {
