@@ -4,6 +4,7 @@ commname 4
 ic1 4
 icgroup 8
 icm 8
+icsplit 8
 ctxalloc 2
 ctxsplit 4
 cmfree 4

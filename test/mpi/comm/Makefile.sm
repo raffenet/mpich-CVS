@@ -10,6 +10,7 @@ commname_SOURCES = commname.c
 ctxalloc_SOURCES = ctxalloc.c
 ctxsplit_SOURCES = ctxsplit.c
 icgroup_SOURCES  = icgroup.c
+icsplit_SOURCES  = icsplit.c
 cmfree_SOURCES   = cmfree.c
 icm_SOURCES      = icm.c
 cmsplit_SOURCES  = cmsplit.c
