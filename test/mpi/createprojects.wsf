@@ -219,7 +219,7 @@ If files.Count > 0 Then
 	Next
 	' Create the solution file
 	set fout = f.CreateTextFile("test.sln", True)
-	fout.WriteLine( "Microsoft Visual Studio Solution File, Format Version 8.00" )
+	fout.WriteLine( "Microsoft Visual Studio Solution File, Format Version 9.00" )
 	fout.Write( project_list )
 	fout.WriteLine( "Global" )
 	fout.WriteLine( "	GlobalSection(SolutionConfiguration) = preSolution" )
