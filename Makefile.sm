@@ -49,13 +49,13 @@ cleanobjsandlibs:
 # cleanlibs makes sure that we clean all of the library files
 cleanlibs:
 	rm -f lib/lib${MPILIBNAME}.a lib/lib${PMPILIBNAME}.a
-	rm -f lib/lib${MPILIBNAME}cxx.a 
+	rm -f lib/lib${MPICXXLIBNAME}.a 
 	rm -f lib/libf${MPILIBNAME}.a 
 	rm -f lib/lib${MPILIBNAME}.@SHLIB_EXT@* lib/lib${PMPILIBNAME}.@SHLIB_EXT@*
-	rm -f lib/lib${MPILIBNAME}cxx.@SHLIB_EXT@* 
+	rm -f lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@* 
 	rm -f lib/libf${MPILIBNAME}.@SHLIB_EXT@* 
 	rm -f lib/lib${MPILIBNAME}.la* lib/lib${PMPILIBNAME}.la*
-	rm -f lib/lib${MPILIBNAME}cxx.la* 
+	rm -f lib/lib${MPICXXLIBNAME}.la* 
 	rm -f lib/libf${MPILIBNAME}.la* 
 
 all-preamble:
@@ -259,6 +259,7 @@ optinstall_SHLIB = lib/lib${PMPILIBNAME}.@SHLIB_EXT@
 optinstall_INCLUDE = src/mpi/romio/include/mpiof.h src/mpi/romio/include/mpio.h
 optinstall_LIB = lib/libf${MPILIBNAME}.a
 optinstall_SHLIB = lib/libf${MPILIBNAME}.@SHLIB_EXT@
+optinstall_SHLIB = lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@
 
 # Some of the subsidiary packages may need to be installed.  This target will
 # invoke their install targets as part of the installation process
