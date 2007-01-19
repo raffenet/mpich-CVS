@@ -11,6 +11,7 @@ ctxalloc_SOURCES = ctxalloc.c
 ctxsplit_SOURCES = ctxsplit.c
 icgroup_SOURCES  = icgroup.c
 icsplit_SOURCES  = icsplit.c
+iccreate_SOURCES = iccreate.c
 cmfree_SOURCES   = cmfree.c
 icm_SOURCES      = icm.c
 cmsplit_SOURCES  = cmsplit.c
