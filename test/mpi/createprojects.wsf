@@ -90,6 +90,7 @@ Function gen_uuid()
 		WScript.Sleep 1
 	Loop
 	uuid = Replace(uuid, vbCrLf, "")
+	uuid = Replace(uuid, vbLf, "")
 	gen_uuid = UCase(uuid)
 End Function
 
