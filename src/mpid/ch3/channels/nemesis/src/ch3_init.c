@@ -152,7 +152,8 @@ int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)
 
     mpi_errno = MPID_nem_connect_to_root (port_name, vc);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-    
+
+    MPIU_CHKPMEM_COMMIT();
  fn_exit:
     return mpi_errno;
  fn_fail:
