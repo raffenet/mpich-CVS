@@ -430,7 +430,11 @@ esac
 export device_name
 export device_args
 export devicedir
-
+# Make the device base name and args available to generated files
+DEVICE_NAME=$device_name
+AC_SUBST(DEVICE_NAME)
+DEVICE_ARGS=$device_args
+AC_SUBST(DEVICE_ARGS)
 #
 # Give the device an opportunity to include a header file in mpi.h.  The
 # default value of INCLUDE_MPIDDEFS_H is set prior to the inclusion of the
@@ -5286,6 +5290,9 @@ AC_SUBST(MPIF90)
 
 AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h file has been included])
 
+dnl
+dnl This includes an experimental pkgconfig file for ch3 in the src/pkgconfig
+dnl directory
 AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
           src/include/mpichtimer.h \
           src/binding/Makefile \
@@ -5296,6 +5303,8 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/binding/f77/setbotf.f \
 	  src/binding/f90/Makefile \
 	  src/binding/f90/mpi_sizeofs.f90 \
+	  src/pkgconfig/mpich2-ch3.pc \
+	  src/pkgconfig/Makefile \
           src/env/mpicc \
 	  src/env/mpicc.conf \
 	  src/env/mpicc.bash \

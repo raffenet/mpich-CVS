@@ -1,0 +1,1 @@
+optinstall_LIB = mpich2-@DEVICE_NAME@.pc
