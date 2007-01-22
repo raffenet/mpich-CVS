@@ -15,6 +15,7 @@
 
 void *MPIDI_CH3_packet_buffer = NULL;
 int MPIDI_CH3I_my_rank = -1;
+MPIDI_PG_t *MPIDI_CH3I_my_pg = NULL;
 
 static int nemesis_initialized = 0;
 
@@ -39,6 +40,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
     nemesis_initialized = 1;
     
     MPIDI_CH3I_my_rank = pg_rank;
+    MPIDI_CH3I_my_pg = pg_p;
     
     /*
      * Initialize Progress Engine 
@@ -106,7 +108,11 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
 	inside MPIDI_CH3_Init after initializing nemesis
     */
     if (!nemesis_initialized)
-	return MPI_SUCCESS;
+        goto fn_exit;
+
+    /* no need to initialize vc to self */
+    if (vc->pg == MPIDI_CH3I_my_pg && vc->pg_rank == MPIDI_CH3I_my_rank)
+        goto fn_exit;
     
     vc->ch.recv_active = NULL;
     vc->state = MPIDI_VC_STATE_ACTIVE;
@@ -117,7 +123,7 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
     mpi_errno = MPID_nem_vc_init (vc, bc);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-
+ fn_exit:
  fn_fail:
     return mpi_errno;
 }

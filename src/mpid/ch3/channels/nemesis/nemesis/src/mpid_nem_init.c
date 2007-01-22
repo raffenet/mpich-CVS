@@ -460,41 +460,53 @@ get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* Put my hostname id */
-    memset (key, 0, MPID_NEM_MAX_KEY_VAL_LEN);
-    MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "hostname[%d]", global_rank);
+    if (num_global > 1)
+    {
+        memset (key, 0, MPID_NEM_MAX_KEY_VAL_LEN);
+        MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "hostname[%d]", global_rank);
+        
+        pmi_errno = PMI_KVS_Put (kvs_name, key, MPID_nem_hostname);
+        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
+        
+        pmi_errno = PMI_KVS_Commit (kvs_name);
+        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
+        
+        pmi_errno = PMI_Barrier();
+        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
+    }
 
-    pmi_errno = PMI_KVS_Put (kvs_name, key, MPID_nem_hostname);
-    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
-
-    pmi_errno = PMI_KVS_Commit (kvs_name);
-    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
-
-    pmi_errno = PMI_Barrier();
-    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
-
-    /* Gather hostnames */
+    /* allocate structures */
     MPIU_CHKPMEM_MALLOC (procs, int *, num_global * sizeof (int), mpi_errno, "local process index array");
     MPIU_CHKPMEM_MALLOC (node_ids, int *, num_global * sizeof (int), mpi_errno, "node_ids");
     MPIU_CHKLMEM_MALLOC (node_names, char **, num_global * sizeof (char*), mpi_errno, "node_names");
     MPIU_CHKLMEM_MALLOC (node_name_buf, char *, num_global * MPID_NEM_MAX_KEY_VAL_LEN * sizeof(char), mpi_errno, "node_name_buf");
 
-    num_nodes = 0;
+    /* Gather hostnames */
     for (i = 0; i < num_global; ++i)
     {
         node_names[i] = &node_name_buf[i * MPID_NEM_MAX_KEY_VAL_LEN];
         node_names[i][0] = '\0';
     }
     
+    num_nodes = 0;    
     num_local = 0;
 
     for (i = 0; i < num_global; ++i)
     {
-	memset (key, 0, MPID_NEM_MAX_KEY_VAL_LEN);
-	MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "hostname[%d]", i);
+        if (i == global_rank)
+        {
+            /* This is us, no need to perform a get */
+            MPIU_Snprintf(node_names[num_nodes], MPID_NEM_MAX_KEY_VAL_LEN, "%s", MPID_nem_hostname);
+        }
+        else
+        {
+            memset (key, 0, MPID_NEM_MAX_KEY_VAL_LEN);
+            MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "hostname[%d]", i);
 
-	pmi_errno = PMI_KVS_Get (kvs_name, key, node_names[num_nodes], MPID_NEM_MAX_KEY_VAL_LEN);
-        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
-	
+            pmi_errno = PMI_KVS_Get (kvs_name, key, node_names[num_nodes], MPID_NEM_MAX_KEY_VAL_LEN);
+            MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
+	}
+        
 	if (!strncmp (MPID_nem_hostname, node_names[num_nodes], MPID_NEM_MAX_KEY_VAL_LEN)
 #if defined (ENABLED_ODD_EVEN_CLIQUES)
             /* Used for debugging on a single machine: Odd procs on a
