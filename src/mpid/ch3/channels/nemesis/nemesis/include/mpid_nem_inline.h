@@ -30,7 +30,7 @@ MPID_NEM_INLINE_DECL int MPID_nem_mpich2_enqueue_fastbox (int local_rank);
 MPID_NEM_INLINE_DECL int MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *again);
 MPID_NEM_INLINE_DECL int MPID_nem_recv_seqno_matches (MPID_nem_queue_ptr_t qhead);
 MPID_NEM_INLINE_DECL int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
-MPID_NEM_INLINE_DECL int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
+MPID_NEM_INLINE_DECL int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_completions);
 MPID_NEM_INLINE_DECL int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout);
 MPID_NEM_INLINE_DECL int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc);
 
@@ -763,18 +763,20 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
 }
 
 /*
-  int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox);
+  int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_completions);
 
-  blocking receive
-  waits until there is something to receive, then sets cell to the received cell. in_fbox is true iff the cell was found in a fbox
-  the cell must be released back to the subsystem with MPID_nem_mpich2_release_cell() once the packet has been copied out
+  blocking receive waits until there is something to receive, or
+  num_completions != MPIDI_CH3I_progress_completion_count, then sets
+  cell to the received cell. in_fbox is true iff the cell was found in
+  a fbox the cell must be released back to the subsystem with
+  MPID_nem_mpich2_release_cell() once the packet has been copied out
 */
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mpich2_blocking_recv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
-MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
+MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_completions)
 {
     int mpi_errno = MPI_SUCCESS;
 #ifndef ENABLE_NO_SCHED_YIELD
@@ -811,6 +813,10 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     {
 	DO_PAPI (PAPI_reset (PAPI_EventSet));
 
+        /* Check if another thread made progress and completed something */
+        if (num_completions != MPIDI_CH3I_progress_completion_count)
+            goto exit_l;
+    
 #ifdef USE_FASTBOX	
 	poll_all_fboxes (cell, goto fbox_l);
 	poll_fboxes (cell, goto fbox_l);

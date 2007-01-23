@@ -231,5 +231,18 @@ MPIDI_CH3I_comm_t;
 #endif
 #define MPID_DEV_COMM_DECL MPIDI_CH3I_comm_t ch;
 
+/*
+ * MPID_Progress_state - device/channel dependent state to be passed between 
+ * MPID_Progress_{start,wait,end}
+ *
+ */
+typedef struct MPIDI_CH3I_Progress_state
+{
+    int completion_count;
+}
+MPIDI_CH3I_Progress_state;
+
+#define MPIDI_CH3_PROGRESS_STATE_DECL MPIDI_CH3I_Progress_state ch;
+
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */
 

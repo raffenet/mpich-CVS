@@ -31,30 +31,26 @@ extern MPID_Request ** const MPID_Recvq_unexpected_tail_ptr;
 
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 
+/* NEMESIS MULTITHREADING: Extra Data Structures Added */
+#ifdef MPICH_IS_THREADED
+volatile int MPIDI_CH3I_progress_blocked = FALSE;
+volatile int MPIDI_CH3I_progress_wakeup_signalled = FALSE;
+static unsigned int nem_completions = 0;
+MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
+static int MPIDI_CH3I_Progress_delay(unsigned int completion_count);
+static int MPIDI_CH3I_Progress_continue(unsigned int completion_count);
+#endif /* MPICH_IS_THREADED */
+/* NEMESIS MULTITHREADING - End block*/
+
 struct MPID_Request *MPIDI_CH3I_sendq_head[CH3_NUM_QUEUES] = {0};
 struct MPID_Request *MPIDI_CH3I_sendq_tail[CH3_NUM_QUEUES] = {0};
 struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES] = {0};
-
-#if !defined(MPIDI_CH3_Progress_start)
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Progress_start
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_Progress_start (MPID_Progress_state * state)
-{
-    /* MT - This function is empty for the single-threaded implementation */
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_START);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_START);
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_START);
-}
-#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Progress (int is_blocking)
+int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 {
     unsigned completions = MPIDI_CH3I_progress_completion_count;
     int mpi_errno = MPI_SUCCESS;
@@ -65,6 +61,21 @@ int MPIDI_CH3I_Progress (int is_blocking)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
+
+#ifdef MPICH_IS_THREADED
+    MPIU_THREAD_CHECK_BEGIN;
+    {
+        if (MPIDI_CH3I_progress_blocked == TRUE)
+        {
+            /* another thread is already blocking in the progress engine.*/
+            if (is_blocking)
+                MPIDI_CH3I_Progress_delay(MPIDI_CH3I_progress_completion_count);
+
+            goto fn_exit;
+        }
+    }
+    MPIU_THREAD_CHECK_END;
+#endif
 
     do
     {
@@ -79,7 +90,31 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	  
 	if (!MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] && !MPIDI_CH3I_SendQ_head (CH3_NORMAL_QUEUE) && is_blocking)
 	{
-	    mpi_errno = MPID_nem_mpich2_blocking_recv (&cell, &in_fbox);
+            /* we only want to unlock the mutex if this is a blocking
+               progress call and were in a multithreaded environment
+               (i.e., mpich is threaded, and if we have runtime thread
+               checking, threading is enabled) */
+#ifdef MPICH_IS_THREADED
+            if (
+#ifdef HAVE_RUNTIME_THREADCHECK
+                MPIR_Process.isThreaded &&
+#endif
+                is_blocking)
+            {
+                MPIDI_CH3I_progress_blocked = TRUE;   
+                nem_completions = MPIDI_CH3I_progress_completion_count;
+                MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
+                mpi_errno = MPID_nem_mpich2_blocking_recv (&cell, &in_fbox, nem_completions);
+                MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
+                MPIDI_CH3I_progress_blocked = FALSE;   
+                MPIDI_CH3I_progress_wakeup_signalled = FALSE;
+            }
+            else
+#endif /* MPICH_IS_THREADED */
+            {
+                nem_completions = MPIDI_CH3I_progress_completion_count;
+                mpi_errno = MPID_nem_mpich2_blocking_recv (&cell, &in_fbox, nem_completions);
+            }
 	}
 	else
 	{
@@ -97,7 +132,7 @@ int MPIDI_CH3I_Progress (int is_blocking)
 
 	if (cell)
 	{
-	    char *cell_buf    = cell->pkt.mpich2.payload;
+	    char *cell_buf    = (char *)cell->pkt.mpich2.payload;
 	    int   payload_len = cell->pkt.mpich2.datalen;
 
             /* Empty packets are not allowed */
@@ -113,15 +148,6 @@ int MPIDI_CH3I_Progress (int is_blocking)
 		MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
                 MPIU_Assert (vc->ch.recv_active == NULL);
 
-#if 0
-#if 0
-		{ MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
-                    mpi_errno = pktArray[pkt->type]( vc, pkt, &rreq );
-		}
-#else		    
-		mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)cell_buf, &rreq);
-#endif
-#endif
 		mpi_errno = pktArray[pkt->type] (vc, pkt, &rreq);
 		if (mpi_errno) MPIU_ERR_POP (mpi_errno);
                 
@@ -151,15 +177,6 @@ int MPIDI_CH3I_Progress (int is_blocking)
                     MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Recv new pkt");
                     MPIU_Assert (payload_len >= sizeof (MPIDI_CH3_Pkt_t));
 		    
-#if 0
-#if 0
-		    { MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
-                        mpi_errno = pktArray[pkt->type]( vc, pkt, &rreq );
-		    }
-#else		    
-		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt (vc, (MPIDI_CH3_Pkt_t *)cell_buf, &rreq);
-#endif
-#endif
                     mpi_errno = pktArray[pkt->type] (vc, pkt, &rreq);
 		    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
                     
@@ -349,14 +366,88 @@ int MPIDI_CH3I_Progress (int is_blocking)
 	}
     }
     while (completions == MPIDI_CH3I_progress_completion_count && is_blocking);
-    
+
+#if MPICH_IS_THREADED
+    MPIU_THREAD_CHECK_BEGIN;
+    {
+        if (is_blocking)
+        {
+            MPIDI_CH3I_Progress_continue(MPIDI_CH3I_progress_completion_count);
+        }
+    }
+    MPIU_THREAD_CHECK_END;
+#endif
 
  fn_exit:
+    /* Reset the progress state so it is fresh for the next iteration */
+    if (progress_state)
+        progress_state->ch.completion_count = MPIDI_CH3I_progress_completion_count;
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
 }
+#ifdef MPICH_IS_THREADED
+
+/* Note that this routine is only called if threads are enabled; 
+   it does not need to check whether runtime threads are enabled */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Progress_delay
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int MPIDI_CH3I_Progress_delay(unsigned int completion_count)
+{
+    int mpi_errno = MPI_SUCCESS;
+    
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    {
+	while (completion_count == MPIDI_CH3I_progress_completion_count)
+	{
+	    MPID_Thread_cond_wait(&MPIDI_CH3I_progress_completion_cond, &MPIR_Process.global_mutex);
+	}
+    }
+#   endif
+    
+    return mpi_errno;
+}
+/* end MPIDI_CH3I_Progress_delay() */
+
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Progress_continue
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int MPIDI_CH3I_Progress_continue(unsigned int completion_count)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    {
+	MPID_Thread_cond_broadcast(&MPIDI_CH3I_progress_completion_cond);
+    }
+#   endif
+    
+    return mpi_errno;
+}
+/* end MPIDI_CH3I_Progress_continue() */
+
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Progress_wakeup
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+void MPIDI_CH3I_Progress_wakeup(void)
+{
+    /* no processes sleep in nemesis progress */
+    return;
+}
+
+
+
+#endif /* MPICH_IS_THREADED */
+
+
 
 
 #define set_request_info(rreq_, pkt_, msg_type_)                \
@@ -1478,38 +1569,6 @@ ch3|cancelresp", 0);
 }
 
 #endif  /* BYPASS_PROGRESS */
-
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Progress_poke
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Progress_poke(void)
-{
-    int mpi_errno;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
-    
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
-    
-    mpi_errno = MPIDI_CH3I_Progress(FALSE);
-    
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_POKE);
-    return mpi_errno;
-}
-
-#if !defined(MPIDI_CH3_Progress_end)
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Progress_end
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-void MPIDI_CH3_Progress_end(MPID_Progress_state * state)
-{
-    /* MT: This function is empty for the single-threaded implementation */
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_END);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_END);
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_END);
-}
-#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_init
