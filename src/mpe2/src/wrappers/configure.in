@@ -302,8 +302,8 @@ if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
 dnl  when --enable-f77 and --disable-f2cmpilib are selected,
 dnl  value supplied in --with-f2cmpilibs will be used.
 else
-dnl     If F2CMPI_LIBS="-lfmpich", disable building of liblmpe.a by
-dnl     setting F2CMPI_LIBS="".  Leave MPE_BUILD_FORTRAN2C=yes, so
+dnl     If F2CMPI_LIBS="-lfmpich", disable building of libmpe_f2cmpi.a
+dnl     by setting F2CMPI_LIBS="".  Leave MPE_BUILD_FORTRAN2C=yes, so
 dnl     fortran link/run tests can be performed.
     F2CMPI_LIBS=""
 fi
@@ -603,8 +603,8 @@ if test "${F2CMPI_LIBS}" = "-l${F2CMPI_LIBNAME}" \
 dnl     For MPICH2, when SIZEOF_MPI_STATUS is not defined, enable_f77=no.
 dnl     Set MPE_BUILD_FORTRAN2C=no and F2CMPI_LIBS="" so liblmpe.a
 dnl     won't be built and fortran link/run tests won't executed.
-dnl     If F2CMPI_LIBS="-lfmpich", disable building of liblmpe.a by
-dnl     setting F2CMPI_LIBS="".  Leave MPE_BUILD_FORTRAN2C=yes, so
+dnl     If F2CMPI_LIBS="-lfmpich", disable building of libmpe_f2cmpi.a
+dnl     by setting F2CMPI_LIBS="".  Leave MPE_BUILD_FORTRAN2C=yes, so
 dnl     fortran link/run tests can be performed.
         AC_MSG_RESULT("undefined -- disabling fortran features.")
         MPE_BUILD_FORTRAN2C=no
