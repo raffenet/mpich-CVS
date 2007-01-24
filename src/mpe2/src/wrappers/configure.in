@@ -299,9 +299,12 @@ if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
     if test "$enable_f2cmpilib" = "yes" ; then
         F2CMPI_LIBS="-l$F2CMPI_LIBNAME"
     fi
-#   when --enable-f77 and --disable-f2cmpilib are selected,
-#   value supplied in --with-f2cmpilibs will be used.
+dnl  when --enable-f77 and --disable-f2cmpilib are selected,
+dnl  value supplied in --with-f2cmpilibs will be used.
 else
+dnl     If F2CMPI_LIBS="-lfmpich", disable building of liblmpe.a by
+dnl     setting F2CMPI_LIBS="".  Leave MPE_BUILD_FORTRAN2C=yes, so
+dnl     fortran link/run tests can be performed.
     F2CMPI_LIBS=""
 fi
 
@@ -587,16 +590,6 @@ if test "${F2CMPI_LIBS}" = "-l${F2CMPI_LIBNAME}" \
 
 #   FIXME: MPICH2 include MPI_Fint, Need to fetch the value somehow.
 
-#   MPICH2 after 1.0.2 release has MPI_F_STATUS_IGNORE, MPI_F_STATUSES_IGNORE
-    AC_DEFINE( HAVE_MPI_F_STATUS_IGNORE, 1,
-               [Define if MPI_F_STATUS_IGNORE available] )
-    AC_DEFINE( HAVE_MPI_F_STATUSES_IGNORE, 1,
-               [Define if MPI_F_STATUSES_IGNORE available] )
-
-#   MPICH2 has MPI_Comm_f2c()/c2f()
-    AC_DEFINE( HAVE_MPI_COMM_F2C, 1,
-               [Define if MPI_Comm_f2c and c2f available] )
-
 #   Obtain MPICH2's MPI_STATUS_SIZE from environmental variable
     AC_MSG_CHECKING( [for the value of MPI_STATUS_SIZE] )
     if test -n "$SIZEOF_MPI_STATUS" ; then
@@ -607,9 +600,26 @@ if test "${F2CMPI_LIBS}" = "-l${F2CMPI_LIBNAME}" \
         AC_DEFINE_UNQUOTED( MPI_STATUS_SIZE, $MPI_STATUS_SIZE,
                             [Define as the size of MPI_STATUS_SIZE] )
     else
-        PAC_MSG_ERROR( $enable_softerror,
-                       [Undefined MPI_STATUS_SIZE in MPICH-2! Exiting...] )
+dnl     For MPICH2, when SIZEOF_MPI_STATUS is not defined, enable_f77=no.
+dnl     Set MPE_BUILD_FORTRAN2C=no and F2CMPI_LIBS="" so liblmpe.a
+dnl     won't be built and fortran link/run tests won't executed.
+dnl     If F2CMPI_LIBS="-lfmpich", disable building of liblmpe.a by
+dnl     setting F2CMPI_LIBS="".  Leave MPE_BUILD_FORTRAN2C=yes, so
+dnl     fortran link/run tests can be performed.
+        AC_MSG_RESULT("undefined -- disabling fortran features.")
+        MPE_BUILD_FORTRAN2C=no
+        F2CMPI_LIBS=""
     fi
+
+#   MPICH2 after 1.0.2 release has MPI_F_STATUS_IGNORE, MPI_F_STATUSES_IGNORE
+    AC_DEFINE( HAVE_MPI_F_STATUS_IGNORE, 1,
+               [Define if MPI_F_STATUS_IGNORE available] )
+    AC_DEFINE( HAVE_MPI_F_STATUSES_IGNORE, 1,
+               [Define if MPI_F_STATUSES_IGNORE available] )
+
+#   MPICH2 has MPI_Comm_f2c()/c2f()
+    AC_DEFINE( HAVE_MPI_COMM_F2C, 1,
+               [Define if MPI_Comm_f2c and c2f available] )
 
 #   MPICH2 has MPI_Status_f2c()/c2f()
     AC_DEFINE( HAVE_MPI_STATUS_F2C, 1,
