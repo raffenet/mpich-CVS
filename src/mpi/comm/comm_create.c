@@ -179,7 +179,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 		    break;
 		}
 	    }
-	    MPIU_ERR_CHKANDJUMP1(remote_mapping[i] == -1,mpi_errno,
+	    MPIU_ERR_CHKANDJUMP1(mapping[i] == -1,mpi_errno,
 				 MPI_ERR_GROUP,
 				 "**groupnotincomm", "**groupnotincomm %d", i );
 	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {
