@@ -20,3 +20,10 @@ probe-intercomm_SOURCES = probe-intercomm.c
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o )
 
+# A special testing target to simplify running just the comm tests
+testing:
+	../runtests -srcdir=$(srcdir) -tests=testlist \
+		   -mpiexec=$(bindir)/mpiexec \
+		   -xmlfile=summary.xml
+clean-local:
+	-rm -f summary.xml
