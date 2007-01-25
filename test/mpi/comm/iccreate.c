@@ -63,9 +63,12 @@ int main( int argc, char *argv[] )
 	}
 	MPI_Group_free( &oldgroup );
 	MPI_Group_free( &newgroup );
-	MPI_Comm_free( &newcomm );
+	if (newcomm != MPI_COMM_NULL) {
+	    MPI_Comm_free( &newcomm );
+	}
 	MPI_Comm_free( &intercomm );
     }
+
     MTest_Finalize(errs);
 
     MPI_Finalize();
