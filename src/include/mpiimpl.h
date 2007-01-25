@@ -1192,23 +1192,23 @@ typedef struct MPID_Comm {
     MPID_VCRT     local_vcrt;    /* local virtual connecton reference table */
     MPID_VCR *    local_vcr;     /* alias to the array of local virtual
 				    connections in local vcrt */
-    MPID_Attribute *attributes;    /* List of attributes */
+    MPID_Attribute *attributes;  /* List of attributes */
     int           local_size;    /* Value of MPI_Comm_size for local group */
     MPID_Group   *local_group,   /* Groups in communicator. */
                  *remote_group;  /* The local and remote groups are the
                                     same for intra communicators */
     MPID_Comm_kind_t comm_kind;  /* MPID_INTRACOMM or MPID_INTERCOMM */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
-    MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
+    MPID_Errhandler *errhandler; /* Pointer to the error handler structure */
     struct MPID_Comm    *local_comm; /* Defined only for intercomms, holds
 				        an intracomm for the local group */
-    int           is_low_group;   /* For intercomms only, this boolean is
-				     set for all members of one of the 
-				     two groups of processes and clear for 
-				     the other.  It enables certain
-				     intercommunicator collective operations
-				     that wish to use half-duplex operations
-				     to implement a full-duplex operation */
+    int           is_low_group;  /* For intercomms only, this boolean is
+				    set for all members of one of the 
+				    two groups of processes and clear for 
+				    the other.  It enables certain
+				    intercommunicator collective operations
+				    that wish to use half-duplex operations
+				    to implement a full-duplex operation */
     struct MPID_Comm     *comm_next;/* Provides a chain through all active 
 				       communicators */
     struct MPID_Collops  *coll_fns; /* Pointer to a table of functions 
