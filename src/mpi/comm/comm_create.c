@@ -145,27 +145,29 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
        case is too messy, we'll add this in.
     */
     if (group_ptr->rank != MPI_UNDEFINED) {
+	MPID_VCR *vcr;
+	int      vcr_size;
+
 	n = group_ptr->size;
 	/*printf( "group size = %d comm size = %d\n", n, 
 	  comm_ptr->remote_size ); */
 	MPIU_CHKLMEM_MALLOC(mapping,int*,n*sizeof(int),mpi_errno,"mapping");
+	if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+	    vcr      = comm_ptr->local_vcr;
+	    vcr_size = comm_ptr->local_size;
+	}
+	else {
+	    vcr      = comm_ptr->vcr;
+	    vcr_size = comm_ptr->remote_size;
+	}
+	
 	for (i=0; i<n; i++) {
 	    /* Mapping[i] is the rank in the communicator of the process that
 	       is the ith element of the group */
-	    MPID_VCR *vcr;
-	    int      vcr_size;
 	    /* We use the appropriate vcr, depending on whether this is
 	       an intercomm (use the local vcr) or an intracomm (remote vcr) 
 	       Note that this is really the local mapping for intercomm
 	       and remote mapping for the intracomm */
-	    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-		vcr      = comm_ptr->local_vcr;
-		vcr_size = comm_ptr->local_size;
-	    }
-	    else {
-		vcr      = comm_ptr->vcr;
-		vcr_size = comm_ptr->remote_size;
-	    }
 	    /* FIXME : BUBBLE SORT */
 	    /* FIXME : NEEDS COMM_WORLD SPECIALIZATION */
 	    mapping[i] = -1;
@@ -182,13 +184,13 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    MPIU_ERR_CHKANDJUMP1(mapping[i] == -1,mpi_errno,
 				 MPI_ERR_GROUP,
 				 "**groupnotincomm", "**groupnotincomm %d", i );
-	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {
-		/* If this is an intra comm, we've really determined the
-		   remote mapping */
-		remote_mapping = mapping;
-		remote_size    = n;
-		mapping        = 0;
-	    }
+	}
+	if (comm_ptr->comm_kind == MPID_INTRACOMM) {
+	    /* If this is an intra comm, we've really determined the
+	       remote mapping */
+	    remote_mapping = mapping;
+	    remote_size    = n;
+	    mapping        = 0;
 	}
 
 	/* Get the new communicator structure and context id */
