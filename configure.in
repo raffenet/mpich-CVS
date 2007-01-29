@@ -2429,6 +2429,17 @@ Fortran (the Fortran standard requires it).
 You may need to specify an additional argument to your C compiler to 
 force it to allow unaligned accesses.)])
 fi
+# Check for __func__ (defined in C99) or __FUNCTION__ (defined in older GCC)
+AC_CACHE_CHECK([whether $CC supports __func__],pac_cv_cc_has___func__,
+[AC_TRY_COMPILE([],
+ [const char *cp = __func__; ],pac_cv_cc_has___func__=yes,
+pac_cv_cc_has___func__=no)])
+if test "$pac_cv_cc_has___func__" != "yes" ; then
+    AC_CACHE_CHECK([whether $CC supports __FUNCTION__],pac_cv_cc_has___FUNCTION__,
+[AC_TRY_COMPILE([],
+ [const char *cp = __FUNCTION__;],pac_cv_cc_has___FUNCTION__=yes,
+pac_cv_cc_has___FUNCTION__=no)])
+fi
 
 # ----------------------------------------------------------------------------
 # Attempt to support dependency handling
@@ -4585,6 +4596,7 @@ if test "$with_thread_package" = "yes" ; then
     with_thread_package=posix
 fi
 
+MPICH2_THREAD_PACKAGE=none
 case $with_thread_package in 
     posix|pthreads)
 	with_thread_package=posix
@@ -4653,6 +4665,7 @@ void f1(void *a) { return; }],
     
         fi
 	THR_LIBS="$THR_LIBS -lpthread"
+	MPICH2_THREAD_PACKAGE=pthreads
 	;;
     solaris)
 	AC_CHECK_HEADERS(thread.h)
@@ -4662,6 +4675,7 @@ void f1(void *a) { return; }],
 	   AC_MSG_ERROR([unable to find Solaris threads library])
 	fi
 	# FIXME: need to add -mt if using solaris compilers
+	MPICH2_THREAD_PACKAGE=solaris
 	;;
     no|none)
 	with_thread_package=none
@@ -4670,6 +4684,10 @@ void f1(void *a) { return; }],
 	AC_MSG_ERROR([The specified thread package, $with_thread_package, is not supported.]) 
 	;;
 esac
+
+# Define and export the selected thread library so that other packages, 
+# such as MPE, will know what's used in MPICH2
+export MPICH2_THREAD_PACKAGE
 
 AC_CHECK_FUNCS(sched_yield yield usleep sleep select)
 
