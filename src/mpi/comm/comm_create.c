@@ -283,6 +283,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 
  	/* Setup the communicator's vc table.  This is for the remote group,
 	   which is the same as the local group for intracommunicators */
+	n = remote_size;
 	MPID_VCRT_Create( n, &newcomm_ptr->vcrt );
 	MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
 	for (i=0; i<n; i++) {
