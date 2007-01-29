@@ -853,7 +853,7 @@ with MPI_Alloc_mem.
 **pthread_cancel:pthread_cancel failed
 **pthread_cancel %s:pthread_cancel failed (%s)
 **badportrange:MPICH_PORT_RANGE - invalid range specified
-
+**argstr_missingifname:Missing ifname or invalid host/port description in business card
 
 **pmi_kvs_get_parent %d:unable to get the PARENT_ROOT_PORT_NAME from the keyval space (pmi_error %d)
 
