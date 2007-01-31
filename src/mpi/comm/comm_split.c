@@ -100,7 +100,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     int       rank, size, i, new_size, first_entry = 0, *last_ptr;
     int       new_context_id;
     MPIU_THREADPRIV_DECL;
-    MPIU_CHKLMEM_DECL(2);
+    MPIU_CHKLMEM_DECL(4);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPLIT);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -144,7 +144,8 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     size = comm_ptr->local_size;
 
     /* Step 1: Find out what color and keys all of the processes have */
-    MPIU_CHKLMEM_MALLOC(table,splittype*,size*sizeof(splittype),mpi_errno,"table");
+    MPIU_CHKLMEM_MALLOC(table,splittype*,size*sizeof(splittype),mpi_errno,
+			"table");
     table[rank].color = color;
     table[rank].key   = key;
     
@@ -183,13 +184,17 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
        context id to the pool */
     /* In the multi-threaded case, MPIR_Get_contextid assumes that the
        calling routine already holds the single criticial section */
-    new_context_id = MPIR_Get_contextid( comm_ptr );
-    if (new_context_id == 0) {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-                                 "MPI_Comm_split", __LINE__, MPI_ERR_OTHER,
-					  "**toomanycomm", 0 );
-	goto fn_fail;
+    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+	if (!comm_ptr->local_comm) {
+	    MPIR_Setup_intercomm_localcomm( comm_ptr );
+	}
+	new_context_id = MPIR_Get_contextid( comm_ptr->local_comm );
     }
+    else {
+	new_context_id = MPIR_Get_contextid( comm_ptr );
+    }
+    MPIU_ERR_CHKANDJUMP(new_context_id == 0, mpi_errno, MPI_ERR_OTHER, 
+			"**toomanycomm" );
     
     /* Now, create the new communicator structure if necessary */
     if (color != MPI_UNDEFINED) {
@@ -197,10 +202,9 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	if (mpi_errno) goto fn_fail;
 
 	newcomm_ptr->context_id	    = new_context_id;
-	newcomm_ptr->recvcontext_id = new_context_id;
-	newcomm_ptr->remote_size    = new_size;
 	newcomm_ptr->local_size	    = new_size;
-	newcomm_ptr->comm_kind	    = MPID_INTRACOMM;
+	newcomm_ptr->comm_kind	    = comm_ptr->comm_kind;
+	/* Other fields depend on whether this is an intercomm or intracomm */
     
 	/* Step 4: Order the processes by their key values.  Sort the
 	   list that is stored in table.  To simplify the sort, we 
@@ -210,7 +214,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	MPIU_CHKLMEM_MALLOC(keytable,splittype*,new_size*sizeof(splittype),
 			    mpi_errno,"keytable");
 	for (i=0; i<new_size; i++) {
-	    keytable[i].key	  = table[first_entry].key;
+	    keytable[i].key   = table[first_entry].key;
 	    keytable[i].color = first_entry;
 	    first_entry	  = table[first_entry].color;
 	}
@@ -219,13 +223,89 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	   process in the input communicator */
 	MPIU_Sort_inttable( keytable, new_size );
 
-	MPID_VCRT_Create( new_size, &newcomm_ptr->vcrt );
-	MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
-	for (i=0; i<new_size; i++) {
-	    MPID_VCR_Dup( comm_ptr->vcr[keytable[i].color], 
-			  &newcomm_ptr->vcr[i] );
-	    if (keytable[i].color == comm_ptr->rank) {
-		newcomm_ptr->rank = i;
+	if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+	    int info[2], rinfo[2], *mapping, *remote_mapping, remote_context_id,
+		remote_size;
+	    /* The key information tells us about the local group.
+	       We need to use this to create our local vcrt and 
+	       send the rank information to the remote process, so that
+	       they can create the necessary remote vcrt */
+	    MPIU_CHKLMEM_MALLOC(mapping,int*,new_size*sizeof(int),
+				mpi_errno,"mapping");
+	    MPID_VCRT_Create( new_size, &newcomm_ptr->local_vcrt );
+	    MPID_VCRT_Get_ptr( newcomm_ptr->local_vcrt, 
+			       &newcomm_ptr->local_vcr );
+	    for (i=0; i<new_size; i++) {
+		MPID_VCR_Dup( comm_ptr->local_vcr[keytable[i].color], 
+			      &newcomm_ptr->local_vcr[i] );
+		if (keytable[i].color == comm_ptr->rank) {
+		    newcomm_ptr->rank = i;
+		}
+		mapping[i] = keytable[i].color;
+	    }
+	    if (comm_ptr->rank == 0) {
+		info[0] = new_context_id;
+		info[1] = new_size;
+		mpi_errno = MPIC_Sendrecv(info, 2, MPI_INT, 0, 0, 
+					  rinfo, 2, MPI_INT,
+					  0, 0, comm, MPI_STATUS_IGNORE );
+		if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
+		remote_context_id = rinfo[0];
+		remote_size       = rinfo[1];
+		MPIU_CHKLMEM_MALLOC(remote_mapping,int*,
+				    remote_size*sizeof(int),
+				    mpi_errno,"remote_mapping");
+		
+		/* Populate and exchange the ranks */
+		printf( "message size %d %d\n", new_size, 
+			remote_size );
+		mpi_errno = MPIC_Sendrecv( mapping, new_size, MPI_INT, 
+					   0, 0, 
+					   remote_mapping, remote_size, MPI_INT,
+					   0, 0, comm, MPI_STATUS_IGNORE );
+		if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
+
+		/* Broadcast to the other members of the local group */
+		NMPI_Bcast( rinfo, 2, MPI_INT, 0, 
+			    comm_ptr->local_comm->handle );
+		NMPI_Bcast( remote_mapping, remote_size, MPI_INT, 0, 
+			    comm_ptr->local_comm->handle );
+	    }
+	    else {
+		/* Broadcast to the other members of the local group */
+		NMPI_Bcast( rinfo, 2, MPI_INT, 0, 
+			    comm_ptr->local_comm->handle );
+		remote_context_id = rinfo[0];
+		remote_size       = rinfo[1];
+		
+		MPIU_CHKLMEM_MALLOC(remote_mapping,int*,
+				    remote_size*sizeof(int),
+				    mpi_errno,"remote_mapping");
+		NMPI_Bcast( remote_mapping, remote_size, MPI_INT, 0, 
+			    comm_ptr->local_comm->handle );
+	    }
+	    newcomm_ptr->recvcontext_id = remote_context_id;
+	    newcomm_ptr->remote_size    = remote_size;
+	    newcomm_ptr->local_comm     = 0;
+
+	    MPID_VCRT_Create( remote_size, &newcomm_ptr->vcrt );
+	    MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
+	    for (i=0; i<remote_size; i++) {
+		MPID_VCR_Dup( comm_ptr->vcr[remote_mapping[i]], 
+			      &newcomm_ptr->vcr[i] );
+	    }
+	}
+	else {
+	    newcomm_ptr->recvcontext_id = new_context_id;
+	    newcomm_ptr->remote_size    = new_size;
+	    MPID_VCRT_Create( new_size, &newcomm_ptr->vcrt );
+	    MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
+	    for (i=0; i<new_size; i++) {
+		MPID_VCR_Dup( comm_ptr->vcr[keytable[i].color], 
+			      &newcomm_ptr->vcr[i] );
+		if (keytable[i].color == comm_ptr->rank) {
+		    newcomm_ptr->rank = i;
+		}
 	    }
 	}
 
@@ -236,9 +316,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	}
 
         /* Notify the device of this new communicator */
-	/*printf( "about to notify device\n" ); */
 	MPID_Dev_comm_create_hook( newcomm_ptr );
-	/*printf( "about to return from comm_split\n" ); */
 	
 	*newcomm = newcomm_ptr->handle;
     }
@@ -246,6 +324,19 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	/* color was MPI_UNDEFINED.  Free the context id */
 	*newcomm = MPI_COMM_NULL;
 	MPIR_Free_contextid( new_context_id );
+
+	/* Dummy to complete collective ops in the intercomm case */
+	if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+	    int rinfo[2], remote_size, *remote_mapping = 0;
+	    NMPI_Bcast( rinfo, 2, MPI_INT, 0, 
+			comm_ptr->local_comm->handle );
+	    remote_size                 = rinfo[1];
+	    MPIU_CHKLMEM_MALLOC(remote_mapping,int*,
+				remote_size*sizeof(int),
+				mpi_errno,"remote_mapping");
+	    NMPI_Bcast( remote_mapping, remote_size, MPI_INT, 0, 
+			comm_ptr->local_comm->handle );
+	}
     }
     
     /* ... end of body of routine ... */
@@ -261,7 +352,8 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_split",
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
+	    "**mpi_comm_split",
 	    "**mpi_comm_split %C %d %d %p", comm, color, key, newcomm);
     }
 #   endif
