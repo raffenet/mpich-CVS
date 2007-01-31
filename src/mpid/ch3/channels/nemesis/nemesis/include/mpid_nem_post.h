@@ -8,15 +8,16 @@
 #define MPID_NEM_POST_H
 
 
-int MPID_nem_init (int rank, MPIDI_PG_t *pg_p);
-int _MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int ckpt_restart);
-int MPID_nem_finalize (void);
-int MPID_nem_ckpt_shutdown (void);
+int MPID_nem_init(int rank, MPIDI_PG_t *pg_p);
+int _MPID_nem_init(int rank, MPIDI_PG_t *pg_p, int ckpt_restart);
+int MPID_nem_finalize(void);
+int MPID_nem_ckpt_shutdown(void);
 int MPID_nem_barrier_init(MPID_nem_barrier_t *barrier_region);
-int MPID_nem_barrier(int, int);
-int MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card);
-int MPID_nem_get_business_card (int myRank, char *value, int length);
-int MPID_nem_connect_to_root (const char *port_name, MPIDI_VC_t *new_vc);
+int MPID_nem_barrier(int num_processes, int rank);
+int MPID_nem_vc_init(MPIDI_VC_t *vc, const char *business_card);
+int MPID_nem_get_business_card(int myRank, char *value, int length);
+int MPID_nem_connect_to_root(const char *port_name, MPIDI_VC_t *new_vc);
+int MPID_nem_lmt_shm_progress(void);
 
 
 #ifdef ENABLED_CHECKPOINTING
@@ -81,18 +82,6 @@ int MPID_nem_mpich2_getv (struct iovec **s_iov, int *s_niov, struct iovec **d_io
 											\
     *(val) = *(typeof (*(val)) *)_s_buf;						\
 } while (0)
-
-
-
-#if 0
-/* large message transfer functions */
-int MPID_nem_mpich2_lmt_send_pre (struct iovec *iov, int n_iov, MPIDI_VC_t *dest_vc, struct iovec *cookie);
-int MPID_nem_mpich2_lmt_recv_pre (struct iovec *iov, int n_iov, MPIDI_VC_t *src_vc, struct iovec *cookie);
-int MPID_nem_mpich2_lmt_start_send (MPIDI_VC_t *dest_vc, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr);
-int MPID_nem_mpich2_lmt_start_recv (MPIDI_VC_t *src_vc, struct iovec s_cookie, struct iovec r_cookie, int *completion_ctr);
-int MPID_nem_mpich2_lmt_send_post (MPIDI_VC_t *dest_vc, struct iovec cookie);
-int MPID_nem_mpich2_lmt_recv_post (MPIDI_VC_t *src_vc, struct iovec cookie);
-#endif
 
 
 #if !defined (MPID_NEM_INLINE) || !MPID_NEM_INLINE

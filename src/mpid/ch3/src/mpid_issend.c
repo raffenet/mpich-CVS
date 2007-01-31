@@ -80,9 +80,9 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
     {
 	/* Note that the sreq was created above */
 	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_RNDV_MSG);
-	mpi_errno = MPIDI_CH3_RndvSend( &sreq, buf, count, datatype, dt_contig,
-					data_sz, dt_true_lb, rank, tag, comm, 
-					context_offset );
+	mpi_errno = MPIDI_CH3_RndvSend_fn( &sreq, buf, count, datatype, dt_contig,
+                                           data_sz, dt_true_lb, rank, tag, comm, 
+                                           context_offset );
 	
 	/* FIXME: fill temporary IOV or pack temporary buffer after send to 
 	   hide some latency.  This requires synchronization

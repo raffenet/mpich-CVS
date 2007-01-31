@@ -16,6 +16,7 @@
 #include "mpid_nem_fbox.h"
 #include "mpid_nem_nets.h"
 #include "mpid_nem_queue.h"
+#include "mpid_nem_generic_queue.h"
 
 #define MPID_NEM__BYPASS_Q_MAX_VAL  ((MPID_NEM_MPICH2_DATA_LEN) - (sizeof(MPIDI_CH3_Pkt_t)))
 
@@ -71,5 +72,7 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
     }
     return (pbox->flag.value != value);
 }
+
+
 
 #endif /* MPID_NEM_IMPL_H */

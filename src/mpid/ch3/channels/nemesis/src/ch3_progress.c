@@ -13,7 +13,9 @@
 #endif
 #include "pmi.h"
 
-static MPIDI_CH3_PktHandler_Fcn *pktArray[MPIDI_CH3_PKT_END_CH3+1];
+extern int MPID_nem_lmt_shm_pending; /* defined in mpid_nem_lmt_shm.c */
+
+static MPIDI_CH3_PktHandler_Fcn *pktArray[MPIDI_CH3_PKT_END_ALL+1];
 
 #ifndef MPIDI_POSTED_RECV_ENQUEUE_HOOK
 #define MPIDI_POSTED_RECV_ENQUEUE_HOOK(x) do {} while (0)
@@ -88,7 +90,8 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 	/* make progress receiving */
 	/* check queue */
 	  
-	if (!MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] && !MPIDI_CH3I_SendQ_head (CH3_NORMAL_QUEUE) && is_blocking)
+	if (!MPID_nem_lmt_shm_pending && !MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE]
+            && !MPIDI_CH3I_SendQ_head(CH3_NORMAL_QUEUE) && is_blocking)
 	{
             /* we only want to unlock the mutex if this is a blocking
                progress call and were in a multithreaded environment
@@ -364,6 +367,11 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 }            
 	    }
 	}
+        if (MPID_nem_lmt_shm_pending)
+        {
+            mpi_errno = MPID_nem_lmt_shm_progress();
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        }
     }
     while (completions == MPIDI_CH3I_progress_completion_count && is_blocking);
 
@@ -1589,7 +1597,9 @@ int MPIDI_CH3I_Progress_init(void)
     }
 
     /* Initialize the code to handle incoming packets */
-    mpi_errno = MPIDI_CH3_PktHandler_Init( pktArray, MPIDI_CH3_PKT_END_CH3+1 );
+    mpi_errno = MPIDI_CH3_PktHandler_Init(pktArray, MPIDI_CH3_PKT_END_ALL+1);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    mpi_errno = MPID_nem_lmt_pkthandler_init(pktArray, MPIDI_CH3_PKT_END_ALL+1);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
  fn_exit:
