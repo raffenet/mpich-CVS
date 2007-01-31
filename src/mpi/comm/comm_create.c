@@ -149,8 +149,6 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	int      vcr_size;
 
 	n = group_ptr->size;
-	/*printf( "group size = %d comm size = %d\n", n, 
-	  comm_ptr->remote_size ); */
 	MPIU_CHKLMEM_MALLOC(mapping,int*,n*sizeof(int),mpi_errno,"mapping");
 	if (comm_ptr->comm_kind == MPID_INTERCOMM) {
 	    vcr      = comm_ptr->local_vcr;
@@ -174,8 +172,6 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    for (j=0; j<vcr_size; j++) {
 		int comm_lpid;
 		MPID_VCR_Get_lpid( vcr[j], &comm_lpid );
-		/*printf( "commlpid = %d, group[%d]lpid = %d\n",
-		  comm_lpid, i, group_ptr->lrank_to_lpid[i].lpid ); */
 		if (comm_lpid == group_ptr->lrank_to_lpid[i].lpid) {
 		    mapping[i] = j;
 		    break;
@@ -214,6 +210,8 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    newcomm_ptr->remote_size    = newcomm_ptr->local_size = n;
 	}
 	else { /* comm_ptr->comm_kind == MPID_INTERCOMM */ 
+	    int rinfo[2];
+	    newcomm_ptr->local_size   = group_ptr->size;
 	    newcomm_ptr->remote_group = 0;
 	    /* There is an additional step.  We must communicate the information
 	       on the local context id and the group members, given by the ranks
@@ -223,7 +221,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	       be constructed.  We can't use NMPI_Sendrecv since we need to 
 	       use the "collective" context in the original intercommunicator */
 	    if (comm_ptr->rank == 0) {
-		int info[2], rinfo[2];
+		int info[2];
 		info[0] = new_context_id;
 		info[1] = group_ptr->size;
 
@@ -231,8 +229,9 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 					  0, 0, 
 					  rinfo, 2, MPI_INT,
 					  0, 0, comm, MPI_STATUS_IGNORE );
-		remote_size = rinfo[1];
+		if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
 		newcomm_ptr->recvcontext_id = rinfo[0];
+		remote_size                 = rinfo[1];
 		    
 		MPIU_CHKLMEM_MALLOC(remote_mapping,int*,
 				    remote_size*sizeof(int),
@@ -243,9 +242,10 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 					   0, 0, 
 					   remote_mapping, remote_size, MPI_INT,
 					   0, 0, comm, MPI_STATUS_IGNORE );
+		if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
 
 		/* Broadcast to the other members of the local group */
-		NMPI_Bcast( &remote_size, 1, MPI_INT, 0, 
+		NMPI_Bcast( rinfo, 2, MPI_INT, 0, 
 			    comm_ptr->local_comm->handle );
 		NMPI_Bcast( remote_mapping, remote_size, MPI_INT, 0, 
 			    comm_ptr->local_comm->handle );
@@ -253,8 +253,10 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    else {
 		/* The other processes */
 		/* Broadcast to the other members of the local group */
-		NMPI_Bcast( &remote_size, 1, MPI_INT, 0, 
+		NMPI_Bcast( rinfo, 2, MPI_INT, 0, 
 			    comm_ptr->local_comm->handle );
+		newcomm_ptr->recvcontext_id = rinfo[0];
+		remote_size                 = rinfo[1];
 		MPIU_CHKLMEM_MALLOC(remote_mapping,int*,
 				    remote_size*sizeof(int),
 				    mpi_errno,"remote_mapping");
@@ -303,6 +305,19 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	/* This process is not in the group */
 	MPIR_Free_contextid( new_context_id );
 	*newcomm = MPI_COMM_NULL;
+
+	/* Dummy to complete collective ops in the intercomm case */
+	if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+	    int rinfo[2], remote_size, *remote_mapping = 0;
+	    NMPI_Bcast( rinfo, 2, MPI_INT, 0, 
+			comm_ptr->local_comm->handle );
+	    remote_size                 = rinfo[1];
+	    MPIU_CHKLMEM_MALLOC(remote_mapping,int*,
+				remote_size*sizeof(int),
+				mpi_errno,"remote_mapping");
+	    NMPI_Bcast( remote_mapping, remote_size, MPI_INT, 0, 
+			comm_ptr->local_comm->handle );
+	}
     }
     
     /* ... end of body of routine ... */
