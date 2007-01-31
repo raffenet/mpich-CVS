@@ -46,7 +46,6 @@ int main( int argc, char *argv[] )
 		errs++;
 		printf( "Output communicator is not an intercomm\n" );
 	    }
-	    continue;
 
 	    MPI_Comm_remote_size( intercomm, &orig_rsize );
 	    MPI_Comm_remote_size( newcomm, &new_rsize );
