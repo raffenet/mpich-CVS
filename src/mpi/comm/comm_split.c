@@ -191,7 +191,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	    }
 	}
     }
-    printf( "new size = %d\n", new_size );
+
     /* We don't need to set the last value to -1 because we loop through
        the list for only the known size of the group */
     /* If we're an intercomm, we need to do the same thing for the remote
