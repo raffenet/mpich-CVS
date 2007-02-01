@@ -100,7 +100,7 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
             MPIU_Object_set_ref(sreq, 0);                                                               \
             MPIDI_CH3_Request_destroy(sreq);                                                            \
             *sreq_p = NULL;                                                                             \
-            MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_OTHER, "**ch3|rtspkt");                         \
+            MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_OTHER, "**rtspkt");                             \
         }                                                                                               \
         /* --END ERROR HANDLING-- */                                                                    \
         if (_rts_req != NULL)                                                                           \
@@ -110,7 +110,7 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
                 MPIU_Object_set_ref(sreq, 0);                                                           \
                 MPIDI_CH3_Request_destroy(sreq);                                                        \
                 mpi_errno = MPIR_Err_create_code(_rts_req->status.MPI_ERROR, MPIR_ERR_FATAL,            \
-                                                 FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0);   \
+                                                 FCNAME, __LINE__, MPI_ERR_OTHER, "**rtspkt", 0);       \
                 MPID_Request_release(_rts_req);                                                         \
                 goto fn_exit;                                                                           \
             }                                                                                           \
@@ -136,10 +136,10 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
         _iov[1].MPID_IOV_LEN = (r_cookie_len);                                                          \
                                                                                                         \
         mpi_errno = MPIDI_CH3_iStartMsgv((vc), _iov, (r_cookie_len) ? 2 : 1, &_cts_req);                \
-        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|ctspkt");                       \
+        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ctspkt");                           \
         if (_cts_req != NULL)                                                                           \
         {                                                                                               \
-            MPIU_ERR_CHKANDJUMP(_cts_req->status.MPI_ERROR, mpi_errno, MPI_ERR_OTHER, "**ch3|ctspkt");  \
+            MPIU_ERR_CHKANDJUMP(_cts_req->status.MPI_ERROR, mpi_errno, MPI_ERR_OTHER, "**ctspkt");      \
             MPID_Request_release(_cts_req);                                                             \
         }                                                                                               \
     } while (0)   
@@ -161,10 +161,10 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
         _iov[1].MPID_IOV_LEN = (r_cookie_len);                                                                  \
                                                                                                                 \
         mpi_errno = MPIDI_CH3_iStartMsgv((vc), _iov, (r_cookie_len) ? 2 : 1, &_cookie_req);                     \
-        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|cookiepkt");                            \
+        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**cookiepkt");                                \
         if (_cookie_req != NULL)                                                                                \
         {                                                                                                       \
-            MPIU_ERR_CHKANDJUMP(_cookie_req->status.MPI_ERROR, mpi_errno, MPI_ERR_OTHER, "**ch3|cookiepkt");    \
+            MPIU_ERR_CHKANDJUMP(_cookie_req->status.MPI_ERROR, mpi_errno, MPI_ERR_OTHER, "**cookiepkt");        \
             MPID_Request_release(_cookie_req);                                                                  \
         }                                                                                                       \
     } while (0)   
@@ -179,10 +179,10 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
         _done_pkt->req_id = (rreq)->ch.lmt_req_id;                                                              \
                                                                                                                 \
         mpi_errno = MPIDI_CH3_iStartMsg((vc), done_pkt, sizeof(*_done_pkt), &_done_req);                        \
-        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|donepkt");                              \
+        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**donepkt");                                  \
         if (_done_req != NULL)                                                                                  \
         {                                                                                                       \
-            MPIU_ERR_CHKANDJUMP(_done_req->status.MPI_ERROR, mpi_errno, MPI_ERR_OTHER, "**ch3|donepkt");        \
+            MPIU_ERR_CHKANDJUMP(_done_req->status.MPI_ERROR, mpi_errno, MPI_ERR_OTHER, "**donepkt");            \
             MPID_Request_release(_done_req);                                                                    \
         }                                                                                                       \
     } while (0)   
