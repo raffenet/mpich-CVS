@@ -88,6 +88,7 @@ typedef struct MPID_nem_pkt_lmt_cts             \
     MPIDI_CH3_Pkt_type_t type;                  \
     MPI_Request sender_req_id;                  \
     MPI_Request receiver_req_id;                \
+    MPIDI_msg_sz_t data_sz;                     \
     MPIDI_msg_sz_t cookie_len;                  \
 }                                               \
 MPID_nem_pkt_lmt_cts_t;                         \
@@ -146,9 +147,9 @@ typedef struct MPIDI_CH3I_VC
     int (* lmt_post_recv)(struct MPIDI_VC *vc, struct MPID_Request *req);
 
     /* LMT shared memory copy-buffer ptr */
-    volatile struct MPID_nem_copy_buf *copy_buf;
-    char *copy_buf_handle;
-    
+    volatile struct MPID_nem_copy_buf *lmt_copy_buf;
+    char *lmt_copy_buf_handle;
+
 
 #if(MPID_NEM_NET_MODULE == MPID_NEM_ERROR_MODULE)
 #error Error in definition of MPID_NEM_*_MODULE macros
@@ -236,18 +237,19 @@ typedef struct MPIDI_CH3I_VC
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
  */
-#define MPIDI_CH3_REQUEST_DECL			\
-struct MPIDI_CH3I_Request			\
-{						\
-    MPIDI_VC_t *vc;				\
-    int iov_offset;				\
-    MPIDI_CH3_Pkt_t pkt;			\
-    struct MPID_Request *lmt_req;               \
-    MPID_IOV s_cookie;                          \
-    MPID_IOV r_cookie;                          \
-    MPIDI_msg_sz_t lmt_data_sz;                 \
-    int lmt_buf_num;                            \
-} ch;
+#define MPIDI_CH3_REQUEST_DECL                                                                                                  \
+    struct MPIDI_CH3I_Request                                                                                                   \
+    {                                                                                                                           \
+        MPIDI_VC_t          *vc;                                                                                                \
+        int                  iov_offset;                                                                                        \
+        MPIDI_CH3_Pkt_t      pkt;                                                                                               \
+                                                                                                                                \
+        MPI_Request          lmt_req_id;     /* request id of remote side */                                                    \
+        struct MPID_Request *lmt_req;        /* pointer to original send/recv request */                                        \
+        MPIDI_msg_sz_t       lmt_data_sz;    /* data size to be transferred, after checking for truncation */                   \
+        MPID_IOV             lmt_tmp_cookie; /* temporary storage for received cookie */                                        \
+        int                  lmt_buf_num;    /* current copy buffer number for shared memory lmt */                             \
+    } ch;
 
 #if 0
 #define DUMP_REQUEST(req) do {							\

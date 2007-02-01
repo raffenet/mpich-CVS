@@ -73,6 +73,119 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
     return (pbox->flag.value != value);
 }
 
+/*  Macros for sending lmt messages from inside network modules.
+    These assume mpi_errno is declared and the fn_exit and fn_fail
+    labels are defined.
+*/
+
+#define MPID_nem_lmt_send_RTS(vc, rts_pkt, s_cookie_buf, s_cookie_len) do {                             \
+        MPID_Request *_rts_req;                                                                         \
+        MPID_IOV _iov[2];                                                                               \
+                                                                                                        \
+        MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv RTS packet");                                      \
+        (rts_pkt)->cookie_len = (s_cookie_len);                                                         \
+                                                                                                        \
+        _iov[0].MPID_IOV_BUF = (rts_pkt);                                                               \
+        _iov[0].MPID_IOV_LEN = sizeof(*(rts_pkt));                                                      \
+        _iov[1].MPID_IOV_BUF = (s_cookie_buf);                                                          \
+        _iov[1].MPID_IOV_LEN = (s_cookie_len);                                                          \
+                                                                                                        \
+        MPIU_DBG_MSGPKT((vc), (rts_pkt)->match.tag, (rts_pkt)->match.context_id, (rts_pkt)->match.rank, \
+                        (rts_pkt)->data_sz, "Rndv");                                                    \
+                                                                                                        \
+        mpi_errno = MPIDI_CH3_iStartMsgv((vc), _iov, ((s_cookie_len)) ? 2 : 1, &_rts_req);              \
+        /* --BEGIN ERROR HANDLING-- */                                                                  \
+        if (mpi_errno != MPI_SUCCESS)                                                                   \
+        {                                                                                               \
+            MPIU_Object_set_ref(sreq, 0);                                                               \
+            MPIDI_CH3_Request_destroy(sreq);                                                            \
+            *sreq_p = NULL;                                                                             \
+            MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_OTHER, "**ch3|rtspkt");                         \
+        }                                                                                               \
+        /* --END ERROR HANDLING-- */                                                                    \
+        if (_rts_req != NULL)                                                                           \
+        {                                                                                               \
+            if (_rts_req->status.MPI_ERROR != MPI_SUCCESS)                                              \
+            {                                                                                           \
+                MPIU_Object_set_ref(sreq, 0);                                                           \
+                MPIDI_CH3_Request_destroy(sreq);                                                        \
+                mpi_errno = MPIR_Err_create_code(_rts_req->status.MPI_ERROR, MPIR_ERR_FATAL,            \
+                                                 FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0);   \
+                MPID_Request_release(_rts_req);                                                         \
+                goto fn_exit;                                                                           \
+            }                                                                                           \
+            MPID_Request_release(_rts_req);                                                             \
+        }                                                                                               \
+    } while (0)
+
+#define MPID_nem_lmt_send_CTS(vc, rreq, r_cookie_buf, r_cookie_len) do {                                \
+        MPIDI_CH3_Pkt_t _upkt;                                                                          \
+        MPID_nem_pkt_lmt_cts_t * const _cts_pkt = &_upkt.lmt_cts;                                       \
+        MPID_Request *_cts_req;                                                                         \
+        MPID_IOV _iov[2];                                                                               \
+                                                                                                        \
+        MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv CTS packet");                                      \
+        MPIDI_Pkt_init(_cts_pkt, MPIDI_NEM_PKT_LMT_CTS);                                                \
+        _cts_pkt->sender_req_id = (rreq)->ch.lmt_req_id;                                                \
+        _cts_pkt->receiver_req_id = (rreq)->handle;                                                     \
+        _cts_pkt->cookie_len = (r_cookie_len);                                                          \
+                                                                                                        \
+        _iov[0].MPID_IOV_BUF = _cts_pkt;                                                                \
+        _iov[0].MPID_IOV_LEN = sizeof(*_cts_pkt);                                                       \
+        _iov[1].MPID_IOV_BUF = (r_cookie_buf);                                                          \
+        _iov[1].MPID_IOV_LEN = (r_cookie_len);                                                          \
+                                                                                                        \
+        mpi_errno = MPIDI_CH3_iStartMsgv((vc), _iov, (r_cookie_len) ? 2 : 1, &_cts_req);                \
+        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|ctspkt");                       \
+        if (_cts_req != NULL)                                                                           \
+        {                                                                                               \
+            MPIU_ERR_CHKANDJUMP(_cts_req->status.MPI_ERROR, mpi_errno, MPI_ERR_OTHER, "**ch3|ctspkt");  \
+            MPID_Request_release(_cts_req);                                                             \
+        }                                                                                               \
+    } while (0)   
+        
+#define MPID_nem_lmt_send_COOKIE(vc, rreq, r_cookie_buf, r_cookie_len) do {                                     \
+        MPIDI_CH3_Pkt_t _upkt;                                                                                  \
+        MPID_nem_pkt_lmt_cookie_t * const _cookie_pkt = &_upkt.lmt_cookie;                                      \
+        MPID_Request *_cookie_req;                                                                              \
+        MPID_IOV _iov[2];                                                                                       \
+                                                                                                                \
+        MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv COOKIE packet");                                           \
+        MPIDI_Pkt_init(_cookie_pkt, MPIDI_NEM_PKT_LMT_COOKIE);                                                  \
+        _cookie_pkt->req_id = (rreq)->ch.lmt_req_id;                                                            \
+        _cookie_pkt->cookie_len = (r_cookie_len);                                                               \
+                                                                                                                \
+        _iov[0].MPID_IOV_BUF = _cookie_pkt;                                                                     \
+        _iov[0].MPID_IOV_LEN = sizeof(*_cookie_pkt);                                                            \
+        _iov[1].MPID_IOV_BUF = (r_cookie_buf);                                                                  \
+        _iov[1].MPID_IOV_LEN = (r_cookie_len);                                                                  \
+                                                                                                                \
+        mpi_errno = MPIDI_CH3_iStartMsgv((vc), _iov, (r_cookie_len) ? 2 : 1, &_cookie_req);                     \
+        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|cookiepkt");                            \
+        if (_cookie_req != NULL)                                                                                \
+        {                                                                                                       \
+            MPIU_ERR_CHKANDJUMP(_cookie_req->status.MPI_ERROR, mpi_errno, MPI_ERR_OTHER, "**ch3|cookiepkt");    \
+            MPID_Request_release(_cookie_req);                                                                  \
+        }                                                                                                       \
+    } while (0)   
+        
+#define MPID_nem_lmt_send_DONE(vc, rreq) do {                                                                   \
+        MPIDI_CH3_Pkt_t _upkt;                                                                                  \
+        MPID_nem_pkt_lmt_done_t * const _done_pkt = &_upkt.lmt_done;                                            \
+        MPID_Request *_done_req;                                                                                \
+                                                                                                                \
+        MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv DONE packet");                                             \
+        MPIDI_Pkt_init(_done_pkt, MPIDI_NEM_PKT_LMT_DONE);                                                      \
+        _done_pkt->req_id = (rreq)->ch.lmt_req_id;                                                              \
+                                                                                                                \
+        mpi_errno = MPIDI_CH3_iStartMsg((vc), done_pkt, sizeof(*_done_pkt), &_done_req);                        \
+        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|donepkt");                              \
+        if (_done_req != NULL)                                                                                  \
+        {                                                                                                       \
+            MPIU_ERR_CHKANDJUMP(_done_req->status.MPI_ERROR, mpi_errno, MPI_ERR_OTHER, "**ch3|donepkt");        \
+            MPID_Request_release(_done_req);                                                                    \
+        }                                                                                                       \
+    } while (0)   
 
 
 #endif /* MPID_NEM_IMPL_H */
