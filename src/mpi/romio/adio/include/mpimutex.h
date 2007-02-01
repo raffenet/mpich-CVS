@@ -2,26 +2,21 @@
  * $COPYRIGHT$
  */
 
-typedef struct mpimutex {
-	int nprocs, myrank, homerank;
-	MPI_Comm comm;
-	MPI_Win waitlistwin;
-	MPI_Datatype waitlisttype;
-	unsigned char *waitlist; /* only allocated on home rank */
-} *mpimutex_t;
+/* observation:  this datatype can be extended to create a single memory region
+ * containing 'fp' followed by the N bytes of 'waitlist' */
 
 typedef struct fp_data {
 	MPI_Offset fp;
 	unsigned char waitlist[1];
 } fp_data_t;
 
-typedef struct mpimutex_fp {
+typedef struct mpimutex {
 	int nprocs, myrank, homerank;
 	MPI_Comm comm;
 	MPI_Win waitlistwin;
 	MPI_Datatype waitlisttype, fptype;
 	fp_data_t *data;
-} *mpimutex_fp_t;
+} *mpimutex_t;
 
 
 
@@ -30,15 +25,8 @@ int ADIOI_MPIMUTEX_Lock(mpimutex_t mutex);
 int ADIOI_MPIMUTEX_Unlock(mpimutex_t mutex);
 int ADIOI_MPIMUTEX_Free(mpimutex_t *mutex_p);
 
-/* need to find a better way to integerate the two slightly different data
- * types */
-int ADIOI_MPIMUTEX_FP_Create(int homerank, MPI_Comm comm, 
-		mpimutex_fp_t *mutex_p);
-int ADIOI_MPIMUTEX_FP_Lock(mpimutex_fp_t mutex);
-int ADIOI_MPIMUTEX_FP_Unlock(mpimutex_fp_t mutex);
-int ADIOI_MPIMUTEX_FP_Free(mpimutex_fp_t *mutex_p);
-int ADIOI_MPIMUTEX_FP_Fetch_and_increment(mpimutex_fp_t mutex, 
+int ADIOI_MPIMUTEX_Fetch_and_increment(mpimutex_t mutex, 
 		MPI_Offset *current, MPI_Offset increment);
-int ADIOI_MPIMUTEX_FP_Set(mpimutex_fp_t mutex, MPI_Offset value);
+int ADIOI_MPIMUTEX_Set(mpimutex_t mutex, MPI_Offset value);
 
-int ADIOI_MPIMUTEX_FP_Get(mpimutex_fp_t mutex, MPI_Offset *value);
+int ADIOI_MPIMUTEX_Get(mpimutex_t mutex, MPI_Offset *value);

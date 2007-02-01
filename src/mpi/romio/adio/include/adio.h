@@ -239,7 +239,7 @@ typedef struct ADIOI_FileD {
     int fortran_handle;     /* handle for Fortran interface if needed */
     MPI_Errhandler err_handler;
     mpimutex_t atomic_mutex; /* RMA-based mutex for atomic mode ops */
-    mpimutex_fp_t fp_mutex;  /* RMA-based mutex for shared fp ops */
+    mpimutex_t fp_mutex;  /* RMA-based mutex for shared fp ops */
     void *fs_ptr;            /* file-system specific information */
 } ADIOI_FileD;
 

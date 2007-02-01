@@ -66,7 +66,7 @@ void ADIO_Close(ADIO_File fd, int *error_code)
     }
 
     ADIOI_MPIMUTEX_Free(&(fd->atomic_mutex));
-    ADIOI_MPIMUTEX_FP_Free(&(fd->fp_mutex));
+    ADIOI_MPIMUTEX_Free(&(fd->fp_mutex));
 
     ADIOI_Free(fd->hints->ranklist);
     ADIOI_Free(fd->hints->cb_config_list);

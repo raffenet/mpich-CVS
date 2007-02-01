@@ -16,7 +16,7 @@ void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
 
 	/* like with ADIO_Get_shared_fp, could maybe defer initialization to
 	 * this point */
-	ADIOI_MPIMUTEX_FP_Set(fd->fp_mutex, offset);
+	ADIOI_MPIMUTEX_Set(fd->fp_mutex, offset);
 	*error_code = MPI_SUCCESS; /* deal with errors in mutex code */
 
 #if 0

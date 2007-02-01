@@ -78,7 +78,7 @@ int MPI_File_read_ordered(MPI_File mpi_fh, void *buf, int count,
      * window.  all other ranks know their offset after MPI_Scan */
 
     if (myrank == 0) {
-	    ADIOI_MPIMUTEX_FP_Get(mpi_fh->fp_mutex, &shared_fp);
+	    ADIOI_MPIMUTEX_Get(mpi_fh->fp_mutex, &shared_fp);
 	    MPI_Scan(&shared_fp, &new_shared_fp, 1, MPI_INT, MPI_SUM, 
 			    MPI_COMM_WORLD);
     } else {
@@ -87,7 +87,7 @@ int MPI_File_read_ordered(MPI_File mpi_fh, void *buf, int count,
 	    shared_fp = new_shared_fp;
     }
     if (myrank == nprocs - 1) {
-	    ADIOI_MPIMUTEX_FP_Set(mpi_fh->fp_mutex, new_shared_fp + incr);
+	    ADIOI_MPIMUTEX_Set(mpi_fh->fp_mutex, new_shared_fp + incr);
     }
 
     /* weak syncronization to prevent one process from racing ahead before rank
