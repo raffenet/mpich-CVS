@@ -116,10 +116,25 @@ int MPID_Finalize(void)
 
     /* Tell the process group code that we're done with the process groups.
        This will notify PMI (with PMI_Finalize) if necessary.  It
-       also frees al PG structures, including the PG for COMM_WORLD, whose 
+       also frees all PG structures, including the PG for COMM_WORLD, whose 
        pointer is also saved in MPIDI_Process.my_pg */
     mpi_errno = MPIDI_PG_Finalize();
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
+#ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
+    MPIDI_CH3_FreeParentPort();
+#endif
+
+    /* Release any SRbuf pool storage */
+    if (MPIDI_CH3U_SRBuf_pool) {
+	MPIDI_CH3U_SRBuf_element_t *p, *pNext;
+	p = MPIDI_CH3U_SRBuf_pool;
+	while (p) {
+	    pNext = p->next;
+	    MPIU_Free(p);
+	    p = pNext;
+	}
+    }
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);

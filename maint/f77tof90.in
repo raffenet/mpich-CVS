@@ -27,6 +27,7 @@ $newline = "\n";
 		    '../attr/attraints' => 'integer (kind=MPI_ADDRESS_KIND) extrastate, valin, valout, val',
 		    'attraints' => 'integer (kind=MPI_ADDRESS_KIND) extrastate, valin, valout, val',
 		    'addsize' => 'integer (kind=MPI_ADDRESS_KIND) aint',
+                    '../rma/addsize' => 'integer (kind=MPI_ADDRESS_KIND) aint',
 	    );
 
 %excludePrograms = ();

@@ -94,6 +94,12 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+
+    if (*request_ptr->cc_ptr != 0) {
+	/* request not complete. poke the progress engine. Req #3130 */
+	mpi_errno = MPID_Progress_test();
+	if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    }
     
     if (*request_ptr->cc_ptr == 0)
     {

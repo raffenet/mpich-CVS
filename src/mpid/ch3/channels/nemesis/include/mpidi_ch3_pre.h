@@ -66,7 +66,61 @@ MPIDI_CH3I_VC_state_t;
     struct MPID_nem_new_tcp_module_sockconn;
 #endif
 
+#define MPIDI_CH3_PKT_ENUM                      \
+        MPIDI_NEM_PKT_LMT_RTS,                  \
+        MPIDI_NEM_PKT_LMT_CTS,                  \
+        MPIDI_NEM_PKT_LMT_DONE,                 \
+        MPIDI_NEM_PKT_LMT_COOKIE
+
+#define MPIDI_CH3_PKT_DEFS                      \
+typedef struct MPID_nem_pkt_lmt_rts             \
+{                                               \
+    MPIDI_CH3_Pkt_type_t type;                  \
+    MPIDI_Message_match match;                  \
+    MPI_Request sender_req_id;                  \
+    MPIDI_msg_sz_t data_sz;                     \
+    MPIDI_msg_sz_t cookie_len;                  \
+}                                               \
+MPID_nem_pkt_lmt_rts_t;                         \
+                                                \
+typedef struct MPID_nem_pkt_lmt_cts             \
+{                                               \
+    MPIDI_CH3_Pkt_type_t type;                  \
+    MPI_Request sender_req_id;                  \
+    MPI_Request receiver_req_id;                \
+    MPIDI_msg_sz_t data_sz;                     \
+    MPIDI_msg_sz_t cookie_len;                  \
+}                                               \
+MPID_nem_pkt_lmt_cts_t;                         \
+                                                \
+typedef struct MPID_nem_pkt_lmt_done            \
+{                                               \
+    MPIDI_CH3_Pkt_type_t type;                  \
+    MPI_Request req_id;                         \
+}                                               \
+MPID_nem_pkt_lmt_done_t;                        \
+                                                \
+typedef struct MPID_nem_pkt_lmt_cookie          \
+{                                               \
+    MPIDI_CH3_Pkt_type_t type;                  \
+    MPI_Request req_id;                         \
+    MPIDI_msg_sz_t cookie_len;                  \
+}                                               \
+MPID_nem_pkt_lmt_cookie_t;
+
+
+#define MPIDI_CH3_PKT_DECL                      \
+MPID_nem_pkt_lmt_rts_t lmt_rts;                 \
+MPID_nem_pkt_lmt_cts_t lmt_cts;                 \
+MPID_nem_pkt_lmt_done_t lmt_done;               \
+MPID_nem_pkt_lmt_cookie_t lmt_cookie;
+
+
 struct MPID_nem_tcp_module_internal_queue;
+struct MPIDI_VC;
+struct MPID_Request;
+struct MPID_nem_copy_buf;
+
 typedef struct MPIDI_CH3I_VC
 {
     int pg_rank;
@@ -82,6 +136,19 @@ typedef struct MPIDI_CH3I_VC
     int node_id;
 
     enum {MPID_NEM_VC_STATE_CONNECTED, MPID_NEM_VC_STATE_DISCONNECTED} state;
+
+    /* LMT function pointers */
+    int (* lmt_pre_send)(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV *cookie);
+    int (* lmt_pre_recv)(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV s_cookie, MPID_IOV *r_cookie, int *send_cts);
+    int (* lmt_start_send)(struct MPIDI_VC *vc, struct MPID_Request *sreq, MPID_IOV r_cookie);
+    /*int (* lmt_start_recv)(struct MPIDI_VC *vc, struct MPID_Request *req);*/
+    int (* lmt_handle_cookie)(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV cookie);
+    int (* lmt_post_send)(struct MPIDI_VC *vc, struct MPID_Request *req);
+    int (* lmt_post_recv)(struct MPIDI_VC *vc, struct MPID_Request *req);
+
+    /* LMT shared memory copy-buffer ptr */
+    volatile struct MPID_nem_copy_buf *lmt_copy_buf;
+    char *lmt_copy_buf_handle;
 
 
 #if(MPID_NEM_NET_MODULE == MPID_NEM_ERROR_MODULE)
@@ -170,13 +237,19 @@ typedef struct MPIDI_CH3I_VC
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
  */
-#define MPIDI_CH3_REQUEST_DECL			\
-struct MPIDI_CH3I_Request			\
-{						\
-    MPIDI_VC_t *vc;				\
-    int iov_offset;				\
-    MPIDI_CH3_Pkt_t pkt;			\
-} ch;
+#define MPIDI_CH3_REQUEST_DECL                                                                                                  \
+    struct MPIDI_CH3I_Request                                                                                                   \
+    {                                                                                                                           \
+        MPIDI_VC_t          *vc;                                                                                                \
+        int                  iov_offset;                                                                                        \
+        MPIDI_CH3_Pkt_t      pkt;                                                                                               \
+                                                                                                                                \
+        MPI_Request          lmt_req_id;     /* request id of remote side */                                                    \
+        struct MPID_Request *lmt_req;        /* pointer to original send/recv request */                                        \
+        MPIDI_msg_sz_t       lmt_data_sz;    /* data size to be transferred, after checking for truncation */                   \
+        MPID_IOV             lmt_tmp_cookie; /* temporary storage for received cookie */                                        \
+        int                  lmt_buf_num;    /* current copy buffer number for shared memory lmt */                             \
+    } ch;
 
 #if 0
 #define DUMP_REQUEST(req) do {							\
@@ -230,6 +303,23 @@ MPIDI_CH3I_comm_t;
 
 #endif
 #define MPID_DEV_COMM_DECL MPIDI_CH3I_comm_t ch;
+
+/* override default rendezvous methods */
+#define MPIDI_CH3_RndvSend_fn MPID_nem_lmt_RndvSend
+#define MPIDI_CH3_RecvRndv_fn MPID_nem_lmt_RecvRndv
+
+/*
+ * MPID_Progress_state - device/channel dependent state to be passed between 
+ * MPID_Progress_{start,wait,end}
+ *
+ */
+typedef struct MPIDI_CH3I_Progress_state
+{
+    int completion_count;
+}
+MPIDI_CH3I_Progress_state;
+
+#define MPIDI_CH3_PROGRESS_STATE_DECL MPIDI_CH3I_Progress_state ch;
 
 #endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */
 

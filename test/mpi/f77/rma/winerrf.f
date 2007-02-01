@@ -79,6 +79,7 @@ C We can free our error handler now
        endif
 
        call mpi_win_free( win, ierr )
+       call mpi_comm_free( comm, ierr )
 C
 C Check error strings while here here...
        call mpi_error_string( newerrclass, errstring, rlen, ierr )

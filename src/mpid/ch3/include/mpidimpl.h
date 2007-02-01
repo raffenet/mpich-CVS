@@ -41,7 +41,6 @@ typedef struct MPIDI_Process
 {
     MPIDI_PG_t * my_pg;
     int my_pg_rank;
-    int lpid_counter;
 }
 MPIDI_Process_t;
 
@@ -1366,6 +1365,15 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_ptr, int pg_rank );
   A MPI error class.
 E*/
 int MPIDI_CH3_Finalize(void);
+
+/* If channel has not overridden rendezvous methods, provide default */
+
+#ifndef MPIDI_CH3_RndvSend_fn
+#define MPIDI_CH3_RndvSend_fn MPIDI_CH3_RndvSend
+#endif
+#ifndef MPIDI_CH3_RecvRndv_fn
+#define MPIDI_CH3_RecvRndv_fn MPIDI_CH3_RecvRndv
+#endif
 
 /* Routines in support of ch3 */
 

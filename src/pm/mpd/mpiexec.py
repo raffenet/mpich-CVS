@@ -455,13 +455,16 @@ def mpiexec():
                 outECs += 'jobid=%s\n' % (jobid.strip())
         # print 'mpiexec: job %s started' % (jobid)
         if parmdb['MPIEXEC_TOTALVIEW']:
-            if not mpd_which('totalview'):
+            tvname = 'totalview'
+            if os.environ.has_key('TOTALVIEW'):
+                tvname = os.environ['TOTALVIEW']
+            if not mpd_which(((tvname.strip()).split()[0])):
                 print 'cannot find "totalview" in your $PATH:'
                 print '    ', os.environ['PATH']
                 sys.exit(-1)
             import mtv
             tv_cmd = 'dattach python ' + `os.getpid()` + '; dgo; dassign MPIR_being_debugged 1'
-            os.system('totalview -e "%s" &' % (tv_cmd) )
+            os.system(tvname + ' -e "%s" &' % (tv_cmd) )
             mtv.wait_for_debugger()
             mtv.allocate_proctable(parmdb['nprocs'])
             # extract procinfo (rank,hostname,exec,pid) tuples from msg

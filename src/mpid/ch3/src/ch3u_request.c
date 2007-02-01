@@ -32,7 +32,7 @@ MPIU_Object_alloc_t MPID_Request_mem = {
 #define FUNCNAME MPID_Request_create
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-MPID_Request * MPID_Request_create()
+MPID_Request * MPID_Request_create(void)
 {
     MPID_Request * req;
     MPIDI_STATE_DECL(MPID_STATE_MPID_REQUEST_CREATE);

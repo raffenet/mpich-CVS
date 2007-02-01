@@ -1192,23 +1192,23 @@ typedef struct MPID_Comm {
     MPID_VCRT     local_vcrt;    /* local virtual connecton reference table */
     MPID_VCR *    local_vcr;     /* alias to the array of local virtual
 				    connections in local vcrt */
-    MPID_Attribute *attributes;    /* List of attributes */
+    MPID_Attribute *attributes;  /* List of attributes */
     int           local_size;    /* Value of MPI_Comm_size for local group */
     MPID_Group   *local_group,   /* Groups in communicator. */
                  *remote_group;  /* The local and remote groups are the
                                     same for intra communicators */
     MPID_Comm_kind_t comm_kind;  /* MPID_INTRACOMM or MPID_INTERCOMM */
     char          name[MPI_MAX_OBJECT_NAME];  /* Required for MPI-2 */
-    MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
+    MPID_Errhandler *errhandler; /* Pointer to the error handler structure */
     struct MPID_Comm    *local_comm; /* Defined only for intercomms, holds
 				        an intracomm for the local group */
-    int           is_low_group;   /* For intercomms only, this boolean is
-				     set for all members of one of the 
-				     two groups of processes and clear for 
-				     the other.  It enables certain
-				     intercommunicator collective operations
-				     that wish to use half-duplex operations
-				     to implement a full-duplex operation */
+    int           is_low_group;  /* For intercomms only, this boolean is
+				    set for all members of one of the 
+				    two groups of processes and clear for 
+				    the other.  It enables certain
+				    intercommunicator collective operations
+				    that wish to use half-duplex operations
+				    to implement a full-duplex operation */
     struct MPID_Comm     *comm_next;/* Provides a chain through all active 
 				       communicators */
     struct MPID_Collops  *coll_fns; /* Pointer to a table of functions 
@@ -1833,9 +1833,11 @@ extern MPICH_PerThread_t MPIR_Thread;
    This structure is allocated in src/mpi/init/initthread.c */
 extern MPICH_PerThread_t MPIR_ThreadSingle;
 
+/* We need to provide a function that will cleanup the storage attached
+   to the key.  */
 #define MPIU_THREADPRIV_INITKEY  \
     {if (MPIR_Process.isThreaded) {\
-    MPID_Thread_tls_create(NULL,&MPIR_Process.thread_storage,NULL);}}
+	    MPID_Thread_tls_create(MPIR_CleanupThreadStorage,&MPIR_Process.thread_storage,NULL);}}
 #define MPIU_THREADPRIV_INIT {if (MPIR_Process.isThreaded) {\
 	MPICH_PerThread_t *(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
 	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) (pt_)); \
@@ -1854,7 +1856,7 @@ extern MPICH_PerThread_t MPIR_ThreadSingle;
    in an invocation of a routine.  */
 
 #define MPIU_THREADPRIV_INITKEY  \
-    MPID_Thread_tls_create(NULL,&MPIR_Process.thread_storage,NULL)
+    MPID_Thread_tls_create(MPIR_CleanupThreadStorage,&MPIR_Process.thread_storage,NULL)
 #define MPIU_THREADPRIV_INIT {\
 	MPICH_PerThread_t *(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
 	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) (pt_)); \

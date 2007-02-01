@@ -37,6 +37,7 @@ int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     if (request_ptr) {
         mpi_errno = MPIC_Wait(request_ptr);
 	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	MPID_Request_release(request_ptr);
     }
  fn_exit:
     MPIDI_PT2PT_FUNC_EXIT(MPID_STATE_MPIC_SEND);
@@ -122,13 +123,7 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     
     mpi_errno = MPIC_Wait(recv_req_ptr);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	goto fn_exit;
-    }
-    /* --END ERROR HANDLING-- */
+    if (mpi_errno) { MPIU_ERR_POPFATAL(mpi_errno); }
     if (status != MPI_STATUS_IGNORE)
         *status = recv_req_ptr->status;
     mpi_errno = recv_req_ptr->status.MPI_ERROR;

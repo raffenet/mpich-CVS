@@ -15,7 +15,6 @@
 #include <errno.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
-#include "newtcp_module_queue.h"
 #include "socksm.h"
 
 /* globals */

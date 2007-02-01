@@ -21,7 +21,9 @@ int MPID_nem_finalize()
     
     mpi_errno = MPID_nem_net_module_finalize();
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-    mpi_errno = MPID_nem_detach_shared_memory (MPID_nem_mem_region.memory.base_addr, MPID_nem_mem_region.memory.max_size);    
+    
+    /* free the shared memory segment */
+    mpi_errno = MPID_nem_seg_destroy();
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
 #ifdef PAPI_MONITOR

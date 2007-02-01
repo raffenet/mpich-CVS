@@ -60,7 +60,13 @@ extern struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES];
 
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
-int MPIDI_CH3I_Progress_poke(void);
+
+int MPID_nem_lmt_shm_pre_send(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV *cookie);
+int MPID_nem_lmt_shm_pre_recv(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_cookie, MPID_IOV *r_cookie, int *send_cts);
+int MPID_nem_lmt_shm_start_send(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV r_cookie);
+int MPID_nem_lmt_shm_handle_cookie(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV cookie);
+int MPID_nem_lmt_shm_post_send(MPIDI_VC_t *vc, MPID_Request *req);
+int MPID_nem_lmt_shm_post_recv(MPIDI_VC_t *vc, MPID_Request *req);
 
 /* #define BYPASS_PROGRESS */
 

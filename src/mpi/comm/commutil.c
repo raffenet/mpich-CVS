@@ -456,8 +456,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
    Even better is to separate the local and remote context ids.  Then
    each group of processes can manage their context ids separately.
 */
-/* FIXME : This approach for intercomm context will not work for MPI-2
- *
+/* 
  * This uses the thread-safe (if necessary) routine to get a context id
  * and does not need its own thread-safe version.
  */
@@ -468,7 +467,7 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr, int *context_id, 
 				  int *recvcontext_id )
 {
-    int mycontext_id, remote_context_id, final_context_id;
+    int mycontext_id, remote_context_id;
     int mpi_errno = MPI_SUCCESS;
     int tag = 31567; /* FIXME  - we need an internal tag or 
 		        communication channel.  Can we use a different
@@ -501,40 +500,17 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr, int *context_id,
 	MPIC_Sendrecv( &mycontext_id, 1, MPI_INT, 0, tag,
 		       &remote_context_id, 1, MPI_INT, 0, tag, 
 		       comm_ptr->handle, MPI_STATUS_IGNORE );
-
-#if 0
-	/* FIXME : We need to do something with the context ids.  For 
-	   MPI1, we can just take the min of the two context ids and
-	   use that value.  For MPI2, we'll need to have separate
-	   send and receive context ids */
-	if (remote_context_id < context_id) 
-	    final_context_id = remote_context_id;
-	else 
-	    final_context_id = context_id;
-#else
-	final_context_id = remote_context_id;
-#endif
     }
 
     /* Make sure that all of the local processes now have this
        id */
     MPIR_Nest_incr();
-    NMPI_Bcast( &final_context_id, 1, MPI_INT, 
+    NMPI_Bcast( &remote_context_id, 1, MPI_INT, 
 		0, comm_ptr->local_comm->handle );
     MPIR_Nest_decr();
-#if 0
-    /* FIXME : If we did not choose this context, free it.  We won't do this
-       once we have MPI2 intercomms (at least, not for intercomms that
-       are not subsets of MPI_COMM_WORLD) */
-    if (final_context_id != context_id) {
-	/* printf( "freeind %d\n", context_id ); */
-	MPIR_Free_contextid( context_id );
-	/* printf( "Done with free\n" ); */
-    }
-#endif
-    /* printf( "intercomm context = %d\n", final_context_id ); */
+    /* printf( "intercomm context = %d\n", remote_context_id ); */
 
-    *context_id = final_context_id;
+    *context_id     = remote_context_id;
     *recvcontext_id = mycontext_id;
  fn_fail:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPIR_GET_INTERCOMM_CONTEXTID);

@@ -100,6 +100,7 @@ C We can free our error handler now
        endif
 
        call mpi_file_close( file, ierr )
+       call mpi_comm_free( comm, ierr )
        call mpi_file_delete( "testfile.txt", MPI_INFO_NULL, ierr )
 C
 C Check error strings while here here...

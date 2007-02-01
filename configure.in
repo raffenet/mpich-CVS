@@ -128,6 +128,18 @@ if test -s "$srcdir/maint/Version" ; then
 else
     VERSION="1.0.5"
 fi
+# Produce a numeric version assuming that the version is of the form
+# x.yy.zz, prefixing zeros for single digit verison numbers
+changequote(<<,>>)
+V1=`expr $VERSION : '\([0-9]*\)\..*'`
+V2=`expr $VERSION : '[0-9]*\.\([0-9]*\)\..*'`
+V3=`expr $VERSION : '[0-9]*\.[0-9]*\.\([0-9]*\)'`
+changequote([,])
+#
+if test "$V2" -lt 9 ; then V2=0$V2 ; fi
+if test "$V3" -lt 9 ; then V3=0$V3 ; fi
+NUMVERSION=$V1$V2$V3
+AC_SUBST(NUMVERSION)
 dnl if test "$VERSION" != "$PACKAGE_VERSION" ; then
 dnl     AC_MSG_WARN([PACKAGE_VERSION = $PACKAGE_VERSION but VERSION = $VERSION])
 dnl fi
@@ -430,7 +442,11 @@ esac
 export device_name
 export device_args
 export devicedir
-
+# Make the device base name and args available to generated files
+DEVICE_NAME=$device_name
+AC_SUBST(DEVICE_NAME)
+DEVICE_ARGS=$device_args
+AC_SUBST(DEVICE_ARGS)
 #
 # Give the device an opportunity to include a header file in mpi.h.  The
 # default value of INCLUDE_MPIDDEFS_H is set prior to the inclusion of the
@@ -2425,6 +2441,17 @@ Fortran (the Fortran standard requires it).
 You may need to specify an additional argument to your C compiler to 
 force it to allow unaligned accesses.)])
 fi
+# Check for __func__ (defined in C99) or __FUNCTION__ (defined in older GCC)
+AC_CACHE_CHECK([whether $CC supports __func__],pac_cv_cc_has___func__,
+[AC_TRY_COMPILE([],
+ [const char *cp = __func__; ],pac_cv_cc_has___func__=yes,
+pac_cv_cc_has___func__=no)])
+if test "$pac_cv_cc_has___func__" != "yes" ; then
+    AC_CACHE_CHECK([whether $CC supports __FUNCTION__],pac_cv_cc_has___FUNCTION__,
+[AC_TRY_COMPILE([],
+ [const char *cp = __FUNCTION__;],pac_cv_cc_has___FUNCTION__=yes,
+pac_cv_cc_has___FUNCTION__=no)])
+fi
 
 # ----------------------------------------------------------------------------
 # Attempt to support dependency handling
@@ -4153,7 +4180,9 @@ AC_CHECK_FUNCS(setitimer alarm)
 # These are used for error reporting
 AC_CHECK_FUNCS(vsnprintf vsprintf)
 if test "$ac_cv_func_vsnprintf" = "yes" ; then
-    PAC_FUNC_NEEDS_DECL([#include <stdarg.h>],vsnprintf)
+    # vsnprintf may be declared in stdio.h and may need stdarg.h 
+    PAC_FUNC_NEEDS_DECL([#include <stdio.h>
+#include <stdarg.h>],vsnprintf)
 fi
 # We would like to use strerror in the file namepublisher; it is also used
 # in MPIU_Strerror (whose implementation is broken if strerror is not found)
@@ -4579,6 +4608,7 @@ if test "$with_thread_package" = "yes" ; then
     with_thread_package=posix
 fi
 
+MPICH2_THREAD_PACKAGE=none
 case $with_thread_package in 
     posix|pthreads)
 	with_thread_package=posix
@@ -4623,7 +4653,31 @@ int main() {
             fi
 	fi
 	fi
+	# Check for a routine that specify a routine to call on 
+	# thread exit.  We can use this to release memory that may
+	# be allocated by the MPICH2 library in the thread.  
+	# A complication: pthread_cleanup_push may be a macro; in that
+	# case, check_funcs will fail to find it.
+	# Under OSX, pthread_cleanup_push and pop are macros that must
+	# appear together in the same lexical scope, and hence are
+	# really useless in libraries that may allocate data within 
+	# a user-managed thread.
+	AC_CHECK_FUNCS(pthread_cleanup_push)
+	if test "$ac_cv_func_pthread_cleanup_push" = "no" ; then
+            AC_CACHE_CHECK([whether pthread_cleanup_push is available (may be a macro in pthread.h)],pac_cv_func_pthread_cleanup_push,[
+	    AC_TRY_LINK([
+#include <pthread.h>
+void f1(void *a) { return; }],
+[pthread_cleanup_push( f1, (void *)0 );],
+            pac_cv_func_pthread_cleanup_push=yes,
+            pac_cv_func_pthread_cleanup_push=no)])
+            if test "$pac_cv_func_pthread_cleanup_push" = yes ; then
+	        AC_DEFINE(HAVE_PTHREAD_CLEANUP_PUSH_MACRO,1,[Define if pthread_cleanup_push is available, even as a macro])
+            fi
+    
+        fi
 	THR_LIBS="$THR_LIBS -lpthread"
+	MPICH2_THREAD_PACKAGE=pthreads
 	;;
     solaris)
 	AC_CHECK_HEADERS(thread.h)
@@ -4633,6 +4687,7 @@ int main() {
 	   AC_MSG_ERROR([unable to find Solaris threads library])
 	fi
 	# FIXME: need to add -mt if using solaris compilers
+	MPICH2_THREAD_PACKAGE=solaris
 	;;
     no|none)
 	with_thread_package=none
@@ -4641,6 +4696,10 @@ int main() {
 	AC_MSG_ERROR([The specified thread package, $with_thread_package, is not supported.]) 
 	;;
 esac
+
+# Define and export the selected thread library so that other packages, 
+# such as MPE, will know what's used in MPICH2
+export MPICH2_THREAD_PACKAGE
 
 AC_CHECK_FUNCS(sched_yield yield usleep sleep select)
 
@@ -5261,6 +5320,9 @@ AC_SUBST(MPIF90)
 
 AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h file has been included])
 
+dnl
+dnl This includes an experimental pkgconfig file for ch3 in the src/pkgconfig
+dnl directory
 AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
           src/include/mpichtimer.h \
           src/binding/Makefile \
@@ -5271,6 +5333,8 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/binding/f77/setbotf.f \
 	  src/binding/f90/Makefile \
 	  src/binding/f90/mpi_sizeofs.f90 \
+	  src/pkgconfig/mpich2-ch3.pc \
+	  src/pkgconfig/Makefile \
           src/env/mpicc \
 	  src/env/mpicc.conf \
 	  src/env/mpicc.bash \

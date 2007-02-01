@@ -229,8 +229,6 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
    pointer as part of the channel init setup, particularly since this
    function appears to access channel-specific storage (MPIDI_CH3_Process) */
 
-/* FIXME: We need a finalize handler to perform MPIU_Free(parent_port_name)
-   if it is allocated */
 
 /* This function is used only with mpid_init to set up the parent communicator
    if there is one.  The routine should be in this file because the parent 
@@ -271,5 +269,11 @@ int MPIDI_CH3_Get_parent_port(char ** parent_port)
  fn_fail:
     goto fn_exit;
 }
-
+void MPIDI_CH3_FreeParentPort(void)
+{
+    if (parent_port_name) {
+	MPIU_Free( parent_port_name );
+	parent_port_name = 0;
+    }
+}
 #endif

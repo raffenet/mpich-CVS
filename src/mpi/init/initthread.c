@@ -92,6 +92,18 @@ MPICH_PerThread_t  MPIR_Thread = { 0 };
 MPICH_PerThread_t  MPIR_ThreadSingle = { 0 };
 #endif
 
+#if defined(MPICH_IS_THREADED)
+/* This routine is called when a thread exits; it is passed the value 
+   associated with the key.  In our case, this is simply storage allocated
+   with MPIU_Calloc */
+void MPIR_CleanupThreadStorage( void *a )
+{
+    if (a != 0) {
+	MPIU_Free( a );
+    }
+}
+#endif /* MPICH_IS_THREADED */
+
 
 int MPIR_Init_thread(int * argc, char ***argv, int required,
 		     int * provided)
@@ -244,7 +256,9 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, "MPIR_Init_thread", __LINE__, MPI_ERR_OTHER, "**init", 0);
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, 
+			   "MPIR_Init_thread", __LINE__, MPI_ERR_OTHER, 
+			   "**init", 0);
 	/* FIXME: the default behavior for all MPI routines is to abort.  
 	   This isn't always convenient, because there's no other way to 
 	   get this routine to simply return.  But we should provide some
@@ -261,13 +275,6 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 #ifdef HAVE_RUNTIME_THREADCHECK
     MPIR_Process.isThreaded = required == MPI_THREAD_MULTIPLE;
     if (provided) *provided = required;
-#if 0
-    /* Preallocated MPIR_Thread if we're single-threaded */
-    if (provided < MPI_THREAD_MULTIPLE) {
-	MPIR_Thread = (MPICH_PerThread_t *) 
-	    MPIU_Calloc(1, sizeof(MPICH_PerThread_t));
-    }
-#endif
 #endif
 
     /* FIXME: Define these in the interface.  Does Timer init belong here? */

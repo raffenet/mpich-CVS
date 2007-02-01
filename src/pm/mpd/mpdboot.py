@@ -371,7 +371,7 @@ def handle_mpd_output(fd,fd2idx,hostsAndInfo):
             tempSock.send_dict_msg(msgToSend)
             msg = tempSock.recv_dict_msg()    # RMB: WITH TIMEOUT ??
             if not msg  or  not msg.has_key('cmd')  or  msg['cmd'] != 'challenge':
-                mpd_print(1,'failed to ping mpd on %s; recvd output=%s' % \
+                mpd_print(1,'failed to handshake with mpd on %s; recvd output=%s' % \
                           (host,msg) )
                 tempOut = tempSock.recv(1000)
                 print tempOut

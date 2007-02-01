@@ -6,6 +6,13 @@
 
 #include "tcp_module_impl.h"
 
+static int getSockInterfaceAddr( int myRank, char *ifname, int maxIfname);
+/* We set dbg_ifname to 1 to help debug the choice of interface name
+   used when determining which interface to advertise to other
+   processes in getSockInterfaceAddr.
+ */
+static int dbg_ifname = 0;
+
 static MPID_nem_queue_t _free_queue;
 
 MPID_nem_queue_ptr_t MPID_nem_module_tcp_free_queue = 0;
@@ -52,7 +59,7 @@ static int init_tcp (MPIDI_PG_t *pg_p)
 	{
 	    struct sockaddr_in temp;
 	    char               s[255];
-	    int                len2 = 255;
+	    const int          len2 = 255;
             int                low_port, high_port;
             
 	    nodes[grank].desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -97,8 +104,8 @@ static int init_tcp (MPIDI_PG_t *pg_p)
             MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**listen", "**listen %s %d", strerror (errno), errno);
 	  
 	    /* Put the key (machine name, port #, src , dest) with PMI */
-	    ret = gethostname(s, len2);
-            MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock_gethost", "**sock_gethost %s %d", strerror (errno), errno);
+            mpi_errno = getSockInterfaceAddr(MPID_nem_mem_region.rank, s, len2);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 #ifdef TRACE
 	    fprintf(stderr,"[%i] ID :  %s_%d_%d_%d \n",MPID_nem_mem_region.rank,s,
 		    ntohs(nodes[grank].sock_id.sin_port),grank,MPID_nem_mem_region.rank);
@@ -422,6 +429,63 @@ MPID_nem_tcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 int MPID_nem_tcp_module_vc_terminate (MPIDI_VC_t *vc)
 {
     return MPI_SUCCESS;
+}
+
+#undef FUNCNAME
+#define FUNCNAME getSockInterfaceAddr
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int getSockInterfaceAddr( int myRank, char *ifname, int maxIfname)
+{
+    char *ifname_string;
+    int mpi_errno = MPI_SUCCESS;
+
+    /* Check for the name supplied through an environment variable */
+    ifname_string = getenv("MPICH_INTERFACE_HOSTNAME");
+    if (!ifname_string) {
+	/* See if there is a per-process name for the interfaces (e.g.,
+	   the process manager only delievers the same values for the 
+	   environment to each process */
+	char namebuf[1024];
+	MPIU_Snprintf( namebuf, sizeof(namebuf), 
+		       "MPICH_INTERFACE_HOSTNAME_R%d", myRank );
+	ifname_string = getenv( namebuf );
+	if (dbg_ifname && ifname_string) {
+	    fprintf( stdout, "Found interface name %s from %s\n", 
+		    ifname_string, namebuf );
+	    fflush( stdout );
+	}
+    }
+    else if (dbg_ifname) {
+	fprintf( stdout, 
+		 "Found interface name %s from MPICH_INTERFACE_HOSTNAME\n", 
+		 ifname_string );
+	fflush( stdout );
+    }
+	 
+    if (!ifname_string) {
+	int len;
+
+	/* If we have nothing, then use the host name */
+	mpi_errno = MPID_Get_processor_name(ifname, maxIfname, &len );
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        
+	ifname_string = ifname;
+
+	/* If we didn't find a specific name, then try to get an IP address
+	   directly from the available interfaces, if that is supported on
+	   this platform.  Otherwise, we'll drop into the next step that uses 
+	   the ifname */
+    }
+    else {
+	/* Copy this name into the output name */
+	MPIU_Strncpy( ifname, ifname_string, maxIfname );
+    }
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 
