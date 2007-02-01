@@ -101,10 +101,14 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	    MPID_Dataloop_dup(old_dtp->dataloop,
 			      old_dtp->dataloop_size,
 			      &new_dtp->dataloop);
-	    MPIU_Assert(old_dtp->hetero_dloop != NULL);
-	    MPID_Dataloop_dup(old_dtp->hetero_dloop,
-			      old_dtp->hetero_dloop_size,
-			      &new_dtp->hetero_dloop);
+	    if (old_dtp->hetero_dloop != NULL) {
+		/* at this time MPI_COMPLEX doesn't have this loop...
+		 * -- RBR, 02/01/2007
+		 */
+		MPID_Dataloop_dup(old_dtp->hetero_dloop,
+				  old_dtp->hetero_dloop_size,
+				  &new_dtp->hetero_dloop);
+	    }
 	}
     }
 
