@@ -58,6 +58,11 @@ void MPIDI_Dataloop_dot_printf(MPID_Dataloop *loop_p,
 {
     int i;
 
+    if (loop_p == NULL) {
+	MPIU_DBG_OUT_FMT(DATATYPE,(MPIU_DBG_FDEST,"<null dataloop>\n"));
+	return;
+    }
+
     if (header) {
 	MPIU_DBG_OUT_FMT(DATATYPE,(MPIU_DBG_FDEST,
 				   "digraph %p {   {", loop_p));

@@ -38,20 +38,21 @@ static inline void DLOOP_Stackelm_load(struct DLOOP_Dataloop_stackelm *elmp,
  * count  - number of instances of the datatype in the buffer
  * handle - handle for datatype (could be derived or not)
  * segp   - pointer to previously allocated segment structure
- * hetero - boolean indicating if we should use an alternative dataloop
+ * flag   - flag indicating which optimizations are valid
+ *          should be one of DLOOP_DATALOOP_HOMOGENEOUS, _HETEROGENEOUS,
+ *          of _ALL_BYTES.
  *
  * Notes:
- * Assumes that the segment has been allocated.
- *
- * I'm not completely satisfied with the "hetero" flag, but it will do for
- * the moment -- RobR.
+ * - Assumes that the segment has been allocated.
+ * - Older MPICH2 code may pass "0" to indicate HETEROGENEOUS or "1" to
+ *   indicate HETEROGENEOUS.
  *
  */
 int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 DLOOP_Count count,
 				 DLOOP_Handle handle, 
 				 struct DLOOP_Segment *segp,
-				 int hetero)
+				 int flag)
 {
     int i, elmsize = 0, depth = 0;
     int branch_detected = 0;
@@ -59,6 +60,10 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     struct DLOOP_Dataloop_stackelm *elmp;
     struct DLOOP_Dataloop *dlp = 0, *sblp = &segp->builtin_loop;
     
+    DLOOP_Assert(flag == DLOOP_DATALOOP_HETEROGENEOUS ||
+		 flag == DLOOP_DATALOOP_HOMOGENEOUS   ||
+		 flag == DLOOP_DATALOOP_ALL_BYTES);
+
 #ifdef DLOOP_DEBUG_MANIPULATE
     DLOOP_dbg_printf("DLOOP_Segment_init: count = %d, buf = %x\n",
 		    count,
@@ -93,8 +98,8 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
     }
     else if (count == 1) {
 	/* don't use the builtin */
-	DLOOP_Handle_get_loopptr_macro(handle, dlp, hetero);
-	DLOOP_Handle_get_loopdepth_macro(handle, depth, hetero);
+	DLOOP_Handle_get_loopptr_macro(handle, dlp, flag);
+	DLOOP_Handle_get_loopdepth_macro(handle, depth, flag);
     }
     else {
 	/* default: need to use builtin to handle contig; must check
@@ -104,10 +109,10 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	DLOOP_Offset type_size, type_extent;
 	DLOOP_Type el_type;
 	
-	DLOOP_Handle_get_loopdepth_macro(handle, depth, hetero);
+	DLOOP_Handle_get_loopdepth_macro(handle, depth, flag);
 	if (depth >= DLOOP_MAX_DATATYPE_DEPTH) return -1;
 
-	DLOOP_Handle_get_loopptr_macro(handle, oldloop, hetero);
+	DLOOP_Handle_get_loopptr_macro(handle, oldloop, flag);
 	DLOOP_Handle_get_size_macro(handle, type_size);
 	DLOOP_Handle_get_extent_macro(handle, type_extent);
         DLOOP_Handle_get_basic_type_macro(handle, el_type);

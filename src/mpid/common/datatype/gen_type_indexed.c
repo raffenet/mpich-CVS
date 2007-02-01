@@ -5,15 +5,14 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include <mpiimpl.h>
 #include <mpid_dataloop.h>
 #include <stdlib.h>
 
-int MPIDI_Type_indexed_count_contig(int count,
-				    int *blocklength_array,
-				    void *displacement_array,
-				    int dispinbytes,
-				    MPI_Aint old_extent);
+static int DLOOP_Type_indexed_count_contig(int count,
+					   int *blocklength_array,
+					   void *displacement_array,
+					   int dispinbytes,
+					   MPI_Aint old_extent);
 
 static void DLOOP_Type_indexed_array_copy(int count,
 					  int contig_count,
@@ -36,7 +35,7 @@ static void DLOOP_Type_indexed_array_copy(int count,
 .  DLOOP_Dataloop **dlp_p
 .  int *dlsz_p
 .  int *dldepth_p
--  int flags
+-  int flag
 
 .N Errors
 .N Returns 0 on success, -1 on error.
@@ -50,7 +49,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 					    DLOOP_Dataloop **dlp_p,
 					    int *dlsz_p,
 					    int *dldepth_p,
-					    int flags)
+					    int flag)
 {
     int err, is_builtin;
     int i, new_loop_sz, old_loop_depth, blksz;
@@ -68,7 +67,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -82,7 +81,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
     else
     {
 	DLOOP_Handle_get_extent_macro(oldtype, old_extent);
-	DLOOP_Handle_get_loopdepth_macro(oldtype, old_loop_depth, 0);
+	DLOOP_Handle_get_loopdepth_macro(oldtype, old_loop_depth, flag);
     }
 
     for (i=0; i < count; i++)
@@ -91,7 +90,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
     }
 
     /* TODO: WHAT DO WE DO ABOUT THIS? */
-    contig_count = MPIDI_Type_indexed_count_contig(count,
+    contig_count = DLOOP_Type_indexed_count_contig(count,
 						   blocklength_array,
 						   displacement_array,
 						   dispinbytes,
@@ -105,7 +104,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -123,7 +122,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 							 dlp_p,
 							 dlsz_p,
 							 dldepth_p,
-							 flags);
+							 flag);
 	return err;
     }
 
@@ -143,7 +142,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 							   dlp_p,
 							   dlsz_p,
 							   dldepth_p,
-							   flags);
+							   flag);
 
 	return err;
     }
@@ -172,7 +171,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 							   dlp_p,
 							   dlsz_p,
 							   dldepth_p,
-							   flags);
+							   flag);
 
 	return err;
     }
@@ -199,7 +198,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 
 	new_dlp->kind = DLOOP_KIND_INDEXED | DLOOP_FINAL_MASK;
 
-	if (flags & MPID_DATALOOP_ALL_BYTES)
+	if (flag == DLOOP_DATALOOP_ALL_BYTES)
 	{
 	    /* blocklengths are modified below */
 	    new_dlp->el_size   = 1;
@@ -218,8 +217,8 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 	DLOOP_Dataloop *old_loop_ptr = NULL;
 	int old_loop_sz = 0;
 
-	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
-	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
+	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, flag);
+	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, flag);
 
 	PREPEND_PREFIX(Dataloop_alloc_and_copy)(DLOOP_KIND_INDEXED,
 						contig_count,
@@ -254,7 +253,7 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
 				  dispinbytes,
 				  old_extent);
 
-    if (is_builtin && (flags & MPID_DATALOOP_ALL_BYTES))
+    if (is_builtin && (flag == DLOOP_DATALOOP_ALL_BYTES))
     {
 	int *tmp_blklen_array = new_dlp->loop_params.i_t.blocksize_array;
 
@@ -352,4 +351,71 @@ static void DLOOP_Type_indexed_array_copy(int count,
 	}
     }
     return;
+}
+
+/* DLOOP_Type_indexed_count_contig()
+ *
+ * Determines the actual number of contiguous blocks represented by the
+ * blocklength/displacement arrays.  This might be less than count (as
+ * few as 1).
+ *
+ * Extent passed in is for the original type.
+ */
+static int DLOOP_Type_indexed_count_contig(int count,
+					   int *blocklength_array,
+					   void *displacement_array,
+					   int dispinbytes,
+					   MPI_Aint old_extent)
+{
+    int i, contig_count = 1;
+    int cur_blklen = blocklength_array[0];
+
+    if (!dispinbytes)
+    {
+	int cur_tdisp = ((int *) displacement_array)[0];
+	
+	for (i = 1; i < count; i++)
+	{
+	    if (blocklength_array[i] == 0)
+	    {
+		continue;
+	    }
+	    else if (cur_tdisp + cur_blklen == ((int *) displacement_array)[i])
+	    {
+		/* adjacent to current block; add to block */
+		cur_blklen += blocklength_array[i];
+	    }
+	    else
+	    {
+		cur_tdisp  = ((int *) displacement_array)[i];
+		cur_blklen = blocklength_array[i];
+		contig_count++;
+	    }
+	}
+    }
+    else
+    {
+	MPI_Aint cur_bdisp = ((MPI_Aint *) displacement_array)[0];
+	
+	for (i = 1; i < count; i++)
+	{
+	    if (blocklength_array[i] == 0)
+	    {
+		continue;
+	    }
+	    else if (cur_bdisp + cur_blklen * old_extent ==
+		     ((MPI_Aint *) displacement_array)[i])
+	    {
+		/* adjacent to current block; add to block */
+		cur_blklen += blocklength_array[i];
+	    }
+	    else
+	    {
+		cur_bdisp  = ((MPI_Aint *) displacement_array)[i];
+		cur_blklen = blocklength_array[i];
+		contig_count++;
+	    }
+	}
+    }
+    return contig_count;
 }

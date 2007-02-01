@@ -44,6 +44,18 @@
 #define DLOOP_Segment               PREPEND_PREFIX(Segment)
 #define DLOOP_Dataloop_stackelm     PREPEND_PREFIX(Dataloop_stackelm)
 
+/* These flags are used at creation time to specify what types of
+ * optimizations may be applied. They are also passed in at Segment_init
+ * time to specify which dataloop to use.
+ *
+ * Note: The flag to MPID_Segment_init() was originally simply "hetero"
+ * and was a boolean value (0 meaning homogeneous). Some MPICH2 code
+ * may still rely on HOMOGENEOUS being "0" and HETEROGENEOUS being "1".
+ */
+#define DLOOP_DATALOOP_HOMOGENEOUS   0
+#define DLOOP_DATALOOP_HETEROGENEOUS 1
+#define DLOOP_DATALOOP_ALL_BYTES     2
+
 /* NOTE: ASSUMING LAST TYPE IS SIGNED */
 #define SEGMENT_IGNORE_LAST ((DLOOP_Offset) -1)
 /*
@@ -272,8 +284,6 @@ typedef struct DLOOP_Dataloop_stackelm {
     struct DLOOP_Dataloop *loop_p;
 } DLOOP_Dataloop_stackelm;
 
-
-
 /*S
   DLOOP_Segment - Description of the Segment datatype
 
@@ -354,40 +364,41 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 struct DLOOP_Segment *segp,
 				 int hetero);
 
-void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
-					DLOOP_Offset first, 
-					DLOOP_Offset *lastp, 
-					int (*piecefn) (DLOOP_Offset *blocks_p,
-							DLOOP_Type el_type,
-							DLOOP_Offset rel_off,
-							void *bufp,
-							void *v_paramp),
-					int (*vectorfn) (DLOOP_Offset *blocks_p,
-							 int count,
-							 int blklen,
-							 DLOOP_Offset stride,
-							 DLOOP_Type el_type,
-							 DLOOP_Offset rel_off,
-							 void *bufp,
-							 void *v_paramp),
-					int (*blkidxfn) (DLOOP_Offset *blocks_p,
-							 int count,
-							 int blklen,
-							 DLOOP_Offset *offsetarray,
-							 DLOOP_Type el_type,
-							 DLOOP_Offset rel_off,
-							 void *bufp,
-							 void *v_paramp),
-					int (*indexfn) (DLOOP_Offset *blocks_p,
-							int count,
-							int *blockarray,
-							DLOOP_Offset *offsetarray,
-							DLOOP_Type el_type,
-							DLOOP_Offset rel_off,
-							void *bufp,
-							void *v_paramp),
-					DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
-					void *pieceparams);
+void
+PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
+				   DLOOP_Offset first, 
+				   DLOOP_Offset *lastp, 
+				   int (*piecefn) (DLOOP_Offset *blocks_p,
+						   DLOOP_Type el_type,
+						   DLOOP_Offset rel_off,
+						   void *bufp,
+						   void *v_paramp),
+				   int (*vectorfn) (DLOOP_Offset *blocks_p,
+						    int count,
+						    int blklen,
+						    DLOOP_Offset stride,
+						    DLOOP_Type el_type,
+						    DLOOP_Offset rel_off,
+						    void *bufp,
+						    void *v_paramp),
+				   int (*blkidxfn) (DLOOP_Offset *blocks_p,
+						    int count,
+						    int blklen,
+						    DLOOP_Offset *offsetarray,
+						    DLOOP_Type el_type,
+						    DLOOP_Offset rel_off,
+						    void *bufp,
+						    void *v_paramp),
+				   int (*indexfn) (DLOOP_Offset *blocks_p,
+						   int count,
+						   int *blockarray,
+						   DLOOP_Offset *offsetarray,
+						   DLOOP_Type el_type,
+						   DLOOP_Offset rel_off,
+						   void *bufp,
+						   void *v_paramp),
+				   DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
+				   void *pieceparams);
 
 #endif
 

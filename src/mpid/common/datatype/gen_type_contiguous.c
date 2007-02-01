@@ -6,7 +6,6 @@
  */
 
 #include <mpid_dataloop.h>
-#include <mpiimpl.h>
 
 /*@
    Dataloop_contiguous - create the dataloop representation for a
@@ -15,10 +14,10 @@
    Arguments:
 +  int count,
 .  MPI_Datatype oldtype,
-.  MPID_Dataloop **dlp_p,
+.  DLOOP_Dataloop **dlp_p,
 .  int *dlsz_p,
 .  int *dldepth_p,
--  int flags
+-  int flag
 
 .N Errors
 .N Returns 0 on success, -1 on failure.
@@ -28,7 +27,7 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 					       DLOOP_Dataloop **dlp_p,
 					       int *dlsz_p,
 					       int *dldepth_p,
-					       int flags)
+					       int flag)
 {
     int is_builtin, apply_contig_coalescing = 0;
     int new_loop_sz, new_loop_depth;
@@ -47,9 +46,9 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 	DLOOP_Offset old_extent = 0;
 	DLOOP_Dataloop *old_loop_ptr;
 
-	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
-	DLOOP_Handle_get_loopdepth_macro(oldtype, old_loop_depth, 0);
-	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
+	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, flag);
+	DLOOP_Handle_get_loopdepth_macro(oldtype, old_loop_depth, flag);
+	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, flag);
 	DLOOP_Handle_get_size_macro(oldtype, old_size);
 	DLOOP_Handle_get_extent_macro(oldtype, old_extent);
 
@@ -82,7 +81,7 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 	DLOOP_Handle_get_size_macro(oldtype, basic_sz);
 	new_dlp->kind = DLOOP_KIND_CONTIG | DLOOP_FINAL_MASK;
 
-	if (flags & MPID_DATALOOP_ALL_BYTES)
+	if (flag == DLOOP_DATALOOP_ALL_BYTES)
 	{
 	    count             *= basic_sz;
 	    new_dlp->el_size   = 1;
@@ -104,8 +103,8 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 	DLOOP_Dataloop *old_loop_ptr;
 	int old_loop_sz = 0;
 
-	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
-	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
+	DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, flag);
+	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, flag);
 
 	if (apply_contig_coalescing)
 	{
@@ -120,15 +119,15 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 	    new_dlp->loop_params.c_t.count *= count;
 
 	    new_loop_sz = old_loop_sz;
-	    DLOOP_Handle_get_loopdepth_macro(oldtype, new_loop_depth, 0);
+	    DLOOP_Handle_get_loopdepth_macro(oldtype, new_loop_depth, flag);
 	}
 	else
 	{
 	    DLOOP_Dataloop *old_loop_ptr;
 	    int old_loop_sz = 0;
 
-	    DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, 0);
-	    DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, 0);
+	    DLOOP_Handle_get_loopptr_macro(oldtype, old_loop_ptr, flag);
+	    DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, flag);
 
 	    /* allocate space for new loop including copy of old */
 	    PREPEND_PREFIX(Dataloop_alloc_and_copy)(DLOOP_KIND_CONTIG,
