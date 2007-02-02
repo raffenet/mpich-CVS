@@ -175,9 +175,9 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
 					MPID_DATALOOP_HOMOGENEOUS);
     if (!err) {
 	err = MPID_Dataloop_create_pairtype(type,
-					    &(new_dtp->dataloop),
-					    &(new_dtp->dataloop_size),
-					    &(new_dtp->dataloop_depth),
+					    &(new_dtp->hetero_dloop),
+					    &(new_dtp->hetero_dloop_size),
+					    &(new_dtp->hetero_dloop_depth),
 					    MPID_DATALOOP_HETEROGENEOUS);
     }
 
