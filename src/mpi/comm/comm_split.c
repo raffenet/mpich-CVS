@@ -103,7 +103,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     int       rank, size, remote_size, i, new_size, new_remote_size, 
 	first_entry = 0, first_remote_entry = 0,
 	*last_ptr;
-    int       new_context_id;
+    int       new_context_id, remote_context_id;
     MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(4);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPLIT);
@@ -157,6 +157,8 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     
     MPIU_THREADPRIV_GET;
 
+    /* Get the communicator to use in collectives on the local group of 
+       processes */
     if (comm_ptr->comm_kind == MPID_INTERCOMM) {
 	if (!comm_ptr->local_comm) {
 	    MPIR_Setup_intercomm_localcomm( comm_ptr );
@@ -191,13 +193,14 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	    }
 	}
     }
-
     /* We don't need to set the last value to -1 because we loop through
        the list for only the known size of the group */
+
     /* If we're an intercomm, we need to do the same thing for the remote
        table, as we need to know the size of the remote group of the
        same color before deciding to create the communicator */
     if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+	splittype mypair;
 	/* For the remote group, the situation is more complicated.
 	   We need to find the size of our "partner" group in the
 	   remote comm.  The easiest way (in terms of code) is for
@@ -210,7 +213,13 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 			    "remotetable");
 	MPIR_Nest_incr();
 	/* This is an intercommunicator allgather */
-	NMPI_Allgather( &table[rank], 2, MPI_INT, remotetable, 2, MPI_INT,
+	
+	/* We must use a local splittype because we've already modified the
+	   entries in table to indicate the location of the next rank of the
+	   same color */
+	mypair.color = color;
+	mypair.key   = key;
+	NMPI_Allgather( &mypair, 2, MPI_INT, remotetable, 2, MPI_INT,
 			comm );
 	MPIR_Nest_decr();
 
@@ -227,6 +236,15 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 		last_ptr  = &remotetable[i].color;
 	    }
 	}
+	/* Note that it might find that there a now processes in the remote
+	   group with the same color.  In that case, COMM_SPLIT will
+	   return a null communicator */
+    }
+    else {
+	/* Set the size of the remote group to the size of our group.
+	   This simplifies the test below for intercomms with an empty remote
+	   group (must create comm_null) */
+	new_remote_size = new_size;
     }
 
     /* Step 3: Create the communicator */
@@ -239,9 +257,24 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     new_context_id = MPIR_Get_contextid( local_comm_ptr );
     MPIU_ERR_CHKANDJUMP(new_context_id == 0, mpi_errno, MPI_ERR_OTHER, 
 			"**toomanycomm" );
-    
+
+    /* In the intercomm case, we need to exchange the context ids */
+    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+	if (comm_ptr->rank == 0) {
+	    mpi_errno = MPIC_Sendrecv( &new_context_id, 1, MPI_INT, 0, 0,
+				       &remote_context_id, 1, MPI_INT, 
+				       0, 0, comm, MPI_STATUS_IGNORE );
+	    if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
+	    NMPI_Bcast( &remote_context_id, 1, MPI_INT, 0, local_comm );
+	}
+	else {
+	    /* Broadcast to the other members of the local group */
+	    NMPI_Bcast( &remote_context_id, 1, MPI_INT, 0, local_comm );
+	}
+    }
+
     /* Now, create the new communicator structure if necessary */
-    if (color != MPI_UNDEFINED) {
+    if (color != MPI_UNDEFINED && new_remote_size > 0) {
     
 	mpi_errno = MPIR_Comm_create( &newcomm_ptr );
 	if (mpi_errno) goto fn_fail;
@@ -269,8 +302,6 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	MPIU_Sort_inttable( keytable, new_size );
 
 	if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-	    int remote_context_id;
-
 	    MPIU_CHKLMEM_MALLOC(remotekeytable,splittype*,
 				new_remote_size*sizeof(splittype),
 				mpi_errno,"remote keytable");
@@ -311,27 +342,14 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	       with an empty remote group. */
 
 	    MPID_VCRT_Create( new_remote_size, &newcomm_ptr->vcrt );
-	    MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, 
-			       &newcomm_ptr->vcr );
+	    MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, &newcomm_ptr->vcr );
 	    for (i=0; i<new_remote_size; i++) {
 		MPID_VCR_Dup( comm_ptr->vcr[remotekeytable[i].color], 
 			      &newcomm_ptr->vcr[i] );
 	    }
 
-	    /* As the final step, we exchange the context ids */
-	    if (comm_ptr->rank == 0) {
-		mpi_errno = MPIC_Sendrecv( &new_context_id, 1, MPI_INT, 0, 0,
-					   &remote_context_id, 1, MPI_INT, 
-					   0, 0, comm, MPI_STATUS_IGNORE );
-		if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
-		NMPI_Bcast( &remote_context_id, 1, MPI_INT, 0, local_comm );
-	    }
-	    else {
-		/* Broadcast to the other members of the local group */
-		NMPI_Bcast( &remote_context_id, 1, MPI_INT, 0, local_comm );
-	    }
 	    newcomm_ptr->recvcontext_id = remote_context_id;
-	    newcomm_ptr->remote_size    = remote_size;
+	    newcomm_ptr->remote_size    = new_remote_size;
 	    newcomm_ptr->local_comm     = 0;
 	    /* FIXME: Do we need to set is_low_group? */
 	    newcomm_ptr->is_low_group   = 0;
@@ -367,12 +385,6 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 	/* color was MPI_UNDEFINED.  Free the context id */
 	*newcomm = MPI_COMM_NULL;
 	MPIR_Free_contextid( new_context_id );
-
-	/* Dummy to complete collective ops in the intercomm case */
-	if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-	    int rinfo;
-	    NMPI_Bcast( &rinfo, 2, MPI_INT, 0, local_comm );
-	}
     }
     
     /* ... end of body of routine ... */
