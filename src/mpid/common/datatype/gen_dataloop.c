@@ -119,7 +119,11 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
     /* copy region first */
     memcpy(dest, src, size);
 
-    /* calculate difference in pointer values */
+    /* Calculate difference in starting locations. DLOOP_Dataloop_update()
+     * then traverses the new structure and updates internal pointers by
+     * adding this difference to them. This way we can just copy the
+     * structure, including pointers, in one big block.
+     */
     ptrdiff = (char *) dest - (char *) src;
 
     /* traverse structure updating pointers */
