@@ -169,7 +169,8 @@ for arg in "$@" ; do
     if [ $addarg = no ] ; then
 	unset allargs[$argno]
     fi
-    ((argno++))
+    # Some versions of bash do not accept ((argno++))
+    argno=`expr $argno + 1`
 done
 
 # -----------------------------------------------------------------------
