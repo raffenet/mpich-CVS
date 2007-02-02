@@ -1,4 +1,5 @@
 #! /bin/sh
+set -x
 # -*- Mode: shell-script; -*-
 #
 # This is a simplified tool for creating and installing shared libraries
@@ -37,6 +38,7 @@ destdir=""
 Show=eval
 exportDefs=""
 dependentLibs=""
+soname=
 #
 # Check for options from the environment
 if [ "$CREATESHLIB_ECHO" = "yes" ] ; then
@@ -60,6 +62,9 @@ for arg in "$@" ; do
 	   # to export, one per line.
 	   exportDefs=$arg
 	   ;;
+           -version-info)
+           ABIVersion=$arg
+           ;;
 	   *)
 	   # Ignoring things like version info for now
 	   ;;
@@ -74,7 +79,7 @@ for arg in "$@" ; do
 
    case $arg in 
        --mode=*) mode=$option ;;
-       -o|-rpath|-version-info|-export) # next arg is value for this option
+       -o|-rpath|-export|-version-info) # next arg is value for this option
        nextarg=$arg
        ;;
        -echo) set -x ;;
@@ -112,6 +117,32 @@ if [ "$srclibdir" = "$srclibname" ] ; then
 fi
 srclibbase=`basename $srclibname .$srclibext`
 
+# The convention for "soname" is the following:
+# soname contains the following
+#    name of library
+#    shared library suffix (typically .so or .dylib)
+#    a version number
+# The version number is not the same as the version number of the
+# of the library.  Instead, it is the version number of the ABI for the
+# library.  That allows applications to use any version of the library that
+# has the same ABI.
+# In cases where there are major changes in behavior but not in the ABI,
+# it makes sense to note those as a minor version number.  Thus, we prefer
+# to have a ABIversion number with which to create the soname
+if [ -z "$ABIVersion" ] ; then ABIVersion="1:0" ; fi
+# Extract the version numbers from the ABIVersion (needed in creating
+# the library names)
+if [ -n "$ABIVersion" ] ; then
+     majorVersion=`expr $ABIVersion : '\(.*\):.*'`
+     minorVersion=`expr $ABIVersion : '.*:\(.*\)'`
+fi
+
+if [ -z "$soname" ] ; then
+    # Create a "Shared Object Name" for the shared library
+    dottedVersion=`echo $ABIversion | sed -e 's/:/./g'`
+    soname=$srclibbase.$SHLIB_EXT.$dottedVersion
+fi
+
 # Now, process the steps
 
 postmode=""
@@ -146,13 +177,28 @@ if [ $mode = link ] ; then
 
     case $libtype in 
 	gcc-osx|osx-gcc)
+	# Under OSX, the major version should be included in the library
+	# Name (as an extension before the .dylib) and the minor version with 
+        # the -current_version num 
+        # argument.  See http://developer.apple.com/documentation/DeveloperTools/Conceptual/DynamicLibraries/index.html 
+	# for more information
+	majorExt=""
+        minorVersionArg=""
+	# Version numbers extracted above
+	if [ -n "$ABIVersion" ] ; then
+	     majorExt="$majorVersion."
+	     # Always increment the minor version because
+	     # osx doesn't allow 0
+	     minorVersion=`expr $minorVersion + 1`
+	     minorVersionArg="-current_version $minorVersion"
+        fi
         # Mac OS/X
 	if [ -z "$destlibname" ] ; then
 	    abssrclibdir=`(cd $srclibdir && pwd)`
-	    destlibname="$abssrclibdir/$srclibbase.$SHLIB_EXT"
+	    destlibname="$abssrclibdir/$srclibbase.$majorExt$SHLIB_EXT"
 	fi
-	$Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT \
-	    -install_name $destlibname .tmp/*.o
+	$Show ${C_LINK_SHL} -o $srclibbase.$majorExt$SHLIB_EXT \
+	    $minorVersionArg -install_name $destlibname .tmp/*.o
 	;;		
 
 	cygwin|cygwin-gcc)
@@ -181,7 +227,10 @@ if [ $mode = link ] ; then
 
 	*)
         # This is the default model
-	$Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT .tmp/*.o
+        # Typically -Wl,-h,$soname
+	# FIXME: C_LINK_SHL knows the options for shared libraries,
+	# but not the args for setting the soname.
+	$Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT -Wl,-h,$soname .tmp/*.o
 	;;
     esac
 
