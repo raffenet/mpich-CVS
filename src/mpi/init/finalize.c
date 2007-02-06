@@ -211,16 +211,25 @@ int MPI_Finalize( void )
     /* We place the memory tracing at the very end because any of the other
        steps may have allocated memory that they still need to release*/
 #ifdef USE_MEMORY_TRACING
-    /* FIXME: the (1) in the if test should be replaced by a 
-       parameter call */
     /* FIXME: We'd like to arrange for the mem dump output to
        go to separate files or to be sorted by rank (note that
        the rank is at the head of the line) */
-    if (1) {
-	/* The second argument is the min id to print; memory allocated 
-	   after MPI_Init is given an id of one.  This allows us to
-	   ignore, if desired, memory leaks in the MPID_Init call */
-	MPIU_trdump( (void *)0, -1 );
+    {
+	int parmFound, parmValue;
+	/* The Param_register is used to document the parameters.  A 
+	   script will extract the information about these parameters,
+	   allowing the documentation to stay up-to-date with the use of the
+	   parameters (this script is still to be written) */
+	MPIU_Param_register( "memdump", "MEMDUMP", 
+	     "List any memory that was allocated by MPICH2 and that remains allocated when MPI_Finalize completes" );
+	parmFound = MPIU_GetEnvBool( "MPICH_MEMDUMP", &parmValue );
+	if (!parmFound) parmValue = 1;
+	if (parmValue) {
+	    /* The second argument is the min id to print; memory allocated 
+	       after MPI_Init is given an id of one.  This allows us to
+	       ignore, if desired, memory leaks in the MPID_Init call */
+	    MPIU_trdump( (void *)0, -1 );
+	}
     }
 #endif
 
