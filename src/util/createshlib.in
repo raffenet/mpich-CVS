@@ -38,7 +38,6 @@ destdir=""
 Show=eval
 exportDefs=""
 dependentLibs=""
-soname=
 #
 # Check for options from the environment
 if [ "$CREATESHLIB_ECHO" = "yes" ] ; then
@@ -111,11 +110,18 @@ fi
 
 # Peel the srclibname into the srclibdir, srclibbase, srclibext
 srclibext=`echo $srclibname | sed -e 's/.*\.//'`
-srclibdir=`echo $srclibname | sed 's/\(.*\)\/.*/\1/'`
+srclibdir=`echo $srclibname | sed -e 's/\(.*\)\/.*/\1/'`
 if [ "$srclibdir" = "$srclibname" ] ; then
     srclibdir=.
 fi
 srclibbase=`basename $srclibname .$srclibext`
+
+if [ -z "$destdir" -a -n "$destlibname" ] ; then
+    # This works because of the eager nature of the RE match (everything
+    # up to the last / is matched in the first expression)
+    destdir=`echo $destlibname | sed -e 's/\(.*\)\/.*/\1/'`
+    destBaseName=`echo $destlibname | sed -e 's/.*\/\(.*\)/\1/'`
+fi
 
 # The convention for "soname" is the following:
 # soname contains the following
@@ -129,19 +135,77 @@ srclibbase=`basename $srclibname .$srclibext`
 # In cases where there are major changes in behavior but not in the ABI,
 # it makes sense to note those as a minor version number.  Thus, we prefer
 # to have a ABIversion number with which to create the soname
-if [ -z "$ABIVersion" ] ; then ABIVersion="1:0" ; fi
+#
+# In addition, it is common to have a primary name that includes some
+# (or all) version information and then one or more soft links to a 
+# "generic" name that does not include version information.  For example,
+# under most Unix systems, there may be a 
+#
+#   libfoo.so.1.2.2
+#   libfoo.so.1
+#   libfoo.so
+# with only the "libfoo.so.1.2.2" being a file; the others are links.
+# Under OSX, the name scheme is a little different, 
+#   libfoo.1.2.3.dylib
+#   libfoo.1.dylib
+#   libfoo.dylib
+# where again the "libfoo.1.2.2.dylib" is the file and the others are links.
+# These links need to be established during the installation phase.
+#
+# To handle this, we fill in three variables:
+#   
+#   realName - name of the file (with no directory)
+#   soName   - name of the shared object (often realName)
+#   altNames - alternate names when installed
+#
+# There is also 
+#   minorVersionArg - argument used to indicate minor version number to 
+#              program that creates shared library.  Used only (so far)
+#              with osx
+#
+# For now, there are only two versions of this.  The osx one and everyone 
+# else.  Most Unix systems will use the default.
+#
+# Note that the names depend on the ABIVersion, so we extract the information
+# on the version numbers from ABIVersion first.
+#
+if [ -z "$ABIVersion" ] ; then ABIVersion="1:1" ; fi
 # Extract the version numbers from the ABIVersion (needed in creating
 # the library names)
-if [ -n "$ABIVersion" ] ; then
-     majorVersion=`expr $ABIVersion : '\(.*\):.*'`
-     minorVersion=`expr $ABIVersion : '.*:\(.*\)'`
+majorVersion=`expr $ABIVersion : '\(.*\):.*'`
+minorVersion=`expr $ABIVersion : '.*:\(.*\)'`
+if [ "$minorVersion" = "0" ] ; then
+    echo "Minor version number must be greater than zero"
+    exit 1
 fi
+dottedVersion=`echo $ABIVersion | sed -e 's/:/./g'`
+#
+# Now we can create the names
+realName=
+soName=
+altNames=
+case $libtype in 
+    gcc-osx|osx-gcc)
+    soname=$srclibbase.$dottedVersion.$SHLIB_EXT
+    realName=$srclibbase.$dottedVersion.$SHLIB_EXT
+    altNames="$srclibbase.$SHLIB_EXT"
+    if [ -n "$majorVersion" ] ; then
+	altNames="$altNames $srclibbase.$majorVersion.$SHLIB_EXT"
+    fi
+    # Version numbers extracted above
+    minorVersionArg="-current_version $minorVersion"
+    ;;
 
-if [ -z "$soname" ] ; then
-    # Create a "Shared Object Name" for the shared library
-    dottedVersion=`echo $ABIversion | sed -e 's/:/./g'`
-    soname=$srclibbase.$SHLIB_EXT.$dottedVersion
-fi
+    *)
+    # Typical Unix default
+    soName=$srclibbase.$SHLIB_EXT.$dottedVersion
+    realName=$srclibbase.$SHLIB_EXT.$dottedVersion
+    altNames="$srclibbase.$SHLIB_EXT"
+    if [ -n "$majorVersion" ] ; then
+	altNames="$altNames $srclibbase.$SHLIB_EXT.$majorVersion"
+    fi
+    ;;
+esac
 
 # Now, process the steps
 
@@ -149,7 +213,7 @@ postmode=""
 if [ $mode = install ] ; then
     postmode=install
     case $libtype in 
-	gcc-osx)
+	gcc-osx|osx-gcc)
 	# Rebuild the library with a new install name.  We do this by 
 	# changing the mode to link and performing the install later.
 	mode=link
@@ -182,22 +246,12 @@ if [ $mode = link ] ; then
         # the -current_version num 
         # argument.  See http://developer.apple.com/documentation/DeveloperTools/Conceptual/DynamicLibraries/index.html 
 	# for more information
-	majorExt=""
-        minorVersionArg=""
-	# Version numbers extracted above
-	if [ -n "$ABIVersion" ] ; then
-	     majorExt="$majorVersion."
-	     # Always increment the minor version because
-	     # osx doesn't allow 0
-	     minorVersion=`expr $minorVersion + 1`
-	     minorVersionArg="-current_version $minorVersion"
-        fi
         # Mac OS/X
 	if [ -z "$destlibname" ] ; then
 	    abssrclibdir=`(cd $srclibdir && pwd)`
-	    destlibname="$abssrclibdir/$srclibbase.$majorExt$SHLIB_EXT"
+	    destlibname="$abssrclibdir/$realName"
 	fi
-	$Show ${C_LINK_SHL} -o $srclibbase.$majorExt$SHLIB_EXT \
+	$Show ${C_LINK_SHL} -o $realName \
 	    $minorVersionArg -install_name $destlibname .tmp/*.o
 	;;		
 
@@ -210,7 +264,7 @@ if [ $mode = link ] ; then
 	# will cause only those symbols to be exported.
 	# Note that we include any dependent libs because these are needed
 	# for Windows-style dlls
-	$Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT $exportDefs \
+	$Show ${C_LINK_SHL} -o $realName $exportDefs \
 	    -Wl,--out-implib,$srclibbase.a \
 	    .tmp/*.o $dependentLibs
 	# Create the import library
@@ -227,12 +281,17 @@ if [ $mode = link ] ; then
 
 	*)
         # This is the default model
-        # Typically -Wl,-h,$soname
+        # Typically -Wl,-h,$soName
 	# FIXME: C_LINK_SHL knows the options for shared libraries,
 	# but not the args for setting the soname.
-	$Show ${C_LINK_SHL} -o $srclibbase.$SHLIB_EXT -Wl,-h,$soname .tmp/*.o
+	$Show ${C_LINK_SHL} -o $realName -Wl,-h,$soName .tmp/*.o
 	;;
     esac
+    if [ -n "$altNames" ] ; then
+        for alt in $altNames ; do
+            $Show ln -s $realName $alt
+        done
+    fi
 
     # Common cleanup code
     rm -rf .tmp
@@ -247,14 +306,34 @@ else
 fi
 
 if [ "$postmode" = install ] ; then
-    if [ -z "$destlibname" ] ; then
-	destlibname="$destdir/$srclibname.$SHLIB_EXT"
+    # See if the destBaseName is included in the altnames.  If so,
+    # use the realName to form the destlibname instead
+    foundName=no
+    if [ -n "$altNames" -a -n "$destBaseName" ] ; then
+        for alt in $altNames ; do
+            if [ "$destBaseName" = "$alt" ] ; then
+	        foundName=yes
+	        break
+            fi
+        done
     fi
-    $Show $INSTALL_PROGRAM $srclibdir/$srclibbase.$SHLIB_EXT $destlibname
+    if [ -z "$destlibname" -o $foundName = yes ] ; then
+	destlibname="$destdir/$realName"
+    fi
+    if [ -z "$destdir" ] ; then
+	echo "The destination directory was not set."
+        exit 1
+    fi
+    $Show $INSTALL_PROGRAM $srclibdir/$realName $destlibname
     if [ "$libtype" = "cygwin-gcc" ] ; then
 	# We must also install the import library
 	# Eventually, we might want to install the .dll and the .a 
 	# into different directories
 	$Show $INSTALL_PROGRAM $srclibdir/$srclibbase.a $destdir/$srclibbase.a
+    fi
+    if [ -n "$altNames" ] ; then
+        for alt in $altNames ; do
+            ( cd $destdir && $Show ln -s $realName $alt )
+        done
     fi
 fi
