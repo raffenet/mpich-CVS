@@ -164,6 +164,20 @@ int MPIU_Param_bcast( void )
     return 0;
 }
 
+/* The purpose of this routine is really to mark, at the point of 
+   use, the parmaeters that are used by the program.  We may want to 
+   use a different interface that passes these values directly to 
+   to code that uses them, or we may want to use an interface that
+   allows the efficient setting of these values at the point of use.  Thus,
+   this routine is really a place-holder for future development. 
+   
+   Input Parameters:
++  name - Name of the parameter, without any prefix (e.g., memdump), as
+          it might be used in an argument list (e.c., as -mpich-memdump=yes)
+.  envname - Name of the parameter, without any prefix, as it might
+          be used as an environment variable name
+-  description - Description of the use of the parameter, in English.          
+*/
 int MPIU_Param_register( const char name[], const char envname[], 
                          const char description[] )
 {
@@ -337,6 +351,7 @@ int MPIU_GetEnvBool( const char *envName, int *val )
 	    return 1;
 	}
 	/* Else an invalid value */
+	/* FIXME: We need to provide a way to signal this error */
 	return -1;
     }
     return 0;
