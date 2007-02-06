@@ -74,6 +74,60 @@
             (qp)->tail = NULL;                                          \
     } while (0)
 
+/* search for element satisfying a predicate */
+/*   the predicate "pred" is any legal c conditional */
+/*   the current element can be accessed in the predicate with the _e
+     variable e.g.: "_e->foo == NULL" */
+#define GENERIC_Q_SEARCH(qp, pred, epp, el_type, next_field) do {       \
+    el_type *_e;                                                        \
+    *(epp) = NULL;                                                      \
+    _e = GENERIC_Q_HEAD(*(qp));                                         \
+    while (_e)                                                          \
+    {                                                                   \
+        if (pred)                                                       \
+        {                                                               \
+            *(epp) = _e;                                                \
+            break;                                                      \
+        }                                                               \
+        _e = _e->next_field;                                            \
+    }                                                                   \
+} while (0)
+
+/* search for element satisfying a predicate and remove it from the queue */
+#define GENERIC_Q_SEARCH_REMOVE(qp, pred, epp, el_type, next_field) do {        \
+    el_type *_e;                                                                \
+    el_type *_prev;                                                             \
+    if (GENERIC_Q_EMPTY(*(qp)))                                                 \
+        *(epp) = NULL;                                                          \
+    _e = GENERIC_Q_HEAD(*(qp));                                                 \
+    if (pred)                                                                   \
+    {                                                                           \
+        GENERIC_Q_DEQUEUE(qp, epp, next_field);                                 \
+    }                                                                           \
+    else                                                                        \
+    {                                                                           \
+        while (1)                                                               \
+        {                                                                       \
+            _prev = _e;                                                         \
+            _e = _e->next_field;                                                \
+                                                                                \
+            if (_e == NULL)                                                     \
+            {                                                                   \
+                *(epp) = NULL;                                                  \
+                break;                                                          \
+            }                                                                   \
+                                                                                \
+            if (pred)                                                           \
+            {                                                                   \
+                *(epp) = _e;                                                    \
+                _prev->next = _e->next;                                         \
+                if ((qp)->tail == _e)                                           \
+                    (qp)->tail = _prev;                                         \
+                break;                                                          \
+            }                                                                   \
+        }                                                                       \
+    }                                                                           \
+} while (0)
 
 
 /* Generic list macros */

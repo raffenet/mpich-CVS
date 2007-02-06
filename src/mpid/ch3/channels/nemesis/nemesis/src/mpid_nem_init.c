@@ -613,15 +613,18 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc->ch.fbox_in = &MPID_nem_mem_region.mailboxes.in[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
 	vc->ch.recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
 
-        vc->ch.lmt_pre_send                = MPID_nem_lmt_shm_pre_send;
-        vc->ch.lmt_pre_recv                = MPID_nem_lmt_shm_pre_recv;
-        vc->ch.lmt_start_send              = MPID_nem_lmt_shm_start_send;
-        /*  vc->ch.lmt_start_recv    = NULL; */
-        vc->ch.lmt_handle_cookie           = MPID_nem_lmt_shm_handle_cookie;
-        vc->ch.lmt_post_send               = MPID_nem_lmt_shm_post_send;
-        vc->ch.lmt_post_recv               = MPID_nem_lmt_shm_post_recv;
-        vc->ch.lmt_copy_buf                = NULL;
-        vc->ch.lmt_copy_buf_handle         = NULL;
+        vc->ch.lmt_pre_send        = MPID_nem_lmt_shm_pre_send;
+        vc->ch.lmt_pre_recv        = MPID_nem_lmt_shm_pre_recv;
+        vc->ch.lmt_start_send      = MPID_nem_lmt_shm_start_send;
+        vc->ch.lmt_handle_cookie   = MPID_nem_lmt_shm_handle_cookie;
+        vc->ch.lmt_post_send       = MPID_nem_lmt_shm_post_send;
+        vc->ch.lmt_post_recv       = MPID_nem_lmt_shm_post_recv;
+        vc->ch.lmt_copy_buf        = NULL;
+        vc->ch.lmt_copy_buf_handle = NULL;
+        vc->ch.lmt_queue.head      = NULL;
+        vc->ch.lmt_queue.tail      = NULL;        
+        vc->ch.lmt_active_lmt      = NULL;
+        vc->ch.lmt_enqueued        = FALSE;
     }
     else
     {

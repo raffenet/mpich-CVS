@@ -120,6 +120,7 @@ struct MPID_nem_tcp_module_internal_queue;
 struct MPIDI_VC;
 struct MPID_Request;
 struct MPID_nem_copy_buf;
+struct MPID_nem_lmt_shm_wait_element;
 
 typedef struct MPIDI_CH3I_VC
 {
@@ -149,7 +150,10 @@ typedef struct MPIDI_CH3I_VC
     /* LMT shared memory copy-buffer ptr */
     volatile struct MPID_nem_copy_buf *lmt_copy_buf;
     char *lmt_copy_buf_handle;
-
+    int lmt_buf_num;
+    struct {struct MPID_nem_lmt_shm_wait_element *head, *tail;} lmt_queue;
+    struct MPID_nem_lmt_shm_wait_element *lmt_active_lmt;
+    int lmt_enqueued; /* FIXME: used for debugging */
 
 #if(MPID_NEM_NET_MODULE == MPID_NEM_ERROR_MODULE)
 #error Error in definition of MPID_NEM_*_MODULE macros
@@ -248,7 +252,6 @@ typedef struct MPIDI_CH3I_VC
         struct MPID_Request *lmt_req;        /* pointer to original send/recv request */                                        \
         MPIDI_msg_sz_t       lmt_data_sz;    /* data size to be transferred, after checking for truncation */                   \
         MPID_IOV             lmt_tmp_cookie; /* temporary storage for received cookie */                                        \
-        int                  lmt_buf_num;    /* current copy buffer number for shared memory lmt */                             \
     } ch;
 
 #if 0
