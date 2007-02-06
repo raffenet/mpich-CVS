@@ -151,12 +151,13 @@ AC_SUBST(VERSION)
 # that were linked against it.  In our use, the version number is x:y, where
 #  x changes when the ABI changes
 #  y changes when major behavior of the routines, without changing the ABI;
-#    reset y to zero when x changes.
+#    reset y to one when x changes.  Some systems don't like a 0 subversion,
+#    so we always use one as the smallest version number.
 # The ABIVERSION is not the same as the VERSION. It is used principly in the
 # Makefile.sm to pass the ABIVERSION to the createshlib script.
 # We use libtool-style version numbers (see --version-info in the 
 # libtool manual) 
-ABIVERSION="1:0"
+ABIVERSION="1:1"
 AC_SUBST(ABIVERSION)
 dnl
 CONFIGURE_ARGUMENTS="$ac_configure_args"
@@ -669,7 +670,7 @@ if test "$logging_name" != "none" ; then
 	logging_name=external
 	# Add the dir to the include paths
 	CPPFLAGS="$CPPFLAGS -I$logdir"
-	# Add the dir to the external build dirs
+	MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$logdir"
 	EXTERNAL_SRC_DIRS="$EXTERNAL_SRC_DIRS $logdir"
 	# Add to the list of external modules to setup
 	if test -x $logdir/setup_logging ; then
@@ -4551,6 +4552,11 @@ AC_DEFINE_UNQUOTED(MPIU_SIZE_T,$MPIU_SIZE_T,[Set to a type that can express the 
 #   LIBS - Add libraries needed for linking
 #   LDFLAGS - Add other LD flags (e.g., search paths for libraries)
 #   CPPFLAGS - Add C preprocessor flags, including -Idir
+#   MPICH2_INCLUDE_FLAGS - A preferred alternative to adding 
+#              directories needed for include paths.  This should include
+#              directories that are *not* needed for any configure tests
+#              (e.g., if including the directory would change the result
+#              of a test, then that include flag should go into CPPFLAGS)
 #   DEFS  - Add C preprocessor definitions, e.g., -Dfoo
 # These must be updated, not replaced, so the setup_device script should
 # do, e.g., 
@@ -4586,6 +4592,7 @@ export MPILIBNAME
 export PMPILIBNAME
 export CC
 export CPPFLAGS
+export MPICH2_INCLUDE_FLAGS
 export LIBS
 export CXX
 export CXXFLAGS
@@ -4876,7 +4883,7 @@ dnl	    ac_sub_configure_args="$ac_sub_configure_args $ac_arg"
 dnl        fi
 dnl    ;;
 dnl
-dnl Here's the problem.  If the user set a few of the special variables
+dnl Here's the problem.  If the user sets a few of the special variables
 dnl such as CPPFLAGS, those original settings will override the
 dnl updated values.  Here's an attempt at a fix
         CPPFLAGS=*)
