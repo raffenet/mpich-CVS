@@ -113,6 +113,7 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	if (depth >= DLOOP_MAX_DATATYPE_DEPTH) return -1;
 
 	DLOOP_Handle_get_loopptr_macro(handle, oldloop, flag);
+	DLOOP_Assert(oldloop != NULL);
 	DLOOP_Handle_get_size_macro(handle, type_size);
 	DLOOP_Handle_get_extent_macro(handle, type_extent);
         DLOOP_Handle_get_basic_type_macro(handle, el_type);

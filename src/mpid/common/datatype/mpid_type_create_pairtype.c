@@ -167,7 +167,13 @@ int MPID_Type_create_pairtype(MPI_Datatype type,
     new_dtp->is_contig       = (type_size == type_extent) ? 1 : 0;
     new_dtp->n_contig_blocks = (type_size == type_extent) ? 1 : 2;
 
-    /* fill in dataloops -- only case where we precreate dataloops */
+    /* fill in dataloops -- only case where we precreate dataloops
+     *
+     * this is necessary because these types aren't committed by the
+     * user, which is the other place where we create dataloops. so
+     * if the user uses one of these w/out building some more complex
+     * type and then committing it, then the dataloop will be missing.
+     */
     err = MPID_Dataloop_create_pairtype(type,
 					&(new_dtp->dataloop),
 					&(new_dtp->dataloop_size),

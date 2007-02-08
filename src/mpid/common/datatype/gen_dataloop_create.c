@@ -9,6 +9,12 @@
 #include <stdlib.h>
 #include <limits.h>
 
+static void DLOOP_Dataloop_create_named(MPI_Datatype type,
+					DLOOP_Dataloop **dlp_p,
+					int *dlsz_p,
+					int *dldepth_p,
+					int flag);
+
 void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 				     DLOOP_Dataloop **dlp_p,
 				     int *dlsz_p,
@@ -34,24 +40,33 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
     MPI_Aint stride;
     MPI_Aint *disps;
 
-    /* TODO: USE THE MPI FUNCTION */
     PMPI_Type_get_envelope(type, &nr_ints, &nr_aints, &nr_types, &combiner);
 
-    /* exit prematurely if what we're given is a basic type */
+    /* some named types do need dataloops; handle separately. */
     if (combiner == MPI_COMBINER_NAMED) {
-	*dlp_p = NULL;
-	*dlsz_p = 0;
-	*dldepth_p = 0;
+	DLOOP_Dataloop_create_named(type, dlp_p, dlsz_p, dldepth_p, flag);
 	return;
     }
 
-    /* TODO: HANDLE MPI_FLOAT_INT ETC... */
+    /* Q: should we also check for "hasloop", or is the COMBINER
+     *    check above enough to weed out everything that wouldn't
+     *    have a loop?
+     */
+    DLOOP_Handle_get_loopptr_macro(type, old_dlp, flag);
+    if (old_dlp != NULL) {
+	/* dataloop already created; just return it. */
+	*dlp_p = old_dlp;
+	DLOOP_Handle_get_loopsize_macro(type, *dlsz_p, flag);
+	DLOOP_Handle_get_loopdepth_macro(type, *dldepth_p, flag);
+	return;
+    }
 
+
+    /* hardcoded handling of MPICH2 contents format... */
     MPID_Datatype_get_ptr(type, dtp);
 
     cp = dtp->contents;
 
-    /* TODO: THINK ABOUT PADDING... */
 #ifdef HAVE_MAX_STRUCT_ALIGNMENT
     if (align_sz > HAVE_MAX_STRUCT_ALIGNMENT) {
 	align_sz = HAVE_MAX_STRUCT_ALIGNMENT;
@@ -62,11 +77,6 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
     types_sz  = nr_types * sizeof(MPI_Datatype);
     ints_sz   = nr_ints * sizeof(int);
 
-    /* pad the struct, types, and ints before we allocate.
-     *
-     * note: it's not necessary that we pad the aints,
-     *       because they are last in the region.
-     */
     if ((epsilon = struct_sz % align_sz)) {
 	struct_sz += align_sz - epsilon;
     }
@@ -79,6 +89,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
     types = (MPI_Datatype *) (((char *) cp) + struct_sz);
     ints  = (int *) (((char *) types) + types_sz);
     aints = (MPI_Aint *) (((char *) ints) + ints_sz);
+    /* end of hardcoded handling of MPICH2 contents format */
 
     /* first check for zero count on types where that makes sense */
     switch(combiner) {
@@ -109,7 +120,8 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
     /* recurse, processing types "below" this one before processing
      * this one, if those type don't already have dataloops.
      *
-     * note: we'll have to recurse more in the struct case below.
+     * note: in the struct case below we'll handle any additional
+     *       types "below" the current one.
      */
     PMPI_Type_get_envelope(types[0], &dummy1, &dummy2, &dummy3,
 			   &type0_combiner);
@@ -118,6 +130,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 	DLOOP_Handle_get_loopptr_macro(types[0], old_dlp, flag);
 	if (old_dlp == NULL)
 	{
+	    /* no dataloop already present; create and store one */
 	    PREPEND_PREFIX(Dataloop_create)(types[0],
 					    &old_dlp,
 					    &old_dlsz,
@@ -337,21 +350,64 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 	    DLOOP_Assert(0);
     }
 
-    /* TODO: HOW DO WE CLEAN UP ALL THE EXTRA DATALOOPS THAT WE HAVE
-     * CREATED IN THIS PROCESS???
-     *
-     * IN OTHER WORDS, ONE REASON TO DO THIS WAS TO AVOID DATALOOPS ON 
-     * INTERMEDIATE TYPES...
-     *
-     * CLEAN UP IF WE CREATED IT? ARE THERE SCARY THREAD SAFETY ISSUES
-     * TO THINK ABOUT HERE?
-     *
-     * I think I can safely just remove the dataloops on sub-types if
-     * I created them here? With an assert that they aren't committed?
+    /* for now we just leave the intermediate dataloops in place.
+     * could remove them to save space if we wanted.
      */
 
-    /* IDEA: KEEP TRACK OF # OF USES OF DATALOOP ON TYPE, KEEP IF
-     * EXCEED SOME THRESHOLD EVEN IF INTERMEDIATE TYPE?
-     */
     return;
+}
+
+/*@
+  DLOOP_Dataloop_create_named - create a dataloop for a "named" type
+  if necessary.
+
+  "named" types are ones for which MPI_Type_get_envelope() returns a
+  combiner of MPI_COMBINER_NAMED. some types that fit this category,
+  such as MPI_SHORT_INT, have multiple elements with potential gaps
+  and padding. these types need dataloops for correct processing.
+@*/
+static void DLOOP_Dataloop_create_named(MPI_Datatype type,
+					DLOOP_Dataloop **dlp_p,
+					int *dlsz_p,
+					int *dldepth_p,
+					int flag)
+{
+    DLOOP_Dataloop *dlp;
+
+    /* special case: pairtypes need dataloops too.
+     *
+     * note: not dealing with MPI_2INT because size == extent
+     *       in all cases for that type.
+     *
+     * note: MPICH2 always precreates these, so we will never call
+     *       Dataloop_create_pairtype() from here in the MPICH2
+     *       case.
+     */
+    if (type == MPI_FLOAT_INT || type == MPI_DOUBLE_INT ||
+	type == MPI_LONG_INT || type == MPI_SHORT_INT ||
+	type == MPI_LONG_DOUBLE_INT)
+    {
+	DLOOP_Handle_get_loopptr_macro(type, dlp, flag);
+	if (dlp != NULL) {
+	    /* dataloop already created; just return it. */
+	    *dlp_p = dlp;
+	    DLOOP_Handle_get_loopsize_macro(type, *dlsz_p, flag);
+	    DLOOP_Handle_get_loopdepth_macro(type, *dldepth_p, flag);
+	}
+	else {
+	    PREPEND_PREFIX(Dataloop_create_pairtype)(type,
+						     dlp_p,
+						     dlsz_p,
+						     dldepth_p,
+						     flag);
+	}
+	return;
+    }
+    /* no other combiners need dataloops; exit. */
+    else {
+	*dlp_p = NULL;
+	*dlsz_p = 0;
+	*dldepth_p = 0;
+	return;
+    }
 }
