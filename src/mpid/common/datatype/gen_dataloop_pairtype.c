@@ -31,7 +31,7 @@
 
    Note:
    This function simply creates the appropriate input parameters for
-   use with Dataloop_create_struct.
+   use with Dataloop_create_struct and then calls that function.
 
    This same function could be used to create dataloops for any type
    that actually consists of two distinct elements.

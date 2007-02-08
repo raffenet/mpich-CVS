@@ -30,6 +30,7 @@ lib${MPILIBNAME}_a_SOURCES = \
 	gen_dataloop_create.c \
 	gen_subarray_support.c \
 	gen_darray_support.c \
+	gen_contents_support.c \
 
 HEADERS = gen_dataloop.h mpid_dataloop.h mpid_datatype.h \
 	mpid_ext32_segment.h segment_states.h

@@ -23,14 +23,11 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 {
     int i;
 
-    int align_sz=8, types_sz, struct_sz, ints_sz, epsilon;
     int nr_ints, nr_aints, nr_types, combiner;
     MPI_Datatype *types;
     int *ints;
     MPI_Aint *aints;
 
-    MPID_Datatype_contents *cp;
-    MPID_Datatype *dtp;
     DLOOP_Dataloop *old_dlp;
     int old_dlsz, old_dldepth;
 
@@ -61,35 +58,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 	return;
     }
 
-
-    /* hardcoded handling of MPICH2 contents format... */
-    MPID_Datatype_get_ptr(type, dtp);
-
-    cp = dtp->contents;
-
-#ifdef HAVE_MAX_STRUCT_ALIGNMENT
-    if (align_sz > HAVE_MAX_STRUCT_ALIGNMENT) {
-	align_sz = HAVE_MAX_STRUCT_ALIGNMENT;
-    }
-#endif
-
-    struct_sz = sizeof(MPID_Datatype_contents);
-    types_sz  = nr_types * sizeof(MPI_Datatype);
-    ints_sz   = nr_ints * sizeof(int);
-
-    if ((epsilon = struct_sz % align_sz)) {
-	struct_sz += align_sz - epsilon;
-    }
-    if ((epsilon = types_sz % align_sz)) {
-	types_sz += align_sz - epsilon;
-    }
-    if ((epsilon = ints_sz % align_sz)) {
-	ints_sz += align_sz - epsilon;
-    }
-    types = (MPI_Datatype *) (((char *) cp) + struct_sz);
-    ints  = (int *) (((char *) types) + types_sz);
-    aints = (MPI_Aint *) (((char *) ints) + ints_sz);
-    /* end of hardcoded handling of MPICH2 contents format */
+    PREPEND_PREFIX(Type_access_contents)(type, &ints, &aints, &types);
 
     /* first check for zero count on types where that makes sense */
     switch(combiner) {
@@ -110,7 +79,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 							   dlsz_p,
 							   dldepth_p,
 							   flag);
-		return;
+		goto clean_exit;
 	    }
 	    break;
 	default:
@@ -348,7 +317,12 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 	    /* TODO: WHAT DO I DO HERE? */
 	default:
 	    DLOOP_Assert(0);
+	    break;
     }
+
+ clean_exit:
+
+    PREPEND_PREFIX(Type_release_contents)(type, &ints, &aints, &types);
 
     /* for now we just leave the intermediate dataloops in place.
      * could remove them to save space if we wanted.
