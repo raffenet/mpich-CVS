@@ -21,13 +21,13 @@ lib${MPILIBNAME}_a_SOURCES = \
 	mpid_type_create_pairtype.c \
 	gen_dataloop.c \
 	gen_segment.c \
-	gen_type_contiguous.c \
-	gen_type_vector.c \
-	gen_type_blockindexed.c \
-	gen_type_indexed.c \
-	gen_type_struct.c \
-	gen_dataloop_pairtype.c \
 	gen_dataloop_create.c \
+	gen_dataloop_create_contig.c \
+	gen_dataloop_create_vector.c \
+	gen_dataloop_create_blockindexed.c \
+	gen_dataloop_create_indexed.c \
+	gen_dataloop_create_struct.c \
+	gen_dataloop_create_pairtype.c \
 	gen_subarray_support.c \
 	gen_darray_support.c \
 	gen_contents_support.c \
