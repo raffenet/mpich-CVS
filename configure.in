@@ -669,7 +669,7 @@ if test "$logging_name" != "none" ; then
 	# code will know it
 	logging_name=external
 	# Add the dir to the include paths
-	CPPFLAGS="$CPPFLAGS -I$logdir"
+	#CPPFLAGS="$CPPFLAGS -I$logdir"
 	MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$logdir"
 	EXTERNAL_SRC_DIRS="$EXTERNAL_SRC_DIRS $logdir"
 	# Add to the list of external modules to setup
@@ -5341,6 +5341,10 @@ AC_SUBST(MPIF90)
 
 AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h file has been included])
 
+# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
+# which include flags should start in MPICH2_INCLUDE_FLAGS and which in 
+# CPPFLAGS
+CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
 dnl
 dnl This includes an experimental pkgconfig file for ch3 in the src/pkgconfig
 dnl directory

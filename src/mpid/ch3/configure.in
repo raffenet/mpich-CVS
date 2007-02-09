@@ -203,6 +203,11 @@ PAC_UPDATE_BASE_CACHE
 
 AC_CONFIG_SUBDIRS(channels/${channel_name})
 
+# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
+# which include flags should start in MPICH2_INCLUDE_FLAGS and which in 
+# CPPFLAGS
+CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
+
 AC_OUTPUT(Makefile src/Makefile util/Makefile util/sock/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile localdefs $MPID_THREAD_OUTPUT_FILES)
 
 PAC_SUBDIR_CACHE_CLEANUP

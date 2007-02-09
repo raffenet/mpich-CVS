@@ -159,7 +159,7 @@ if test -z "$ARCH" -a -x $srcdir/util/tarch ; then
     ARCH=`$srcdir/util/tarch | sed s/-/_/g`
     if test -z "$ARCH" ; then
        AC_MSG_RESULT(Unknown!)
-       AC_MSG_ERROR([Error: Couldn\'t guess target architecture, you must 
+       AC_MSG_ERROR([Error: Could not guess target architecture, you must 
 set an architecture type with the environment variable ARCH]) 
     fi 
     eval "arch_$ARCH=1"
@@ -630,7 +630,10 @@ if test -n "$arch_IRIX"; then
 		MPI=mpich2
 		mpi_mpich2=1
             elif test -f "/usr/include/mpi.h" ; then
-                AC_MSG_WARN([assuming that you want to use ROMIO with SGI\'s MPI])
+                # removed use of escaped single quotes in messages
+		# because they confuse Emacs, making it hard to 
+		# read the files (with emacs :) )
+                AC_MSG_WARN([assuming that you want to use ROMIO with the SGI MPI])
                 MPI=sgi
                 mpi_sgi=1
             else 
@@ -1840,6 +1843,8 @@ elif test $FROM_MPICH2 = yes ; then
    EXTRA_DIRS=""
    AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if status_set_bytes available])
    DEFINE_HAVE_MPI_GREQUEST="#define HAVE_MPI_GREQUEST"
+   # Add the MPICH2_INCLUDE_FLAGS to CPPFLAGS
+   CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
 fi
 #
 #
