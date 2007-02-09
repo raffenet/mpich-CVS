@@ -70,7 +70,6 @@ int MPID_nem_lmt_RndvSend(MPID_Request **sreq_p, const void * buf, int count, MP
     MPIDI_VC_t *vc;
     MPID_Request *rts_sreq;
     MPID_Request *sreq =*sreq_p;
-    MPID_IOV cookie;
     MPID_IOV iov[2];
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LMT_RNDVSEND);
 
@@ -79,7 +78,7 @@ int MPID_nem_lmt_RndvSend(MPID_Request **sreq_p, const void * buf, int count, MP
     MPIDI_Comm_get_vc(comm, rank, &vc);
 
     /* if the lmt functions are not set, fall back to the default rendezvous code */
-    if (vc->ch.lmt_pre_send == NULL)
+    if (vc->ch.lmt_initiate_lmt == NULL)
     {
         mpi_errno = MPIDI_CH3_RndvSend(sreq_p, buf, count, datatype, dt_contig, data_sz, dt_true_lb, rank, tag, comm, context_offset);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -102,40 +101,40 @@ int MPID_nem_lmt_RndvSend(MPID_Request **sreq_p, const void * buf, int count, MP
     MPIDI_Pkt_set_seqnum(rts_pkt, seqnum);
     MPIDI_Request_set_seqnum(sreq, seqnum);
 
-    mpi_errno = vc->ch.lmt_pre_send(vc, sreq, &cookie);
+    mpi_errno = vc->ch.lmt_initiate_lmt(vc, &upkt, sreq);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    rts_pkt->cookie_len = cookie.MPID_IOV_LEN;
+/*     rts_pkt->cookie_len = cookie.MPID_IOV_LEN; */
     
-    iov[0].MPID_IOV_BUF = rts_pkt;
-    iov[0].MPID_IOV_LEN = sizeof(*rts_pkt);
-    iov[1] = cookie;
+/*     iov[0].MPID_IOV_BUF = rts_pkt; */
+/*     iov[0].MPID_IOV_LEN = sizeof(*rts_pkt); */
+/*     iov[1] = cookie; */
 
-    MPIU_DBG_MSGPKT(vc, tag, rts_pkt->match.context_id, rank, data_sz, "Rndv");
+/*     MPIU_DBG_MSGPKT(vc, tag, rts_pkt->match.context_id, rank, data_sz, "Rndv"); */
 
-    mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, (cookie.MPID_IOV_LEN) ? 2 : 1, &rts_sreq);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	MPIU_Object_set_ref(sreq, 0);
-	MPIDI_CH3_Request_destroy(sreq);
-	*sreq_p = NULL;
-        MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_OTHER, "**ch3|rtspkt");
-    }
-    /* --END ERROR HANDLING-- */
-    if (rts_sreq != NULL)
-    {
-	if (rts_sreq->status.MPI_ERROR != MPI_SUCCESS)
-	{
-	    MPIU_Object_set_ref(sreq, 0);
-	    MPIDI_CH3_Request_destroy(sreq);
-	    *sreq_p = NULL;
-	    mpi_errno = MPIR_Err_create_code(rts_sreq->status.MPI_ERROR, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0);
-	    MPID_Request_release(rts_sreq);
-	    goto fn_exit;
-	}
-	MPID_Request_release(rts_sreq);
-    }
+/*     mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, (cookie.MPID_IOV_LEN) ? 2 : 1, &rts_sreq); */
+/*     /\* --BEGIN ERROR HANDLING-- *\/ */
+/*     if (mpi_errno != MPI_SUCCESS) */
+/*     { */
+/* 	MPIU_Object_set_ref(sreq, 0); */
+/* 	MPIDI_CH3_Request_destroy(sreq); */
+/* 	*sreq_p = NULL; */
+/*         MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_OTHER, "**ch3|rtspkt"); */
+/*     } */
+/*     /\* --END ERROR HANDLING-- *\/ */
+/*     if (rts_sreq != NULL) */
+/*     { */
+/* 	if (rts_sreq->status.MPI_ERROR != MPI_SUCCESS) */
+/* 	{ */
+/* 	    MPIU_Object_set_ref(sreq, 0); */
+/* 	    MPIDI_CH3_Request_destroy(sreq); */
+/* 	    *sreq_p = NULL; */
+/* 	    mpi_errno = MPIR_Err_create_code(rts_sreq->status.MPI_ERROR, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rtspkt", 0); */
+/* 	    MPID_Request_release(rts_sreq); */
+/* 	    goto fn_exit; */
+/* 	} */
+/* 	MPID_Request_release(rts_sreq); */
+/*     } */
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LMT_RNDVSEND);
@@ -161,7 +160,7 @@ int MPID_nem_lmt_RecvRndv(MPIDI_VC_t *vc, MPID_Request *rreq)
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LMT_RECVRNDV);
 
     /* if the lmt functions are not set, fall back to the default rendezvous code */
-    if (vc->ch.lmt_pre_send == NULL)
+    if (vc->ch.lmt_initiate_lmt == NULL)
     {
         mpi_errno = MPIDI_CH3_RecvRndv(vc, rreq);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -348,11 +347,11 @@ static int pkt_DONE_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPID_Request *
     switch (MPIDI_Request_get_type(req))
     {
     case MPIDI_REQUEST_TYPE_RECV:
-        mpi_errno = vc->ch.lmt_post_recv(vc, req);
+        mpi_errno = vc->ch.lmt_done_recv(vc, req);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         break;
     case MPIDI_REQUEST_TYPE_SEND:
-        mpi_errno = vc->ch.lmt_post_send(vc, req);
+        mpi_errno = vc->ch.lmt_done_send(vc, req);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         break;
     default:
@@ -420,212 +419,6 @@ static int pkt_COOKIE_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPID_Request
     goto fn_exit;
 }
 
-#if 0
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_lmt_pre_send
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_lmt_pre_send (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV *cookie)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LMT_PRE_SEND);
-    
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LMT_PRE_SEND);
-    
-    if (vc->ch.lmt_pre_send)
-    {
-        mpi_errno = vc->ch.lmt_pre_send (vc, req, cookie);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-        goto fn_exit;
-    }
-
-    /* default method: using message queues */
-
-    /* send a NULL RTS message */
-    req->ch.s_cookie.MPID_IOV_BUF = NULL;
-    req->ch.s_cookie.MPID_IOV_LEN = 0;
-    *cookie = req->ch.s_cookie;
-
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LMT_PRE_SEND);
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_lmt_pre_recv
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_lmt_pre_recv (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_cookie, MPID_IOV *r_cookie, int *send_cts)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LMT_PRE_RECV);
-    
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LMT_PRE_RECV);
-
-    if (vc->ch.lmt_pre_recv)
-    {
-        mpi_errno = vc->ch.lmt_pre_recv (vc, req, s_cookie, r_cookie, send_cts);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-        goto fn_exit;
-    }
-
-    /* default method: using message queues */
-
-    req->ch.r_cookie.MPID_IOV_BUF = &req->handle;
-    req->ch.r_cookie.MPID_IOV_LEN = sizeof (req->handle);
-    *r_cookie = req->ch.r_cookie;
-    *send_cts = 1;
-
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LMT_PRE_RECV);
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_lmt_start_send
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_lmt_start_send (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV r_cookie)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LMT_START_SEND);
-    
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LMT_START_SEND);
-
-    if (vc->ch.lmt_start_send)
-    {
-        mpi_errno = vc->ch.lmt_start_send (vc, sreq, r_cookie);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-        goto fn_exit;
-    }
-    
-    /* default method: using message queues */
-
-    MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**notimpl");
-    
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LMT_START_SEND);
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-/* #undef FUNCNAME */
-/* #define FUNCNAME MPID_nem_lmt_start_recv */
-/* #undef FCNAME */
-/* #define FCNAME MPIDI_QUOTE(FUNCNAME) */
-/* int MPID_nem_lmt_start_recv (MPIDI_VC_t *vc, MPID_Request *req) */
-/* { */
-/*     int mpi_errno = MPI_SUCCESS; */
-/*     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LMT_START_RECV); */
-    
-/*     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LMT_START_RECV); */
-
-/*     if (vc->ch.lmt_start_recv) */
-/*     { */
-/*         mpi_errno = vc->ch.lmt_start_recv (vc, req); */
-/*         if (mpi_errno) MPIU_ERR_POP (mpi_errno); */
-/*         goto fn_exit; */
-/*     } */
-
-/*     /\* default method: using message queues *\/ */
-/*     /\* do nothing *\/ */
-    
-/*  fn_exit: */
-/*     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LMT_START_RECV); */
-/*     return mpi_errno; */
-/*  fn_fail: */
-/*     goto fn_exit; */
-/* } */
-
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_lmt_handle_cookie
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_lmt_handle_cookie (MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV cookie)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LMT_HANDLE_COOKIE);
-    
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LMT_HANDLE_COOKIE);
-
-    if (vc->ch.lmt_handle_cookie)
-    {
-        mpi_errno = vc->ch.lmt_handle_cookie (vc, req, cookie);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-        goto fn_exit;
-    }
-
-    /* default method: using message queues */
-    /* do nothing */
-    
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LMT_HANDLE_COOKIE);
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_lmt_post_send
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_lmt_post_send (MPIDI_VC_t *vc, MPID_Request *req)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LMT_POST_SEND);
-    
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LMT_POST_SEND);
-
-    if (vc->ch.lmt_post_send)
-    {
-        mpi_errno = vc->ch.lmt_post_send (vc, req);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-        goto fn_exit;
-    }
-
-    /* default method: using message queues */
-
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LMT_POST_SEND);
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_lmt_post_recv
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_lmt_post_recv (MPIDI_VC_t *vc, MPID_Request *req)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LMT_POST_RECV);
-    
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LMT_POST_RECV);
-
-    if (vc->ch.lmt_post_recv)
-    {
-        mpi_errno = vc->ch.lmt_post_recv (vc, req);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-        goto fn_exit;
-    }
-    
-    /* default method: using message queues */
-
-    MPIDI_CH3U_Request_complete (req);
-
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LMT_POST_RECV);
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-#endif
 
 #undef FUNCNAME
 #define FUNCNAME do_cts
@@ -641,9 +434,7 @@ static int do_cts(MPIDI_VC_t *vc, MPID_Request *rreq, int *complete)
     MPID_Request * cts_req;
     MPIDI_CH3_Pkt_t upkt;
     MPID_nem_pkt_lmt_cts_t * const cts_pkt = &upkt.lmt_cts;
-    MPID_IOV r_cookie;
     MPID_IOV s_cookie;
-    int send_cts;
     MPIDI_STATE_DECL(MPID_STATE_DO_CTS);
     
     MPIDI_FUNC_ENTER(MPID_STATE_DO_CTS);
@@ -660,7 +451,7 @@ static int do_cts(MPIDI_VC_t *vc, MPID_Request *rreq, int *complete)
     
     s_cookie = rreq->ch.lmt_tmp_cookie;
 
-    mpi_errno = vc->ch.lmt_pre_recv(vc, rreq, s_cookie, &r_cookie, &send_cts);
+    mpi_errno = vc->ch.lmt_start_recv(vc, rreq, s_cookie);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     /* free cookie buffer allocated in RTS handler */
@@ -670,30 +461,27 @@ static int do_cts(MPIDI_VC_t *vc, MPID_Request *rreq, int *complete)
         rreq->ch.lmt_tmp_cookie.MPID_IOV_LEN = 0;
     }
     
-    if (send_cts)
-    {            
-        MPID_IOV iov[2];
+/*     if (send_cts) */
+/*     {             */
+/*         MPID_IOV iov[2]; */
 
-        MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv CTS packet");
-        MPIDI_Pkt_init(cts_pkt, MPIDI_NEM_PKT_LMT_CTS);
-        cts_pkt->sender_req_id = rreq->ch.lmt_req_id;
-        cts_pkt->receiver_req_id = rreq->handle;
-        cts_pkt->data_sz = rreq->ch.lmt_data_sz;
-        cts_pkt->cookie_len = r_cookie.MPID_IOV_LEN;
+/*         MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv CTS packet"); */
+/*         MPIDI_Pkt_init(cts_pkt, MPIDI_NEM_PKT_LMT_CTS); */
+/*         cts_pkt->sender_req_id = rreq->ch.lmt_req_id; */
+/*         cts_pkt->receiver_req_id = rreq->handle; */
+/*         cts_pkt->data_sz = rreq->ch.lmt_data_sz; */
+/*         cts_pkt->cookie_len = r_cookie.MPID_IOV_LEN; */
                 
-        iov[0].MPID_IOV_BUF = cts_pkt;
-        iov[0].MPID_IOV_LEN = sizeof(*cts_pkt);
-        iov[1] = r_cookie;
+/*         iov[0].MPID_IOV_BUF = cts_pkt; */
+/*         iov[0].MPID_IOV_LEN = sizeof(*cts_pkt); */
+/*         iov[1] = r_cookie; */
                 
-        mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, (r_cookie.MPID_IOV_LEN) ? 2 : 1, &cts_req);
-        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|ctspkt");
-        if (cts_req != NULL)
-            MPID_Request_release(cts_req);
-    }
+/*         mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, (r_cookie.MPID_IOV_LEN) ? 2 : 1, &cts_req); */
+/*         MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|ctspkt"); */
+/*         if (cts_req != NULL) */
+/*             MPID_Request_release(cts_req); */
+/*     } */
             
-/*     mpi_errno = MPID_nem_lmt_start_recv (vc, rreq); */
-/*     if (mpi_errno) MPIU_ERR_POP (mpi_errno); */
-
     *complete = TRUE;
 
  fn_exit:
@@ -749,7 +537,7 @@ static int do_cookie(MPIDI_VC_t *vc, MPID_Request *rreq, int *complete)
 
     cookie = req->ch.lmt_tmp_cookie;
 
-    mpi_errno = vc->ch.lmt_handle_cookie (vc, req, cookie);
+    mpi_errno = vc->ch.lmt_handle_cookie(vc, req, cookie);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* free cookie buffer allocated in COOKIE handler */

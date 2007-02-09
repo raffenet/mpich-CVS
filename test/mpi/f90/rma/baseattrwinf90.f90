@@ -7,6 +7,7 @@
       program main
       use mpi
       integer (kind=MPI_ADDRESS_KIND) extrastate, valin, valout, val
+
       logical flag
       integer ierr, errs
       integer base(1024)
@@ -16,15 +17,16 @@
 ! Include addsize defines aint as an address-sized integer
       integer (kind=MPI_ADDRESS_KIND) aint
 
+
       errs = 0
-      call mtest_init( ierr )
       
+      call mtest_init( ierr )
       call mpi_comm_size( MPI_COMM_WORLD, commsize, ierr )
 
 ! Create a window; then extract the values 
       aint    = 1024
       disp = 4
-      call MPI_Win_create( base, aint, disp, MPI_INFO_NULL, &
+      call MPI_Win_create( base, aint, disp, MPI_INFO_NULL,  &
       &  MPI_COMM_WORLD, win, ierr )
 !
 ! In order to check the base, we need an address-of function.
@@ -76,7 +78,6 @@
       call MPI_Win_free( win, ierr )
 
       call mtest_finalize( errs )
-
       call MPI_Finalize( ierr )
 
       end

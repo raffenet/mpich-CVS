@@ -97,9 +97,8 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
         /* --BEGIN ERROR HANDLING-- */                                                                  \
         if (mpi_errno != MPI_SUCCESS)                                                                   \
         {                                                                                               \
-            MPIU_Object_set_ref(sreq, 0);                                                               \
-            MPIDI_CH3_Request_destroy(sreq);                                                            \
-            *sreq_p = NULL;                                                                             \
+            MPIU_Object_set_ref(_rts_req, 0);                                                           \
+            MPIDI_CH3_Request_destroy(_rts_req);                                                        \
             MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_OTHER, "**rtspkt");                             \
         }                                                                                               \
         /* --END ERROR HANDLING-- */                                                                    \
@@ -107,8 +106,8 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
         {                                                                                               \
             if (_rts_req->status.MPI_ERROR != MPI_SUCCESS)                                              \
             {                                                                                           \
-                MPIU_Object_set_ref(sreq, 0);                                                           \
-                MPIDI_CH3_Request_destroy(sreq);                                                        \
+                MPIU_Object_set_ref(_rts_req, 0);                                                       \
+                MPIDI_CH3_Request_destroy(_rts_req);                                                    \
                 mpi_errno = MPIR_Err_create_code(_rts_req->status.MPI_ERROR, MPIR_ERR_FATAL,            \
                                                  FCNAME, __LINE__, MPI_ERR_OTHER, "**rtspkt", 0);       \
                 MPID_Request_release(_rts_req);                                                         \
@@ -129,6 +128,7 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
         _cts_pkt->sender_req_id = (rreq)->ch.lmt_req_id;                                                \
         _cts_pkt->receiver_req_id = (rreq)->handle;                                                     \
         _cts_pkt->cookie_len = (r_cookie_len);                                                          \
+        _cts_pkt->data_sz = (rreq)->ch.lmt_data_sz;                                                     \
                                                                                                         \
         _iov[0].MPID_IOV_BUF = _cts_pkt;                                                                \
         _iov[0].MPID_IOV_LEN = sizeof(*_cts_pkt);                                                       \

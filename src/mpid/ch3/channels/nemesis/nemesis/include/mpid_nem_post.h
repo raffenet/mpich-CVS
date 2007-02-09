@@ -18,7 +18,7 @@ int MPID_nem_vc_init(MPIDI_VC_t *vc, const char *business_card);
 int MPID_nem_get_business_card(int myRank, char *value, int length);
 int MPID_nem_connect_to_root(const char *port_name, MPIDI_VC_t *new_vc);
 int MPID_nem_lmt_shm_progress(void);
-
+int MPID_nem_vc_terminate(MPIDI_VC_t *vc);
 
 #ifdef ENABLED_CHECKPOINTING
 int MPID_nem_ckpt_init (int ckpt_restart);

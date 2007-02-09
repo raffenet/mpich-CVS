@@ -613,12 +613,13 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc->ch.fbox_in = &MPID_nem_mem_region.mailboxes.in[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
 	vc->ch.recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
 
-        vc->ch.lmt_pre_send        = MPID_nem_lmt_shm_pre_send;
-        vc->ch.lmt_pre_recv        = MPID_nem_lmt_shm_pre_recv;
-        vc->ch.lmt_start_send      = MPID_nem_lmt_shm_start_send;
-        vc->ch.lmt_handle_cookie   = MPID_nem_lmt_shm_handle_cookie;
-        vc->ch.lmt_post_send       = MPID_nem_lmt_shm_post_send;
-        vc->ch.lmt_post_recv       = MPID_nem_lmt_shm_post_recv;
+        vc->ch.lmt_initiate_lmt  = MPID_nem_lmt_shm_initiate_lmt;
+        vc->ch.lmt_start_recv    = MPID_nem_lmt_shm_start_recv;
+        vc->ch.lmt_start_send    = MPID_nem_lmt_shm_start_send;
+        vc->ch.lmt_handle_cookie = MPID_nem_lmt_shm_handle_cookie;
+        vc->ch.lmt_done_send     = MPID_nem_lmt_shm_done_send;
+        vc->ch.lmt_done_recv     = MPID_nem_lmt_shm_done_recv;
+
         vc->ch.lmt_copy_buf        = NULL;
         vc->ch.lmt_copy_buf_handle = NULL;
         vc->ch.lmt_queue.head      = NULL;
@@ -632,13 +633,12 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc->ch.fbox_in    = NULL;
 	vc->ch.recv_queue = NULL;
 
-        vc->ch.lmt_pre_send      = NULL;
-        vc->ch.lmt_pre_recv      = NULL;
+        vc->ch.lmt_initiate_lmt      = NULL;
+        vc->ch.lmt_start_recv      = NULL;
         vc->ch.lmt_start_send    = NULL;
-        /*  vc->ch.lmt_start_recv    = NULL; */
         vc->ch.lmt_handle_cookie = NULL;
-        vc->ch.lmt_post_send     = NULL;
-        vc->ch.lmt_post_recv     = NULL;
+        vc->ch.lmt_done_send     = NULL;
+        vc->ch.lmt_done_recv     = NULL;
 
         mpi_errno = MPID_nem_net_module_vc_init (vc, business_card);
 	if (mpi_errno) MPIU_ERR_POP(mpi_errno);

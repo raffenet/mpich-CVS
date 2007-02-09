@@ -120,6 +120,7 @@ struct MPID_nem_tcp_module_internal_queue;
 struct MPIDI_VC;
 struct MPID_Request;
 struct MPID_nem_copy_buf;
+union MPIDI_CH3_Pkt;
 struct MPID_nem_lmt_shm_wait_element;
 
 typedef struct MPIDI_CH3I_VC
@@ -139,13 +140,12 @@ typedef struct MPIDI_CH3I_VC
     enum {MPID_NEM_VC_STATE_CONNECTED, MPID_NEM_VC_STATE_DISCONNECTED} state;
 
     /* LMT function pointers */
-    int (* lmt_pre_send)(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV *cookie);
-    int (* lmt_pre_recv)(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV s_cookie, MPID_IOV *r_cookie, int *send_cts);
+    int (* lmt_initiate_lmt)(struct MPIDI_VC *vc, union MPIDI_CH3_Pkt *rts_pkt, struct MPID_Request *req);
+    int (* lmt_start_recv)(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV s_cookie);
     int (* lmt_start_send)(struct MPIDI_VC *vc, struct MPID_Request *sreq, MPID_IOV r_cookie);
-    /*int (* lmt_start_recv)(struct MPIDI_VC *vc, struct MPID_Request *req);*/
     int (* lmt_handle_cookie)(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV cookie);
-    int (* lmt_post_send)(struct MPIDI_VC *vc, struct MPID_Request *req);
-    int (* lmt_post_recv)(struct MPIDI_VC *vc, struct MPID_Request *req);
+    int (* lmt_done_send)(struct MPIDI_VC *vc, struct MPID_Request *req);
+    int (* lmt_done_recv)(struct MPIDI_VC *vc, struct MPID_Request *req);
 
     /* LMT shared memory copy-buffer ptr */
     volatile struct MPID_nem_copy_buf *lmt_copy_buf;
