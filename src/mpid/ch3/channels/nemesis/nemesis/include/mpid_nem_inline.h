@@ -332,7 +332,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *agai
 /* MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, int dest)
    same as above but first iov element is an MPICH2 32 byte header */
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_mpich2_send_header
+#define FUNCNAME MPID_nem_mpich2_sendv_header
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL int
