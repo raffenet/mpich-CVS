@@ -9,7 +9,8 @@
 $includedir = ".";
 $makefilebase = "Makefile.base";
 $ranliblib    = 1;
-$useinclude = 0;
+$useinclude = 0;     # set to 1 to make the Makefiles refer to a single
+                     # base makefile.
 $include_list = "";
 $vpath_config = 0;   # set to 1 for @VPATH@
 $nocomments = 0;     # set to 1 to exclude comments from the source file
