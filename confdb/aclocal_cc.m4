@@ -1559,7 +1559,12 @@ int main( int argc, char *argv[] )
     /* assume max integer alignment isn't 8 if we don't have
      * an eight-byte value :)
      */
+#ifdef HAVE_LONG_LONG_INT
+    if (sizeof(int) < 8 && sizeof(long) < 8 && sizeof(long long int) < 8)
+	is_eight = 0;
+#else
     if (sizeof(int) < 8 && sizeof(long) < 8) is_eight = 0;
+#endif
 
     size = sizeof(char) + sizeof(int);
     extent = sizeof(char_int);
