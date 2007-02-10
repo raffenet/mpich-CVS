@@ -505,11 +505,13 @@ void mpi_init_( MPI_Fint *ierr )
 }
 
 
+#if defined( HAVE_MPI_INIT_THREAD )
 void mpi_init_thread_( MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr );
 void mpi_init_thread_( MPI_Fint *required, MPI_Fint *provided, MPI_Fint *ierr )
 {
     *ierr = MPI_Init_thread( NULL, NULL, *required, provided );
 }
+#endif
 
 
 
