@@ -71,7 +71,9 @@ MPIDI_Message_match;
    packet header can be copied in the event that a message cannot be
    send immediately.  
 */
-#include "mpidpkt.h"
+/* #include "mpidpkt.h" */
+typedef struct { int32_t kind; int32_t pktwords[17]; } MPIDI_CH3_PktGeneric_t;
+
 /*
  * THIS IS OBSOLETE AND UNUSED, BUT RETAINED FOR ITS DESCRIPTIONS OF THE
  * VARIOUS STATES.  Note that this is not entirely accurate, as the 
@@ -306,13 +308,13 @@ typedef struct MPIDI_Request {
 
     /* user_buf, user_count, and datatype needed to process 
        rendezvous messages. */
-    void * user_buf;
-    int user_count;
+    void        *user_buf;
+    int          user_count;
     MPI_Datatype datatype;
 
     /* segment, segment_first, and segment_size are used when processing 
        non-contiguous datatypes */
-    MPID_Segment segment;
+    MPID_Segment   segment;
     MPIDI_msg_sz_t segment_first;
     MPIDI_msg_sz_t segment_size;
 
@@ -323,12 +325,14 @@ typedef struct MPIDI_Request {
     MPID_IOV iov[MPID_IOV_LIMIT];
     int iov_count;
 
+#if 0
     /* FIXME: RDMA values are specific to some channels? */
+    /* FIXME: Remove these (obsolete)? */
     MPID_IOV rdma_iov[MPID_IOV_LIMIT];
     int rdma_iov_count;
     int rdma_iov_offset;
     MPI_Request rdma_request;
-
+#endif
     /* OnDataAvail is the action to take when data is now available.
        For example, when an operation described by an iov has 
        completed.  This replaces the MPIDI_CA_t (completion action)
@@ -347,16 +351,16 @@ typedef struct MPIDI_Request {
     /* tmpbuf and tmpbuf_sz describe temporary storage used for things like 
        unexpected eager messages and packing/unpacking
        buffers.  tmpuf_off is the current offset into the temporary buffer. */
-    void * tmpbuf;
-    int tmpbuf_off;
+    void          *tmpbuf;
+    int            tmpbuf_off;
     MPIDI_msg_sz_t tmpbuf_sz;
 
     MPIDI_msg_sz_t recv_data_sz;
-    MPI_Request sender_req_id;
+    MPI_Request    sender_req_id;
 
-    unsigned state;
-    int cancel_pending;
-    int recv_pending_count;
+    unsigned int   state;
+    int            cancel_pending;
+    int            recv_pending_count;
 
     /* The next 8 are for RMA */
     MPI_Op op;
@@ -367,13 +371,20 @@ typedef struct MPIDI_Request {
     void *dataloop;
     /* req. handle needed to implement derived datatype gets  */
     MPI_Request request_handle;
-    MPI_Win target_win_handle;
-    MPI_Win source_win_handle;
+    MPI_Win     target_win_handle;
+    MPI_Win     source_win_handle;
     int single_op_opt;   /* to indicate a lock-put-unlock optimization case */
     struct MPIDI_Win_lock_queue *lock_queue_entry; /* for single lock-put-unlock optimization */
 
     MPIDI_REQUEST_SEQNUM
 
+    /* Occasionally, when a message cannot be sent, we need to cache the
+       data that is required.  The fields above (such as userbuf and tmpbuf)
+       are used for the message data.  However, we also need space for the
+       message packet. This field provide a generic location for that.
+       Question: do we want to make this a link instead of reserving 
+       a fixed spot in the request? */
+    MPIDI_CH3_PktGeneric_t pending_pkt;
     struct MPID_Request * next;
 } MPIDI_Request;
 #define MPID_REQUEST_DECL MPIDI_Request dev;

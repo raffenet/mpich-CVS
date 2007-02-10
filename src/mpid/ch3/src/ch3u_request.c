@@ -84,8 +84,10 @@ MPID_Request * MPID_Request_create(void)
 	req->dev.lock_queue_entry  = NULL;
 	req->dev.dtype_info	   = NULL;
 	req->dev.dataloop	   = NULL;
+#if 0
 	req->dev.rdma_iov_count	   = 0;
 	req->dev.rdma_iov_offset   = 0;
+#endif
 #ifdef MPIDI_CH3_REQUEST_INIT
 	MPIDI_CH3_REQUEST_INIT(req);
 #endif

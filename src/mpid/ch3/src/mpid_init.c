@@ -51,6 +51,15 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     /* FIXME: This is a good place to check for environment variables
        and command line options that may control the device */
 
+#if 1
+    /* This is a sanity check because we define a generic packet size
+     */
+    if (sizeof(MPIDI_CH3_PktGeneric_t) < sizeof(MPIDI_CH3_Pkt_t)) {
+	fprintf( stderr, "Internal error - packet definition is too small\n" );
+	exit(1);
+    }
+#endif
+
     /*
      * Set global process attributes.  These can be overridden by the channel 
      * if necessary.

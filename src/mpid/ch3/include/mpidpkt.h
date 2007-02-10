@@ -56,8 +56,8 @@ typedef struct MPIDI_CH3_Pkt_send
 }
 MPIDI_CH3_Pkt_send_t;
 
-/* NOTE: Normal and synchronous eager sends, as well as all ready-mode sends, use the same structure but have a different type
-   value. */
+/* NOTE: Normal and synchronous eager sends, as well as all ready-mode sends, 
+   use the same structure but have a different type value. */
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_eager_send_t;
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_eager_sync_send_t;
 typedef MPIDI_CH3_Pkt_send_t MPIDI_CH3_Pkt_ready_send_t;

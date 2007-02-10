@@ -97,11 +97,13 @@ MPIDI_CH3I_VC;
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
  */
 /*  pkt is used to temporarily store a packet header associated with this request */	
+#if 0
 #define MPIDI_CH3_REQUEST_DECL	\
 struct MPIDI_CH3I_Request	\
 {				\
-    MPIDI_CH3_Pkt_t pkt;	\
+    MPIDI_CH3_PktGeneric_t pkt;	\
 } ch;
+#endif
 
 /*
  * MPID_Progress_state - device/channel dependent state to be passed between 

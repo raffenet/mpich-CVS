@@ -23,6 +23,9 @@
 #include "mpidpre.h"
 #endif
 
+/* Add the ch3 packet definitions */
+#include "mpidpkt.h"
+
 #if !defined(MPIDI_IOV_DENSITY_MIN)
 #   define MPIDI_IOV_DENSITY_MIN (16 * 1024)
 #endif
