@@ -392,7 +392,7 @@ AC_CHECK_HEADERS( fcntl.h,
 dnl   Determine if PMPI_Comm_create_keyval exists
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     AC_MSG_CHECKING( [for PMPI_Comm_create_keyval()] )
-    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, ,
                           [ int comm_keyval ], [
                           PMPI_Comm_create_keyval( MPI_COMM_NULL_COPY_FN,
                                                    MPI_COMM_NULL_DELETE_FN,
@@ -416,7 +416,7 @@ fi
 dnl   Determine if PMPI_Comm_free_keyval exists
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     AC_MSG_CHECKING( [for PMPI_Comm_free_keyval()] )
-    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, ,
                           [ int comm_keyval ], [
                           PMPI_Comm_free_keyval( &comm_keyval )
                           ],
@@ -438,7 +438,7 @@ fi
 dnl   Determine if PMPI_Comm_set_attr exists
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     AC_MSG_CHECKING( [for PMPI_Comm_set_attr()] )
-    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, ,
                           [ int comm_keyval ], [
                           PMPI_Comm_set_attr( MPI_COMM_WORLD, comm_keyval,
                                               (void *)5 )
@@ -461,7 +461,7 @@ fi
 dnl   Determine if PMPI_Comm_get_attr exists
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     AC_MSG_CHECKING( [for PMPI_Comm_get_attr()] )
-    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+    PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, ,
                           [ int comm_keyval, comm_val, istatus ], [
                           PMPI_Comm_get_attr( MPI_COMM_WORLD, comm_keyval,
                                               &comm_val, &istatus )

@@ -197,7 +197,7 @@ if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
 #   Determine MPI_Fint
     if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
         AC_MSG_CHECKING( [for MPI_Fint] )
-        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, ,
                               [ MPI_Fint aa=1 ], ,
                               [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
         AC_MSG_RESULT($mpe_link_ok)
@@ -216,7 +216,7 @@ if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
 #   Determmine if MPI_Comm_f2c() and MPI_Comm_c2f() are there
     if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
         AC_MSG_CHECKING( [for MPI_Comm_c2f() and MPI_Comm_f2c()] )
-        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, [
+        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, , [
                               MPI_Comm comm; ${MPI_FINT_TYPE} aa;
                               ], [
                               aa=MPI_Comm_c2f(comm) ;

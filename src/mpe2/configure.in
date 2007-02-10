@@ -361,7 +361,7 @@ dnl
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     if test "$enable_checkMPI" = "yes" ; then
         AC_MSG_CHECKING( [for the linkage of the supplied MPI C definitions] )
-        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, , ,
+        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, , , ,
                               [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
         if test "$mpe_link_ok" = "yes" ; then
             AC_MSG_RESULT(yes)
@@ -399,7 +399,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
     dnl
     if test "$enable_checkMPI" = "yes" -a "$enable_checkMPIwtime" = "yes" ; then
         AC_MSG_CHECKING( [for the C version of MPI_Wtime()] )
-        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS,
+        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC], $MPI_LIBS, ,
                               [ double d ],
                               [ d=MPI_Wtime() ],
                               [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
