@@ -76,7 +76,7 @@ MPIDI_CH3I_Process_group_t;
 
 #define MPIDI_CH3_PG_DECL MPIDI_CH3I_Process_group_t ch;
 
-#if 1
+#if 0
 #define MPIDI_CH3I_PKT_DECL \
 MPIDI_CH3_Pkt_rdma_rts_iov_t rts_iov; \
 MPIDI_CH3_Pkt_rdma_cts_iov_t cts_iov; \
@@ -109,7 +109,6 @@ typedef struct MPIDI_CH3_Pkt_rdma_iov_t \
     int send_recv; \
     int iov_len; \
 } MPIDI_CH3_Pkt_rdma_iov_t;
-#endif
 
 #ifdef USE_ALIGNED_PACKET_SIZE
 #define MPIDI_CH3_PKT_DECL MPIDI_CH3I_PKT_DECL MPIDI_CH3_Pkt_max_size_aligned_t dummy;
@@ -128,6 +127,8 @@ typedef struct MPIDI_CH3_Pkt_max_size_aligned \
     MPIDI_CH3_PKT_CTS_IOV, \
     MPIDI_CH3_PKT_RELOAD,  \
     MPIDI_CH3_PKT_IOV
+
+#endif /* if 0 */
 
 #define MPIDI_CH3_PKT_RELOAD_SEND 1
 #define MPIDI_CH3_PKT_RELOAD_RECV 0
