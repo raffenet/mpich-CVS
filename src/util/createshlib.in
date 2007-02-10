@@ -1,5 +1,5 @@
 #! /bin/sh
-set -x
+#set -x
 # -*- Mode: shell-script; -*-
 #
 # This is a simplified tool for creating and installing shared libraries
