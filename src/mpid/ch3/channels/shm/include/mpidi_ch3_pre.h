@@ -76,6 +76,7 @@ MPIDI_CH3I_Process_group_t;
 
 #define MPIDI_CH3_PG_DECL MPIDI_CH3I_Process_group_t ch;
 
+#if 1
 #define MPIDI_CH3I_PKT_DECL \
 MPIDI_CH3_Pkt_rdma_rts_iov_t rts_iov; \
 MPIDI_CH3_Pkt_rdma_cts_iov_t cts_iov; \
@@ -108,6 +109,7 @@ typedef struct MPIDI_CH3_Pkt_rdma_iov_t \
     int send_recv; \
     int iov_len; \
 } MPIDI_CH3_Pkt_rdma_iov_t;
+#endif
 
 #ifdef USE_ALIGNED_PACKET_SIZE
 #define MPIDI_CH3_PKT_DECL MPIDI_CH3I_PKT_DECL MPIDI_CH3_Pkt_max_size_aligned_t dummy;
@@ -194,7 +196,7 @@ struct MPIDI_CH3I_Request						\
     									\
     /*  pkt is used to temporarily store a packet header associated	\
        with this request */						\
-    MPIDI_CH3_Pkt_t pkt;						\
+    /* MPIDI_CH3_Pkt_t pkt;*/						\
 									\
     struct MPID_Request *req;						\
 } ch;
@@ -205,7 +207,8 @@ struct MPIDI_CH3I_Request						\
     (req_)->ch.req=NULL
 
 /*
- * MPID_Progress_state - device/channel dependent state to be passed between MPID_Progress_{start,wait,end}
+ * MPID_Progress_state - device/channel dependent state to be passed between 
+ * MPID_Progress_{start,wait,end}
  */
 typedef struct MPIDI_CH3I_Progress_state
 {
