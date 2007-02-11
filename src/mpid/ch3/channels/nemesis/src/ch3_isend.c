@@ -74,8 +74,8 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_s
  enqueue_it:
     MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
 
-    sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) hdr;
-    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->ch.pkt;
+    sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *) hdr;
+    sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->dev.pending_pkt;
     sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz;
     sreq->dev.iov_count = 1;
     sreq->ch.iov_offset = 0;

@@ -318,6 +318,16 @@ AC_DEFINE(MPID_NEM_INLINE,1,[Define to turn on the inlining optimizations in Nem
 AC_DEFINE(PREFETCH_CELL,1,[Define to turn on the prefetching optimization in Nemesis code])	
 AC_DEFINE(USE_FASTBOX,1,[Define to use the fastboxes in Nemesis code])	
 
+# We may need this only for tcp and related netmodules
+# Check for h_addr or h_addr_list
+AC_CACHE_CHECK([whether struct hostent contains h_addr_list],
+pac_cv_have_haddr_list,[
+AC_TRY_COMPILE([
+#include <netdb.h>],[struct hostent hp;hp.h_addr_list[0]=0;],
+pac_cv_have_haddr_list=yes,pac_cv_have_haddr_list=no)])
+if test "$pac_cv_have_haddr_list" = "yes" ; then
+    AC_DEFINE(HAVE_H_ADDR_LIST,1,[Define if struct hostent contains h_addr_list])
+fi
 
 AC_SUBST(device_name)
 AC_SUBST(channel_name)
@@ -338,5 +348,10 @@ AC_SUBST(master_top_builddir)
 dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)
+
+# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
+# which include flags should start in MPICH2_INCLUDE_FLAGS and which in 
+# CPPFLAGS
+CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
 
 AC_OUTPUT(Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/replacements/Makefile nemesis/utils/monitor/Makefile nemesis/net_mod/Makefile nemesis/net_mod/elan_module/Makefile  nemesis/net_mod/gm_module/Makefile nemesis/net_mod/mx_module/Makefile nemesis/net_mod/tcp_module/Makefile nemesis/net_mod/newtcp_module/Makefile nemesis/net_mod/sctp_module/Makefile nemesis/net_mod/ib_module/Makefile nemesis/net_mod/none_module/Makefile localdefs)
