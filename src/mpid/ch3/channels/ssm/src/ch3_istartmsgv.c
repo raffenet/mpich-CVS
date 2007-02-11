@@ -30,10 +30,10 @@
     /*for (i = 0; i < count; i++) { sreq->dev.iov[i] = iov[i]; }*/ \
     if (offset == 0) \
     { \
-	/* memcpy(&sreq->ch.pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
+	/* memcpy(&sreq->dev.pending_pkt, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN); */ \
 	/*MPIU_Assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));*/ \
-	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF; \
-	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) &sreq->ch.pkt; \
+	sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *) iov[0].MPID_IOV_BUF; \
+	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) &sreq->dev.pending_pkt; \
     } \
     sreq->dev.iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb); \
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \

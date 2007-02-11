@@ -25,9 +25,9 @@ static int createRequest( void *pkt, MPIDI_msg_sz_t pkt_sz, int nb,
     }
     MPIU_Object_set_ref(sreq, 2);
     sreq->kind   = MPID_REQUEST_SEND;
-    sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) pkt;
+    sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *) pkt;
     sreq->dev.iov[0].MPID_IOV_BUF = 
-	(MPID_IOV_BUF_CAST)((char *) &sreq->ch.pkt + nb);
+	(MPID_IOV_BUF_CAST)((char *) &sreq->dev.pending_pkt + nb);
     sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb;
     sreq->dev.iov_count   = 1;
     sreq->ch.iov_offset   = 0;

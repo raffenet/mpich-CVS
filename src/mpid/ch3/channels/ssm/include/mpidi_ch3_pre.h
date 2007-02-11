@@ -258,7 +258,7 @@ struct MPIDI_CH3I_Request						\
     int iov_offset;							\
 									\
     /*  pkt is used to temporarily store a packet header associated with this request */	\
-    MPIDI_CH3_Pkt_t pkt;						\
+    /* MPIDI_CH3_Pkt_t pkt;	*/					\
                                                                         \
     struct MPID_Request *req;						\
 } ch;
