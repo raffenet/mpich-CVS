@@ -54,6 +54,6 @@ int MPIDI_CH3I_comm_destroy (MPID_Comm *new_comm);
 /* rendezvous hooks */
 int MPID_nem_lmt_RndvSend(MPID_Request **sreq_p, const void * buf, int count, MPI_Datatype datatype, int dt_contig, int data_sz, 
                           MPI_Aint dt_true_lb, int rank, int tag, MPID_Comm * comm, int context_offset);
-int MPID_nem_lmt_RecvRndv(MPIDI_VC_t *vc, MPID_Request *rreq);
+int MPID_nem_lmt_RndvRecv(MPIDI_VC_t *vc, MPID_Request *rreq);
 
 #endif /* !defined(MPICH_MPIDI_CH3_POST_H_INCLUDED) */

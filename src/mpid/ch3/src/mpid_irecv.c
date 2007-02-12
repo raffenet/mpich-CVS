@@ -111,7 +111,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	{
 	    MPIDI_Comm_get_vc(comm, rreq->dev.match.rank, &vc);
 	
-	    mpi_errno = MPIDI_CH3_RecvRndv_fn( vc, rreq );
+	    mpi_errno = vc->RndvRecv_fn( vc, rreq );
 	    if (mpi_errno) MPIU_ERR_POP( mpi_errno );
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 	    {

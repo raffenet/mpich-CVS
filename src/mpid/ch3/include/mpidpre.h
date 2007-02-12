@@ -203,6 +203,8 @@ typedef enum MPIDI_VC_State
     MPIDI_VC_STATE_CLOSE_ACKED
 } MPIDI_VC_State_t;
 
+struct MPID_Comm;
+
 typedef struct MPIDI_VC
 {
     /* XXX - need better comment */
@@ -241,6 +243,14 @@ typedef struct MPIDI_VC
        is the responsibility of the channel. */
     MPIDI_CH3_Pkt_send_container_t * msg_reorder_queue;
 #endif
+
+    /* rendezvous function pointers, called to send a rendevous
+       message or when one is matched */
+    int (* RndvSend_fn)( struct MPID_Request **sreq_p, const void * buf, int count, 
+                         MPI_Datatype datatype, int dt_contig, int data_sz, 
+                         MPI_Aint dt_true_lb, int rank, int tag,
+                         struct MPID_Comm * comm, int context_offset );
+    int (* RndvRecv_fn)( struct MPIDI_VC * vc, struct MPID_Request *rreq );
     
 # if defined(MPIDI_CH3_VC_DECL)
     MPIDI_CH3_VC_DECL

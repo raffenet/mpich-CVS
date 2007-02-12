@@ -148,16 +148,16 @@ int MPID_nem_lmt_RndvSend(MPID_Request **sreq_p, const void * buf, int count, MP
  * It is used in mpid_recv and mpid_irecv.
  */
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_lmt_RecvRndv
+#define FUNCNAME MPID_nem_lmt_RndvRecv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_lmt_RecvRndv(MPIDI_VC_t *vc, MPID_Request *rreq)
+int MPID_nem_lmt_RndvRecv(MPIDI_VC_t *vc, MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
     int complete = 0;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LMT_RECVRNDV);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LMT_RNDVRECV);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LMT_RECVRNDV);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LMT_RNDVRECV);
 
     /* if the lmt functions are not set, fall back to the default rendezvous code */
     if (vc->ch.lmt_initiate_lmt == NULL)
@@ -175,7 +175,7 @@ int MPID_nem_lmt_RecvRndv(MPIDI_VC_t *vc, MPID_Request *rreq)
     MPIU_Assert(complete);
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LMT_RECVRNDV);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LMT_RNDVRECV);
     return mpi_errno;
  fn_fail:
     goto fn_exit;

@@ -662,6 +662,8 @@ int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
     vc->lpid    = lpid_counter++;
     MPIDI_VC_Init_seqnum_send(vc);
     MPIDI_VC_Init_seqnum_recv(vc);
+    vc->RndvSend_fn = MPIDI_CH3_RndvSend;
+    vc->RndvRecv_fn = MPIDI_CH3_RecvRndv;
     MPIU_DBG_PrintVCState(vc);
 
     return MPI_SUCCESS;

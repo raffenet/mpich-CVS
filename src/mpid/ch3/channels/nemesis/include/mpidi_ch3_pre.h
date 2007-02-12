@@ -307,10 +307,6 @@ MPIDI_CH3I_comm_t;
 #endif
 #define MPID_DEV_COMM_DECL MPIDI_CH3I_comm_t ch;
 
-/* override default rendezvous methods */
-#define MPIDI_CH3_RndvSend_fn MPID_nem_lmt_RndvSend
-#define MPIDI_CH3_RecvRndv_fn MPID_nem_lmt_RecvRndv
-
 /*
  * MPID_Progress_state - device/channel dependent state to be passed between 
  * MPID_Progress_{start,wait,end}

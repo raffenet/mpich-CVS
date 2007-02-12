@@ -613,6 +613,10 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc->ch.fbox_in = &MPID_nem_mem_region.mailboxes.in[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
 	vc->ch.recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
 
+        /* override rendezvous functions */
+        vc->RndvSend_fn = MPID_nem_lmt_RndvSend;
+        vc->RndvRecv_fn = MPID_nem_lmt_RndvRecv;
+
         vc->ch.lmt_initiate_lmt  = MPID_nem_lmt_shm_initiate_lmt;
         vc->ch.lmt_start_recv    = MPID_nem_lmt_shm_start_recv;
         vc->ch.lmt_start_send    = MPID_nem_lmt_shm_start_send;
@@ -633,8 +637,8 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc->ch.fbox_in    = NULL;
 	vc->ch.recv_queue = NULL;
 
-        vc->ch.lmt_initiate_lmt      = NULL;
-        vc->ch.lmt_start_recv      = NULL;
+        vc->ch.lmt_initiate_lmt  = NULL;
+        vc->ch.lmt_start_recv    = NULL;
         vc->ch.lmt_start_send    = NULL;
         vc->ch.lmt_handle_cookie = NULL;
         vc->ch.lmt_done_send     = NULL;

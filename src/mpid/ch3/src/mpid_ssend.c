@@ -85,10 +85,13 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
     }
     else
     {
+        MPIDI_VC_t * vc;
+        
+        MPIDI_Comm_get_vc(comm, rank, &vc);
 	/* Note that the sreq was created above */
-	mpi_errno = MPIDI_CH3_RndvSend_fn( &sreq, buf, count, datatype, dt_contig,
-                                           data_sz, dt_true_lb, rank, tag, comm, 
-                                           context_offset );
+	mpi_errno = vc->RndvSend_fn( &sreq, buf, count, datatype, dt_contig,
+                                     data_sz, dt_true_lb, rank, tag, comm, 
+                                     context_offset );
 	/* Note that we don't increase the ref cound on the datatype
 	   because this is a blocking call, and the calling routine 
 	   must wait until sreq completes */
