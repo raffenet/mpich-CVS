@@ -12,7 +12,8 @@
 
 static int root_smpd(void *p);
 
-/* Define to prevent an smpd root thread or process from being created when there is only one process. */
+/* Define to prevent an smpd root thread or process from being created when 
+   there is only one process. */
 /* Currently, defining this prevents the use of the spawn command. */
 /*#define SINGLE_PROCESS_OPTIMIZATION*/
 
