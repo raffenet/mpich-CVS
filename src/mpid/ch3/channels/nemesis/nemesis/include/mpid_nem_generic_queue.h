@@ -36,6 +36,17 @@
         PRINT_QUEUE (qp, next_field);                           \
     } while (0)
 
+#define GENERIC_Q_ENQUEUE_AT_HEAD(qp, ep, next_field) do {      \
+        if (GENERIC_Q_EMPTY (*(qp)))                            \
+            GENERIC_Q_ENQUEUE_EMPTY (qp, ep, next_field);       \
+        else                                                    \
+        {                                                       \
+            (ep)->next_field = (qp)->head;                      \
+            (qp)->head = ep;                                    \
+        }                                                       \
+        PRINT_QUEUE (qp, next_field);                           \
+    } while (0)
+
 /* the _MULTIPLE routines assume that ep0 is the head and ep1 is the
    tail of a linked list of elements.  The list is inserted on the end
    of the queue. */

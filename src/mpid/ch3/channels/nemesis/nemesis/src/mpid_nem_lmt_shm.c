@@ -45,6 +45,7 @@ typedef struct MPID_nem_lmt_shm_wait_element
 #define LMT_SHM_Q_EMPTY(qp) GENERIC_Q_EMPTY(qp)
 #define LMT_SHM_Q_HEAD(qp) GENERIC_Q_HEAD(qp)
 #define LMT_SHM_Q_ENQUEUE(qp, ep) GENERIC_Q_ENQUEUE(qp, ep, next)
+#define LMT_SHM_Q_ENQUEUE_AT_HEAD(qp, ep) GENERIC_Q_ENQUEUE_AT_HEAD(qp, ep, next)
 #define LMT_SHM_Q_DEQUEUE(qp, epp) GENERIC_Q_DEQUEUE(qp, epp, next)
 #define LMT_SHM_Q_SEARCH_REMOVE(qp, req_id, epp) GENERIC_Q_SEARCH_REMOVE(qp, _e->req->handle == (req_id), epp, \
                                                                          MPID_nem_lmt_shm_wait_element_t, next)
@@ -242,7 +243,7 @@ int MPID_nem_lmt_shm_start_send(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV r_co
         mpi_errno = MPID_nem_attach_shm_region(&vc->ch.lmt_copy_buf, vc->ch.lmt_copy_buf_handle);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-        LMT_SHM_Q_ENQUEUE(&vc->ch.lmt_queue, vc->ch.lmt_active_lmt);
+        LMT_SHM_Q_ENQUEUE_AT_HEAD(&vc->ch.lmt_queue, vc->ch.lmt_active_lmt); /* MT: not thread safe */
         vc->ch.lmt_active_lmt = NULL;
     }
 
