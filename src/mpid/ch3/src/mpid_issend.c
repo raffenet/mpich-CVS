@@ -65,11 +65,11 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
     
     if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_sync_send_t) <= MPIDI_CH3_EAGER_MAX_MSG_SIZE)
     {
-	mpi_errno = MPIDI_CH3_EagerSyncNoncontigSend( &sreq, buf, count,
-						      datatype, data_sz, 
-						      dt_contig, dt_true_lb,
-						      rank, tag, comm, 
-						      context_offset );
+	mpi_errno = vc->EagerSyncNoncontigSend_fn( &sreq, buf, count,
+                                                   datatype, data_sz, 
+                                                   dt_contig, dt_true_lb,
+                                                   rank, tag, comm, 
+                                                   context_offset );
 	/* If we're not complete, then add a reference to the datatype */
 	if (sreq && sreq->dev.OnDataAvail) {
 	    sreq->dev.datatype_ptr = dt_ptr;
