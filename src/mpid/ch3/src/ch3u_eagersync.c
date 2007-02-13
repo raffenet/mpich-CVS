@@ -36,7 +36,6 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **sreq_p,
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_eager_sync_send_t * const es_pkt = &upkt.eager_sync_send;
-    MPID_IOV iov[MPID_IOV_LIMIT];
     MPIDI_VC_t * vc;
     MPID_Request *sreq = *sreq_p;
     
@@ -51,23 +50,24 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **sreq_p,
     es_pkt->data_sz = data_sz;
 
     MPIDI_Comm_get_vc(comm, rank, &vc);
+    
+    MPIDI_VC_FAI_send_seqnum(vc, seqnum);
+    MPIDI_Pkt_set_seqnum(es_pkt, seqnum);
+    MPIDI_Request_set_seqnum(sreq, seqnum);
+    
     MPIU_DBG_MSGPKT(vc,tag,es_pkt->match.context_id,rank,data_sz,"EagerSync");
-    
-    iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)es_pkt;
-    iov[0].MPID_IOV_LEN = sizeof(*es_pkt);
-    
+
     if (dt_contig)
     {
+        MPID_IOV iov[2];
 	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-          "sending contiguous sync eager message, data_sz=" MPIDI_MSG_SZ_FMT, 
+                                            "sending contiguous sync eager message, data_sz=" MPIDI_MSG_SZ_FMT, 
 					    data_sz));
 	
+        iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)es_pkt;
+        iov[0].MPID_IOV_LEN = sizeof(*es_pkt);
 	iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) ((char *)buf + dt_true_lb);
-	iov[1].MPID_IOV_LEN = data_sz;
-	
-	MPIDI_VC_FAI_send_seqnum(vc, seqnum);
-	MPIDI_Pkt_set_seqnum(es_pkt, seqnum);
-	MPIDI_Request_set_seqnum(sreq, seqnum);
+	iov[1].MPID_IOV_LEN = data_sz;	
 	
 	mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, 2);
 	/* --BEGIN ERROR HANDLING-- */
@@ -77,7 +77,7 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **sreq_p,
 	    MPIDI_CH3_Request_destroy(sreq);
 	    *sreq_p = NULL;
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
-	    goto fn_exit;
+	    goto fn_fail;
 	}
 	/* --END ERROR HANDLING-- */
     }
@@ -93,45 +93,15 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **sreq_p,
 	sreq->dev.segment_first = 0;
 	sreq->dev.segment_size = data_sz;
 	
-	iov_n = MPID_IOV_LIMIT - 1;
-	/* One the initial load of a send iov req, set the OnFinal action (null
-	   for point-to-point) */
-	sreq->dev.OnFinal = 0;
-	mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
-	if (mpi_errno == MPI_SUCCESS)
-	{
-	    iov_n += 1;
-	    
-	    MPIDI_VC_FAI_send_seqnum(vc, seqnum);
-	    MPIDI_Pkt_set_seqnum(es_pkt, seqnum);
-	    MPIDI_Request_set_seqnum(sreq, seqnum);
-	    
-	    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		MPIU_Object_set_ref(sreq, 0);
-		MPIDI_CH3_Request_destroy(sreq);
-		*sreq_p = NULL;
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|eagermsg", 0);
-		goto fn_exit;
-	    }
-	    /* --END ERROR HANDLING-- */
-	}
-	else
-	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    MPIU_Object_set_ref(sreq, 0);
-	    MPIDI_CH3_Request_destroy(sreq);
-	    *sreq_p = NULL;
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
-	    goto fn_exit;
-	    /* --END ERROR HANDLING-- */
-	}
+        mpi_errno = vc->sendEagerNoncontig_fn(vc, sreq, es_pkt, sizeof(es_pkt));
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 
  fn_exit:
     return mpi_errno;
+ fn_fail:
+    *sreq_p = NULL;
+    goto fn_exit;
 }
 
 /* Send a zero-sized message with eager synchronous.  This is a temporary

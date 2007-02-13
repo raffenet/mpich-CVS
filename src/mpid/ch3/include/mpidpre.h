@@ -247,25 +247,19 @@ typedef struct MPIDI_VC
 
     /* rendezvous function pointers.  Called to send a rendevous
        message or when one is matched */
-    int (* RndvSend_fn)( struct MPID_Request **sreq_p, const void * buf, int count, 
+    int (* rndvSend_fn)( struct MPID_Request **sreq_p, const void * buf, int count, 
                          MPI_Datatype datatype, int dt_contig, int data_sz, 
                          MPI_Aint dt_true_lb, int rank, int tag,
                          struct MPID_Comm * comm, int context_offset );
-    int (* RndvRecv_fn)( struct MPIDI_VC * vc, struct MPID_Request *rreq );
+    int (* rndvRecv_fn)( struct MPIDI_VC * vc, struct MPID_Request *rreq );
 
     /* eager noncontiguous send function pointer.  Called to send a
-       noncontiguous eager message.  Contiguous messages are called
-       directly from CH3 and cannot be overridden. */
-    int (* EagerNoncontigSend_fn)( struct MPID_Request **sreq_p, 
-                                   enum MPIDI_CH3_Pkt_type reqtype, const void * buf,
-                                   int count, MPI_Datatype datatype, int data_sz, 
-                                   int rank, int tag, struct MPID_Comm * comm, 
-                                   int context_offset );
-    int (* EagerSyncNoncontigSend_fn)( struct MPID_Request **sreq_p, const void * buf,
-                                       int count, MPI_Datatype datatype, int data_sz, 
-                                       int dt_contig, MPI_Aint dt_true_lb, int rank, 
-                                       int tag, struct MPID_Comm * comm,
-                                       int context_offset );
+       noncontiguous eager message.  Caller must initialize
+       sreq->dev.segment, _first and _size.  Contiguous messages are
+       called directly from CH3 and cannot be overridden. */
+    int (* sendEagerNoncontig_fn)( struct MPIDI_VC *vc, struct MPID_Request *sreq,
+                                   void *header, MPIDI_msg_sz_t hdr_sz );
+    
 # if defined(MPIDI_CH3_VC_DECL)
     MPIDI_CH3_VC_DECL
 # endif

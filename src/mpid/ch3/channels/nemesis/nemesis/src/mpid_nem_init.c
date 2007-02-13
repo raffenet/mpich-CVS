@@ -614,8 +614,8 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc->ch.recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
 
         /* override rendezvous functions */
-        vc->RndvSend_fn = MPID_nem_lmt_RndvSend;
-        vc->RndvRecv_fn = MPID_nem_lmt_RndvRecv;
+        vc->rndvSend_fn = MPID_nem_lmt_RndvSend;
+        vc->rndvRecv_fn = MPID_nem_lmt_RndvRecv;
 
         vc->ch.lmt_initiate_lmt  = MPID_nem_lmt_shm_initiate_lmt;
         vc->ch.lmt_start_recv    = MPID_nem_lmt_shm_start_recv;

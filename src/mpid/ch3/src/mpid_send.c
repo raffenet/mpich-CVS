@@ -132,17 +132,17 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank,
 	else {
 	    MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
 	    MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
-	    mpi_errno = vc->EagerNoncontigSend_fn( &sreq, 
-                                                   MPIDI_CH3_PKT_EAGER_SEND,
-                                                   buf, count, datatype,
-                                                   data_sz, rank, tag, 
-                                                   comm, context_offset );
+	    mpi_errno = MPIDI_CH3_EagerNoncontigSend( &sreq, 
+                                                      MPIDI_CH3_PKT_EAGER_SEND,
+                                                      buf, count, datatype,
+                                                      data_sz, rank, tag, 
+                                                      comm, context_offset );
 	}
     }
     else {
 	MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
 	MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
-	mpi_errno = vc->RndvSend_fn( &sreq, buf, count, datatype, dt_contig,
+	mpi_errno = vc->rndvSend_fn( &sreq, buf, count, datatype, dt_contig,
                                      data_sz, dt_true_lb, rank, tag, comm, 
                                      context_offset );
 	/* Note that we don't increase the ref count on the datatype

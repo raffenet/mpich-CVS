@@ -79,16 +79,16 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
     
     if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_sync_send_t) <= MPIDI_CH3_EAGER_MAX_MSG_SIZE)
     {
-	mpi_errno = vc->EagerSyncNoncontigSend_fn( &sreq, buf, count,
-                                                   datatype, data_sz, 
-                                                   dt_contig, dt_true_lb,
-                                                   rank, tag, comm, 
-                                                   context_offset );
+	mpi_errno = MPIDI_CH3_EagerSyncNoncontigSend( &sreq, buf, count,
+                                                      datatype, data_sz, 
+                                                      dt_contig, dt_true_lb,
+                                                      rank, tag, comm, 
+                                                      context_offset );
     }
     else
     {
 	/* Note that the sreq was created above */
-	mpi_errno = vc->RndvSend_fn( &sreq, buf, count, datatype, dt_contig,
+	mpi_errno = vc->rndvSend_fn( &sreq, buf, count, datatype, dt_contig,
                                      data_sz, dt_true_lb, rank, tag, comm, 
                                      context_offset );
 	/* Note that we don't increase the ref cound on the datatype
