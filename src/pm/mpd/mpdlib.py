@@ -724,6 +724,8 @@ class MPDStreamHandler(object):
                 break
             except select.error, errinfo:
                 if errinfo[0] == EINTR:
+                    if mpd_signum == signal.SIGCHLD:
+                        break
                     if mpd_signum == signal.SIGINT  or  mpd_signum == signal.SIGALRM:
                         break
                     else:

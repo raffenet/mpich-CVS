@@ -25,7 +25,7 @@ from urllib   import quote
 from mpdlib   import mpd_set_my_id, mpd_print, mpd_read_nbytes,  \
                      mpd_sockpair, mpd_get_ranks_in_binary_tree, \
                      mpd_get_my_username, mpd_set_cli_app,       \
-                     mpd_dbg_level,                              \
+                     mpd_dbg_level, mpd_handle_signal,           \
                      MPDSock, MPDListenSock, MPDStreamHandler, MPDRing
 
 try:
@@ -1580,6 +1580,7 @@ def sigchld_handler(signum,frame):
             if pid == clientPid:
                 clientExited = 1
                 clientExitStatus = status
+                mpd_handle_signal(signum,0)
         except:
             done = 1
 
