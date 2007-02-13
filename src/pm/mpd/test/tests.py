@@ -145,7 +145,7 @@ if testsToRun[5]:
         ## redo the above test with a local ifhn that should cause failure
         lines = commands.getoutput("mpdboot%s -f %s -n %d --ifhn=127.0.0.1" % (PYEXT,HFILE,NMPDS) )
         if len(lines) > 0:
-            if lines.find('failed to ping') < 0:
+            if lines.find('failed to handshake') < 0:
                 print "probable error in ifhn test using 127.0.0.1; printing lines of output next:"
                 print lines
                 sys.exit(-1)
