@@ -202,6 +202,9 @@ AC_ARG_ENABLE(coverage,
 [--enable-coverage - Turn on coverage analysis using gcc and gcov],,
 enable_coverage=no)
 dnl
+AC_ARG_ENABLE(dynamiclibs,
+[--enable-dynamiclibs - Enable the use of dynamic libraries by the devices that support them],,enable_dynamiclibs=no)
+dnl
 AC_ARG_ENABLE(error-checking,
 [--enable-error-checking=level - Control the amount of error checking.  
 level may be 
@@ -4243,6 +4246,23 @@ void foo1( char *fmt, ... ) {
 ],[foo1("a test %d", 3);],pac_cv_func___va_copy=yes,pac_cv_func___va_copy=no)])
     if test "$pac_cv_func___va_copy" = "yes" ; then
     AC_DEFINE(HAVE___VA_COPY,1,[Define if we have __va_copy])
+    fi
+fi
+ 
+# ----------------------------------------------------------------------------
+# Check for the routines and libraries needed for accessing dynamically
+# loaded libraries.
+# This is very approximate for now; it is enough to allow use to experiment
+# with this feature under Linux.
+# ----------------------------------------------------------------------------
+if test "$enable_dynamiclibs" = "yes" ; then
+    AC_CHECK_HEADERS(dlfcn.h)
+    AC_SEARCH_LIBS(dlopen,dl)
+    AC_CHECK_FUNCS(dlopen dlsym)
+    if test "$ac_cv_func_dlopen" = yes -a \
+            "$ac_cv_func_dlsym"  = yes -a \
+	    "$ac_cv_header_dlfcn_h" = yes ; then
+        AC_DEFINE(USE_DYNAMIC_LIBRARIES,1,[Define if dynamic libraries are available and should be used])
     fi
 fi
 dnl

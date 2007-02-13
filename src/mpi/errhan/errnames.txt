@@ -162,6 +162,14 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **typeinitminmaxloc: Could not determine pointer for predefined minloc or \
  maxloc type.  Initialization of those names failed.
 
+**unableToLoadDLL: Unable to load a dynamically loadable library
+**unableToLoadDLL %s %s: Unable to load the dynamically loadable library %s\
+ for reason %s
+**unableToLoadDLLsym: Unable to find or load a symbol from a dynamically \
+ loadable library
+**unableToLoadDLLsym %s %s: Unable to find or load the symbol %s from a \
+ dynamically loaded library for reason %s
+
 # -- FIXME: Some (but not all) of the messages below this line have been used
 #---- The messages below this line haven't been used yet.
 #
