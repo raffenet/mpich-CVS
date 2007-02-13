@@ -143,7 +143,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
 #   endif
 	
 #   ifdef MPICH_IS_THREADED
-    MPIU_THREAD_CHECK_BEGIN;
+    MPIU_THREAD_CHECK_BEGIN
     {
 	if (MPIDI_CH3I_progress_blocked == TRUE) 
 	{
@@ -163,7 +163,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
 	    goto fn_exit;
 	}
     }
-    MPIU_THREAD_CHECK_END;
+    MPIU_THREAD_CHECK_END
 #   endif
     
     do
@@ -281,12 +281,13 @@ int MPIDI_CH3I_Progress_init(void)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
 
-    /* FIXME: Should this be within a check_begin/end block? */
+    MPIU_THREAD_CHECK_BEGIN
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
 	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, NULL);
     }
 #   endif
+    MPIU_THREAD_CHECK_END
 	
     mpi_errno = MPIDU_Sock_init();
     if (mpi_errno != MPI_SUCCESS) {
@@ -345,13 +346,14 @@ int MPIDI_CH3I_Progress_finalize(void)
     MPIDU_Sock_destroy_set(MPIDI_CH3I_sock_set);
     MPIDU_Sock_finalize();
 
-    /* FIXME: Should this be within a check_begin/end block? */
+    MPIU_THREAD_CHECK_BEGIN
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
 	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, NULL);
     }
 #   endif
-    
+    MPIU_THREAD_CHECK_END
+
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
     return mpi_errno;
@@ -834,17 +836,19 @@ static int MPIDI_CH3I_Progress_continue(unsigned int completion_count)
 {
     int mpi_errno = MPI_SUCCESS;
 
+    MPIU_THREAD_CHECK_BEGIN
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
 	MPID_Thread_cond_broadcast(&MPIDI_CH3I_progress_completion_cond);
     }
 #   endif
-    
+    MPIU_THREAD_CHECK_END
+
     return mpi_errno;
 }
 /* end MPIDI_CH3I_Progress_continue() */
 
-#endif /* (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL) */
+#endif /* MPICH_IS_THREADED */
 
 
 /* FIXME: (a) what does this do and where is it used and (b) 
