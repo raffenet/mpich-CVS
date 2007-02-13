@@ -10,6 +10,7 @@
 #include "pmi.h"
 #include "mpidu_sock.h"
 
+/* FIXME: We need an Undefined for the tick type */
 #define USE_GCC_X86_CYCLE_ASM 1
 #define USE_WIN_X86_CYCLE_ASM 2
 
@@ -17,6 +18,10 @@
    file */
 /* FIXME: What are these used for (possibly one of the spinwait variations?)
    Document the use */
+#ifndef MPICH_CPU_TICK_TYPE
+#define MPICH_CPU_TICK_TYPE -10000
+#endif
+
 #if MPICH_CPU_TICK_TYPE == USE_GCC_X86_CYCLE_ASM
 /* This cycle counter is the read time stamp (rdtsc) instruction with gcc asm */
 #define MPID_CPU_TICK(var_ptr) \

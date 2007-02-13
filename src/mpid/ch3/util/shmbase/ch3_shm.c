@@ -24,7 +24,7 @@
 #define OFF_T off_t
 #define OFF_T_CAST(a) ((off_t)(a))
 #endif
-#endif
+#endif /* 0 */
 
 /*#undef USE_IOV_LEN_2_SHORTCUT*/
 #define USE_IOV_LEN_2_SHORTCUT
@@ -1555,4 +1555,28 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n,
     vc->ch.shm_reading_pkt = FALSE;
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
     return MPI_SUCCESS;
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Routines to create/open shared memory                                      */
+/* -------------------------------------------------------------------------- */
+void MPIDI_Generate_shm_string(char *str)
+{
+#ifdef USE_WINDOWS_SHM
+    UUID guid;
+    UuidCreate(&guid);
+    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, 
+	"%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
+	guid.Data1, guid.Data2, guid.Data3,
+	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+    MPIU_DBG_PRINTF(("GUID = %s\n", str));
+#elif defined (USE_POSIX_SHM)
+    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, "/mpich_shm_%d", getpid());
+#elif defined (USE_SYSV_SHM)
+    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, "%d", getpid());
+#else
+#error No shared memory subsystem defined
+#endif
 }

@@ -12,26 +12,6 @@
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
 
-static void generate_shm_string(char *str)
-{
-#ifdef USE_WINDOWS_SHM
-    UUID guid;
-    UuidCreate(&guid);
-    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, 
-	"%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
-	guid.Data1, guid.Data2, guid.Data3,
-	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
-	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
-    MPIU_DBG_PRINTF(("GUID = %s\n", str));
-#elif defined (USE_POSIX_SHM)
-    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, "/mpich_shm_%d", getpid());
-#elif defined (USE_SYSV_SHM)
-    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, "%d", getpid());
-#else
-#error No shared memory subsystem defined
-#endif
-}
-
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME
@@ -163,7 +143,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 	if (pg_rank == 0)
 	{
 	    /* Put the shared memory key */
-	    generate_shm_string(shmemkey);
+	    MPIDI_Generate_shm_string(shmemkey);
 	    if (MPIU_Strncpy(key, "SHMEMKEY", key_max_sz))
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);

@@ -5,5 +5,4 @@ lib${MPILIBNAME}_a_SOURCES =   \
  ch3u_finalize_sshm.c          \
  ch3i_bootstrapq.c             \
  ch3i_shm_bootstrapq.c         \
- ch3u_connect_sshm.c           \
- shmproc.c
+ ch3u_connect_sshm.c           
