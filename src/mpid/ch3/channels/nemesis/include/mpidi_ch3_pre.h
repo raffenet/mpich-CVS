@@ -246,7 +246,8 @@ typedef struct MPIDI_CH3I_VC
     {                                                                                                                           \
         MPIDI_VC_t          *vc;                                                                                                \
         int                  iov_offset;                                                                                        \
-	/*        MPIDI_CH3_Pkt_t      pkt;	*/			\
+        int                  noncontig;                                                                                         \
+	/*        MPIDI_CH3_Pkt_t      pkt;	*/                                                                              \
                                                                                                                                 \
         MPI_Request          lmt_req_id;     /* request id of remote side */                                                    \
         struct MPID_Request *lmt_req;        /* pointer to original send/recv request */                                        \

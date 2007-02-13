@@ -40,6 +40,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
+    //    MPIU_Assert(n_iov <= 2); /* now used only for contiguous data possibly with header */ DARIUS
     MPIU_Assert (n_iov <= MPID_IOV_LIMIT);
     MPIU_Assert (iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
 
@@ -101,6 +102,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 	    sreq->ch.iov_offset = 0;
 	    sreq->dev.iov_count = remaining_n_iov;
 	    sreq->dev.OnDataAvail = 0;
+            sreq->ch.noncontig = FALSE;
 	    sreq->ch.vc = vc;
 	    if ( iov == remaining_iov )
 	    {
@@ -138,6 +140,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 	sreq->ch.iov_offset = 0;
 	sreq->dev.iov_count = n_iov;
 	sreq->dev.OnDataAvail = 0;
+        sreq->ch.noncontig = FALSE;
 	sreq->ch.vc = vc;
 	MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
     }

@@ -26,6 +26,7 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
+    //    MPIU_Assert(n_iov <= 2); /* now used only for contiguous data possibly with header */ DARIUS
     MPIU_Assert(n_iov <= MPID_IOV_LIMIT);
     MPIU_Assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
 
@@ -70,6 +71,7 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 	    }
 	    sreq->ch.iov_offset = 0;
 	    sreq->dev.iov_count = remaining_n_iov;
+            sreq->ch.noncontig = FALSE;
 	    sreq->ch.vc = vc;
 	    MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
 	    MPIU_Assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
@@ -96,6 +98,7 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
                 if (!complete)
                 {
                     sreq->ch.iov_offset = 0;
+                    sreq->ch.noncontig = FALSE;
                     sreq->ch.vc = vc;
                     MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
                     MPIU_Assert (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
@@ -125,6 +128,7 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 
 	sreq->dev.iov_count = n_iov;
 	sreq->ch.iov_offset = 0;
+        sreq->ch.noncontig = FALSE;
 	sreq->ch.vc = vc;
 	MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
     }

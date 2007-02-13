@@ -613,10 +613,9 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc->ch.fbox_in = &MPID_nem_mem_region.mailboxes.in[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
 	vc->ch.recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
 
-        /* override rendezvous functions */
-        vc->rndvSend_fn = MPID_nem_lmt_RndvSend;
-        vc->rndvRecv_fn = MPID_nem_lmt_RndvRecv;
-
+        /* override nocontig send function */
+        vc->sendEagerNoncontig_fn = MPIDI_CH3I_SendEagerNoncontig;
+        
         vc->ch.lmt_initiate_lmt  = MPID_nem_lmt_shm_initiate_lmt;
         vc->ch.lmt_start_recv    = MPID_nem_lmt_shm_start_recv;
         vc->ch.lmt_start_send    = MPID_nem_lmt_shm_start_send;
@@ -647,7 +646,11 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
         mpi_errno = MPID_nem_net_module_vc_init (vc, business_card);
 	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
-    
+
+    /* override rendezvous functions */
+    vc->rndvSend_fn           = MPID_nem_lmt_RndvSend;
+    vc->rndvRecv_fn           = MPID_nem_lmt_RndvRecv;
+
     /* FIXME: ch3 assumes there is a field called sendq_head in the ch
        portion of the vc.  This is unused in nemesis and should be set
        to NULL */
