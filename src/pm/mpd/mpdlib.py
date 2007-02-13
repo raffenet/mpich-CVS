@@ -318,6 +318,7 @@ def mpd_read_nbytes(fd,nbytes):
     rv = 0
     while 1:
         try:
+            mpd_signum = 0
             rv = os.read(fd,nbytes)
             break
         except os.error, errinfo:
@@ -378,6 +379,7 @@ class MPDSock(object):
         # do the right thing in that case).
         while 1:
             try:
+                mpd_signum = 0
                 self.sock.connect(*args)
                 break
             except socket.error, errinfo:
