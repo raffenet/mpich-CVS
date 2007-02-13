@@ -1406,6 +1406,8 @@ class MPDTest(object):
             runner.stdin.close()
             for line in runner.stdout:
                 outLines.append(line[:-1])    # strip newlines
+            for line in runner.stderr:
+                outLines.append(line[:-1])    # strip newlines
             rv['pid'] = runner.pid
             rv['EC'] = runner.wait()
         elif hasattr(popen2,'Popen4'):    # delete when python2.4+ is common
