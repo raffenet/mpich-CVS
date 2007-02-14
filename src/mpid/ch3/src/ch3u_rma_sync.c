@@ -1371,7 +1371,9 @@ int MPIDI_Win_unlock(int dest, MPID_Win *win_ptr)
     }
         
     single_op_opt = 0;
-        
+
+    MPIDI_Comm_get_vc(comm_ptr, dest, &vc);
+   
     if (rma_op->next->next == NULL) {
 	/* Single put, get, or accumulate between the lock and unlock. If it
 	 * is of small size and predefined datatype at the target, we
@@ -1386,7 +1388,7 @@ int MPIDI_Win_unlock(int dest, MPID_Win *win_ptr)
 	MPIDI_CH3I_DATATYPE_IS_PREDEFINED(curr_op->target_datatype, predefined);
 
 	if ( predefined &&
-	     (type_size * curr_op->origin_count <= MPIDI_CH3_EAGER_MAX_MSG_SIZE) ) {
+	     (type_size * curr_op->origin_count <= vc->eager_max_msg_sz) ) {
 	    single_op_opt = 1;
 	    /* Set the lock granted flag to 1 */
 	    win_ptr->lock_granted = 1;
@@ -1411,8 +1413,6 @@ int MPIDI_Win_unlock(int dest, MPID_Win *win_ptr)
 	lock_pkt->target_win_handle = win_ptr->all_win_handles[dest];
 	lock_pkt->source_win_handle = win_ptr->handle;
 	lock_pkt->lock_type = rma_op->lock_type;
-	
-	MPIDI_Comm_get_vc(comm_ptr, dest, &vc);
 	
 	/* Set the lock granted flag to 0 */
 	win_ptr->lock_granted = 0;

@@ -63,7 +63,7 @@ int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	goto fn_exit;
     }
     
-    if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_sync_send_t) <= MPIDI_CH3_EAGER_MAX_MSG_SIZE)
+    if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_sync_send_t) <= vc->eager_max_msg_sz)
     {
 	mpi_errno = MPIDI_CH3_EagerSyncNoncontigSend( &sreq, buf, count,
                                                       datatype, data_sz, 

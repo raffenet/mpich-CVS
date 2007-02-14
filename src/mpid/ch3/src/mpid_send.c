@@ -121,7 +121,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank,
     else
 #endif
     if (data_sz + sizeof(MPIDI_CH3_Pkt_eager_send_t) <=	
-	MPIDI_CH3_EAGER_MAX_MSG_SIZE) {
+	vc->eager_max_msg_sz) {
 	if (dt_contig) {
  	    mpi_errno = MPIDI_CH3_EagerContigSend( &sreq, 
 						   MPIDI_CH3_PKT_EAGER_SEND,

@@ -253,6 +253,9 @@ typedef struct MPIDI_VC
                          struct MPID_Comm * comm, int context_offset );
     int (* rndvRecv_fn)( struct MPIDI_VC * vc, struct MPID_Request *rreq );
 
+    /* eager message threshold */
+    int eager_max_msg_sz;
+    
     /* eager noncontiguous send function pointer.  Called to send a
        noncontiguous eager message.  Caller must initialize
        sreq->dev.segment, _first and _size.  Contiguous messages are
