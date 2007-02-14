@@ -147,6 +147,7 @@ static CLOG_Time_t CLOG_Sync_run_seq( CLOG_Sync_t *sync )
     MPI_Request  *sync_reqs;
     MPI_Status    status;
 
+    dummytime    = 0.0;
     sync_reqs    = NULL;
     gpofst_pairs = NULL;
     if ( sync->world_rank == sync->root ) {
@@ -242,6 +243,7 @@ static CLOG_Time_t CLOG_Sync_run_bitree( CLOG_Sync_t *sync )
     local_adj_rank  = CLOG_Sync_ring_rank( sync->world_size, sync->root,
                                            sync->world_rank );
 
+    dummytime     = 0.0;
     gpofst_size   = 0;
     gpofst_pairs  = NULL;
     if ( local_adj_rank % 2 == 0 ) {
@@ -389,7 +391,8 @@ static CLOG_Time_t CLOG_Sync_run_altngbr( CLOG_Sync_t *sync )
     CLOG_Time_t  tmp_gp, tmp_ofst, sum_gp, sum_ofst;
     MPI_Status   status;
 
-    bestshift = 0.0;
+    dummytime    = 0.0;
+    bestshift    = 0.0;
 
     /* Set neighbors' world rank */
     prev_world_rank = sync->world_rank - 1;
