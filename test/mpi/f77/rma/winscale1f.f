@@ -59,8 +59,8 @@ C Initialize the buffer
                buf(i,j) = rank * (ncols * nrows) + i + (j-1) * nrows
             enddo
          enddo
-         call mpi_win_start( group2, 0, win, ierr )
          call mpi_win_post( group2, 0, win, ierr )
+         call mpi_win_start( group2, 0, win, ierr )
 C         
          call mpi_put( buf(1,1), nrows, MPI_INTEGER, left, ncols+1, 
      &                 nrows, MPI_INTEGER, win, ierr )
