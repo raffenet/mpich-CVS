@@ -285,8 +285,8 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 	/* make progress sending */
         do
         {
-            MPID_IOV *_iov;
-            int _n_iov;
+            MPID_IOV *iov;
+            int n_iov;
             int again = 0;
 
             if (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL && MPIDI_CH3I_SendQ_head(CH3_NORMAL_QUEUE) == NULL)
@@ -303,20 +303,20 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 {
                     MPIU_Assert(sreq->dev.iov_count > 0 && sreq->dev.iov[sreq->ch.iov_offset].MPID_IOV_LEN > 0);
             
-                    _iov = &sreq->dev.iov[sreq->ch.iov_offset];
-                    _n_iov = sreq->dev.iov_count;
+                    iov = &sreq->dev.iov[sreq->ch.iov_offset];
+                    n_iov = sreq->dev.iov_count;
 
                     do 
                     {
-                        mpi_errno = MPID_nem_mpich2_sendv(&_iov, &_n_iov, sreq->ch.vc, &again);
+                        mpi_errno = MPID_nem_mpich2_sendv(&iov, &n_iov, sreq->ch.vc, &again);
                         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
                     }
-                    while (!again && _n_iov > 0);
+                    while (!again && n_iov > 0);
 
                     if (again) /* not finished sending */
                     {
-                        sreq->ch.iov_offset = _iov - sreq->dev.iov;
-                        sreq->dev.iov_count = _n_iov;
+                        sreq->ch.iov_offset = iov - sreq->dev.iov;
+                        sreq->dev.iov_count = n_iov;
                         break; /* break out of send progress */
                     }
                     else
@@ -345,21 +345,21 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 {
                     MPIU_Assert(sreq->dev.iov_count > 0 && sreq->dev.iov[sreq->ch.iov_offset].MPID_IOV_LEN > 0);
             
-                    _iov = &sreq->dev.iov[sreq->ch.iov_offset];
-                    _n_iov = sreq->dev.iov_count;
+                    iov = &sreq->dev.iov[sreq->ch.iov_offset];
+                    n_iov = sreq->dev.iov_count;
 
-                    mpi_errno = MPID_nem_mpich2_sendv_header(&_iov, &_n_iov, sreq->ch.vc, &again);
+                    mpi_errno = MPID_nem_mpich2_sendv_header(&iov, &n_iov, sreq->ch.vc, &again);
                     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-                    while (!again && _n_iov > 0);
+                    while (!again && n_iov > 0)
                     {
-                        mpi_errno = MPID_nem_mpich2_sendv(&_iov, &_n_iov, sreq->ch.vc, &again);
+                        mpi_errno = MPID_nem_mpich2_sendv(&iov, &n_iov, sreq->ch.vc, &again);
                         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
                     }
 
                     if (again) /* not finished sending */
                     {
-                        sreq->ch.iov_offset = _iov - sreq->dev.iov;
-                        sreq->dev.iov_count = _n_iov;
+                        sreq->ch.iov_offset = iov - sreq->dev.iov;
+                        sreq->dev.iov_count = n_iov;
                         break; /* break out of send progress */
                     }
                     else
@@ -369,7 +369,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 {
                     MPID_nem_mpich2_send_seg_header(&sreq->dev.segment, &sreq->dev.segment_first, sreq->dev.segment_size,
                                                     &sreq->dev.pending_pkt, sizeof(MPIDI_CH3_PktGeneric_t), sreq->ch.vc, &again);
-                    while (!again && sreq->dev.segment_first < sreq->dev.segment_size);
+                    while (!again && sreq->dev.segment_first < sreq->dev.segment_size)
                     {
                         MPID_nem_mpich2_send_seg(&sreq->dev.segment, &sreq->dev.segment_first, sreq->dev.segment_size,
                                                  sreq->ch.vc, &again);
@@ -545,7 +545,7 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
 
 	if (cell)
 	{	 
-	    char *cell_buf    = cell->pkt.mpich2.payload;
+	    char *cell_buf = cell->pkt.mpich2.payload;
 
 	    switch(((MPIDI_CH3_Pkt_t *)cell_buf)->type)
 	    {

@@ -229,7 +229,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *agai
     int payload_len;    
     int my_rank;
 
-    MPIU_Assert (n_iov > 0 && (*iov)->iov_len > 0);
+    MPIU_Assert (*n_iov > 0 && (*iov)->iov_len > 0);
     
 #ifdef ENABLED_CHECKPOINTING
     if (MPID_nem_ckpt_sending_markers)
