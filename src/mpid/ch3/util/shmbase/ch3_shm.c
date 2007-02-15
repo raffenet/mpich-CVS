@@ -9,23 +9,6 @@
 
 /* STATES:NO WARNINGS */
 
-#if 0
-#ifndef HAVE_WINDOWS_H
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#ifdef HAVE_SYS_PTRACE_H
-#include <sys/ptrace.h>
-#endif
-#include <sys/wait.h>
-#include <errno.h>
-#define OFF_T off_t
-#define OFF_T_CAST(a) ((off_t)(a))
-#endif
-#endif /* 0 */
-
 /*#undef USE_IOV_LEN_2_SHORTCUT*/
 #define USE_IOV_LEN_2_SHORTCUT
 
