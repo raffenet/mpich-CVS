@@ -161,6 +161,8 @@ class MPDMan(object):
         for k in self.clientPgmEnv.keys():
             if k.startswith('MPI_APPNUM'):
                 self.appnum = self.clientPgmEnv[k]    # don't put in application env
+            elif k.startswith('MPICH_INTERFACE_HOSTNAME'):
+                continue    ## already put it in above
             else:
                 cli_env[k] = self.clientPgmEnv[k]
         self.kvs_next_id = 1
@@ -953,7 +955,7 @@ class MPDMan(object):
             pmiMsgToSend = 'cmd=unparseable_msg rc=-1\n'
             self.pmiSock.send_char_msg(pmiMsgToSend)
             return
-        # startup_status may sent here from new process BEFORE starting client
+        # startup_status may be sent here from new process BEFORE starting client
         if parsedMsg['cmd'] == 'startup_status':
             msgToSend = { 'cmd' : 'startup_status', 'src' : self.myId, 
                           'rc' : parsedMsg['rc'],
