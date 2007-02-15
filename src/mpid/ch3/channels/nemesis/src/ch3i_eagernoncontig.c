@@ -29,6 +29,7 @@ int MPIDI_CH3I_SendEagerNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq, void *hea
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)header);
 
     sreq->dev.OnFinal = 0;
+    sreq->dev.OnDataAvail = 0;
 
     if (!MPIDI_CH3I_SendQ_empty(CH3_NORMAL_QUEUE)) /* MT */
     {
@@ -70,7 +71,7 @@ int MPIDI_CH3I_SendEagerNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq, void *hea
     {
         MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
         MPIDI_CH3U_Request_complete(sreq);
-        MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, ".... complete %d bytes", sreq->dev.segment_size);
     }
     else
     {
@@ -79,7 +80,7 @@ int MPIDI_CH3I_SendEagerNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq, void *hea
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         MPIU_Assert(complete); /* all data has been sent, we should always complete */
         
-        MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, ".... complete %d bytes", sreq->dev.segment_size);
     }
     
  fn_exit:

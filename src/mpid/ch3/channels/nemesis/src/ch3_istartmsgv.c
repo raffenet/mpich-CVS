@@ -48,7 +48,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
      * the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF);
-    
+
     if (MPIDI_CH3I_SendQ_empty (CH3_NORMAL_QUEUE))
         /* MT */
     {

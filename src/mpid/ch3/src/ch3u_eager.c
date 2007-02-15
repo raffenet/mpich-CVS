@@ -113,7 +113,7 @@ int MPIDI_CH3_EagerNoncontigSend( MPID_Request **sreq_p,
     sreq->dev.segment_first = 0;
     sreq->dev.segment_size = data_sz;
 	    
-    mpi_errno = vc->sendEagerNoncontig_fn(vc, sreq, eager_pkt, sizeof(eager_pkt));
+    mpi_errno = vc->sendEagerNoncontig_fn(vc, sreq, eager_pkt, sizeof(MPIDI_CH3_Pkt_eager_send_t));
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
  fn_exit:

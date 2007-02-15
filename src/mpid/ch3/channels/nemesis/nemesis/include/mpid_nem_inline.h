@@ -527,7 +527,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, in
                      i.e.: we will never send only the header
 */
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_mpich2_sendv_header
+#define FUNCNAME MPID_nem_mpich2_send_seg_header
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL void
@@ -593,7 +593,7 @@ MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_
 
             *segment_first = last;
 
-	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent fbox ");
+	    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "--> Sent fbox ");
 	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (&pbox->cell));
 
             goto return_success;
@@ -676,7 +676,7 @@ MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_
 /* similar to MPID_nem_mpich2_send_seg_header, except there is no
    header to send.  This need not be the first packet of a message. */
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_mpich2_sendv_header
+#define FUNCNAME MPID_nem_mpich2_send_seg
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPID_NEM_INLINE_DECL void
