@@ -588,6 +588,11 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
     MPIDI_FUNC_ENTER (MPID_STATE_MPID_NEM_VC_INIT);
     vc->ch.send_seqno = 0;
 
+    /* FIXME: DARIUS set these to default for now */
+    vc->ch.iStartMsg  = NULL;
+    vc->ch.iStartMsgv = NULL;
+    vc->ch.iSend      = NULL;
+    vc->ch.iSendv     = NULL;
 
     /* We do different things for vcs in the COMM_WORLD pg vs other pgs
        COMM_WORLD vcs may use shared memory, and already have queues allocated
@@ -615,6 +620,12 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 
         /* override nocontig send function */
         vc->sendEagerNoncontig_fn = MPIDI_CH3I_SendEagerNoncontig;
+
+        /* local processes use the default method */
+        vc->ch.iStartMsg  = NULL;
+        vc->ch.iStartMsgv = NULL;
+        vc->ch.iSend      = NULL;
+        vc->ch.iSendv     = NULL;
         
         vc->ch.lmt_initiate_lmt  = MPID_nem_lmt_shm_initiate_lmt;
         vc->ch.lmt_start_recv    = MPID_nem_lmt_shm_start_recv;

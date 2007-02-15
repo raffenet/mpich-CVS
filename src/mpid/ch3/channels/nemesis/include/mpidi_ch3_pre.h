@@ -139,6 +139,12 @@ typedef struct MPIDI_CH3I_VC
 
     enum {MPID_NEM_VC_STATE_CONNECTED, MPID_NEM_VC_STATE_DISCONNECTED} state;
 
+    /* contig function pointers.  Netmods should set these. */
+    int (* iStartMsg)(struct MPIDI_VC *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, struct MPID_Request **sreq_ptr);
+    int (* iStartMsgv)(struct MPIDI_VC *vc, MPID_IOV *iov, int n_iov, struct MPID_Request ** sreq_ptr);
+    int (* iSend)(struct MPIDI_VC *vc, struct MPID_Request *sreq, void * hdr, MPIDI_msg_sz_t hdr_sz);
+    int (* iSendv)(struct MPIDI_VC *vc, struct MPID_Request *sreq, MPID_IOV *iov, int n_iov);
+
     /* LMT function pointers */
     int (* lmt_initiate_lmt)(struct MPIDI_VC *vc, union MPIDI_CH3_Pkt *rts_pkt, struct MPID_Request *req);
     int (* lmt_start_recv)(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV s_cookie);
@@ -247,6 +253,7 @@ typedef struct MPIDI_CH3I_VC
         MPIDI_VC_t          *vc;                                                                                                \
         int                  iov_offset;                                                                                        \
         int                  noncontig;                                                                                         \
+        MPIDI_msg_sz_t       header_sz;                                                                                         \
 	/*        MPIDI_CH3_Pkt_t      pkt;	*/                                                                              \
                                                                                                                                 \
         MPI_Request          lmt_req_id;     /* request id of remote side */                                                    \

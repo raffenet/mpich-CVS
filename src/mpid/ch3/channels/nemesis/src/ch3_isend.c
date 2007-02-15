@@ -24,6 +24,12 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_s
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
+    if (vc->ch.iSend)
+    {
+        mpi_errno = vc->ch.iSend(vc, sreq, hdr, hdr_sz);
+        goto fn_exit;
+    }
+
     MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* This channel uses a fixed length header, the size of which

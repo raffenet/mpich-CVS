@@ -40,6 +40,12 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
+    if (vc->ch.iStartMsgv)
+    {
+        mpi_errno = vc->ch.iStartMsgv(vc, iov, n_iov, sreq_ptr);
+        goto fn_exit;
+    }
+
     //    MPIU_Assert(n_iov <= 2); /* now used only for contiguous data possibly with header */ DARIUS
     MPIU_Assert (n_iov <= MPID_IOV_LIMIT);
     MPIU_Assert (iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));

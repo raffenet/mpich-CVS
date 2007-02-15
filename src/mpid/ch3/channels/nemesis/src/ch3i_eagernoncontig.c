@@ -37,9 +37,10 @@ int MPIDI_CH3I_SendEagerNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq, void *hea
 
         MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
 
-        sreq->ch.noncontig = TRUE;
 	sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *)header;
-	sreq->ch.vc = vc;
+        sreq->ch.noncontig    = TRUE;
+        sreq->ch.header_sz    = hdr_sz;
+	sreq->ch.vc           = vc;
 	MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
         goto fn_exit;
     }
@@ -54,15 +55,18 @@ int MPIDI_CH3I_SendEagerNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq, void *hea
         /* we didn't finish sending everything */
         sreq->ch.noncontig = TRUE;
         sreq->ch.vc = vc;
-        MPIDI_CH3I_SendQ_enqueue(sreq, CH3_NORMAL_QUEUE);
         if (sreq->dev.segment_first == 0) /* nothing was sent, save header */
+        {
             sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *)header;
+            sreq->ch.header_sz    = hdr_sz;
+        }
         else
         {
             /* part of message was sent, make this req an active send */
             MPIU_Assert(MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL);
             MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
         }
+        MPIDI_CH3I_SendQ_enqueue(sreq, CH3_NORMAL_QUEUE);
         goto fn_exit;
     }
 

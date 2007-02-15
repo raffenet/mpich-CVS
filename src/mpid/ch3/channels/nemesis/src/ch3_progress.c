@@ -338,7 +338,6 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
             else
             {
                 sreq = MPIDI_CH3I_SendQ_head (CH3_NORMAL_QUEUE);
-                MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
                 MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {if (sreq) MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Send: new sreq ");});
 
                 if (!sreq->ch.noncontig)
@@ -350,10 +349,14 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
                     mpi_errno = MPID_nem_mpich2_sendv_header(&iov, &n_iov, sreq->ch.vc, &again);
                     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-                    while (!again && n_iov > 0)
+                    if (!again)
                     {
-                        mpi_errno = MPID_nem_mpich2_sendv(&iov, &n_iov, sreq->ch.vc, &again);
-                        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+                        MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
+                        while (!again && n_iov > 0)
+                        {
+                            mpi_errno = MPID_nem_mpich2_sendv(&iov, &n_iov, sreq->ch.vc, &again);
+                            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+                        }
                     }
 
                     if (again) /* not finished sending */
@@ -368,11 +371,15 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 else
                 {
                     MPID_nem_mpich2_send_seg_header(&sreq->dev.segment, &sreq->dev.segment_first, sreq->dev.segment_size,
-                                                    &sreq->dev.pending_pkt, sizeof(MPIDI_CH3_PktGeneric_t), sreq->ch.vc, &again);
-                    while (!again && sreq->dev.segment_first < sreq->dev.segment_size)
+                                                    &sreq->dev.pending_pkt, sreq->ch.header_sz, sreq->ch.vc, &again);
+                    if (!again)
                     {
-                        MPID_nem_mpich2_send_seg(&sreq->dev.segment, &sreq->dev.segment_first, sreq->dev.segment_size,
-                                                 sreq->ch.vc, &again);
+                        MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
+                        while (!again && sreq->dev.segment_first < sreq->dev.segment_size)
+                        {
+                            MPID_nem_mpich2_send_seg(&sreq->dev.segment, &sreq->dev.segment_first, sreq->dev.segment_size,
+                                                     sreq->ch.vc, &again);
+                        }
                     }
                     
                     if (again) /* not finished sending */

@@ -33,6 +33,12 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
+    if (vc->ch.iStartMsg)
+    {
+        errno = vc->ch.iStartMsg(vc, hdr, hdr_sz, sreq_ptr);
+        goto fn_exit;
+    }
+
     MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* This channel uses a fixed length header, the size of which is
