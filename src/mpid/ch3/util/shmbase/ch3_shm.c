@@ -1561,21 +1561,28 @@ int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n,
 /* -------------------------------------------------------------------------- */
 /* Routines to create/open shared memory                                      */
 /* -------------------------------------------------------------------------- */
-void MPIDI_Generate_shm_string(char *str)
+/* Create a name that may be used for a shared-memory region.
+   "str" must have at least maxlen characters, and it is recommended 
+   that maxlen be at least MPIDI_MAX_SHM_NAME_LENGTH
+   Note that the name may include a random number; this is to 
+   help create unique names which is needed in some users (e.g., 
+   a separate shared memory region for each pair of processes)
+ */
+void MPIDI_Generate_shm_string(char *str, int maxlen)
 {
 #ifdef USE_WINDOWS_SHM
     UUID guid;
     UuidCreate(&guid);
-    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, 
+    MPIU_Snprintf(str, maxlen,
 	"%08lX-%04X-%04x-%02X%02X-%02X%02X%02X%02X%02X%02X",
 	guid.Data1, guid.Data2, guid.Data3,
 	guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
 	guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
     MPIU_DBG_PRINTF(("GUID = %s\n", str));
 #elif defined (USE_POSIX_SHM)
-    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, "/mpich_shm_%d", getpid());
+    MPIU_Snprintf(str, maxlen, "/mpich_shm_%d_%d", rand(), getpid());
 #elif defined (USE_SYSV_SHM)
-    MPIU_Snprintf(str, MPIDI_MAX_SHM_NAME_LENGTH, "%d", getpid());
+    MPIU_Snprintf(str, maxlen, "%d", getpid());
 #else
 #error No shared memory subsystem defined
 #endif

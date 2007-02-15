@@ -143,7 +143,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 	if (pg_rank == 0)
 	{
 	    /* Put the shared memory key */
-	    MPIDI_Generate_shm_string(shmemkey);
+	    MPIDI_Generate_shm_string(shmemkey,sizeof(shmemkey));
 	    if (MPIU_Strncpy(key, "SHMEMKEY", key_max_sz))
 	    {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);

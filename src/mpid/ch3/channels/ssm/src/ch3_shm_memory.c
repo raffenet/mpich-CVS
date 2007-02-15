@@ -54,14 +54,17 @@ int MPIDI_CH3I_SHM_Get_mem(int size,
     }
 
     /* Create the shared memory object */
+    /* FIXME: Why try 10 times?  It should either succeed or fail the first
+       time; if it is a race, this isn't the way to fix it */
     for (i=0; i<10; i++) {
-	MPIDI_Generate_shm_string(pOutput->key);
+	MPIDI_Generate_shm_string(pOutput->key,sizeof(pOutput->key));
 	pOutput->id = shm_open(pOutput->key, O_EXCL | O_RDWR | O_CREAT, 0600);
 	if (pOutput->id != -1)
 	    break;
     }
     if (pOutput->id == -1) {
 	pOutput->error = errno;
+	perror("shm_open error");
 	MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_OTHER, 
 	       "**shm_open", "**shm_open %s %d", pOutput->key, pOutput->error);
     }
@@ -75,6 +78,7 @@ int MPIDI_CH3I_SHM_Get_mem(int size,
 			 MAP_SHARED /* | MAP_NORESERVE*/, pOutput->id, 0);
     if (pOutput->addr == MAP_FAILED) {
 	pOutput->addr = NULL;
+	perror("mmap failed");
 	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
 			     "**mmap", "**mmap %d", errno);
     }
@@ -84,7 +88,7 @@ int MPIDI_CH3I_SHM_Get_mem(int size,
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_MEM);
-    return MPI_SUCCESS;
+    return mpi_errno;
  fn_fail:
     goto fn_exit;
 }
@@ -368,7 +372,7 @@ int MPIDI_CH3I_SHM_Get_mem(int size,
     }
 
     /* Create the shared memory object */
-    MPIDI_Generate_shm_string(pOutput->key);
+    MPIDI_Generate_shm_string(pOutput->key,sizeof(pOutput->key));
     pOutput->id = CreateFileMapping(
 	INVALID_HANDLE_VALUE,
 	NULL,

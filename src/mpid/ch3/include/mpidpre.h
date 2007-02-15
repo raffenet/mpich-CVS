@@ -204,7 +204,6 @@ typedef enum MPIDI_VC_State
 } MPIDI_VC_State_t;
 
 struct MPID_Comm;
-enum MPIDI_CH3_Pkt_type;
 
 typedef struct MPIDI_VC
 {
