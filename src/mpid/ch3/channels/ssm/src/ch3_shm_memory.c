@@ -54,8 +54,9 @@ int MPIDI_CH3I_SHM_Get_mem(int size,
     }
 
     /* Create the shared memory object */
-    /* FIXME: Why try 10 times?  It should either succeed or fail the first
-       time; if it is a race, this isn't the way to fix it */
+    /* Generate_shm_string generates a unique and different string 
+     each time.  We try 10 times to succeed in creating an unused filename 
+     for shm_open.  */
     for (i=0; i<10; i++) {
 	MPIDI_Generate_shm_string(pOutput->key,sizeof(pOutput->key));
 	pOutput->id = shm_open(pOutput->key, O_EXCL | O_RDWR | O_CREAT, 0600);
