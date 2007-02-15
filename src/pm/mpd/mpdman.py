@@ -161,6 +161,8 @@ class MPDMan(object):
         for k in self.clientPgmEnv.keys():
             if k.startswith('MPI_APPNUM'):
                 self.appnum = self.clientPgmEnv[k]    # don't put in application env
+            elif k.startswith('MPICH_INTERFACE_HOSTNAME'):
+                continue    ## already put it in above
             else:
                 cli_env[k] = self.clientPgmEnv[k]
         self.kvs_next_id = 1
