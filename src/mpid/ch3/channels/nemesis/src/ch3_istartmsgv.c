@@ -46,6 +46,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
         goto fn_exit;
     }
 
+    //MPIU_Assert(vc->ch.is_local);
     //    MPIU_Assert(n_iov <= 2); /* now used only for contiguous data possibly with header */ DARIUS
     MPIU_Assert (n_iov <= MPID_IOV_LIMIT);
     MPIU_Assert (iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));

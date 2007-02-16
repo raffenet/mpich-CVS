@@ -39,6 +39,7 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
         goto fn_exit;
     }
 
+    //MPIU_Assert(vc->ch.is_local);
     MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* This channel uses a fixed length header, the size of which is

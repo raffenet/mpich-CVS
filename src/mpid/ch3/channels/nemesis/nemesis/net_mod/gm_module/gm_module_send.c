@@ -28,7 +28,6 @@ send_callback (struct gm_port *p, void *context, gm_status_t status)
 /*
   requires that pkt is in registered memory, and there are sufficient tokens
  */
-#if 1
 static inline int
 send_cell (int node_id, int port_id, MPID_nem_cell_ptr_t cell, int datalen)
 {
@@ -44,21 +43,6 @@ send_cell (int node_id, int port_id, MPID_nem_cell_ptr_t cell, int datalen)
     printf_d ("    datalen %d\n", datalen);
     return MPI_SUCCESS;
 }
-#else
-#define send_cell(node_id, port_id, cell, datalen) do {                                                                \
-    MPID_nem_pkt_t *pkt = (MPID_nem_pkt_t *)MPID_NEM_CELL_TO_PACKET (cell);						\
-															\
-    MPIU_Assert ((datalen) <= MPID_NEM_MPICH2_DATA_LEN);									\
-															\
-    DO_PAPI (PAPI_reset (PAPI_EventSet));										\
-    gm_send_with_callback (MPID_nem_module_gm_port, pkt, PACKET_SIZE, (datalen) + MPID_NEM_MPICH2_HEAD_LEN, GM_LOW_PRIORITY, node_id,	\
-			   port_id, send_callback, (void *)(cell));							\
-    DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues4));								\
-    printf_d ("  Sent packet to node = %d, port = %d\n", node_id, port_id);						\
-    printf_d ("    dest %d\n", (vcp)->lid);										\
-    printf_d ("    datalen + MPID_NEM_MPICH2_HEAD_LEN %d\n", (datalen) + MPID_NEM_MPICH2_HEAD_LEN);			\
-    } while (0)
-#endif
 
 /* #define BOUNCE_BUFFER */
 #undef FUNCNAME
