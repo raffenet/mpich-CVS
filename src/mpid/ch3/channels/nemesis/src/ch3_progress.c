@@ -64,21 +64,6 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
 
-#ifdef MPICH_IS_THREADED
-    MPIU_THREAD_CHECK_BEGIN;
-    {
-        if (MPIDI_CH3I_progress_blocked == TRUE)
-        {
-            /* another thread is already blocking in the progress engine.*/
-            if (is_blocking)
-                MPIDI_CH3I_Progress_delay(MPIDI_CH3I_progress_completion_count);
-
-            goto fn_exit;
-        }
-    }
-    MPIU_THREAD_CHECK_END;
-#endif
-
     do
     {
 	MPID_Request        *sreq;
@@ -86,6 +71,18 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 	MPID_nem_cell_ptr_t  cell;
 	int                  in_fbox = 0;
 	MPIDI_VC_t          *vc;
+
+#ifdef MPICH_IS_THREADED
+    MPIU_THREAD_CHECK_BEGIN;
+    {
+        if (MPIDI_CH3I_progress_blocked == TRUE)
+        {
+            /* another thread is already blocking in the progress engine.*/
+            goto send_loop;
+        }
+    }
+    MPIU_THREAD_CHECK_END;
+#endif
 
 	/* make progress receiving */
 	/* check queue */
@@ -283,7 +280,8 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 	}
 
 	/* make progress sending */
-        do
+send_loop:    
+	do
         {
             MPID_IOV *iov;
             int n_iov;
@@ -291,8 +289,24 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
             if (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL && MPIDI_CH3I_SendQ_head(CH3_NORMAL_QUEUE) == NULL)
             {
+#ifdef MPICH_IS_THREADED
+    MPIU_THREAD_CHECK_BEGIN;
+    {
+        if (MPIDI_CH3I_progress_blocked == TRUE)
+        {
+            /* another thread is already blocking in the progress engine.*/
+            if (is_blocking)
+                MPIDI_CH3I_Progress_delay(MPIDI_CH3I_progress_completion_count);
+
+	    goto fn_exit;
+        }
+    }
+    MPIU_THREAD_CHECK_END;
+#endif
+
                 /* there are no pending sends */
                 break; /* break out of send progress */
+
             }
             
             sreq = MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE];
