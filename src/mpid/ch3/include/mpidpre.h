@@ -72,7 +72,7 @@ MPIDI_Message_match;
    send immediately.  
 */
 /* #include "mpidpkt.h" */
-typedef struct { int32_t kind; int32_t pktwords[17]; } MPIDI_CH3_PktGeneric_t;
+typedef struct { int32_t kind; int32_t *pktptrs[1]; int32_t pktwords[6]; } MPIDI_CH3_PktGeneric_t;
 
 /*
  * THIS IS OBSOLETE AND UNUSED, BUT RETAINED FOR ITS DESCRIPTIONS OF THE
