@@ -487,8 +487,10 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	/*MPIU_DBG_PRINTF(("shmem connected\n"));*/
 	MPIDI_CH3I_SHM_Add_to_writer_list(vc);
 
-	/* If there are more shm connections than cpus, reduce the spin count to one. */
-	/* This does not take into account connections between other processes on the same machine. */
+	/* If there are more shm connections than cpus, reduce the spin count 
+	   to one. */
+	/* This does not take into account connections between other processes 
+	   on the same machine. */
 	iter = MPIDI_CH3I_Process.shm_writing_list;
 	while (iter)
 	{
@@ -507,6 +509,10 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	goto fn_exit;
     }
 
+    /* Reset the state if we've failed to connect */
+    vc->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+    mpi_errno = MPIDI_CH3I_Sock_connect( vc, val, sizeof(val) );
+#if 0
 /*    printf( "Attempting to connect through socket\n" );fflush(stdout); */
     MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST,
 	   "vc=%p: Attempting to connect with business card %s", vc, val ));
@@ -564,7 +570,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|sock|connalloc");
     }
-
+#endif
  fn_exit:
 /*    printf("Exiting with %d\n", mpi_errno );fflush(stdout);*/
     MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
