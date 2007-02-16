@@ -49,7 +49,7 @@ static int send_sctp_pkt(MPIDI_VC_t *vc, MPID_nem_pkt_t *pkt, int stream, int *s
 
     /* need to find out if we have to send the connection packet for this stream */
     
-    if(vc->ch.stream_table[stream].have_sent_pg_id == HAVE_NOT_SENT_PG_ID) {        
+    if(VC_FIELD(vc, stream_table)[stream].have_sent_pg_id == HAVE_NOT_SENT_PG_ID) {        
 
         /* send connection pkt */
 
@@ -72,9 +72,9 @@ static int send_sctp_pkt(MPIDI_VC_t *vc, MPID_nem_pkt_t *pkt, int stream, int *s
             conn_pkt_is_set++;                
         }
 
-        ret = sctp_sendmsg(vc->ch.fd, conn_pkt_p, 
+        ret = sctp_sendmsg(VC_FIELD(vc, fd), conn_pkt_p, 
                            MPID_NEM_PACKET_LEN (conn_pkt_p),
-                           (struct sockaddr *) &(vc->ch.to_address), sizeof(struct sockaddr_in),
+                           (struct sockaddr *) &(VC_FIELD(vc, to_address)), sizeof(struct sockaddr_in),
                            0, 0, stream, 0, 0);        
 
         if(ret == -1) {
@@ -87,12 +87,12 @@ static int send_sctp_pkt(MPIDI_VC_t *vc, MPID_nem_pkt_t *pkt, int stream, int *s
         }
 
         /* update that the connection packet was sent */
-        vc->ch.stream_table[stream].have_sent_pg_id = HAVE_SENT_PG_ID;        
+        VC_FIELD(vc, stream_table)[stream].have_sent_pg_id = HAVE_SENT_PG_ID;        
     }
 
     /* send pkt */
-    ret = sctp_sendmsg(vc->ch.fd, pkt, MPID_NEM_PACKET_LEN (pkt),
-                       (struct sockaddr *)&(vc->ch.to_address), sizeof(struct sockaddr_in),
+    ret = sctp_sendmsg(VC_FIELD(vc, fd), pkt, MPID_NEM_PACKET_LEN (pkt),
+                       (struct sockaddr *)&(VC_FIELD(vc, to_address)), sizeof(struct sockaddr_in),
                        0, 0, stream, 0, 0);
     if(ret == -1) {
 /*         errno_save = errno; */
@@ -209,7 +209,7 @@ MPID_nem_sctp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 
     /* pre-sendQ code*/
     
-/*     if(vc->ch.stream_table[stream].have_sent_pg_id == HAVE_NOT_SENT_PG_ID) {         */
+/*     if(VC_FIELD(vc, stream_table)[stream].have_sent_pg_id == HAVE_NOT_SENT_PG_ID) {         */
 
 /*         /\* send connection pkt *\/ */
 
@@ -231,9 +231,9 @@ MPID_nem_sctp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 /*             conn_pkt_is_set++;                 */
 /*         } */
 
-/*         ret = sctp_sendmsg(vc->ch.fd, conn_pkt_p,  */
+/*         ret = sctp_sendmsg(VC_FIELD(vc, fd), conn_pkt_p,  */
 /*                            MPID_NEM_PACKET_LEN (conn_pkt_p), */
-/*                            (struct sockaddr *) &(vc->ch.to_address), sizeof(struct sockaddr_in), */
+/*                            (struct sockaddr *) &(VC_FIELD(vc, to_address)), sizeof(struct sockaddr_in), */
 /*                            0, 0, stream, 0, 0);         */
 
 /*         errno_save = errno; */
@@ -246,12 +246,12 @@ MPID_nem_sctp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 /*         } */
 
         
-/*         vc->ch.stream_table[stream].have_sent_pg_id = HAVE_SENT_PG_ID;         */
+/*         VC_FIELD(vc, stream_table)[stream].have_sent_pg_id = HAVE_SENT_PG_ID;         */
 /*     } */
 
 /*     /\* send cell *\/ */
-/*     ret = sctp_sendmsg(vc->ch.fd, pkt, MPID_NEM_PACKET_LEN (pkt), */
-/*                        (struct sockaddr *)&(vc->ch.to_address), sizeof(struct sockaddr_in), */
+/*     ret = sctp_sendmsg(VC_FIELD(vc, fd), pkt, MPID_NEM_PACKET_LEN (pkt), */
+/*                        (struct sockaddr *)&(VC_FIELD(vc, to_address)), sizeof(struct sockaddr_in), */
 /*                        0, 0, stream, 0, 0); */
 /*     errno_save = errno; */
 /*     if(ret == -1) { */
@@ -352,7 +352,7 @@ int MPID_nem_sctp_module_send_progress()
     int mpi_errno = MPI_SUCCESS;
     MPIDI_VC_t *vc;
     
-    for (vc = send_list.head; vc; vc = vc->ch.sctp_sendl_next)
+    for (vc = send_list.head; vc; vc = vc->ch.next)
     {
         mpi_errno = MPID_nem_sctp_module_send_queue (vc);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);

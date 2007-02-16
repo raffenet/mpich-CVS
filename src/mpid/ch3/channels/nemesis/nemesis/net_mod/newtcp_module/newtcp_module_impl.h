@@ -24,6 +24,29 @@ extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
 extern int MPID_nem_newtcp_module_listen_fd;
 
 
+/* The vc provides a generic buffer in which network modules can store
+   private fields This removes all dependencies from the VC struction
+   on the network module, facilitating dynamic module loading. */
+typedef struct 
+{
+    struct sockaddr_in sock_id;
+    struct MPID_nem_new_tcp_module_sockconn *sc;
+    struct
+    {
+        struct MPID_nem_newtcp_module_send_q_element *head;
+        struct MPID_nem_newtcp_module_send_q_element *tail;
+    } send_queue;
+    struct 
+    {
+        MPID_nem_cell_t *cell;
+        char *end;
+        int len;
+    } pending_recv;
+} MPID_nem_newtcp_module_vc_area;
+
+/* accessor macro to private fields in VC */
+#define VC_FIELD(vc, field) (((MPID_nem_newtcp_module_vc_area *)(vc)->ch.netmod_area.padding)->field)
+
 /* functions */
 int MPID_nem_newtcp_module_send_init (void);
 int MPID_nem_newtcp_module_poll_init (void);
@@ -80,9 +103,9 @@ int MPID_nem_newtcp_module_state_listening_handler(pollfd_t *const l_plfd, sockc
 /* VC list macros */
 #define VC_L_EMPTY(q) GENERIC_L_EMPTY (q)
 #define VC_L_HEAD(q) GENERIC_L_HEAD (q)
-#define VC_L_ADD_EMPTY(qp, ep) GENERIC_L_ADD_EMPTY (qp, ep, ch.newtcp_sendl_next, ch.newtcp_sendl_prev)
-#define VC_L_ADD(qp, ep) GENERIC_L_ADD (qp, ep, ch.newtcp_sendl_next, ch.newtcp_sendl_prev)
-#define VC_L_REMOVE(qp, ep) GENERIC_L_REMOVE (qp, ep, ch.newtcp_sendl_next, ch.newtcp_sendl_prev)
+#define VC_L_ADD_EMPTY(qp, ep) GENERIC_L_ADD_EMPTY (qp, ep, ch.next, ch.prev)
+#define VC_L_ADD(qp, ep) GENERIC_L_ADD (qp, ep, ch.next, ch.prev)
+#define VC_L_REMOVE(qp, ep) GENERIC_L_REMOVE (qp, ep, ch.next, ch.prev)
 
 /* stack macros */
 #define S_EMPTY(s) GENERIC_S_EMPTY (s)

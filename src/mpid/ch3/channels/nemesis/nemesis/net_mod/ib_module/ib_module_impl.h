@@ -20,6 +20,26 @@ extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
 extern struct ibv_mr *proc_elements_mr;
 extern struct ibv_mr *module_elements_mr;
 
+/* The vc provides a generic buffer in which network modules can store
+   private fields This removes all dependencies from the VC struction
+   on the network module, facilitating dynamic module loading. */
+typedef struct 
+{
+    uint32_t  ud_qpn;
+    uint16_t  ud_dlid;
+    uint64_t  node_guid;
+    struct ibv_ah *ud_ah;
+    int conn_status;
+    struct ibv_qp *qp;
+    struct MPID_nem_ib_module_queue_t *ib_send_queue;
+    struct MPID_nem_ib_module_queue_t *ib_recv_queue;
+    uint32_t  avail_send_wqes;
+    char   in_queue;
+} MPID_nem_ib_module_vc_area;
+
+/* accessor macro to private fields in VC */
+#define VC_FIELD(vc, field) (((MPID_nem_ib_module_vc_area *)(vc)->ch.netmod_area.padding)->field)
+
 typedef struct {
     union {
         struct ibv_send_wr s_wr;

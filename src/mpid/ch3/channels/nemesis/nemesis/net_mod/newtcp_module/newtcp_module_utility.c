@@ -19,7 +19,7 @@ int MPID_nem_newtcp_module_get_conninfo (struct MPIDI_VC *vc, struct sockaddr_in
 {
     int mpi_errno = MPI_SUCCESS;
 
-    *addr = vc->ch.sock_id;
+    *addr = VC_FIELD(vc, sock_id);
     *pg_id = (char *)vc->pg->id;
     *pg_rank = vc->pg_rank;
     

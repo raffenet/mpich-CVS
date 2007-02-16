@@ -100,17 +100,17 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
         }
     }
 
-/*     while(!Q_EMPTY (vc_ch->send_queue))//DARIUS */
+/*     while(!Q_EMPTY (VC_FIELD(vc, send_queue)))//DARIUS */
 /*     { */
 /*         mpi_errno = send_queued (vc); /\* try to empty the queue *\/ */
 /*         if (mpi_errno) MPIU_ERR_POP (mpi_errno); */
 /*     } */
     
-    if (!Q_EMPTY (vc_ch->send_queue))
+    if (!Q_EMPTY (VC_FIELD(vc, send_queue)))
     {
         mpi_errno = send_queued (vc); /* try to empty the queue */
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-        if (!Q_EMPTY (vc_ch->send_queue))
+        if (!Q_EMPTY (VC_FIELD(vc, send_queue)))
         {
             /*printf ("  send queue not empty, enqueuing %d\n", MPID_NEM_PACKET_LEN (pkt));*/
             goto enqueue_cell_and_exit;
@@ -119,7 +119,7 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
 
     /* start sending the cell */
 
-    CHECK_EINTR (offset, write (vc_ch->sc->fd, pkt, MPID_NEM_PACKET_LEN (pkt)));
+    CHECK_EINTR (offset, write (VC_FIELD(vc, sc)->fd, pkt, MPID_NEM_PACKET_LEN (pkt)));
 /*     MPIU_Assert (offset != 0);//DARIUS */
     MPIU_ERR_CHKANDJUMP (offset == 0, mpi_errno, MPI_ERR_OTHER, "**sock_closed");
     if (offset == -1)
@@ -148,7 +148,7 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     e->start = (char *)pkt + offset;
     /*printf ("  enqueuing %d\n", e->len);*/
     
-    Q_ENQUEUE_EMPTY (&vc_ch->send_queue, e);
+    Q_ENQUEUE_EMPTY (&VC_FIELD(vc, send_queue), e);
     VC_L_ADD (&send_list, vc);
     
  fn_exit:
@@ -160,7 +160,7 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
     e->cell = cell;
     e->len = MPID_NEM_PACKET_LEN (pkt);
     e->start = (char *)pkt;
-    Q_ENQUEUE (&vc_ch->send_queue, e);
+    Q_ENQUEUE (&VC_FIELD(vc, send_queue), e);
     goto fn_exit;
  fn_fail:
     MPIU_CHKPMEM_REAP();
@@ -184,13 +184,13 @@ static int send_queued (MPIDI_VC_t *vc)
     ssize_t bytes_sent;
     ssize_t bytes_queued;    
 
-    MPIU_Assert (!Q_EMPTY (vc_ch->send_queue));
+    MPIU_Assert (!Q_EMPTY (VC_FIELD(vc, send_queue)));
 
     /* construct iov of pending sends */
     bytes_queued = 0;
     count = 0;
     e_last = NULL;
-    e = Q_HEAD (vc_ch->send_queue);
+    e = Q_HEAD (VC_FIELD(vc, send_queue));
     do
     {
         iov[count].MPID_IOV_BUF = e->start;
@@ -204,7 +204,7 @@ static int send_queued (MPIDI_VC_t *vc)
     while (count < MAX_SEND_IOV && e);
 
     /* write iov */
-    CHECK_EINTR (bytes_sent, writev (vc_ch->sc->fd, iov, count));
+    CHECK_EINTR (bytes_sent, writev (VC_FIELD(vc, sc)->fd, iov, count));
 /*     MPIU_Assert (bytes_sent != 0);//DARIUS */
     MPIU_ERR_CHKANDJUMP1 (bytes_sent == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**writev", "**writev %s", strerror (errno));
     MPIU_ERR_CHKANDJUMP (bytes_sent == 0, mpi_errno, MPI_ERR_OTHER, "**sock_closed");
@@ -226,9 +226,9 @@ static int send_queued (MPIDI_VC_t *vc)
         goto fn_exit;
 
 /*     printf ("packets sent\n");//DARIUS */
-    e_first = Q_HEAD (vc_ch->send_queue);    
+    e_first = Q_HEAD (VC_FIELD(vc, send_queue));    
     e_last = NULL;
-    e = Q_HEAD (vc_ch->send_queue);
+    e = Q_HEAD (VC_FIELD(vc, send_queue));
     while (1)
     {        
         MPIU_Assert (bytes_sent);
@@ -260,9 +260,9 @@ static int send_queued (MPIDI_VC_t *vc)
 
     if (e_last != NULL) /* did we send at least one queued send? */
     {
-        Q_REMOVE_ELEMENTS (&vc_ch->send_queue, e_first, e_last);
+        Q_REMOVE_ELEMENTS (&VC_FIELD(vc, send_queue), e_first, e_last);
         FREE_Q_ELEMENTS (e_first, e_last);
-        if (Q_EMPTY (vc_ch->send_queue))
+        if (Q_EMPTY (VC_FIELD(vc, send_queue)))
             VC_L_REMOVE (&send_list, vc);
     }
 
@@ -282,7 +282,7 @@ int MPID_nem_newtcp_module_send_progress()
     int mpi_errno = MPI_SUCCESS;
     MPIDI_VC_t *vc;
     
-    for (vc = send_list.head; vc; vc = vc->ch.newtcp_sendl_next)
+    for (vc = send_list.head; vc; vc = vc->ch.next)
     {
         mpi_errno = send_queued (vc);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -327,9 +327,9 @@ int MPID_nem_newtcp_module_conn_est (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
 
-/*     printf ("*** connected *** %d\n", vc->ch.sc->fd); //DARIUS     */
+/*     printf ("*** connected *** %d\n", VC_FIELD(vc, sc)->fd); //DARIUS     */
 
-    if (!Q_EMPTY (vc->ch.send_queue))
+    if (!Q_EMPTY (VC_FIELD(vc, send_queue)))
     {
         VC_L_ADD (&send_list, vc);
         mpi_errno = send_queued (vc);

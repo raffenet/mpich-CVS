@@ -149,6 +149,6 @@ typedef struct MPIDI_nem_newtcp_module_idinfo {
 } MPIDI_nem_newtcp_module_idinfo_t;
 
 
-#define MPID_nem_newtcp_module_vc_is_connected(vc) ((vc)->ch.sc && (vc)->ch.sc->state.cstate == CONN_STATE_TS_COMMRDY)
+#define MPID_nem_newtcp_module_vc_is_connected(vc) (VC_FIELD(vc, sc) && VC_FIELD(vc, sc)->state.cstate == CONN_STATE_TS_COMMRDY)
 
 #endif

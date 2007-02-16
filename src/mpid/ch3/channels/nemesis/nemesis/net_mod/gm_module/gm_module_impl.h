@@ -47,6 +47,20 @@ int MPID_nem_gm_module_lmt_do_get (int node_id, int port_id, struct iovec **r_io
 int MPID_nem_gm_module_do_put (void *target_p, void *source_p, int len, int node_id, int port_id, int *completion_ctr);
 int MPID_nem_gm_module_do_get (void *target_p, void *source_p, int len, int node_id, int port_id, int *completion_ctr);
 
+/* The vc provides a generic buffer in which network modules can store
+   private fields This removes all dependencies from the VC struction
+   on the network module, facilitating dynamic module loading. */
+typedef struct 
+{
+    unsigned gm_port_id;
+    unsigned gm_node_id; 
+    unsigned char gm_unique_id[6]; /* GM unique id length is 6 bytes.  GM doesn't define a constant. */
+} MPID_nem_gm_module_vc_area;
+
+/* accessor macro to private fields in VC */
+#define VC_FIELD(vc, field) (((MPID_nem_gm_module_vc_area *)(vc)->ch.netmod_area.padding)->field)
+
+
 /* lmt queues */
 
 typedef struct MPID_nem_gm_module_lmt_queue

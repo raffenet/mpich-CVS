@@ -515,14 +515,14 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         struct sockaddr_in *sock_addr;
         int rc = 0;
 
-        MPIU_Assert(vc->ch.sc == NULL);
+        MPIU_Assert(VC_FIELD(vc, sc) == NULL);
         mpi_errno = find_free_entry(&index);
         if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
         
         sc = &g_sc_tbl[index];
         plfd = &g_plfd_tbl[index];        
 
-        sock_addr = &(vc->ch.sock_id);
+        sock_addr = &(VC_FIELD(vc, sock_id));
 
         CHECK_EINTR(sc->fd, socket(AF_INET, SOCK_STREAM, 0));
         MPIU_ERR_CHKANDJUMP2(sc->fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", 
@@ -558,18 +558,18 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
             sc->pg_id = vc->pg->id;
         }
         sc->vc = vc;
-        vc->ch.sc = sc;
+        VC_FIELD(vc, sc) = sc;
         sc->pending_event = 0; /* clear pending events */
     }
     else if (vc->ch.state == MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED) {
-        sc = vc->ch.sc;
+        sc = VC_FIELD(vc, sc);
         switch(sc->state.cstate) {
         case CONN_STATE_TS_D_DCNTING:
             sc->state.cstate = CONN_STATE_TS_COMMRDY;
             /* plfd->events = POLLIN | POLLOUT; */
             sc->handler = sc_state_handlers[sc->state.cstate];
             sc->pending_event = 0;
-            sc->vc->ch.sc = sc;
+            VC_FIELD(sc->vc, sc) = sc;
             MPID_nem_newtcp_module_conn_est (vc);
             break;
         case CONN_STATE_TS_D_REQRCVD:
@@ -580,7 +580,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
                     /* plfd->events = POLLIN | POLLOUT; */
                     sc->handler = sc_state_handlers[sc->state.cstate];
                     sc->pending_event = 0;
-                    sc->vc->ch.sc = sc;
+                    VC_FIELD(sc->vc, sc) = sc;
                     MPID_nem_newtcp_module_conn_est (vc);
                 }
             }
@@ -778,7 +778,7 @@ static int state_c_ranksent_handler(pollfd_t *const plfd, sockconn_t *const sc)
             if (pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_ID_ACK) {
                 sc->state.cstate = CONN_STATE_TS_COMMRDY;
                 sc->handler = sc_state_handlers[sc->state.cstate];
-                sc->vc->ch.sc = sc;
+                VC_FIELD(sc->vc, sc) = sc;
                 MPID_nem_newtcp_module_conn_est (sc->vc);
             }
             else { /* pkt_type must be MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK */
@@ -889,7 +889,7 @@ static int state_l_rankrcvd_handler(pollfd_t *const plfd, sockconn_t *const sc)
         else {
             if (send_cmd_pkt(sc->fd, MPIDI_NEM_NEWTCP_MODULE_PKT_ID_ACK) == MPI_SUCCESS) {
                 sc->state.cstate = CONN_STATE_TS_COMMRDY;
-                sc->vc->ch.sc = sc;
+                VC_FIELD(sc->vc, sc) = sc;
                 sc->handler = sc_state_handlers[sc->state.cstate];
                 MPID_nem_newtcp_module_conn_est (sc->vc);
             }
@@ -1013,13 +1013,13 @@ static int state_d_quiescent_handler(pollfd_t *const plfd, sockconn_t *const sc)
     MPIU_ERR_CHKANDJUMP1 (rc == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, 
                           "**close", "**close %s", strerror (errno));
     sc->fd = plfd->fd = CONN_INVALID_FD;
-    if (sc->vc && sc->vc->ch.sc == sc) /* this vc may be connecting/accepting with another sc e.g., this sc lost the tie-breaker */
+    if (sc->vc && VC_FIELD(sc->vc, sc) == sc) /* this vc may be connecting/accepting with another sc e.g., this sc lost the tie-breaker */
     {
         sc->vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED;
         if (sc->pending_event != EVENT_CONNECT)
-            sc->vc->ch.sc = NULL;
+            VC_FIELD(sc->vc, sc) = NULL;
     }
-    if (sc->vc && sc->vc->ch.sc == sc && sc->pending_event == EVENT_CONNECT)
+    if (sc->vc && VC_FIELD(sc->vc, sc) == sc && sc->pending_event == EVENT_CONNECT)
         MPID_nem_newtcp_module_connect(sc->vc);
     else {
         node = MPIU_Malloc(sizeof(freenode_t));      
@@ -1068,7 +1068,7 @@ int MPID_nem_newtcp_module_connection_progress (MPIDI_VC_t *vc)
     pollfd_t *plfd;
     sockconn_t *sc;
     
-    sc = vc->ch.sc;
+    sc = VC_FIELD(vc, sc);
     if (sc == NULL)
         goto fn_exit;
 
@@ -1239,9 +1239,9 @@ static int f (void)
 /*** General FIXME and "ThinkAboutIt" Questions 
 
 1. To check whether a socket connection is connected or not in rank_rcvd_handler
-and possibly other handler functions, see whether you can use sc->vc->ch.state
-and sc->vc->ch.sc. 
-Check the set/use of sc->vc->ch.sc in connect side and accept side sequence of
+and possibly other handler functions, see whether you can use VC_FIELD(sc->vc, state)
+and VC_FIELD(sc->vc, sc). 
+Check the set/use of VC_FIELD(sc->vc, sc) in connect side and accept side sequence of
 events properly. This may be helpful in optimizing the code.
 2. Make sure all system calls are called within CHECK_EINTR macro
 

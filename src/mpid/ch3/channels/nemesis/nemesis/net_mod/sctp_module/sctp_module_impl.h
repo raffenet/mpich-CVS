@@ -23,7 +23,46 @@
 #define SCTP_POLL_FREQ_NO   -1
 #define SCTP_END_STRING "NEM_SCTP_MOD_FINALIZE"
 
+
+#define MPIDI_CH3_HAS_CHANNEL_CLOSE
+#define MPIDI_CH3_CHANNEL_AVOIDS_SELECT
+
+    /* TODO make all of these _ and make all of these adjustable using env var */
+#define MPICH_SCTP_NUM_STREAMS 1
+#define _MPICH_SCTP_SOCKET_BUFSZ 233016  /* _ because not to confuse with env var */
+    /* TODO add port and no_nagle */
+
+    /* stream table */
+#define HAVE_NOT_SENT_PG_ID 0
+#define HAVE_SENT_PG_ID 1
+#define HAVE_NOT_RECV_PG_ID 0
+#define HAVE_RECV_PG_ID 1
+
+typedef struct MPID_nem_sctp_stream {
+    char have_sent_pg_id;
+    char have_recv_pg_id;
+} MPID_nem_sctp_stream_t;
+
 /* typedefs */
+
+/* The vc provides a generic buffer in which network modules can store
+   private fields This removes all dependencies from the VC struction
+   on the network module, facilitating dynamic module loading. */
+typedef struct 
+{
+    int fd;
+    MPID_nem_sctp_stream_t stream_table[MPICH_SCTP_NUM_STREAMS];
+    struct sockaddr_in to_address;
+    void * conn_pkt;
+    struct
+    {
+        struct MPID_nem_sctp_module_send_q_element *head;
+        struct MPID_nem_sctp_module_send_q_element *tail;
+    } send_queue;
+} MPID_nem_sctp_module_vc_area;
+
+/* accessor macro to private fields in VC */
+#define VC_FIELD(vc, field) (((MPID_nem_sctp_module_vc_area *)(vc)->ch.netmod_area.padding)->field)
 
 /*   sendq */
 typedef struct MPID_nem_sctp_module_send_q_element
@@ -90,9 +129,9 @@ int MPID_nem_sctp_module_send_finalize();
 /* VC list macros */
 #define VC_L_EMPTY(q) GENERIC_L_EMPTY (q)
 #define VC_L_HEAD(q) GENERIC_L_HEAD (q)
-#define VC_L_ADD_EMPTY(qp, ep) GENERIC_L_ADD_EMPTY (qp, ep, ch.sctp_sendl_next, ch.sctp_sendl_prev)
-#define VC_L_ADD(qp, ep) GENERIC_L_ADD (qp, ep, ch.sctp_sendl_next, ch.sctp_sendl_prev)
-#define VC_L_REMOVE(qp, ep) GENERIC_L_REMOVE (qp, ep, ch.sctp_sendl_next, ch.sctp_sendl_prev)
+#define VC_L_ADD_EMPTY(qp, ep) GENERIC_L_ADD_EMPTY (qp, ep, ch.next, ch.prev)
+#define VC_L_ADD(qp, ep) GENERIC_L_ADD (qp, ep, ch.next, ch.prev)
+#define VC_L_REMOVE(qp, ep) GENERIC_L_REMOVE (qp, ep, ch.next, ch.prev)
 
 
 #endif /* SCTP_MODULE_IMPL_H */

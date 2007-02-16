@@ -240,6 +240,9 @@ MPID_nem_elan_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
    int mpi_errno = MPI_SUCCESS ;
    int index;
    
+   /* first make sure that our private fields in the vc fit into the area provided  */
+   MPIU_Assert(sizeof(MPID_nem_elan_module_vc_area) <= MPID_NEM_VC_NETMOD_AREA_LEN);
+
    if( MPID_nem_mem_region.ext_procs > 0)
      {
 	init_elan(pg_p);
@@ -382,8 +385,8 @@ MPID_nem_elan_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	rxq_ptr_array[vc->pg_rank]       = elan_queueTxInit(elan_base->state,remoteq_ptr,MPID_NEM_ELAN_RAIL_NUM,flags);
 	MPID_nem_elan_vpids[vc->pg_rank] = vpid;
 
-	vc->ch.rxq_ptr_array = rxq_ptr_array;   
-	vc->ch.vpid          = vpid;
+	VC_FIELD(vc, rxq_ptr_array) = rxq_ptr_array;   
+	VC_FIELD(vc, vpid)          = vpid;
      }   
    fn_exit:   
        return mpi_errno;

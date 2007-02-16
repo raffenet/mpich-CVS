@@ -55,6 +55,9 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
 
+    /* first make sure that our private fields in the vc fit into the area provided  */
+    MPIU_Assert(sizeof(MPID_nem_newtcp_module_vc_area) <= MPID_NEM_VC_NETMOD_AREA_LEN);
+    
     /* set up listener socket */
 /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
     g_lstn_plfd.fd = g_lstn_sc.fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -337,21 +340,21 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 
 /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
 
-    memset (&vc->ch.sock_id, 0, sizeof(vc->ch.sock_id));
-    vc->ch.sock_id.sin_family = AF_INET;
+    memset (&VC_FIELD(vc, sock_id), 0, sizeof(VC_FIELD(vc, sock_id)));
+    VC_FIELD(vc, sock_id).sin_family = AF_INET;
     
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);    
-    mpi_errno = get_addr_port_from_bc (business_card, &addr, &(vc->ch.sock_id.sin_port));
-    vc->ch.sock_id.sin_addr.s_addr = addr.s_addr;
+    mpi_errno = get_addr_port_from_bc (business_card, &addr, &(VC_FIELD(vc, sock_id).sin_port));
+    VC_FIELD(vc, sock_id).sin_addr.s_addr = addr.s_addr;
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-    vc->ch.sc = NULL;
-    vc->ch.send_queue.head = vc->ch.send_queue.tail = NULL;
-    vc->ch.newtcp_sendl_next = NULL;
-    vc->ch.newtcp_sendl_prev = NULL;
-    vc->ch.pending_recv.cell = NULL;
-    vc->ch.pending_recv.end = NULL;
-    vc->ch.pending_recv.len = 0;
+    vc->ch.next = NULL;
+    vc->ch.prev = NULL;
+    VC_FIELD(vc, sc) = NULL;
+    VC_FIELD(vc, send_queue).head = VC_FIELD(vc, send_queue).tail = NULL;
+    VC_FIELD(vc, pending_recv).cell = NULL;
+    VC_FIELD(vc, pending_recv).end = NULL;
+    VC_FIELD(vc, pending_recv).len = 0;
     
  fn_exit:
 /*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */

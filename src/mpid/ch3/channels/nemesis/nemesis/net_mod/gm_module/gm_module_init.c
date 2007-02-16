@@ -124,6 +124,9 @@ MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     gm_status_t status;
     int i;
 
+    /* first make sure that our private fields in the vc fit into the area provided  */
+    MPIU_Assert(sizeof(MPID_nem_gm_module_vc_area) <= MPID_NEM_VC_NETMOD_AREA_LEN);
+
     mpi_errno = init_gm (&board_id, &port_id, unique_id);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
@@ -272,10 +275,10 @@ MPID_nem_gm_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     int mpi_errno = MPI_SUCCESS;
     int ret;
 
-    mpi_errno = MPID_nem_gm_module_get_port_unique_from_bc (business_card, &vc->ch.gm_port_id, vc->ch.gm_unique_id);
+    mpi_errno = MPID_nem_gm_module_get_port_unique_from_bc (business_card, &VC_FIELD(vc, gm_port_id), VC_FIELD(vc, gm_unique_id));
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-    ret = gm_unique_id_to_node_id (MPID_nem_module_gm_port, (char *)vc->ch.gm_unique_id, &vc->ch.gm_node_id);
+    ret = gm_unique_id_to_node_id (MPID_nem_module_gm_port, (char *)VC_FIELD(vc, gm_unique_id), &VC_FIELD(vc, gm_node_id));
     /* --BEGIN ERROR HANDLING-- */
     if (ret != GM_SUCCESS)
     {

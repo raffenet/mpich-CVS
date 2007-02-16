@@ -23,6 +23,18 @@ extern int            *MPID_nem_elan_vpids;
 extern ELAN_QUEUE_TX **rxq_ptr_array;
 extern ELAN_QUEUE_TX  *mpid_nem_elan_recv_queue_ptr;
 
+/* The vc provides a generic buffer in which network modules can store
+   private fields This removes all dependencies from the VC struction
+   on the network module, facilitating dynamic module loading. */
+typedef struct 
+{
+    void *rxq_ptr_array; 
+    int   vpid;
+} MPID_nem_elan_module_vc_area;
+
+/* accessor macro to private fields in VC */
+#define VC_FIELD(vc, field) (((MPID_nem_elan_module_vc_area *)(vc)->ch.netmod_area.padding)->field)
+
 typedef struct MPID_nem_elan_cell
 {   
    struct MPID_nem_elan_cell *next;

@@ -194,7 +194,7 @@ int MPID_nem_ib_module_poll (MPID_nem_poll_dir_t in_or_out)
                 MPID_nem_queue_enqueue(MPID_nem_process_free_queue, 
                         ce->nem_cell);
 
-                ce->vc->ch.avail_send_wqes++;
+                VC_FIELD(ce->vc, avail_send_wqes)++;
 
                 MPID_nem_ib_module_return_cell(ce);
 
@@ -251,16 +251,16 @@ int MPID_nem_ib_module_poll (MPID_nem_poll_dir_t in_or_out)
 
         vc = (MPIDI_VC_t *) e->data;
 
-        if(MPID_NEM_IB_CONN_RC == vc->ch.conn_status) {
+        if(MPID_NEM_IB_CONN_RC == VC_FIELD(vc, conn_status)) {
 
             /* Connected */
 
             while(!MPID_nem_ib_module_queue_empty(
-                        (MPID_nem_ib_module_queue_t *)vc->ch.ib_send_queue) &&
-                    vc->ch.avail_send_wqes) {
+                        (MPID_nem_ib_module_queue_t *)VC_FIELD(vc, ib_send_queue)) &&
+                    VC_FIELD(vc, avail_send_wqes)) {
 
                 MPID_nem_ib_module_queue_dequeue(
-                        (MPID_nem_ib_module_queue_t *)vc->ch.ib_send_queue,
+                        (MPID_nem_ib_module_queue_t *)VC_FIELD(vc, ib_send_queue),
                         &sqe);
 
                 ce = (MPID_nem_ib_module_cell_elem_t *) sqe->data;
@@ -268,17 +268,17 @@ int MPID_nem_ib_module_poll (MPID_nem_poll_dir_t in_or_out)
                 NEM_IB_DBG("Cell to send %p, Len %d",
                         ce->nem_cell, ce->datalen);
 
-                ret = MPID_nem_ib_module_post_send(vc->ch.qp,
+                ret = MPID_nem_ib_module_post_send(VC_FIELD(vc, qp),
                         &ce->desc.u.s_wr);
 
                 MPIU_ERR_CHKANDJUMP1(ret != 0, mpi_errno, MPI_ERR_OTHER, 
                         "**ibv_post_send", "**ibv_post_send %d", ret);
 
-                vc->ch.avail_send_wqes--;
+                VC_FIELD(vc, avail_send_wqes)--;
             }
 
             if(!MPID_nem_ib_module_queue_empty(
-                        (MPID_nem_ib_module_queue_t *)vc->ch.ib_send_queue)) {
+                        (MPID_nem_ib_module_queue_t *)VC_FIELD(vc, ib_send_queue))) {
                 /* Still needs processing.
                  * Back to the queue you go! */
                 MPID_nem_ib_module_queue_enqueue(
@@ -286,7 +286,7 @@ int MPID_nem_ib_module_poll (MPID_nem_poll_dir_t in_or_out)
             } else {
 
                 /* This VC is no longer in the queue */
-                vc->ch.in_queue = 0;
+                VC_FIELD(vc, in_queue) = 0;
             }
 
         } else {

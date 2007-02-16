@@ -30,7 +30,7 @@ int MPID_nem_ib_module_vc_init (MPIDI_VC_t *vc,
         MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
     }
 
-    vc->ch.ud_qpn = ud_qpn;
+    VC_FIELD(vc, ud_qpn) = ud_qpn;
 
     mpi_errno = MPIU_Str_get_int_arg(business_card, 
             MPID_NEM_IB_LID_KEY, &dlid);
@@ -38,7 +38,7 @@ int MPID_nem_ib_module_vc_init (MPIDI_VC_t *vc,
         MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
     }
 
-    vc->ch.ud_dlid = dlid;
+    VC_FIELD(vc, ud_dlid) = dlid;
 
     mpi_errno = MPIU_Str_get_binary_arg(business_card, 
             MPID_NEM_IB_GUID_KEY, (char *) &guid, sizeof(uint64_t), &out_len);
@@ -46,27 +46,27 @@ int MPID_nem_ib_module_vc_init (MPIDI_VC_t *vc,
         MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
     }
 
-    vc->ch.node_guid = guid;
-    vc->ch.qp = NULL;
-    vc->ch.avail_send_wqes = MPID_nem_ib_dev_param_ptr->max_send_wr;
-    vc->ch.in_queue = 0;
+    VC_FIELD(vc, node_guid) = guid;
+    VC_FIELD(vc, qp) = NULL;
+    VC_FIELD(vc, avail_send_wqes) = MPID_nem_ib_dev_param_ptr->max_send_wr;
+    VC_FIELD(vc, in_queue) = 0;
 
     memset(&attr, 0, sizeof(struct ibv_ah_attr));
 
     attr.is_global = 0;
-    attr.dlid = vc->ch.ud_dlid;
+    attr.dlid = VC_FIELD(vc, ud_dlid);
     attr.sl = 0;
     attr.src_path_bits = 0;
     attr.port_num = MPID_nem_ib_cm_ctxt_ptr->hca_port;
     
-    vc->ch.ud_ah = ibv_create_ah 
+    VC_FIELD(vc, ud_ah) = ibv_create_ah 
         (MPID_nem_ib_cm_ctxt_ptr->prot_domain, &attr);
 
-    MPIU_ERR_CHKANDJUMP1(vc->ch.ud_ah == NULL, mpi_errno, MPI_ERR_OTHER, 
-            "**ibv_create_ah", "**ibv_create_ah %p", vc->ch.ud_ah);
+    MPIU_ERR_CHKANDJUMP1(VC_FIELD(vc, ud_ah) == NULL, mpi_errno, MPI_ERR_OTHER, 
+            "**ibv_create_ah", "**ibv_create_ah %p", VC_FIELD(vc, ud_ah));
 
 
-    vc->ch.conn_status = MPID_NEM_IB_CONN_NONE;
+    VC_FIELD(vc, conn_status) = MPID_NEM_IB_CONN_NONE;
 
     /* Add this information to the hash table */
 
@@ -93,10 +93,10 @@ int MPID_nem_ib_module_vc_init (MPIDI_VC_t *vc,
     }
 
     MPID_nem_ib_module_queue_init(
-            (MPID_nem_ib_module_queue_t **)(&vc->ch.ib_send_queue));
+            (MPID_nem_ib_module_queue_t **)(&VC_FIELD(vc, ib_send_queue)));
 
     NEM_IB_DBG("VC Init called, vc->pg_rank %d, ud_qpn %u, dlid %u, GUID %lu",
-            vc->pg_rank, vc->ch.ud_qpn, vc->ch.ud_dlid, vc->ch.node_guid);
+            vc->pg_rank, VC_FIELD(vc, ud_qpn), VC_FIELD(vc, ud_dlid), VC_FIELD(vc, node_guid));
 
 fn_exit:
     return mpi_errno;

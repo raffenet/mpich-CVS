@@ -414,6 +414,9 @@ int MPID_nem_ib_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
     int mpi_errno = MPI_SUCCESS;
     int ret, i;
 
+    /* first make sure that our private fields in the vc fit into the area provided  */
+    MPIU_Assert(sizeof(MPID_nem_ib_module_vc_area) <= MPID_NEM_VC_NETMOD_AREA_LEN);
+    
     INIT_NEM_IB_PROC_DESC(pg_rank);
 
     mpi_errno = MPID_nem_ib_module_init_cm_param();

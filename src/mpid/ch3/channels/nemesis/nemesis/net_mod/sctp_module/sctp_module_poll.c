@@ -30,7 +30,7 @@ static inline int send_progress()
     /* TODO need a send Q because can't assume success on first call to
      *   the net module's send */
     
-/*     for (vc = MPID_nem_sctp_module_send_list.head; vc; vc = vc->ch.sctp_sendl_next) */
+/*     for (vc = MPID_nem_sctp_module_send_list.head; vc; vc = vc->ch.next) */
 /*     { */
 /*         mpi_errno = MPID_nem_sctp_module_send_queue (vc); */
 /*         if (mpi_errno) MPIU_ERR_POP (mpi_errno); */
@@ -172,7 +172,7 @@ static inline int recv_progress()
                     vc->ch.state = MPID_NEM_VC_STATE_CONNECTED;
                     
                     /* Record that connection pkt has arrived.  */
-                    vc->ch.stream_table[sri.sinfo_stream].have_recv_pg_id = HAVE_RECV_PG_ID;
+                    VC_FIELD(vc, stream_table)[sri.sinfo_stream].have_recv_pg_id = HAVE_RECV_PG_ID;
                     
                     /* insert fully populated entry */
                     hash_insert(MPID_nem_sctp_assocID_table, result);
@@ -197,9 +197,9 @@ static inline int recv_progress()
                      *     malloc MPIDI_VC_t
                      *     MPIDI_VC_Init(vc, NULL, 0) and other init...
                      *     extract port_name_tag from msg
-                     *     extract business_card from msg, set vc->ch.to_address
-                     *     open new socket, set to vc->ch.fd
-                     *     construct new business_card based on vc->ch.fd
+                     *     extract business_card from msg, set VC_FIELD(vc, to_address)
+                     *     open new socket, set to VC_FIELD(vc, fd)
+                     *     construct new business_card based on VC_FIELD(vc, fd)
                      *     prepare to send new business_card
                      *     ACK new business_card
                      *     MPIDI_CH3I_Acceptq_enqueue(vc, port_name_tag);

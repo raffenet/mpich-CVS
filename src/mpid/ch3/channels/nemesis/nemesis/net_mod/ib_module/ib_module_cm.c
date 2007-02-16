@@ -519,11 +519,11 @@ static int cm_connect_and_reply(MPID_nem_ib_cm_msg_t *msg,
     MPID_nem_ib_cm_msg_t reply_msg;
 
     /* The VC should not have been "connected" */
-    MPIU_Assert(MPID_NEM_IB_CONN_RC != vc->ch.conn_status);
+    MPIU_Assert(MPID_NEM_IB_CONN_RC != VC_FIELD(vc, conn_status));
 
-    if(NULL == vc->ch.qp) {
+    if(NULL == VC_FIELD(vc, qp)) {
         /* Create QP */
-        mpi_errno = cm_create_rc_qp(&vc->ch.qp);
+        mpi_errno = cm_create_rc_qp(&VC_FIELD(vc, qp));
 
         if(mpi_errno) {
             MPIU_ERR_POP(mpi_errno);
@@ -531,7 +531,7 @@ static int cm_connect_and_reply(MPID_nem_ib_cm_msg_t *msg,
     }
 
     /* INIT -> RTR */
-    mpi_errno = cm_enable_qp_init_to_rtr(vc->ch.qp,
+    mpi_errno = cm_enable_qp_init_to_rtr(VC_FIELD(vc, qp),
             msg->lid, msg->rc_qpn);
 
     if(mpi_errno) {
@@ -539,7 +539,7 @@ static int cm_connect_and_reply(MPID_nem_ib_cm_msg_t *msg,
     }
 
     /* RTR -> RTS */
-    mpi_errno = cm_enable_qp_rtr_to_rts(vc->ch.qp);
+    mpi_errno = cm_enable_qp_rtr_to_rts(VC_FIELD(vc, qp));
 
     if(mpi_errno) {
         MPIU_ERR_POP(mpi_errno);
@@ -547,21 +547,21 @@ static int cm_connect_and_reply(MPID_nem_ib_cm_msg_t *msg,
 
     /* Prepare reply message */
     reply_msg.msg_type = MPID_NEM_IB_CM_MSG_TYPE_REP;
-    reply_msg.rc_qpn = vc->ch.qp->qp_num;
+    reply_msg.rc_qpn = VC_FIELD(vc, qp)->qp_num;
     reply_msg.lid = MPID_nem_ib_cm_ctxt_ptr->port_attr.lid;
     reply_msg.src_guid = MPID_nem_ib_cm_ctxt_ptr->guid;
     reply_msg.src_ud_qpn = MPID_nem_ib_cm_ctxt_ptr->ud_qp->qp_num;
 
     /* Send reply */
     mpi_errno = cm_post_ud_packet(&reply_msg, 
-            vc->ch.ud_ah, vc->ch.ud_qpn);
+            VC_FIELD(vc, ud_ah), VC_FIELD(vc, ud_qpn));
 
     if(mpi_errno) {
         MPIU_ERR_POP(mpi_errno);
     }
 
     /* Mark connection as "connected" */
-    vc->ch.conn_status = MPID_NEM_IB_CONN_RC;
+    VC_FIELD(vc, conn_status) = MPID_NEM_IB_CONN_RC;
 
     NEM_IB_DBG("RC Connection Server");
 
@@ -583,14 +583,14 @@ static int cm_reply(MPIDI_VC_t *vc)
 
     /* Prepare reply message */
     reply_msg.msg_type = MPID_NEM_IB_CM_MSG_TYPE_REP;
-    reply_msg.rc_qpn = vc->ch.qp->qp_num;
+    reply_msg.rc_qpn = VC_FIELD(vc, qp)->qp_num;
     reply_msg.lid = MPID_nem_ib_cm_ctxt_ptr->port_attr.lid;
     reply_msg.src_guid = MPID_nem_ib_cm_ctxt_ptr->guid;
     reply_msg.src_ud_qpn = MPID_nem_ib_cm_ctxt_ptr->ud_qp->qp_num;
 
     /* Send reply */
     mpi_errno = cm_post_ud_packet(&reply_msg, 
-            vc->ch.ud_ah, vc->ch.ud_qpn);
+            VC_FIELD(vc, ud_ah), VC_FIELD(vc, ud_qpn));
 
     if(mpi_errno) {
         MPIU_ERR_POP(mpi_errno);
@@ -617,7 +617,7 @@ static int cm_connect_vc(
     MPIU_Assert(NULL != msg);
 
     /* INIT -> RTR */
-    mpi_errno = cm_enable_qp_init_to_rtr(vc->ch.qp,
+    mpi_errno = cm_enable_qp_init_to_rtr(VC_FIELD(vc, qp),
             msg->lid, msg->rc_qpn);
 
     if(mpi_errno) {
@@ -625,13 +625,13 @@ static int cm_connect_vc(
     }
 
     /* RTR -> RTS */
-    mpi_errno = cm_enable_qp_rtr_to_rts(vc->ch.qp);
+    mpi_errno = cm_enable_qp_rtr_to_rts(VC_FIELD(vc, qp));
 
     if(mpi_errno) {
         MPIU_ERR_POP(mpi_errno);
     }
 
-    vc->ch.conn_status = MPID_NEM_IB_CONN_RC;
+    VC_FIELD(vc, conn_status) = MPID_NEM_IB_CONN_RC;
 
     NEM_IB_DBG("RC Connection Client");
 
@@ -678,7 +678,7 @@ static int cm_handle_msg(MPID_nem_ib_cm_msg_t *msg)
     MPIU_Assert(NULL != r_info->vc);
 
     vc = (MPIDI_VC_t *) r_info->vc;
-    conn_status = vc->ch.conn_status;
+    conn_status = VC_FIELD(vc, conn_status);
 
     switch(msg->msg_type) {
 
@@ -1236,9 +1236,9 @@ int MPID_nem_ib_cm_start_connect(
     /* Only this function can set status to MPID_NEM_IB_CONN_IN_PROGRESS,
      * and it definitely shouldn't have been called twice! */
 
-    MPIU_Assert(vc->ch.conn_status != MPID_NEM_IB_CONN_IN_PROGRESS);
+    MPIU_Assert(VC_FIELD(vc, conn_status) != MPID_NEM_IB_CONN_IN_PROGRESS);
 
-    if(MPID_NEM_IB_CONN_RC == vc->ch.conn_status) {
+    if(MPID_NEM_IB_CONN_RC == VC_FIELD(vc, conn_status)) {
         /* Must've been a race condition in which
          * a process discovers that the VC is
          * disconnected, but by the time this
@@ -1249,13 +1249,13 @@ int MPID_nem_ib_cm_start_connect(
         return mpi_errno;
     }
 
-    vc->ch.conn_status = MPID_NEM_IB_CONN_IN_PROGRESS;
+    VC_FIELD(vc, conn_status) = MPID_NEM_IB_CONN_IN_PROGRESS;
 
 
     /* Never clobber an existing QP */
-    MPIU_Assert(NULL == vc->ch.qp);
+    MPIU_Assert(NULL == VC_FIELD(vc, qp));
     
-    mpi_errno = cm_create_rc_qp(&vc->ch.qp);
+    mpi_errno = cm_create_rc_qp(&VC_FIELD(vc, qp));
 
     if(mpi_errno) {
         pthread_mutex_unlock(&MPID_nem_ib_cm_ctxt_ptr->cm_conn_state_lock);
@@ -1264,13 +1264,13 @@ int MPID_nem_ib_cm_start_connect(
 
     msg.msg_type = MPID_NEM_IB_CM_MSG_TYPE_REQ;
     msg.req_id = ++(MPID_nem_ib_cm_ctxt_ptr->cm_req_id_global);
-    msg.rc_qpn = vc->ch.qp->qp_num;
+    msg.rc_qpn = VC_FIELD(vc, qp)->qp_num;
     msg.lid = MPID_nem_ib_cm_ctxt_ptr->port_attr.lid;
     msg.src_guid = MPID_nem_ib_cm_ctxt_ptr->guid;
     msg.src_ud_qpn = MPID_nem_ib_cm_ctxt_ptr->ud_qp->qp_num;
 
-    mpi_errno = cm_send_ud_msg(&msg, vc->ch.ud_ah, 
-            vc->ch.ud_qpn, vc->ch.node_guid);
+    mpi_errno = cm_send_ud_msg(&msg, VC_FIELD(vc, ud_ah), 
+            VC_FIELD(vc, ud_qpn), VC_FIELD(vc, node_guid));
 
     if(mpi_errno) {
         pthread_mutex_unlock(&MPID_nem_ib_cm_ctxt_ptr->cm_conn_state_lock);

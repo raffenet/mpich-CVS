@@ -301,6 +301,9 @@ MPID_nem_sctp_module_init (MPID_nem_queue_ptr_t  proc_recv_queue,
     int pmi_errno;
     int index;
 
+    /* first make sure that our private fields in the vc fit into the area provided  */
+    MPIU_Assert(sizeof(MPID_nem_sctp_module_vc_area) <= MPID_NEM_VC_NETMOD_AREA_LEN);
+    
     mpi_errno = init_sctp (pg_p);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
@@ -384,10 +387,10 @@ MPID_nem_sctp_module_connect_to_root (const char *business_card, MPIDI_VC_t *new
     /* TODO fill in connect_to_root body based on this pseudocode */
     
     /* assert that new_vc->pg == NULL */
-    /* assert that new_vc->ch.fd == -1 */
-    /* create new socket for new_vc->ch.fd */
+    /* assert that VC_FIELD(new_vc, fd) == -1 */
+    /* create new socket for VC_FIELD(new_vc, fd) */
     /* MPIDI_CH3I_dynamic_tmp_vc = new_vc; */
-    /* MPIDI_CH3I_dynamic_tmp_fd = new_vc->ch.fd; */
+    /* MPIDI_CH3I_dynamic_tmp_fd = VC_FIELD(new_vc, fd); */
     /* obtain to_address from business_card contents */
     /* create business_card for new socket */
     /* prepare sending the business card to the server */
@@ -410,7 +413,7 @@ MPIDI_CH3_Complete_Acceptq_dequeue (MPIDI_VC_t *vc) {
         MPIU_Assert(MPIDI_CH3I_dynamic_tmp_vc == NULL);
         
         MPIDI_CH3I_dynamic_tmp_vc = vc;
-        MPIDI_CH3I_dynamic_tmp_fd = vc->ch.fd;
+        MPIDI_CH3I_dynamic_tmp_fd = VC_FIELD(vc, fd);
     }
     
     return MPI_SUCCESS;
@@ -502,18 +505,18 @@ MPID_nem_sctp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
      *  packet containing the PG has arrived)
      */
     for(i = 0; i < MPICH_SCTP_NUM_STREAMS; i++) {
-        vc->ch.stream_table[i].have_sent_pg_id = HAVE_NOT_SENT_PG_ID;
-        vc->ch.stream_table[i].have_recv_pg_id = HAVE_NOT_RECV_PG_ID;
+        VC_FIELD(vc, stream_table)[i].have_sent_pg_id = HAVE_NOT_SENT_PG_ID;
+        VC_FIELD(vc, stream_table)[i].have_recv_pg_id = HAVE_NOT_RECV_PG_ID;
     }
 
     /* use single one-to-many socket for non-temporary VCs (as in connect/accept) */
     if(vc->pg)
-        vc->ch.fd = MPID_nem_sctp_onetomany_fd;
+        VC_FIELD(vc, fd) = MPID_nem_sctp_onetomany_fd;
     else
-        vc->ch.fd = -1;
+        VC_FIELD(vc, fd) = -1;
     
     /* populate the sockaddr_in based on the business card */
-    mpi_errno = get_sockaddr_in_from_bc (business_card, &(vc->ch.to_address));
+    mpi_errno = get_sockaddr_in_from_bc (business_card, &(VC_FIELD(vc, to_address)));
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     
  fn_exit:
