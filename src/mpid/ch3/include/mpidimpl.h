@@ -927,20 +927,6 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root );
 int MPIDI_CH3I_Connect_to_root_sshm(const char *, MPIDI_VC_t **);
 int MPIDI_VC_InitShm( MPIDI_VC_t *vc );
 
-/* from util/sock */
-#ifdef HAVE_UTIL_SOCK
-int MPIDU_Sock_get_conninfo_from_bc( const char *bc, 
-				     char *host_description, int maxlen,
-				     int *port, MPIDU_Sock_ifaddr_t *ifaddr, 
-				     int *hasIfaddr );
-
-/* These two routines from util/sock initialize and shutdown the 
-   socket used to establish connections.  */
-int MPIDU_CH3I_SetupListener( MPIDU_Sock_set_t );
-int MPIDU_CH3I_ShutdownListener( void );
-
-#endif
-
 /* Channel defintitions */
 /*@
   MPIDI_CH3_iStartMsg - A non-blocking request to send a CH3 packet.  A r

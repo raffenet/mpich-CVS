@@ -7,6 +7,10 @@
 #ifndef CH3USOCK_H_INCLUDED
 #define CH3USOCK_H_INCLUDED
 
+#ifndef MPIDU_SOCK_H_INCLUDED
+#include "mpidu_sock.h" 
+#endif
+
 typedef enum MPIDI_CH3I_Conn_state
 {
     CONN_STATE_UNCONNECTED,
@@ -57,5 +61,15 @@ int MPIDU_CH3U_GetSockInterfaceAddr( int, char *, int, MPIDU_Sock_ifaddr_t * );
 const char * MPIDI_Conn_GetStateString(int);
 const char * MPIDI_CH3_VC_GetStateString( int );
 #endif
+
+int MPIDU_Sock_get_conninfo_from_bc( const char *bc, 
+				     char *host_description, int maxlen,
+				     int *port, MPIDU_Sock_ifaddr_t *ifaddr, 
+				     int *hasIfaddr );
+
+/* These two routines from util/sock initialize and shutdown the 
+   socket used to establish connections.  */
+int MPIDU_CH3I_SetupListener( MPIDU_Sock_set_t );
+int MPIDU_CH3I_ShutdownListener( void );
 
 #endif

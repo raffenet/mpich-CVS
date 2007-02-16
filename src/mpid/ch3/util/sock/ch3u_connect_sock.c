@@ -1010,15 +1010,113 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_SOCKCONNECT);
     
+    mpi_errno = MPIDI_PG_GetConnString( vc->pg, vc->pg_rank, val, sizeof(val));
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+
+    mpi_errno = MPIDI_CH3I_Sock_connect( vc, val, sizeof(val) );
+#if 0
     MPIU_Assert(vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED);
     
     MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
     vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
-    mpi_errno = MPIDI_PG_GetConnString( vc->pg, vc->pg_rank, val, sizeof(val));
-    if (mpi_errno != MPI_SUCCESS) {
+    mpi_errno = MPIDU_Sock_get_conninfo_from_bc( val, host_description,
+						 sizeof(host_description),
+						 &port, &ifaddr, &hasIfaddr );
+    if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
+
+    mpi_errno = MPIDI_CH3I_Connection_alloc(&conn);
+    if (mpi_errno == MPI_SUCCESS)
+    {
+	/* FIXME: This is a hack to allow Windows to continue to use
+	   the host description string instead of the interface address
+	   bytes when posting a socket connection.  This should be fixed 
+	   by changing the Sock_post_connect to only accept interface
+	   address.  See also channels/ssm/ch3_progress_connect.c */
+#ifndef HAVE_WINDOWS_H
+	if (hasIfaddr) {
+	    mpi_errno = MPIDU_Sock_post_connect_ifaddr(MPIDI_CH3I_sock_set, 
+						       conn, &ifaddr, port, 
+						       &conn->sock);
+	}
+	else 
+#endif
+	{
+	    mpi_errno = MPIDU_Sock_post_connect(MPIDI_CH3I_sock_set, conn, 
+						host_description, port, 
+						&conn->sock);
+	}
+	if (mpi_errno == MPI_SUCCESS)
+	{
+	    MPIU_DBG_CONNSTATECHANGE(vc,conn,CONN_STATE_CONNECTING);
+	    vc->ch.sock = conn->sock;
+	    vc->ch.conn = conn;
+	    conn->vc = vc;
+	    conn->state = CONN_STATE_CONNECTING;
+	    conn->send_active = NULL;
+	    conn->recv_active = NULL;
+	}
+	/* --BEGIN ERROR HANDLING-- */
+	else
+	{
+	    MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_FAILED);
+	    vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
+	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|sock|postconnect",
+		"**ch3|sock|postconnect %d %d %s", MPIR_Process.comm_world->rank, vc->pg_rank, val);
+	    goto fn_fail;
+	}
+	/* --END ERROR HANDLING-- */
+    }
+    else {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|sock|connalloc");
+    }
+#endif
+  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_SOCKCONNECT);
+    return mpi_errno;
+ fn_fail:
+#if 0
+    /* --BEGIN ERROR HANDLING-- */
+    if (conn) {
+	connection_destroy(conn);
+    }
+#endif
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
+}
+/* end MPIDI_CH3I_VC_post_sockconnect() */
+
+/* Given a connection string, start the process of creating a socket 
+   connection to that designated interface (on a node).  This routine 
+   is used both in MPIDI_CH3I_VC_post_sockconnect and in 
+   MPIDI_CH3I_VC_post_connect in the ch3:ssm channel. 
+
+   vallen = sizeof(val)
+*/
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Sock_connect
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Sock_connect( MPIDI_VC_t *vc, const char val[], int vallen )
+{
+    char host_description[MAX_HOST_DESCRIPTION_LEN];
+    MPIDU_Sock_ifaddr_t ifaddr;
+    int hasIfaddr = 0, port;
+    MPIDI_CH3I_Connection_t * conn = 0;
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SOCK_CONNECT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SOCK_CONNECT);
+    
+    MPIU_Assert(vc->ch.state == MPIDI_CH3I_VC_STATE_UNCONNECTED);
+    
+    MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
+    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
+
     mpi_errno = MPIDU_Sock_get_conninfo_from_bc( val, host_description,
 						 sizeof(host_description),
 						 &port, &ifaddr, &hasIfaddr );
@@ -1072,8 +1170,8 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|sock|connalloc");
     }
 
-  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_SOCKCONNECT);
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SOCK_CONNECT);
     return mpi_errno;
  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
@@ -1083,7 +1181,6 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
-/* end MPIDI_CH3I_VC_post_sockconnect() */
 
 
 /* FIXME: What does this do? */

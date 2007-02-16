@@ -7,7 +7,10 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
-#include "mpidu_sock.h"
+/* #include "mpidu_sock.h" */
+#ifndef MPIDU_SOCK_H_INCLUDED
+/*typedef struct MPIDU_Sock * MPIDU_Sock_t;*/
+#endif
 
 /* These macros unlock shared code */
 #define MPIDI_CH3_USES_SOCK
@@ -86,7 +89,8 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * sendq_head;
     struct MPID_Request * sendq_tail;
     MPIDI_CH3I_VC_state_t state;
-    MPIDU_Sock_t sock;
+    /*MPIDU_Sock_t sock;*/
+    struct MPIDU_Sock *sock;
     struct MPIDI_CH3I_Connection * conn;
 }
 MPIDI_CH3I_VC;
@@ -95,15 +99,8 @@ MPIDI_CH3I_VC;
 
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
+ * The socket channel makes no additions
  */
-/*  pkt is used to temporarily store a packet header associated with this request */	
-#if 0
-#define MPIDI_CH3_REQUEST_DECL	\
-struct MPIDI_CH3I_Request	\
-{				\
-    MPIDI_CH3_PktGeneric_t pkt;	\
-} ch;
-#endif
 
 /*
  * MPID_Progress_state - device/channel dependent state to be passed between 
