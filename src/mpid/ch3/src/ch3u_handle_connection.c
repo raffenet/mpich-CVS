@@ -152,7 +152,7 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
 		 * we need to initiate the close protocol on the read side 
 		 * even if the write state is MPIDI_VC_STATE_INACTIVE. */
 		 || ((vc->state == MPIDI_VC_STATE_INACTIVE) && 
-		     vc->ch.shm_read_connected) );
+		     ((MPIDI_CH3I_VC *)(vc->channel_private))->shm_read_connected) );
 #else
     MPIU_Assert( vc->state == MPIDI_VC_STATE_ACTIVE || 
 		 vc->state == MPIDI_VC_STATE_REMOTE_CLOSE );

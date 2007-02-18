@@ -24,11 +24,14 @@ extern MPIDI_CH3_PktHandler_Fcn *MPIDI_pktArray[MPIDI_CH3_PKT_END_CH3+1];
 static inline int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_CH3I_VC *vcch;
     MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POST_SENDQ_REQ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_POST_SENDQ_REQ);
     /* post send of next request on the send queue */
-    conn->send_active = MPIDI_CH3I_SendQ_head(conn->vc); /* MT */
+    vcch = (MPIDI_CH3I_VC *)conn->vc->channel_private;
+
+    conn->send_active = MPIDI_CH3I_SendQ_head(vcch); /* MT */
     if (conn->send_active != NULL)
     {
 	mpi_errno = MPIDU_Sock_post_writev(
@@ -391,6 +394,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		else if (conn->pkt.type == MPIDI_CH3I_PKT_SC_CONN_ACCEPT)
 		{
 		    MPIDI_VC_t *vc; 
+		    MPIDI_CH3I_VC *vcch;
 		    int port_name_tag = conn->pkt.sc_conn_accept.port_name_tag;
 
 		    vc = (MPIDI_VC_t *) MPIU_Malloc(sizeof(MPIDI_VC_t));
@@ -404,29 +408,30 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    /* --END ERROR HANDLING-- */
 		    /* FIXME - where does this vc get freed? */
 
+		    vcch = (MPIDI_CH3I_VC *)vc->channel_private;
 		    /* Initialize the device fields */
 		    MPIDI_VC_Init(vc, NULL, 0);
 		    /* Initialize the sock fields */
-		    vc->ch.sendq_head = NULL;
-		    vc->ch.sendq_tail = NULL;
+		    vcch->sendq_head = NULL;
+		    vcch->sendq_tail = NULL;
 		    MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
-		    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
-		    vc->ch.sock = conn->sock;
-		    vc->ch.conn = conn;
+		    vcch->state = MPIDI_CH3I_VC_STATE_CONNECTING;
+		    vcch->sock = conn->sock;
+		    vcch->conn = conn;
 		    conn->vc = vc;
 
 		    /* Initialize the shm fields */
-		    vc->ch.recv_active = NULL;
-		    vc->ch.send_active = NULL;
-		    vc->ch.req = NULL;
-		    vc->ch.read_shmq = NULL;
-		    vc->ch.write_shmq = NULL;
-		    vc->ch.shm = NULL;
-		    vc->ch.shm_state = 0;
-		    vc->ch.shm_next_reader = NULL;
-		    vc->ch.shm_next_writer = NULL;
-		    vc->ch.shm_read_connected = 0;
-		    vc->ch.bShm = FALSE;
+		    vcch->recv_active = NULL;
+		    vcch->send_active = NULL;
+		    vcch->req = NULL;
+		    vcch->read_shmq = NULL;
+		    vcch->write_shmq = NULL;
+		    vcch->shm = NULL;
+		    vcch->shm_state = 0;
+		    vcch->shm_next_reader = NULL;
+		    vcch->shm_next_writer = NULL;
+		    vcch->shm_read_connected = 0;
+		    vcch->bShm = FALSE;
 
 
 		    MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);
@@ -451,28 +456,28 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		{
 		    if (conn->pkt.sc_open_resp.ack)
 		    {
+			MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)conn->vc->channel_private;
 			conn->state = CONN_STATE_CONNECTED;
-			conn->vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
-			MPIU_Assert(conn->vc->ch.conn == conn);
-			MPIU_Assert(conn->vc->ch.sock == conn->sock);
+			vcch->state = MPIDI_CH3I_VC_STATE_CONNECTED;
+			MPIU_Assert(vcch->conn == conn);
+			MPIU_Assert(vcch->sock == conn->sock);
 			    
 			mpi_errno = connection_post_recv_pkt(conn);
 			if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 			mpi_errno = connection_post_sendq_req(conn);
-			/* --BEGIN ERROR HANDLING-- */
-			if (mpi_errno != MPI_SUCCESS)
-			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_INTERN,
-							     "**ch3|sock|scopenresp", NULL);
-			    goto fn_exit;
+			if (mpi_errno != MPI_SUCCESS) {
+			    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_INTERN,
+				    "**ch3|sock|scopenresp");
 			}
-			/* --END ERROR HANDLING-- */
 		    }
 		    else
 		    {
 			conn->vc = NULL;
 			conn->state = CONN_STATE_CLOSING;
-			MPIDU_Sock_post_close(conn->sock);
+			mpi_errno = MPIDU_Sock_post_close(conn->sock);
+			if (mpi_errno != MPI_SUCCESS) {
+			    MPIU_ERR_POP(mpi_errno);
+			}
 		    }
 		}
 		/* --BEGIN ERROR HANDLING-- */
@@ -518,7 +523,8 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 
 		if (complete)
 		{
-		    MPIDI_CH3I_SendQ_dequeue(conn->vc);
+		    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)conn->vc->channel_private;
+		    MPIDI_CH3I_SendQ_dequeue(vcch);
 		    mpi_errno = connection_post_sendq_req(conn);
 		    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 		}
@@ -560,7 +566,8 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 
 			    if (complete)
 			    {
-				MPIDI_CH3I_SendQ_dequeue(conn->vc);
+				MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)conn->vc->channel_private;
+				MPIDI_CH3I_SendQ_dequeue(vcch);
 				mpi_errno = connection_post_sendq_req(conn);
 				if (mpi_errno) {
 				    MPIU_ERR_POP(mpi_errno);
@@ -602,9 +609,10 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    /* finished sending open response packet */
 		    if (conn->pkt.sc_open_resp.ack == TRUE)
 		    { 
+			MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)conn->vc->channel_private;
 			/* post receive for packet header */
 			conn->state = CONN_STATE_CONNECTED;
-			conn->vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
+			vcch->state = MPIDI_CH3I_VC_STATE_CONNECTED;
 			mpi_errno = connection_post_recv_pkt(conn);
 			if (mpi_errno != MPI_SUCCESS) { 
 			    MPIU_ERR_POP(mpi_errno); 

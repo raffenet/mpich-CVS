@@ -277,7 +277,7 @@ extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 #define MPIDI_CH3I_SendQ_dequeue(vcch)					\
 {									\
     /* MT - not thread safe! */						\
-    vcch->sendq_head = vc->ch.sendq_head->dev.next;			\
+    vcch->sendq_head = vcch->sendq_head->dev.next;			\
     if (vcch->sendq_head == NULL)					\
     {									\
 	/* decrement number of active writes when a queue becomes empty */\

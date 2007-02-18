@@ -1041,7 +1041,8 @@ int MPIDI_PG_Close_VCs( void )
 		 * writing 
 		 * we need to initiate the close protocol on the read side 
 		 * even if the write state is MPIDI_VC_STATE_INACTIVE. */
-		|| ((vc->state == MPIDI_VC_STATE_INACTIVE) && vc->ch.shm_read_connected)
+		|| ((vc->state == MPIDI_VC_STATE_INACTIVE) && 
+		    ((MPIDI_CH3I_VC *)(vc->channel_private))->shm_read_connected)
 #endif
 		)
 	    {
