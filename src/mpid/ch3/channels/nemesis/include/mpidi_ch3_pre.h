@@ -192,7 +192,7 @@ typedef struct MPIDI_CH3I_VC
 #define MPIDI_CH3_REQUEST_DECL                                                                                                  \
     struct MPIDI_CH3I_Request                                                                                                   \
     {                                                                                                                           \
-        MPIDI_VC_t          *vc;                                                                                                \
+        struct MPIDI_VC     *vc;                                                                                                \
         int                  iov_offset;                                                                                        \
         int                  noncontig;                                                                                         \
         MPIDI_msg_sz_t       header_sz;                                                                                         \

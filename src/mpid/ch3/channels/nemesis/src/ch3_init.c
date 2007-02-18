@@ -169,10 +169,12 @@ int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)
 
 #ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 #ifdef USE_DBG_LOGGING
-const char * MPIDI_CH3_VC_GetStateString( int state )
+const char * MPIDI_CH3_VC_GetStateString( struct MPIDI_VC *vc )
 {
     const char *name = "unknown";
     static char asdigits[20];
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    int    state = vcch->state;
     
     switch (state) {
     case MPIDI_CH3I_VC_STATE_UNCONNECTED: name = "CH3I_VC_STATE_UNCONNECTED"; break;

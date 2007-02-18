@@ -334,7 +334,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                         if (is_blocking)
                             MPIDI_CH3I_Progress_delay(MPIDI_CH3I_progress_completion_count);
 
-                        //goto fn_exit;
+                        /*goto fn_exit;*/
                     }
                 }
                 MPIU_THREAD_CHECK_END;
@@ -596,9 +596,9 @@ MPID_Request *MPIDI_CH3_Progress_poke_with_matching (int source, int tag, MPID_C
     /* handle only contiguous types (for now) and one-cell packets */
     if((dt_contig) && (( userbuf_sz <= MPID_NEM__BYPASS_Q_MAX_VAL))) 
     {
-	//PAPI_reset(PAPI_EventSet);
+	/*PAPI_reset(PAPI_EventSet);*/
 	MPID_nem_mpich2_blocking_recv (&cell, &in_fbox);
-	//PAPI_accum(PAPI_EventSet, PAPI_values2);	
+	/*PAPI_accum(PAPI_EventSet, PAPI_values2);	*/
 
 	if (cell)
 	{	 
