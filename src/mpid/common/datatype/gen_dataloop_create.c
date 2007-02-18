@@ -270,7 +270,6 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 	    if (combiner == MPI_COMBINER_STRUCT_INTEGER) {
 		MPIU_Free(disps);
 	    }
-
 	    break;
 	case MPI_COMBINER_SUBARRAY:
 	    ndims = ints[0];

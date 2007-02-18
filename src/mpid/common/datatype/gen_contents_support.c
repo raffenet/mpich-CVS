@@ -18,6 +18,7 @@ void PREPEND_PREFIX(Type_access_contents)(MPI_Datatype type,
     MPID_Datatype_contents *cp;
 
     PMPI_Type_get_envelope(type, &nr_ints, &nr_aints, &nr_types, &combiner);
+    DLOOP_Assert(combiner != MPI_COMBINER_NAMED);
 
     /* hardcoded handling of MPICH2 contents format... */
     MPID_Datatype_get_ptr(type, dtp);
