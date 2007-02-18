@@ -363,16 +363,17 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 /* This routine initializes shm-specific elements of the VC */
 int MPIDI_VC_InitShm( MPIDI_VC_t *vc ) 
 {
-    vc->ch.recv_active        = NULL;
-    vc->ch.send_active        = NULL;
-    vc->ch.req                = NULL;
-    vc->ch.read_shmq          = NULL;
-    vc->ch.write_shmq         = NULL;
-    vc->ch.shm                = NULL;
-    vc->ch.shm_state          = 0;
-    vc->ch.shm_next_reader    = NULL;
-    vc->ch.shm_next_writer    = NULL;
-    vc->ch.shm_read_connected = 0;
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    vcch->recv_active        = NULL;
+    vcch->send_active        = NULL;
+    vcch->req                = NULL;
+    vcch->read_shmq          = NULL;
+    vcch->write_shmq         = NULL;
+    vcch->shm                = NULL;
+    vcch->shm_state          = 0;
+    vcch->shm_next_reader    = NULL;
+    vcch->shm_next_writer    = NULL;
+    vcch->shm_read_connected = 0;
     return 0;
 }
 

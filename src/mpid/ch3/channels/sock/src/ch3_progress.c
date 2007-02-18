@@ -37,7 +37,7 @@ static MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
 MPIDU_Sock_set_t MPIDI_CH3I_sock_set = NULL; 
 static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event);
 
-static inline int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
+static inline int connection_pop_sendq_req(MPIDI_CH3I_Connection_t * conn);
 static inline int connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn);
 
 static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb);
@@ -253,11 +253,12 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
 int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
 
-    MPIU_DBG_CONNSTATECHANGE(vc,vc->ch.conn,CONN_STATE_CLOSING);
-    vc->ch.conn->state = CONN_STATE_CLOSING;
+    MPIU_DBG_CONNSTATECHANGE(vc,vcch->conn,CONN_STATE_CLOSING);
+    vcch->conn->state = CONN_STATE_CLOSING;
     MPIU_DBG_MSG(CH3_DISCONNECT,TYPICAL,"Closing sock (Post_close)");
-    mpi_errno = MPIDU_Sock_post_close(vc->ch.sock);
+    mpi_errno = MPIDU_Sock_post_close(vcch->sock);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -674,8 +675,7 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    
 		if (complete)
 		{
-		    MPIDI_CH3I_SendQ_dequeue(conn->vc);
-		    mpi_errno = connection_post_sendq_req(conn);
+		    mpi_errno = connection_pop_sendq_req(conn);
 		    if (mpi_errno != MPI_SUCCESS) {
 			MPIU_ERR_POP(mpi_errno);
 		    }
@@ -721,8 +721,7 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			    }
 			    if (complete)
 			    {
-				MPIDI_CH3I_SendQ_dequeue(conn->vc);
-				mpi_errno = connection_post_sendq_req(conn);
+				mpi_errno = connection_pop_sendq_req(conn);
 				if (mpi_errno != MPI_SUCCESS) {
 				    MPIU_ERR_POP(mpi_errno);
 				}
@@ -865,17 +864,22 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 
 /* FIXME: This function also used in ch3u_connect_sock.c */
 #undef FUNCNAME
-#define FUNCNAME connection_post_sendq_req
+#define FUNCNAME connection_pop_sendq_req
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
+static inline int connection_pop_sendq_req(MPIDI_CH3I_Connection_t * conn)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POST_SENDQ_REQ);
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)conn->vc->channel_private;
+    MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POP_SENDQ_REQ);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_POST_SENDQ_REQ);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_CONNECTION_POP_SENDQ_REQ);
     /* post send of next request on the send queue */
-    conn->send_active = MPIDI_CH3I_SendQ_head(conn->vc); /* MT */
+
+    /* FIXME: Is dequeue/get next the operation we really want? */
+    MPIDI_CH3I_SendQ_dequeue(vcch);
+    conn->send_active = MPIDI_CH3I_SendQ_head(vcch); /* MT */
     if (conn->send_active != NULL)
     {
 	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"conn=%p: Posting message from connection send queue", conn );
@@ -886,7 +890,7 @@ static inline int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn)
     }
     
  fn_fail:
-    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_SENDQ_REQ);
+    MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POP_SENDQ_REQ);
     return mpi_errno;
 }
 

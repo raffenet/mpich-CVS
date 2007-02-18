@@ -59,7 +59,7 @@ int MPIDU_CH3U_GetSockInterfaceAddr( int, char *, int, MPIDU_Sock_ifaddr_t * );
 /* Return a string for the connection state */
 #ifdef USE_DBG_LOGGING
 const char * MPIDI_Conn_GetStateString(int);
-const char * MPIDI_CH3_VC_GetStateString( int );
+const char * MPIDI_CH3_VC_GetStateString( struct MPIDI_VC * );
 #endif
 
 int MPIDU_Sock_get_conninfo_from_bc( const char *bc, 

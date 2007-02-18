@@ -21,6 +21,7 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_VC_t * vc;
+    MPIDI_CH3I_VC *vcch;
     MPIU_CHKPMEM_DECL(1);
     int port_name_tag;
     int connected;
@@ -52,8 +53,8 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
 	MPIDI_VC_Init(vc, NULL, 0);
 	MPIDI_CH3_VC_Init(vc);
     }
-
-    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTING;
+    vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    vcch->state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
     connected = FALSE;
     /* Make it so that the pg_id is not matched on the other side by sending a 
@@ -65,7 +66,7 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
     if (mpi_errno != MPI_SUCCESS) {
 	/* FIXME: Do we want to free the vc instead? Or put this into the fail
 	   block? */
-	vc->ch.state = MPIDI_CH3I_VC_STATE_FAILED;
+	vcch->state = MPIDI_CH3I_VC_STATE_FAILED;
 	MPIU_ERR_POP(mpi_errno);
     }
     if (!connected) {
@@ -76,9 +77,9 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
     }
 
     MPIDI_CH3I_SHM_Add_to_writer_list(vc);
-    vc->ch.state = MPIDI_CH3I_VC_STATE_CONNECTED;
-    vc->ch.shm_reading_pkt = TRUE;
-    vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc); /* MT */
+    vcch->state = MPIDI_CH3I_VC_STATE_CONNECTED;
+    vcch->shm_reading_pkt = TRUE;
+    vcch->send_active = MPIDI_CH3I_SendQ_head(vcch); /* MT */
 
     MPIDI_Pkt_init(&pkt, MPIDI_CH3I_PKT_SC_CONN_ACCEPT);
     pkt.sc_conn_accept.port_name_tag = port_name_tag;
@@ -97,10 +98,12 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
 }
 
 #ifdef USE_DBG_LOGGING
-const char * MPIDI_CH3_VC_GetStateString( int state )
+const char * MPIDI_CH3_VC_GetStateString( struct MPIDI_VC *vc )
 {
     const char *name = "unknown";
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
     static char asdigits[20];
+    int    state = vcch->state;
     
     switch (state) {
     case MPIDI_CH3I_VC_STATE_UNCONNECTED: name = "CH3I_VC_STATE_UNCONNECTED"; break;

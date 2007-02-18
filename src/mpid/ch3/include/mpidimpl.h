@@ -17,6 +17,16 @@
 #include <assert.h>
 #endif
 
+/* We need to match the size of MPI_Aint to the relevant Format control
+ */
+#ifdef MPI_AINT_IS_LONG_INT
+#define MPIDI_MSG_SZ_FMT "%ld"
+#elif defined(MPI_AINT_IS_LONG_LONG_INT)
+#define MPIDI_MSG_SZ_FMT "%lld"
+#else
+#define MPIDI_MSG_SZ_FMT "%d"
+#endif
+
 #include "mpiimpl.h"
 
 #if !defined(MPICH_MPIDPRE_H_INCLUDED)
@@ -34,6 +44,73 @@
    !defined(gethostname)
 int gethostname(char *name, size_t len);
 # endif
+
+/*S
+  MPIDI_PG_t - Process group description
+
+  Notes:
+  Every 'MPI_COMM_WORLD' known to this process has an associated process 
+  group.  
+  S*/
+typedef struct MPIDI_PG
+{
+    /* MPIU_Object field.  MPIDI_PG_t objects are not allocated using the 
+       MPIU_Object system, but we do use the associated reference counting 
+       routines.  Therefore, handle must be present, but is not used 
+       except by debugging routines */
+    int handle;
+    volatile int ref_count;
+
+    /* Next pointer used to maintain a list of all process groups known to 
+       this process */
+    struct MPIDI_PG * next;
+
+    /* Number of processes in the process group */
+    int size;
+
+    /* VC table.  At present this is a pointer to an array of VC structures. 
+       Someday we may want make this a pointer to an array
+       of VC references.  Thus, it is important to use MPIDI_PG_Get_vc() 
+       instead of directly referencing this field. */
+    struct MPIDI_VC * vct;
+
+    /* Pointer to the process group ID.  The actual ID is defined and 
+       allocated by the process group.  The pointer is kept in the
+       device space because it is necessary for the device to be able to 
+       find a particular process group. */
+    void * id;
+
+    /* Replacement abstraction for connection information */
+    /* Connection information needed to access processes in this process 
+       group and to share the data with other processes.  The items are
+       connData - pointer for data used to implement these functions 
+                  (e.g., a pointer to an array of process group info)
+       getConnInfo( rank, buf, bufsize, self ) - function to store into
+                  buf the connection information for rank in this process 
+                  group
+       connInfoToString( buf_p, size, self ) - return in buf_p a string
+                  that can be sent to another process to recreate the
+                  connection information (the info needed to support
+                  getConnInfo)
+       connInfoFromString( buf, self ) - setup the information needed
+                  to implement getConnInfo
+       freeConnInfo( self ) - free any storage or resources associated
+                  with the connection information.
+
+       See ch3/src/mpidi_pg.c 
+    */
+    void *connData;
+    int  (*getConnInfo)( int, char *, int, struct MPIDI_PG * );
+    int  (*connInfoToString)( char **, int *, struct MPIDI_PG * );
+    int  (*connInfoFromString)( const char *,  struct MPIDI_PG * );
+    int  (*freeConnInfo)( struct MPIDI_PG * );
+
+#if defined(MPIDI_CH3_PG_DECL)
+    MPIDI_CH3_PG_DECL
+#endif    
+}
+MPIDI_PG_t;
+
 
 /*S
   MPIDI_Process_t - The information required about this process by the CH3 
@@ -410,14 +487,14 @@ int MPIDI_PG_Id_compare(void *id1, void *id2);
 int MPIDI_PG_Get_next(MPIDI_PG_t ** pgp);
 int MPIDI_PG_Iterate_reset(void);
 /* FIXME: MPIDI_PG_Get_vc is a macro, not a routine */
-int MPIDI_PG_Get_vc(MPIDI_PG_t * pg, int rank, MPIDI_VC_t ** vc); 
+int MPIDI_PG_Get_vc(MPIDI_PG_t * pg, int rank, struct MPIDI_VC ** vc); 
 int MPIDI_PG_Close_VCs( void );
 
 int MPIDI_PG_InitConnKVS( MPIDI_PG_t * );
 int MPIDI_PG_GetConnKVSname( char ** );
 int MPIDI_PG_InitConnString( MPIDI_PG_t * );
 int MPIDI_PG_GetConnString( MPIDI_PG_t *, int, char *, int );
-int MPIDI_PG_Dup_vcr( MPIDI_PG_t *, int, MPIDI_VC_t ** );
+int MPIDI_PG_Dup_vcr( MPIDI_PG_t *, int, struct MPIDI_VC ** );
 int MPIDI_PG_Get_size(MPIDI_PG_t * pg);
 void MPIDI_PG_IdToNum( MPIDI_PG_t *, int * );
 int MPIU_PG_Printall( FILE * );
@@ -464,6 +541,104 @@ int MPIDI_PG_Create_from_string(const char * str, MPIDI_PG_t ** pg_pptr,
 /*--------------------------------
   BEGIN VIRTUAL CONNECTION SECTION
   --------------------------------*/
+/*E
+  MPIDI_VC_State - States for a virtual connection.
+ 
+  Notes:
+  A closed connection is placed into 'STATE_INACTIVE'. (is this true?)
+ E*/
+typedef enum MPIDI_VC_State
+{
+    MPIDI_VC_STATE_INACTIVE=1,
+    MPIDI_VC_STATE_ACTIVE,
+    MPIDI_VC_STATE_LOCAL_CLOSE,
+    MPIDI_VC_STATE_REMOTE_CLOSE,
+    MPIDI_VC_STATE_CLOSE_ACKED
+} MPIDI_VC_State_t;
+
+struct MPID_Comm;
+
+typedef struct MPIDI_VC
+{
+    /* XXX - need better comment */
+    /* MPIU_Object fields.  MPIDI_VC_t objects are not allocated using the 
+       MPIU_Object system, but we do use the associated
+       reference counting routines.  The handle value is required 
+       when debugging objects (the handle kind is used in reporting
+       on changes to the object).
+    */
+    int handle;
+    volatile int ref_count;
+
+    /* state of the VC */
+    MPIDI_VC_State_t state;
+
+    /* Process group to which this VC belongs */
+    struct MPIDI_PG * pg;
+
+    /* Rank of the process in that process group associated with this VC */
+    int pg_rank;
+
+    /* Local process ID */
+    int lpid;
+    
+#if defined(MPID_USE_SEQUENCE_NUMBERS)
+    /* Sequence number of the next packet to be sent */
+    MPID_Seqnum_t seqnum_send;
+#endif
+    
+#if defined(MPIDI_CH3_MSGS_UNORDERED)
+    /* Sequence number of the next packet we expect to receive */
+    MPID_Seqnum_t seqnum_recv;
+
+    /* Queue for holding packets received out of order.  NOTE: the CH3 device 
+       only orders packets.  Handling of out-of-order data
+       is the responsibility of the channel. */
+    MPIDI_CH3_Pkt_send_container_t * msg_reorder_queue;
+#endif
+
+    /* rendezvous function pointers.  Called to send a rendevous
+       message or when one is matched */
+    int (* rndvSend_fn)( struct MPID_Request **sreq_p, const void * buf, int count, 
+                         MPI_Datatype datatype, int dt_contig, int data_sz, 
+                         MPI_Aint dt_true_lb, int rank, int tag,
+                         struct MPID_Comm * comm, int context_offset );
+    int (* rndvRecv_fn)( struct MPIDI_VC * vc, struct MPID_Request *rreq );
+
+    /* eager message threshold */
+    int eager_max_msg_sz;
+    
+    /* eager noncontiguous send function pointer.  Called to send a
+       noncontiguous eager message.  Caller must initialize
+       sreq->dev.segment, _first and _size.  Contiguous messages are
+       called directly from CH3 and cannot be overridden. */
+    int (* sendEagerNoncontig_fn)( struct MPIDI_VC *vc, struct MPID_Request *sreq,
+                                   void *header, MPIDI_msg_sz_t hdr_sz );
+    
+    /* Rather than have each channel define its own fields for the 
+       channel-specific data, we provide a fixed-sized scratchpad.  Currently,
+       this has a very generous size, though this may shrink later (a channel
+       can always allocate storage and hang it off of the end).  This 
+       is necessary to allow dynamic loading of channels at MPI_Init time. */
+    int32_t channel_private[64];
+# if defined(MPIDI_CH3_VC_DECL)
+    MPIDI_CH3_VC_DECL
+# endif
+}
+MPIDI_VC_t;
+
+typedef enum MPIDI_VC_Event
+{
+    MPIDI_VC_EVENT_TERMINATED
+}
+MPIDI_VC_Event_t;
+
+#ifndef HAVE_MPIDI_VCRT
+#define HAVE_MPIDI_VCRT
+typedef struct MPIDI_VCRT * MPID_VCRT;
+typedef struct MPIDI_VC * MPID_VCR;
+#endif
+
 
 /* Initialize a new VC */
 int MPIDI_VC_Init( MPIDI_VC_t *, MPIDI_PG_t *, int );
@@ -573,7 +748,7 @@ extern MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool;
 #define MPIDI_CH3_VC_GetStateString( _c ) "none"
 #else
 /* FIXME: This duplicates a value in util/sock/ch3usock.h */
-const char *MPIDI_CH3_VC_GetStateString(int);
+const char *MPIDI_CH3_VC_GetStateString(struct MPIDI_VC *);
 #endif
 
 /* These tw routines are in mpidi_pg.c and are used to print the 
@@ -609,12 +784,12 @@ int MPIDI_PrintConnStrToFile( FILE *fd, const char *file, int line,
      MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST, \
      "vc=%p: Setting state (vc) from %s to %s, vcchstate is %s", \
                   _vc, MPIDI_VC_GetStateString((_vc)->state), \
-                  #_newstate, MPIDI_CH3_VC_GetStateString( (_vc)->ch.state )) )
+                  #_newstate, MPIDI_CH3_VC_GetStateString( (_vc) )) )
 
 #define MPIU_DBG_VCCHSTATECHANGE(_vc,_newstate) \
      MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST, \
      "vc=%p: Setting state (ch) from %s to %s, vc state is %s", \
-                   _vc, MPIDI_CH3_VC_GetStateString((_vc)->ch.state), \
+		   _vc, MPIDI_CH3_VC_GetStateString((_vc)), \
                    #_newstate, MPIDI_VC_GetStateString( (_vc)->state )) )
 
 #define MPIU_DBG_CONNSTATECHANGE(_vc,_conn,_newstate) \
@@ -632,7 +807,7 @@ int MPIDI_PrintConnStrToFile( FILE *fd, const char *file, int line,
              _vc ? MPIDI_VC_GetStateString((_vc)->state) : "<no vc>", _msg ))
 #define MPIU_DBG_VCUSE(_vc,_msg) \
      MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST,\
-      "vc=%p,conn=%p: Using vc for %s", _vc, (_vc)->ch.conn, _msg ))
+      "vc=%p: Using vc for %s", _vc, _msg ))
 #define MPIU_DBG_PKT(_conn,_pkt,_msg) \
      MPIU_DBG_MSG_FMT(CH3_OTHER,TYPICAL,(MPIU_DBG_FDEST,\
      "conn=%p: %s %s", _conn, _msg, MPIDI_Pkt_GetDescString( _pkt ) ))

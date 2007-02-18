@@ -221,7 +221,8 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * req;
     MPIDI_CH3I_VC_state_t state;
     int shm_read_connected;
-    MPIDU_Sock_t sock;
+    /* MPIDU_Sock_t sock;*/
+    struct MPIDU_Sock *sock;
     struct MPIDI_CH3I_Connection * conn;
     int port_name_tag;
     BOOL bShm;
@@ -240,8 +241,9 @@ typedef struct MPIDI_CH3I_VC
     struct MPIDI_VC *shm_next_reader, *shm_next_writer;
 } MPIDI_CH3I_VC;
 
+#if 0
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
-
+#endif
 
 #define MPIDI_CH3_REQUEST_KIND_DECL \
 MPIDI_CH3I_IOV_WRITE_REQUEST, \

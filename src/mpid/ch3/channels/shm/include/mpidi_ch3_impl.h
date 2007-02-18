@@ -152,51 +152,45 @@ MPIDI_CH3I_Process_t;
 
 extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
 
-#define MPIDI_CH3I_SendQ_enqueue(vc, req)				\
+#define MPIDI_CH3I_SendQ_enqueue(vcch, req)				\
 {									\
     /* MT - not thread safe! */						\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue vc=0x%08x req=0x%08x",	\
-	              (unsigned long) vc, req->handle));		\
     req->dev.next = NULL;						\
-    if (vc->ch.sendq_tail != NULL)					\
+    if (vcch->sendq_tail != NULL)					\
     {									\
-	vc->ch.sendq_tail->dev.next = req;				\
+	vcch->sendq_tail->dev.next = req;				\
     }									\
     else								\
     {									\
-	vc->ch.sendq_head = req;					\
+	vcch->sendq_head = req;					\
     }									\
-    vc->ch.sendq_tail = req;						\
+    vcch->sendq_tail = req;						\
 }
 
-#define MPIDI_CH3I_SendQ_enqueue_head(vc, req)				     \
+#define MPIDI_CH3I_SendQ_enqueue_head(vcch, req)			     \
 {									     \
     /* MT - not thread safe! */						     \
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_enqueue_head vc=0x%08x req=0x%08x", \
-	              (unsigned long) vc, req->handle));		     \
-    req->dev.next = vc->ch.sendq_head;					     \
-    if (vc->ch.sendq_tail == NULL)					     \
+    req->dev.next = vcch->sendq_head;					     \
+    if (vcch->sendq_tail == NULL)					     \
     {									     \
-	vc->ch.sendq_tail = req;					     \
+	vcch->sendq_tail = req;					     \
     }									     \
-    vc->ch.sendq_head = req;						     \
+    vcch->sendq_head = req;						     \
 }
 
-#define MPIDI_CH3I_SendQ_dequeue(vc)					\
+#define MPIDI_CH3I_SendQ_dequeue(vcch)					\
 {									\
     /* MT - not thread safe! */						\
-    MPIDI_DBG_PRINTF((50, FCNAME, "SendQ_dequeue vc=0x%08x req=0x%08x",	\
-	              (unsigned long) vc, vc->ch.sendq_head));		\
-    vc->ch.sendq_head = vc->ch.sendq_head->dev.next;			\
-    if (vc->ch.sendq_head == NULL)					\
+    vcch->sendq_head = vcch->sendq_head->dev.next;			\
+    if (vcch->sendq_head == NULL)					\
     {									\
-	vc->ch.sendq_tail = NULL;					\
+	vcch->sendq_tail = NULL;					\
     }									\
 }
 
-#define MPIDI_CH3I_SendQ_head(vc) (vc->ch.sendq_head)
+#define MPIDI_CH3I_SendQ_head(vcch) (vcch->sendq_head)
 
-#define MPIDI_CH3I_SendQ_empty(vc) (vc->ch.sendq_head == NULL)
+#define MPIDI_CH3I_SendQ_empty(vcch) (vcch->sendq_head == NULL)
 
 typedef enum shm_wait_e
 {

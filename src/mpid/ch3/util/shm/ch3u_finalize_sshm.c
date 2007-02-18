@@ -33,6 +33,7 @@ int MPIDI_CH3U_Finalize_sshm()
     MPIDI_PG_t * pg_next;
     int inuse;
 
+#if 0
     /* Free resources allocated in CH3_Init() */
     while (MPIDI_CH3I_Process.shm_reading_list)
     {
@@ -44,9 +45,10 @@ int MPIDI_CH3U_Finalize_sshm()
 	MPIDI_CH3I_SHM_Release_mem(&MPIDI_CH3I_Process.shm_writing_list->ch.shm_write_queue_info);
 	MPIDI_CH3I_Process.shm_writing_list = MPIDI_CH3I_Process.shm_writing_list->ch.shm_next_writer;
     }
+#endif
 
-    /* brad : used to unlink this within Init but now done in finalize in case someone spawned needs
-     *        to attach to this bootstrapQ.
+    /* brad : used to unlink this within Init but now done in finalize in case 
+     * someone spawned needs to attach to this bootstrapQ.
      */
     mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(MPIDI_Process.my_pg->ch.bootstrapQ);
     if (mpi_errno != MPI_SUCCESS) {

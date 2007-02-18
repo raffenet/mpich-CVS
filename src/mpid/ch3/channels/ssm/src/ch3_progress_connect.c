@@ -53,12 +53,16 @@ static void MPIDI_CH3I_SHM_Remove_vc_read_references(MPIDI_VC_t *vc)
     {
 	if (iter == vc)
 	{
-	    /*printf("[%s%d]removing read vc%d.state = %s (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, vc->pg_rank, VCState(vc), (vc->pg && vc->pg_rank >= 0) ? vc->pg->id : "?");fflush(stdout);*/
-	    /* Mark the connection as NOT read connected so it won't be mistaken for active */
-	    /* Since shm connections are uni-directional the following three states are considered active:
-	     * MPIDI_VC_STATE_ACTIVE + ch.shm_read_connected = 0 - active in the write direction
-	     * MPIDI_VC_STATE_INACTIVE + ch.shm_read_connected = 1 - active in the read direction
-	     * MPIDI_VC_STATE_ACTIVE + ch.shm_read_connected = 1 - active in both directions
+	    /* Mark the connection as NOT read connected so it won't be 
+	       mistaken for active */
+	    /* Since shm connections are uni-directional the following three 
+	       states are considered active:
+	     * MPIDI_VC_STATE_ACTIVE + ch.shm_read_connected = 0 - active in 
+	     the write direction
+	     * MPIDI_VC_STATE_INACTIVE + ch.shm_read_connected = 1 - active in 
+	     the read direction
+	     * MPIDI_VC_STATE_ACTIVE + ch.shm_read_connected = 1 - active in 
+	     both directions
 	     */
 	    vc->ch.shm_read_connected = 0;
 	    if (trailer != iter)
@@ -92,7 +96,6 @@ static void MPIDI_CH3I_SHM_Remove_vc_write_references(MPIDI_VC_t *vc)
     {
 	if (iter == vc)
 	{
-	    /*printf("[%s%d]removing write vc%d.state = %s (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, vc->pg_rank, VCState(vc), (vc->pg && vc->pg_rank >= 0) ? vc->pg->id : "?");fflush(stdout);*/
 	    if (trailer != iter)
 	    {
 		/* remove the vc from the list */
@@ -127,7 +130,6 @@ void MPIDI_CH3I_SHM_Remove_vc_references(MPIDI_VC_t *vc)
 void MPIDI_CH3I_SHM_Add_to_reader_list(MPIDI_VC_t *vc)
 {
     MPIDI_CH3I_SHM_Remove_vc_read_references(vc);
-    /*printf("[%s%d]adding read vc%d.state = %s (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, vc->pg_rank, VCState(vc), (vc->pg && vc->pg_rank >= 0) ? vc->pg->id : "?");fflush(stdout);*/
     vc->ch.shm_next_reader = MPIDI_CH3I_Process.shm_reading_list;
     MPIDI_CH3I_Process.shm_reading_list = vc;
 }
@@ -139,145 +141,10 @@ void MPIDI_CH3I_SHM_Add_to_reader_list(MPIDI_VC_t *vc)
 void MPIDI_CH3I_SHM_Add_to_writer_list(MPIDI_VC_t *vc)
 {
     MPIDI_CH3I_SHM_Remove_vc_write_references(vc);
-    /*printf("[%s%d]adding write vc%d.state = %s (%s)\n", MPIU_DBG_parent_str, MPIR_Process.comm_world->rank, vc->pg_rank, VCState(vc), (vc->pg && vc->pg_rank >= 0) ? vc->pg->id : "?");fflush(stdout);*/
     vc->ch.shm_next_writer = MPIDI_CH3I_Process.shm_writing_list;
     MPIDI_CH3I_Process.shm_writing_list = vc;
 }
 
-#if 0
-
-static unsigned int GetIP(char *pszIP)
-{
-    unsigned int nIP;
-    unsigned int a,b,c,d;
-    if (pszIP == NULL)
-	return 0;
-    sscanf(pszIP, "%u.%u.%u.%u", &a, &b, &c, &d);
-    /*MPIU_DBG_PRINTF(("mask: %u.%u.%u.%u\n", a, b, c, d));*/
-    nIP = (d << 24) | (c << 16) | (b << 8) | a;
-    return nIP;
-}
-
-static unsigned int GetMask(char *pszMask)
-{
-    int i, nBits;
-    unsigned int nMask = 0;
-    unsigned int a,b,c,d;
-
-    if (pszMask == NULL)
-	return 0;
-
-    if (strstr(pszMask, "."))
-    {
-	sscanf(pszMask, "%u.%u.%u.%u", &a, &b, &c, &d);
-	/*MPIU_DBG_PRINTF(("mask: %u.%u.%u.%u\n", a, b, c, d));*/
-	nMask = (d << 24) | (c << 16) | (b << 8) | a;
-    }
-    else
-    {
-	nBits = atoi(pszMask);
-	for (i=0; i<nBits; i++)
-	{
-	    nMask = nMask << 1;
-	    nMask = nMask | 0x1;
-	}
-    }
-    /*
-    unsigned int a, b, c, d;
-    a = ((unsigned char *)(&nMask))[0];
-    b = ((unsigned char *)(&nMask))[1];
-    c = ((unsigned char *)(&nMask))[2];
-    d = ((unsigned char *)(&nMask))[3];
-    MPIU_DBG_PRINTF(("mask: %u.%u.%u.%u\n", a, b, c, d));
-    */
-    return nMask;
-}
-
-static int GetHostAndPort(char *host, int *port, char *business_card)
-{
-    char pszNetMask[50];
-    char *pEnv, *token;
-    unsigned int nNicNet, nNicMask;
-    char *temp, *pszHost, *pszIP, *pszPort;
-    unsigned int ip;
-
-    pEnv = getenv("MPICH_NETMASK");
-    if (pEnv != NULL)
-    {
-	MPIU_Strncpy(pszNetMask, pEnv, 50);
-	token = strtok(pszNetMask, "/");
-	if (token != NULL)
-	{
-	    token = strtok(NULL, "\n");
-	    if (token != NULL)
-	    {
-		nNicNet = GetIP(pszNetMask);
-		nNicMask = GetMask(token);
-
-		/* parse each line of the business card and match the ip address with the network mask */
-		temp = MPIU_Strdup(business_card);
-		token = strtok(temp, ":\r\n");
-		while (token)
-		{
-		    pszHost = token;
-		    pszIP = strtok(NULL, ":\r\n");
-		    pszPort = strtok(NULL, ":\r\n");
-		    ip = GetIP(pszIP);
-		    /*msg_printf("masking '%s'\n", pszIP);*/
-		    if ((ip & nNicMask) == nNicNet)
-		    {
-			/* the current ip address matches the requested network so return these values */
-			MPIU_Strncpy(host, pszIP, MAXHOSTNAMELEN); /*pszHost);*/
-			*port = atoi(pszPort);
-			MPIU_Free(temp);
-			return MPI_SUCCESS;
-		    }
-		    token = strtok(NULL, ":\r\n");
-		}
-		if (temp)
-		    MPIU_Free(temp);
-	    }
-	}
-    }
-
-    temp = MPIU_Strdup(business_card);
-    if (temp == NULL)
-    {
-	/*MPIDI_err_printf("GetHostAndPort", "MPIU_Strdup failed\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**MPIU_Strdup", 0);
-    }
-    /* move to the host part */
-    token = strtok(temp, ":");
-    if (token == NULL)
-    {
-	MPIU_Free(temp);
-	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**business_card", "**business_card %s", business_card); /*"[ch3:mm] GetHostAndPort: Invalid business card - %s", business_card);*/
-    }
-    /*strcpy(host, token);*/
-    /* move to the ip part */
-    token = strtok(NULL, ":");
-    if (token == NULL)
-    {
-	MPIU_Free(temp);
-	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**business_card", "**business_card %s", business_card); /*"[ch3:mm] GetHostAndPort: Invalid business card - %s", business_card);*/
-    }
-    MPIU_Strncpy(host, token, MAXHOSTNAMELEN); /* use the ip string instead of the hostname, it's more reliable */
-    /* move to the port part */
-    token = strtok(NULL, ":");
-    if (token == NULL)
-    {
-	MPIU_Free(temp);
-	/*MPIDI_err_printf("GetHostAndPort", "invalid business card\n");*/
-	return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**business_card", "**business_card %s", business_card); /*"[ch3:mm] GetHostAndPort: Invalid business card - %s", business_card);*/
-    }
-    *port = atoi(token);
-    MPIU_Free(temp);
-
-    return MPI_SUCCESS;
-}
-#endif
 
 /* This routine may be called from the common connect code */
 #undef FUNCNAME
@@ -300,9 +167,9 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
     mpi_errno = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_SHM_HOST_KEY, hostname, 256);
     if (mpi_errno != MPIU_STR_SUCCESS)
     {
-	/*printf("getstringarg(%s, %s) failed.\n", MPIDI_CH3I_SHM_HOST_KEY, business_card);fflush(stdout);*/
 	*flag = FALSE;
-/* If there is no shm host key, assume that we can't use shared memory */
+	/* If there is no shm host key, assume that we can't use shared 
+	   memory */
 /*
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**argstr_shmhost", 0);
 */
@@ -331,12 +198,10 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
     if (strcmp(MPIDI_Process.my_pg->ch.shm_hostname, hostname) != 0)
     {
 	*flag = FALSE;
-	/*MPIU_DBG_PRINTF(("%s != %s\n", MPIDI_Process.my_pg->ch.shm_hostname, hostname));*/
 	return MPI_SUCCESS;
     }
 
     *flag = TRUE;
-    /*MPIU_DBG_PRINTF(("%s == %s\n", MPIDI_Process.my_pg->ch.shm_hostname, hostname));*/
 
     MPIU_DBG_PRINTF(("attaching to queue: %s\n", queue_name));
     mpi_errno = MPIDI_CH3I_BootstrapQ_attach(queue_name, &queue);
@@ -354,7 +219,6 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**shmconnect_getmem", 0);
 	return mpi_errno;
     }
-    /*printf("rank %d sending queue(%s)\n", MPIR_Process.comm_world->rank, vc->ch.shm_write_queue_info.name);*/
 
     vc->ch.write_shmq = vc->ch.shm_write_queue_info.addr;
     vc->ch.write_shmq->head_index = 0;
@@ -368,16 +232,7 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
     }
 
     /* send the queue connection information */
-    /*MPIU_DBG_PRINTF(("write_shmq: %p, name - %s\n", vc->ch.write_shmq, vc->ch.shm_write_queue_info.key));*/
     shm_info.info = vc->ch.shm_write_queue_info;
-    /*
-    printf("comm_world rank %d\nvc->pg_rank %d\nmy_pg_rank %d\n\npg_id:\n<%s>\n",
-	MPIR_Process.comm_world->rank,
-	vc->pg_rank,
-	MPIDI_Process.my_pg_rank,
-	vc->pg->id);
-    fflush(stdout);
-    */
     MPIU_Strncpy(shm_info.pg_id, MPIDI_Process.my_pg->id, 100);
     shm_info.pg_rank = MPIDI_Process.my_pg_rank;
     shm_info.pid = getpid();
@@ -451,8 +306,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
 
-    MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
-
     if (vc->ch.state != MPIDI_CH3I_VC_STATE_UNCONNECTED)
     {
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**vc_state", "**vc_state %d", vc->ch.state);
@@ -468,12 +321,9 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     }
 
     /* attempt to connect through shared memory */
-/*    printf( "trying to connect through shared memory...\n"); fflush(stdout); */
     connected = FALSE;
 /*     MPIU_DBG_PRINTF(("business card: <%s> = <%s>\n", key, val)); */
     mpi_errno = MPIDI_CH3I_Shm_connect(vc, val, &connected);
-/*    printf( "After attempt to connect, flag = %d and rc = %d\n", connected, 
-      mpi_errno ); fflush(stdout); */
     if (mpi_errno != MPI_SUCCESS) 
     {
 	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**post_connect", "**post_connect %s", "MPIDI_CH3I_Shm_connect");
@@ -484,7 +334,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	MPIDI_VC_t *iter;
 	int count = 0;
 
-	/*MPIU_DBG_PRINTF(("shmem connected\n"));*/
 	MPIDI_CH3I_SHM_Add_to_writer_list(vc);
 
 	/* If there are more shm connections than cpus, reduce the spin count 
@@ -524,11 +373,9 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	MPIU_ERR_POP(mpi_errno);
     }
 
-/*    printf ("Allocating connection\n" );fflush(stdout);*/
     mpi_errno = MPIDI_CH3I_Connection_alloc(&conn);
     if (mpi_errno == MPI_SUCCESS)
     {
-/*	printf( "Posting socket connection\n" );fflush(stdout);*/
 	/* FIXME: This is a hack to allow Windows to continue to use
 	   the host description string instead of the interface address
 	   bytes when posting a socket connection.  This should be fixed 
@@ -572,8 +419,6 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     }
 #endif
  fn_exit:
-/*    printf("Exiting with %d\n", mpi_errno );fflush(stdout);*/
-    MPIDI_DBG_PRINTF((60, FCNAME, "exiting"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);
     return mpi_errno;
  fn_fail:

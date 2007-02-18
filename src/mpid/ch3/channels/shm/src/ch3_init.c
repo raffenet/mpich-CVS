@@ -76,18 +76,19 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 
     for (p = 0; p < pg_size; p++)
     {
+	MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)pg->vct[p].channel_private;
 	/* FIXME: the vc's must be set to active for the close protocol to 
 	   work in the shm channel */
 	pg->vct[p].state = MPIDI_VC_STATE_ACTIVE;
 	MPIDI_CH3_VC_Init( &pg->vct[p] );
-	pg->vct[p].ch.req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
+	vcch->req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
 	/* FIXME: Should these also be set in the VC_Init, or 
 	   is VC_Init moot (never called because this channel does not
 	   support dynamic processes?) */
-	pg->vct[p].ch.shm_reading_pkt = TRUE;
+	vcch->shm_reading_pkt = TRUE;
 #ifdef USE_SHM_UNEX
-	pg->vct[p].ch.unex_finished_next = NULL;
-	pg->vct[p].ch.unex_list = NULL;
+	vcch->unex_finished_next = NULL;
+	vcch->unex_list = NULL;
 #endif
     }
     
@@ -266,44 +267,46 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     /* initialize each shared memory queue */
     for (i=0; i<pg_size; i++)
     {
+	MPIDI_CH3I_VC *vcch;
 	/* MPIDI_PG_Get_vcr(pg, i, &vc); */
 	/* FIXME: Move this code to the general init pg for shared
 	   memory */
 	vc = &pg->vct[i];
+	vcch = (MPIDI_CH3I_VC *)vc->channel_private;
 #ifdef HAVE_SHARED_PROCESS_READ
 #ifdef HAVE_WINDOWS_H
 	if (pg->ch.pSharedProcessHandles)
-	    vc->ch.hSharedProcessHandle = pg->ch.pSharedProcessHandles[i];
+	    vcch->hSharedProcessHandle = pg->ch.pSharedProcessHandles[i];
 #else
 	if (pg->ch.pSharedProcessIDs)
 	{
-	    vc->ch.nSharedProcessID = pg->ch.pSharedProcessIDs[i];
-	    vc->ch.nSharedProcessFileDescriptor = pg->ch.pSharedProcessFileDescriptors[i];
+	    vcch->nSharedProcessID = pg->ch.pSharedProcessIDs[i];
+	    vcch->nSharedProcessFileDescriptor = pg->ch.pSharedProcessFileDescriptors[i];
 	}
 #endif
 #endif
 	if (i == pg_rank)
 	{
-	    vc->ch.shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->ch.addr + (shm_block * i));
+	    vcch->shm = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->ch.addr + (shm_block * i));
 	    for (j=0; j<pg_size; j++)
 	    {
-		vc->ch.shm[j].head_index = 0;
-		vc->ch.shm[j].tail_index = 0;
+		vcch->shm[j].head_index = 0;
+		vcch->shm[j].tail_index = 0;
 		for (k=0; k<MPIDI_CH3I_NUM_PACKETS; k++)
 		{
-		    vc->ch.shm[j].packet[k].offset = 0;
-		    vc->ch.shm[j].packet[k].avail = MPIDI_CH3I_PKT_AVAILABLE;
+		    vcch->shm[j].packet[k].offset = 0;
+		    vcch->shm[j].packet[k].avail = MPIDI_CH3I_PKT_AVAILABLE;
 		}
 	    }
 	}
 	else
 	{
-	    /*vc->ch.shm += pg_rank;*/
-	    vc->ch.shm = NULL;
-	    vc->ch.write_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->ch.addr + (shm_block * i)) + pg_rank;
-	    vc->ch.read_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->ch.addr + (shm_block * pg_rank)) + i;
+	    /*vcch->shm += pg_rank;*/
+	    vcch->shm = NULL;
+	    vcch->write_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->ch.addr + (shm_block * i)) + pg_rank;
+	    vcch->read_shmq = (MPIDI_CH3I_SHM_Queue_t*)((char*)pg->ch.addr + (shm_block * pg_rank)) + i;
 	    /* post a read of the first packet header */
-	    vc->ch.shm_reading_pkt = TRUE;
+	    vcch->shm_reading_pkt = TRUE;
 	}
     }
 
@@ -385,17 +388,18 @@ fn_exit:
    in MPIDI_CH3_Init and in routines that create and initialize connections */
 int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
 {
-    vc->ch.sendq_head         = NULL;
-    vc->ch.sendq_tail         = NULL;
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    vcch->sendq_head         = NULL;
+    vcch->sendq_tail         = NULL;
 
     /* Which of these do we need? */
-    vc->ch.recv_active        = NULL;
-    vc->ch.send_active        = NULL;
-    vc->ch.req                = NULL;
-    vc->ch.read_shmq          = NULL;
-    vc->ch.write_shmq         = NULL;
-    vc->ch.shm                = NULL;
-    vc->ch.shm_state          = 0;
+    vcch->recv_active        = NULL;
+    vcch->send_active        = NULL;
+    vcch->req                = NULL;
+    vcch->read_shmq          = NULL;
+    vcch->write_shmq         = NULL;
+    vcch->shm                = NULL;
+    vcch->shm_state          = 0;
     return 0;
 }
 

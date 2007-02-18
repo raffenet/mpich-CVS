@@ -75,6 +75,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * sreq = NULL;
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
@@ -102,7 +103,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
     
     /* If send queue is empty attempt to send
     data, queuing any unsent data. */
-    if (MPIDI_CH3I_SendQ_empty(vc)) /* MT */
+    if (MPIDI_CH3I_SendQ_empty(vcch)) /* MT */
     {
 	int error;
 	int nb;
@@ -131,8 +132,8 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
 		{
 		    MPIU_DBG_PRINTF(("ch3_istartmsgv: shm_writev did not complete the send, allocating request\n"));
 		    create_request(sreq, iov, n_iov, offset, nb);
-		    MPIDI_CH3I_SendQ_enqueue_head(vc, sreq);
-		    vc->ch.send_active = sreq;
+		    MPIDI_CH3I_SendQ_enqueue_head(vcch, sreq);
+		    vcch->send_active = sreq;
 		    break;
 		}
 	    }
@@ -155,7 +156,7 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
     else
     {
 	create_request(sreq, iov, n_iov, 0, 0);
-	MPIDI_CH3I_SendQ_enqueue(vc, sreq);
+	MPIDI_CH3I_SendQ_enqueue(vcch, sreq);
     }
 
     *sreq_ptr = sreq;

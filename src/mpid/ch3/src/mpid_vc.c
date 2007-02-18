@@ -573,14 +573,22 @@ static int MPIDI_CH3U_VC_FinishPending( MPIDI_VCRT_t *vcrt )
 	/* printf( "Size = %d\n", size ); fflush(stdout); */
 	for (i=0; i<size; i++) {
 	    if (vc[i]->state != MPIDI_VC_STATE_INACTIVE) {
+		/* FIXME: Printf for debugging */
 		printf ("state for vc[%d] is %d\n",
 			i, vc[i]->state ); fflush(stdout);
 		nPending++;
 	    }
+#if 0
+	    /* FIXME: We shouldn't have any references to the channel-specific
+	       fields in this part of the code.  This case should actually
+	       not be needed; if there is a pending send element, the
+	       top-level state should not be inactive */
 	    if (vc[i]->ch.sendq_head) {
+		/* FIXME: Printf for debugging */
 		printf( "Nonempty sendQ for vc[%d]\n", i ); fflush(stdout);
 		nPending++;
 	    }
+#endif
 	}
 	if (nPending > 0) {
 	    printf( "Panic! %d pending operations!\n", nPending );

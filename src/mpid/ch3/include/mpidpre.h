@@ -12,26 +12,21 @@
 
 #include "mpidi_ch3_conf.h"
 
+#if 0
 #ifdef HAVE_ASSERT_H
 #include <assert.h>
+#endif
 #endif
 
 #if defined(HAVE_SYS_TYPES_H)
 #include <sys/types.h>
 #endif
 
-#include "mpid_dataloop.h"
-struct MPID_Datatype;
-
 typedef MPI_Aint MPIDI_msg_sz_t;
-/* We need to match the size of MPI_Aint to the relevant Format control
- */
-#ifdef MPI_AINT_IS_LONG_INT
-#define MPIDI_MSG_SZ_FMT "%ld"
-#elif defined(MPI_AINT_IS_LONG_LONG_INT)
-#define MPIDI_MSG_SZ_FMT "%lld"
-#else
-#define MPIDI_MSG_SZ_FMT "%d"
+
+#include "mpid_dataloop.h"
+#if 0
+struct MPID_Datatype; 
 #endif
 
 /* Include definitions from the channel which must exist before items in this 
@@ -71,8 +66,8 @@ MPIDI_Message_match;
    packet header can be copied in the event that a message cannot be
    send immediately.  
 */
-/* #include "mpidpkt.h" */
-typedef struct { int32_t kind; int32_t *pktptrs[1]; int32_t pktwords[6]; } MPIDI_CH3_PktGeneric_t;
+typedef struct { int32_t kind; int32_t *pktptrs[1]; int32_t pktwords[6]; } 
+    MPIDI_CH3_PktGeneric_t;
 
 /*
  * THIS IS OBSOLETE AND UNUSED, BUT RETAINED FOR ITS DESCRIPTIONS OF THE
@@ -119,160 +114,6 @@ typedef struct { int32_t kind; int32_t *pktptrs[1]; int32_t pktwords[6]; } MPIDI
  * internal to the channel instance and must be handled
  * by the channel instance.
  */
-
-/*S
-  MPIDI_PG_t - Process group description
-
-  Notes:
-  Every 'MPI_COMM_WORLD' known to this process has an associated process 
-  group.  
-  S*/
-typedef struct MPIDI_PG
-{
-    /* MPIU_Object field.  MPIDI_PG_t objects are not allocated using the 
-       MPIU_Object system, but we do use the associated reference counting 
-       routines.  Therefore, handle must be present, but is not used 
-       except by debugging routines */
-    int handle;
-    volatile int ref_count;
-
-    /* Next pointer used to maintain a list of all process groups known to 
-       this process */
-    struct MPIDI_PG * next;
-
-    /* Number of processes in the process group */
-    int size;
-
-    /* VC table.  At present this is a pointer to an array of VC structures. 
-       Someday we may want make this a pointer to an array
-       of VC references.  Thus, it is important to use MPIDI_PG_Get_vc() 
-       instead of directly referencing this field. */
-    struct MPIDI_VC * vct;
-
-    /* Pointer to the process group ID.  The actual ID is defined and 
-       allocated by the process group.  The pointer is kept in the
-       device space because it is necessary for the device to be able to 
-       find a particular process group. */
-    void * id;
-
-    /* Replacement abstraction for connection information */
-    /* Connection information needed to access processes in this process 
-       group and to share the data with other processes.  The items are
-       connData - pointer for data used to implement these functions 
-                  (e.g., a pointer to an array of process group info)
-       getConnInfo( rank, buf, bufsize, self ) - function to store into
-                  buf the connection information for rank in this process 
-                  group
-       connInfoToString( buf_p, size, self ) - return in buf_p a string
-                  that can be sent to another process to recreate the
-                  connection information (the info needed to support
-                  getConnInfo)
-       connInfoFromString( buf, self ) - setup the information needed
-                  to implement getConnInfo
-       freeConnInfo( self ) - free any storage or resources associated
-                  with the connection information.
-
-       See ch3/src/mpidi_pg.c 
-    */
-    void *connData;
-    int  (*getConnInfo)( int, char *, int, struct MPIDI_PG * );
-    int  (*connInfoToString)( char **, int *, struct MPIDI_PG * );
-    int  (*connInfoFromString)( const char *,  struct MPIDI_PG * );
-    int  (*freeConnInfo)( struct MPIDI_PG * );
-
-#if defined(MPIDI_CH3_PG_DECL)
-    MPIDI_CH3_PG_DECL
-#endif    
-}
-MPIDI_PG_t;
-
-
-
-/*E
-  MPIDI_VC_State - States for a virtual connection.
- 
-  Notes:
-  A closed connection is placed into 'STATE_INACTIVE'. (is this true?)
- E*/
-typedef enum MPIDI_VC_State
-{
-    MPIDI_VC_STATE_INACTIVE=1,
-    MPIDI_VC_STATE_ACTIVE,
-    MPIDI_VC_STATE_LOCAL_CLOSE,
-    MPIDI_VC_STATE_REMOTE_CLOSE,
-    MPIDI_VC_STATE_CLOSE_ACKED
-} MPIDI_VC_State_t;
-
-struct MPID_Comm;
-
-typedef struct MPIDI_VC
-{
-    /* XXX - need better comment */
-    /* MPIU_Object fields.  MPIDI_VC_t objects are not allocated using the 
-       MPIU_Object system, but we do use the associated
-       reference counting routines.  The handle value is required 
-       when debugging objects (the handle kind is used in reporting
-       on changes to the object).
-    */
-    int handle;
-    volatile int ref_count;
-
-    /* state of the VC */
-    MPIDI_VC_State_t state;
-
-    /* Process group to which this VC belongs */
-    MPIDI_PG_t * pg;
-
-    /* Rank of the process in that process group associated with this VC */
-    int pg_rank;
-
-    /* Local process ID */
-    int lpid;
-    
-#if defined(MPID_USE_SEQUENCE_NUMBERS)
-    /* Sequence number of the next packet to be sent */
-    MPID_Seqnum_t seqnum_send;
-#endif
-    
-#if defined(MPIDI_CH3_MSGS_UNORDERED)
-    /* Sequence number of the next packet we expect to receive */
-    MPID_Seqnum_t seqnum_recv;
-
-    /* Queue for holding packets received out of order.  NOTE: the CH3 device 
-       only orders packets.  Handling of out-of-order data
-       is the responsibility of the channel. */
-    MPIDI_CH3_Pkt_send_container_t * msg_reorder_queue;
-#endif
-
-    /* rendezvous function pointers.  Called to send a rendevous
-       message or when one is matched */
-    int (* rndvSend_fn)( struct MPID_Request **sreq_p, const void * buf, int count, 
-                         MPI_Datatype datatype, int dt_contig, int data_sz, 
-                         MPI_Aint dt_true_lb, int rank, int tag,
-                         struct MPID_Comm * comm, int context_offset );
-    int (* rndvRecv_fn)( struct MPIDI_VC * vc, struct MPID_Request *rreq );
-
-    /* eager message threshold */
-    int eager_max_msg_sz;
-    
-    /* eager noncontiguous send function pointer.  Called to send a
-       noncontiguous eager message.  Caller must initialize
-       sreq->dev.segment, _first and _size.  Contiguous messages are
-       called directly from CH3 and cannot be overridden. */
-    int (* sendEagerNoncontig_fn)( struct MPIDI_VC *vc, struct MPID_Request *sreq,
-                                   void *header, MPIDI_msg_sz_t hdr_sz );
-    
-# if defined(MPIDI_CH3_VC_DECL)
-    MPIDI_CH3_VC_DECL
-# endif
-}
-MPIDI_VC_t;
-
-typedef enum MPIDI_VC_Event
-{
-    MPIDI_VC_EVENT_TERMINATED
-}
-MPIDI_VC_Event_t;
 
 #ifndef HAVE_MPIDI_VCRT
 #define HAVE_MPIDI_VCRT
@@ -357,7 +198,7 @@ typedef struct MPIDI_Request {
        For example, when an operation described by an iov has 
        completed.  This replaces the MPIDI_CA_t (completion action)
        field used through MPICH2 1.0.4. */
-    int (*OnDataAvail)( MPIDI_VC_t *, struct MPID_Request *, int * );
+    int (*OnDataAvail)( struct MPIDI_VC *, struct MPID_Request *, int * );
     /* OnFinal is used in the following case:
        OnDataAvail is set to a function, and that function has processed
        all of the data.  At that point, the OnDataAvail function can
@@ -366,7 +207,7 @@ typedef struct MPIDI_Request {
        as a get-response) when processing of the non-contiguous data 
        completes. This value need not be initialized unless OnDataAvail
        is set to a non-null value (and then only in certain cases) */
-    int (*OnFinal)( MPIDI_VC_t *, struct MPID_Request *, int * );
+    int (*OnFinal)( struct MPIDI_VC *, struct MPID_Request *, int * );
 
     /* tmpbuf and tmpbuf_sz describe temporary storage used for things like 
        unexpected eager messages and packing/unpacking
@@ -427,6 +268,9 @@ MPID_REQUEST_DECL
 /* FIXME: This ifndef test is a temp until mpidpre is cleaned of
    all items that do not belong (e.g., all items not needed by the
    top layers of MPICH2) */
+/* FIXME: The progress routines will be made into ch3-common definitions, not
+   channel specific.  Channels that need more will need to piggy back or 
+   otherwise override */
 #ifndef MPID_PROGRESS_STATE_DECL
 #if defined(MPIDI_CH3_PROGRESS_STATE_DECL)
 #   define MPID_PROGRESS_STATE_DECL MPIDI_CH3_PROGRESS_STATE_DECL

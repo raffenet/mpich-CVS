@@ -184,7 +184,9 @@ typedef struct MPIDI_CH3I_VC
 #endif
 } MPIDI_CH3I_VC;
 
+#if 0
 #define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch;
+#endif
 
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)

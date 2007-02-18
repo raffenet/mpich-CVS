@@ -81,7 +81,7 @@ int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
 }
 */
 /* Because packets are interpreted in-place in the shm queue, posting a pkt read only requires setting a flag */
-#define post_pkt_recv(vc) vc->ch.shm_reading_pkt = TRUE
+#define post_pkt_recv(vcch) vcch->shm_reading_pkt = TRUE
 
 #undef FUNCNAME
 #define FUNCNAME handle_read
@@ -91,11 +91,12 @@ static inline int handle_read(MPIDI_VC_t *vc, int nb)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * req;
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_READ);
     
-    req = vc->ch.recv_active;
+    req = vcch->recv_active;
     if (req == NULL)
     {
 	MPIDI_FUNC_EXIT(MPID_STATE_HANDLE_READ);
@@ -112,17 +113,17 @@ static inline int handle_read(MPIDI_VC_t *vc, int nb)
 	    reqFn = req->dev.OnDataAvail;
 	    if (!reqFn) {
 		MPIDI_CH3U_Request_complete(req);
-		post_pkt_recv(vc);
+		post_pkt_recv(vcch);
 	    }
 	    else {
 		int complete;
 		mpi_errno = reqFn( vc, req, &complete );
 		if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 		if (complete) {
-		    post_pkt_recv(vc);
+		    post_pkt_recv(vcch);
 		}
 		else {
-		    vc->ch.recv_active = req;
+		    vcch->recv_active = req;
 		    mpi_errno = MPIDI_CH3I_SHM_post_readv(vc, req->dev.iov, req->dev.iov_count, NULL);
 		}
 	    }
@@ -148,13 +149,14 @@ static inline int handle_written(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
     int nb;
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_HANDLE_WRITTEN);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLE_WRITTEN);
     
-    while (vc->ch.send_active != NULL)
+    while (vcch->send_active != NULL)
     {
-	MPID_Request * req = vc->ch.send_active;
+	MPID_Request * req = vcch->send_active;
 
 	mpi_errno = MPIDI_CH3I_SHM_writev(
 	    vc, req->dev.iov + req->ch.iov_offset, 
@@ -175,17 +177,17 @@ static inline int handle_written(MPIDI_VC_t * vc)
 		reqFn = req->dev.OnDataAvail;
 		if (!reqFn) {
 		    MPIDI_CH3U_Request_complete(req);
-		    MPIDI_CH3I_SendQ_dequeue(vc);
+		    MPIDI_CH3I_SendQ_dequeue(vcch);
 		}
 		else {
 		    int complete;
 		    mpi_errno = reqFn( vc, req, &complete );
 		    if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
 		    if (complete) {
-			MPIDI_CH3I_SendQ_dequeue(vc);
+			MPIDI_CH3I_SendQ_dequeue(vcch);
 		    }
 		}
-		vc->ch.send_active = MPIDI_CH3I_SendQ_head(vc);
+		vcch->send_active = MPIDI_CH3I_SendQ_head(vcch);
 	    }
 	}
 	else
@@ -288,8 +290,10 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	/* pound on the write queues since shm_read_progress currently does not return SHM_WAIT_WRITE */
 	for (i=0; i<MPIDI_PG_Get_size(MPIDI_CH3I_Process.vc->pg); i++)
 	{
+	    MPIDI_CH3I_VC *vcch;
 	    MPIDI_PG_Get_vc(MPIDI_CH3I_Process.vc->pg, i, &vc_ptr);
-	    if (/*MPIDI_Process.my_pg->ch.vc_table[i].*/vc_ptr->ch.send_active != NULL)
+	    vcch = (MPIDI_CH3I_VC *)vc_ptr->channel_private;
+	    if (/*MPIDI_Process.my_pg->ch.vc_table[i].*/vcch->send_active != NULL)
 	    {
 		mpi_errno = handle_written(vc_ptr/*&MPIDI_Process.my_pg->ch.vc_table[i]*/);
 		if (mpi_errno != MPI_SUCCESS)
