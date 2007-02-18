@@ -127,7 +127,8 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank )
        now part of the channel-specific hook for channel-specific VC info? */
     for (p = 0; p < pg_size; p++)
     {
-	pg_p->vct[p].ch.bShm = FALSE;
+	MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)pg_p->vct[p].channel_private;
+	vcch->bShm = FALSE;
     }
 
 fn_exit:
@@ -157,13 +158,14 @@ int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a )
 
 /* Perform the channel-specific vc initialization */
 int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
-    vc->ch.sendq_head         = NULL;
-    vc->ch.sendq_tail         = NULL;
-    vc->ch.state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    vcch->sendq_head         = NULL;
+    vcch->sendq_tail         = NULL;
+    vcch->state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
     MPIDI_VC_InitSock( vc );
     MPIDI_VC_InitShm( vc );
     /* This variable is used when sock and sshm are combined */
-    vc->ch.bShm               = FALSE;
+    vcch->bShm               = FALSE;
     return 0;
 }
 
