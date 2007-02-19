@@ -620,7 +620,9 @@ typedef struct MPIDI_VC
        this has a very generous size, though this may shrink later (a channel
        can always allocate storage and hang it off of the end).  This 
        is necessary to allow dynamic loading of channels at MPI_Init time. */
-    int32_t channel_private[64];
+/* The ssm channel needs a *huge* space for the VC.  We need to fix that. */
+#define MPIDI_CH3_VC_SIZE 150
+    int32_t channel_private[MPIDI_CH3_VC_SIZE];
 # if defined(MPIDI_CH3_VC_DECL)
     MPIDI_CH3_VC_DECL
 # endif
@@ -855,7 +857,7 @@ extern char *MPIU_DBG_parent_str;
     }
 #endif
 
-/* FIXME: What are these for?  Why not just use #A? */
+/* This is used to quote a name in a definition (see FUNCNAME/FCNAME below) */
 #define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
 #define MPIDI_QUOTE2(A) #A
 

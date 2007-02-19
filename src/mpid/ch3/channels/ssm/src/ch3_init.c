@@ -88,6 +88,10 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank )
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_INIT);
 
+    if (sizeof(MPIDI_CH3I_VC) > 4*MPIDI_CH3_VC_SIZE) {
+	printf( "Panic! storage too small (need %d)!\n",
+		sizeof(MPIDI_CH3I_VC) );fflush(stdout);
+    }
     mpi_errno = MPIDI_CH3I_Progress_init();
     if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
 
