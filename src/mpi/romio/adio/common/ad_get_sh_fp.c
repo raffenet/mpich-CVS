@@ -25,7 +25,7 @@ void ADIO_Get_shared_fp(ADIO_File fd, int incr, ADIO_Offset *shared_fp,
      * initialization to this point */ 
     /* even if we have an incr of 0, still need to do the full locking protocol
      * so as to ensure we get a consistent value */
-    ADIOI_MPIMUTEX_FP_Fetch_and_increment(fd->fp_mutex, shared_fp, incr);
+    ADIOI_MPIMUTEX_Fetch_and_increment(fd->fp_mutex, shared_fp, incr);
 
     *error_code = MPI_SUCCESS; /* XXX: need to set error codes in mutex calls */
 
