@@ -146,12 +146,12 @@ MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
 
     MPID_nem_queue_init (MPID_nem_module_gm_free_queue);
 
-    mpi_errno = MPID_nem_gm_module_send_init();
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-    
     MPID_nem_module_gm_num_send_tokens = gm_num_send_tokens (MPID_nem_module_gm_port);
     MPID_nem_module_gm_num_recv_tokens = gm_num_receive_tokens (MPID_nem_module_gm_port);
 
+    mpi_errno = MPID_nem_gm_module_send_init();
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
     for (i = 0; i < num_module_elements; ++i)
     {
 	MPID_nem_queue_enqueue (MPID_nem_module_gm_free_queue, &module_elements[i]);

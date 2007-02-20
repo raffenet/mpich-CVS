@@ -270,7 +270,7 @@ int MPID_nem_gm_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz
     MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
     
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)hdr);
-    if (SEND_Q_EMPTY() && MPID_nem_module_gm_num_send_tokens)
+    if (!SEND_Q_EMPTY() && MPID_nem_module_gm_num_send_tokens)
         /* MT */
     {
         int node_id = VC_FIELD(vc, gm_node_id);
@@ -344,7 +344,7 @@ int MPID_nem_gm_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, MPIDI
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_GM_ISTARTCONTIGMSG);
 
-    if (SEND_Q_EMPTY() && MPID_nem_module_gm_num_send_tokens)
+    if (!SEND_Q_EMPTY() && MPID_nem_module_gm_num_send_tokens)
         /* MT */
     {
         sendbuf_t *sb;
