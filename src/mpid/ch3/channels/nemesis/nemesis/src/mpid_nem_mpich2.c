@@ -109,6 +109,76 @@ MPID_nem_mpich2_init (int ckpt_restart)
     /* --END ERROR HANDLING-- */
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_send_iov
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_send_iov(MPIDI_VC_t *vc, MPID_Request **sreq_ptr, MPID_IOV *iov, int n_iov)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_msg_sz_t data_sz;
+    int i;
+    int iov_data_copied;
+    MPID_Request *sreq = *sreq_ptr;
+    MPID_IOV *data_iov = &iov[1]; /* iov of just the data, not the header */
+    int data_n_iov = n_iov - 1;
+    
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_SEND_IOV);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_SEND_IOV);
+
+    if (*sreq_ptr == NULL)
+    {
+	/* create a request */
+	sreq = MPID_Request_create();
+	MPIU_Assert(sreq != NULL);
+	MPIU_Object_set_ref(sreq, 2);
+	sreq->kind = MPID_REQUEST_SEND;
+        sreq->dev.OnDataAvail = 0;
+    }
+
+    data_sz = 0;
+    for (i = 1; i < data_n_iov; ++i)
+        data_sz += data_iov[i].MPID_IOV_LEN;
+    
+
+    if (!MPIDI_Request_get_srbuf_flag(sreq))
+    {
+        MPIDI_CH3U_SRBuf_alloc(sreq, data_sz);
+        /* --BEGIN ERROR HANDLING-- */
+        if (sreq->dev.tmpbuf_sz == 0)
+        {
+            MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,"SRBuf allocation failure");
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, 
+                                             FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+            sreq->status.MPI_ERROR = mpi_errno;
+            goto fn_exit;
+        }
+        /* --END ERROR HANDLING-- */
+    }
+
+    MPIU_Assert(sreq->dev.tmpbuf_sz >= data_sz);
+
+    iov_data_copied = 0;
+    for (i = 0; i < data_n_iov; ++i) {
+        MPID_NEM_MEMCPY((char*) sreq->dev.tmpbuf + iov_data_copied, data_iov[i].MPID_IOV_BUF, data_iov[i].MPID_IOV_LEN);
+        iov_data_copied += data_iov[i].MPID_IOV_LEN;
+    }
+
+    mpi_errno = vc->ch.iSendContig(vc, sreq, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN, sreq->dev.tmpbuf, data_sz);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    *sreq_ptr = sreq;
+
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_SEND_IOV);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+
+
 /*
   int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc);
 

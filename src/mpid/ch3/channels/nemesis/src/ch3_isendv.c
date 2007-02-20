@@ -27,14 +27,25 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
 
-    if (vc->ch.iSendv)
+    if (vc->ch.iSendContig)
     {
-        mpi_errno = vc->ch.iSendv(vc, sreq, iov, n_iov);
+        MPIU_Assert(n_iov > 0);
+        switch (n_iov)
+        {
+        case 1:
+            mpi_errno = vc->ch.iSendContig(vc, sreq, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN, NULL, 0);
+            break;
+        case 2:
+            mpi_errno = vc->ch.iSendContig(vc, sreq, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN, iov[1].MPID_IOV_BUF, iov[1].MPID_IOV_LEN);
+            break;
+        default:
+            mpi_errno = MPID_nem_send_iov(vc, &sreq, iov, n_iov);
+            break;
+        }
         goto fn_exit;
     }
 
     /*MPIU_Assert(vc->ch.is_local); */
-    /*    MPIU_Assert(n_iov <= 2);*/ /* now used only for contiguous data possibly with header */ /* DARIUS */
     MPIU_Assert(n_iov <= MPID_IOV_LIMIT);
     MPIU_Assert(iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
 

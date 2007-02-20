@@ -33,9 +33,9 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
-    if (vc->ch.iStartMsg)
+    if (vc->ch.iStartContigMsg)
     {
-        errno = vc->ch.iStartMsg(vc, hdr, hdr_sz, sreq_ptr);
+        errno = vc->ch.iStartContigMsg(vc, hdr, hdr_sz, NULL, 0, sreq_ptr);
         goto fn_exit;
     }
 

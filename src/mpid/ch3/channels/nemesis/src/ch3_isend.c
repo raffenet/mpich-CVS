@@ -24,9 +24,9 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_s
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 
-    if (vc->ch.iSend)
+    if (vc->ch.iSendContig)
     {
-        mpi_errno = vc->ch.iSend(vc, sreq, hdr, hdr_sz);
+        mpi_errno = vc->ch.iSendContig(vc, sreq, hdr, hdr_sz, NULL, 0);
         goto fn_exit;
     }
 

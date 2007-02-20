@@ -30,7 +30,7 @@
 #define FUNCNAME MPIDI_CH3_iStartMsgv
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Request ** sreq_ptr)
+int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request **sreq_ptr)
 {
     MPID_Request * sreq = NULL;
     int mpi_errno = MPI_SUCCESS;
@@ -40,9 +40,23 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
-    if (vc->ch.iStartMsgv)
+    if (vc->ch.iStartContigMsg)
     {
-        mpi_errno = vc->ch.iStartMsgv(vc, iov, n_iov, sreq_ptr);
+        MPIU_Assert (n_iov > 0);
+        switch (n_iov)
+        {
+        case 1:
+            mpi_errno = vc->ch.iStartContigMsg(vc, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN, NULL, 0, sreq_ptr);
+            break;
+        case 2:
+            mpi_errno = vc->ch.iStartContigMsg(vc, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN,
+                                               iov[1].MPID_IOV_BUF, iov[1].MPID_IOV_LEN, sreq_ptr);
+            break;
+        default:
+            mpi_errno = MPID_nem_send_iov(vc, &sreq, iov, n_iov);
+            *sreq_ptr = sreq;
+            break;
+        }
         goto fn_exit;
     }
 
@@ -66,35 +80,35 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov, MPID_Reque
 
         MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "iStartMsgv");
         MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-            int total = 0;
-            int i;
-            for (i = 0; i < n_iov; ++i)
-                total += iov[i].MPID_IOV_LEN;
+                int total = 0;
+                int i;
+                for (i = 0; i < n_iov; ++i)
+                    total += iov[i].MPID_IOV_LEN;
                     
-            MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   + len=%d ", total);
-        });
+                MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   + len=%d ", total);
+            });
 	mpi_errno = MPID_nem_mpich2_sendv_header (&remaining_iov, &remaining_n_iov, vc, &again);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	while (!again && (remaining_n_iov > 0))
 	{
             MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-                int total = 0;
-                int i;
-                for (i = 0; i < remaining_n_iov; ++i)
-                    total += remaining_iov[i].MPID_IOV_LEN;
-                MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   + len=%d ", total);
-            });
+                    int total = 0;
+                    int i;
+                    for (i = 0; i < remaining_n_iov; ++i)
+                        total += remaining_iov[i].MPID_IOV_LEN;
+                    MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   + len=%d ", total);
+                });
 
 	    mpi_errno = MPID_nem_mpich2_sendv (&remaining_iov, &remaining_n_iov, vc, &again);
             if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	}
         MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
-            int total = 0;
-            int i;
-            for (i = 0; i < remaining_n_iov; ++i)
-                total += remaining_iov[i].MPID_IOV_LEN;
-            MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   - len=%d ", total);
-        });
+                int total = 0;
+                int i;
+                for (i = 0; i < remaining_n_iov; ++i)
+                    total += remaining_iov[i].MPID_IOV_LEN;
+                MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   - len=%d ", total);
+            });
 
 	if (again)
 	{

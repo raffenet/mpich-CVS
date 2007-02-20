@@ -35,7 +35,13 @@ extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
 
 int MPID_nem_gm_module_recv_poll();
 inline int MPID_nem_gm_module_recv();
-inline int MPID_nem_send_from_queue();
+int MPID_nem_send_from_queue();
+
+int MPID_nem_gm_module_send_init();
+int MPID_nem_gm_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, void *data, MPIDI_msg_sz_t data_sz,
+                                MPID_Request **sreq_ptr);;
+int MPID_nem_gm_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, MPIDI_msg_sz_t hdr_sz,
+                            void *data, MPIDI_msg_sz_t data_sz);;
 
 int MPID_nem_gm_module_lmt_init();
 int MPID_nem_gm_module_lmt_finalize();
@@ -54,6 +60,7 @@ typedef struct
 {
     unsigned gm_port_id;
     unsigned gm_node_id; 
+    unsigned source_id; 
     unsigned char gm_unique_id[6]; /* GM unique id length is 6 bytes.  GM doesn't define a constant. */
 } MPID_nem_gm_module_vc_area;
 

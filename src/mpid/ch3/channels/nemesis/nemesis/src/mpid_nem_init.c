@@ -588,12 +588,6 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
     MPIDI_FUNC_ENTER (MPID_STATE_MPID_NEM_VC_INIT);
     vc->ch.send_seqno = 0;
 
-    /* FIXME: DARIUS set these to default for now */
-    vc->ch.iStartMsg  = NULL;
-    vc->ch.iStartMsgv = NULL;
-    vc->ch.iSend      = NULL;
-    vc->ch.iSendv     = NULL;
-
     /* We do different things for vcs in the COMM_WORLD pg vs other pgs
        COMM_WORLD vcs may use shared memory, and already have queues allocated
     */
@@ -622,10 +616,8 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
         vc->sendEagerNoncontig_fn = MPIDI_CH3I_SendEagerNoncontig;
 
         /* local processes use the default method */
-        vc->ch.iStartMsg  = NULL;
-        vc->ch.iStartMsgv = NULL;
-        vc->ch.iSend      = NULL;
-        vc->ch.iSendv     = NULL;
+        vc->ch.iStartContigMsg = NULL;
+        vc->ch.iSendContig     = NULL;
         
         vc->ch.lmt_initiate_lmt  = MPID_nem_lmt_shm_initiate_lmt;
         vc->ch.lmt_start_recv    = MPID_nem_lmt_shm_start_recv;
@@ -654,8 +646,19 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
         vc->ch.lmt_done_send     = NULL;
         vc->ch.lmt_done_recv     = NULL;
 
+        /* FIXME: DARIUS set these to default for now */
+        vc->ch.iStartContigMsg = NULL;
+        vc->ch.iSendContig     = NULL;
+        
         mpi_errno = MPID_nem_net_module_vc_init (vc, business_card);
 	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+/* FIXME: DARIUS -- enable this assert once these functions are implemented */
+/*         /\* iStartContigMsg iSendContig and sendEagerNoncontig_fn must */
+/*            be set for nonlocal processes.  Default functions only */
+/*            support shared-memory communication. *\/ */
+/*         MPIU_Assert(vc->ch.iStartContigMsg && vc->ch.iSendContig ** vc->sendEagerNoncontig_fn); */
+
     }
 
     /* override rendezvous functions */

@@ -115,7 +115,6 @@ MPID_nem_pkt_lmt_done_t lmt_done;               \
 MPID_nem_pkt_lmt_cookie_t lmt_cookie;
 
 
-struct MPID_nem_tcp_module_internal_queue;
 struct MPIDI_VC;
 struct MPID_Request;
 struct MPID_nem_copy_buf;
@@ -143,10 +142,15 @@ typedef struct MPIDI_CH3I_VC
     enum {MPID_NEM_VC_STATE_CONNECTED, MPID_NEM_VC_STATE_DISCONNECTED} state;
 
     /* contig function pointers.  Netmods should set these. */
-    int (* iStartMsg)(struct MPIDI_VC *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, struct MPID_Request **sreq_ptr);
-    int (* iStartMsgv)(struct MPIDI_VC *vc, MPID_IOV *iov, int n_iov, struct MPID_Request ** sreq_ptr);
-    int (* iSend)(struct MPIDI_VC *vc, struct MPID_Request *sreq, void * hdr, MPIDI_msg_sz_t hdr_sz);
-    int (* iSendv)(struct MPIDI_VC *vc, struct MPID_Request *sreq, MPID_IOV *iov, int n_iov);
+    /* iStartContigMsg -- sends a message consisting of a header (hdr) and contiguous data (data), possibly of 0 size.  If the
+       message cannot be sent immediately, the function should create a request and return a pointer in sreq_ptr.  The network
+       module should complete the request once the message has been completely sent. */
+    int (* iStartContigMsg)(struct MPIDI_VC *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, void *data, MPIDI_msg_sz_t data_sz,
+                            struct MPID_Request **sreq_ptr);
+    /* iSentContig -- sends a message consisting of a header (hdr) and contiguous data (data), possibly of 0 size.  The
+       network module should complete the request once the message has been completely sent. */
+    int (* iSendContig)(struct MPIDI_VC *vc, struct MPID_Request *sreq, void *hdr, MPIDI_msg_sz_t hdr_sz,
+                        void *data, MPIDI_msg_sz_t data_sz);
 
     /* LMT function pointers */
     int (* lmt_initiate_lmt)(struct MPIDI_VC *vc, union MPIDI_CH3_Pkt *rts_pkt, struct MPID_Request *req);

@@ -146,6 +146,9 @@ MPID_nem_gm_module_init (MPID_nem_queue_ptr_t proc_recv_queue,
 
     MPID_nem_queue_init (MPID_nem_module_gm_free_queue);
 
+    mpi_errno = MPID_nem_gm_module_send_init();
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
     MPID_nem_module_gm_num_send_tokens = gm_num_send_tokens (MPID_nem_module_gm_port);
     MPID_nem_module_gm_num_recv_tokens = gm_num_receive_tokens (MPID_nem_module_gm_port);
 
@@ -274,6 +277,10 @@ MPID_nem_gm_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {    
     int mpi_errno = MPI_SUCCESS;
     int ret;
+
+    vc->ch.iStartContigMsg  = MPID_nem_gm_iStartContigMsg;
+    vc->ch.iSendContig      = MPID_nem_gm_iSendContig;
+    VC_FIELD(vc, source_id) = MPIDI_Process.my_pg_rank; /* FIXME: this is only valid for processes in COMM_WORLD */
 
     mpi_errno = MPID_nem_gm_module_get_port_unique_from_bc (business_card, &VC_FIELD(vc, gm_port_id), VC_FIELD(vc, gm_unique_id));
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
