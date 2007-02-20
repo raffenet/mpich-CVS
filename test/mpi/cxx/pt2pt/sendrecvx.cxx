@@ -10,20 +10,34 @@
  * Simple test program for C++ binding
  */
 
-#include <stdio.h>
+/* #include <stdio.h> */
 #include "mpi.h"
+#include "mpitestcxx.h"
+
+#include "mpitestconf.h"
+#ifdef HAVE_IOSTREAM
+// Not all C++ compilers have iostream instead of iostream.h
+#include <iostream>
+#ifdef HAVE_NAMESPACE_STD
+// Those that do often need the std namespace; otherwise, a bare "cout"
+// is likely to fail to compile
+using namespace std;
+#endif
+#else
+#include <iostream.h>
+#endif
 
 int main( int argc, char *argv[] )
 {
-    int rank, size;
+    int rank, size, errs = 0;
 
-    MPI::Init();
+    MTest_Init();
 
     rank = MPI::COMM_WORLD.Get_rank();
     size = MPI::COMM_WORLD.Get_size();
 
     if (size < 2) {
-	fprintf( stderr, "Size of comm_world must be at least 2\n" );
+	cerr << "Size of comm_world must be at least 2\n";
 	MPI::COMM_WORLD.Abort(1);
     }
     if (rank == 0) {
@@ -38,14 +52,13 @@ int main( int argc, char *argv[] )
 	MPI::COMM_WORLD.Recv( buf, 100, MPI::INT, 0, 0 );
 	for (i=0; i<100; i++) {
 	    if (buf[i] != i) {
-		fprintf( stderr, "Error: buf[%d] = %d\n", i, buf[i] );
+		errs++;
+		cerr << "Error: buf[" << i << "] = " << buf[i] << "\n";
 	    }
 	}
     }
-    if (rank == 0) {
-	printf( " No Errors\n" );
-    }
 
+    MTest_Finalize( errs );
     MPI::Finalize();
     return 0;
 }

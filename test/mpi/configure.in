@@ -914,6 +914,7 @@ AC_OUTPUT(maint/testmerge \
 	  cxx/Makefile \
 	  cxx/util/Makefile \
 	  cxx/attr/Makefile \
+	  cxx/pt2pt/Makefile \
 	  cxx/comm/Makefile \
 	  cxx/coll/Makefile \
           cxx/info/Makefile \

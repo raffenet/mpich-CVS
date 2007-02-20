@@ -3,13 +3,31 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#include <iostream.h>
+
+/* Thanks to Jim Hoekstra of Iowa State University for several important
+   bug fixes */
+
 #include "mpi.h"
-#include "../../../src/binding/cxx/mpicxx.h"
+#include "mpitestcxx.h"
+#include "mpitestconf.h"
+#ifdef HAVE_IOSTREAM
+// Not all C++ compilers have iostream instead of iostream.h
+#include <iostream>
+#ifdef HAVE_NAMESPACE_STD
+// Those that do often need the std namespace; otherwise, a bare "cout"
+// is likely to fail to compile
+using namespace std;
+#endif
+#else
+#include <iostream.h>
+#endif
+/*
 #include <stdio.h>
 #include <stdlib.h>
 
 extern "C" void strncpy( char *, const char *, int );
+*/
+
 /* 
  * This is a simple program that tests bsend.  It may be run as a single
  * process to simplify debugging; in addition, bsend allows send-to-self
@@ -17,10 +35,10 @@ extern "C" void strncpy( char *, const char *, int );
  */
 int main( int argc, char *argv[] )
 {
-  //    MPI::Comm comm = MPI::COMM_WORLD;
-/*
+    MPI::Intracomm comm;
     int dest = 0, src = 0, tag = 1;
-    char *buf, *bbuf;
+    char *buf;
+    void *bbuf;
     char msg1[7], msg3[17];
     double msg2[2];
     char rmsg1[64], rmsg3[64];
@@ -28,17 +46,14 @@ int main( int argc, char *argv[] )
     int errs = 0, rank;
     int bufsize, bsize;
     MPI::Status status;
-*/
-    int rank;
 
-    MPI::Init( );
-    rank = MPI::COMM_WORLD.Get_rank();
+    MTest_Init();
+    comm = MPI::COMM_WORLD;
+    rank = comm.Get_rank();
 
-    printf( "rank is %d\n", rank );
-#if 0
     bufsize = 3 * MPI_BSEND_OVERHEAD + 7 + 17 + 2*sizeof(double);
-    buf = (char *)malloc( bufsize );
-    MPI_Buffer_attach( buf, bufsize );
+    buf = new char[bufsize];
+    MPI::Attach_buffer( buf, bufsize );
 
     strncpy( msg1, "012345", 7 );
     strncpy( msg3, "0123401234012341", 17 );
@@ -58,25 +73,32 @@ int main( int argc, char *argv[] )
 
 	if (strcmp( rmsg1, msg1 ) != 0) {
 	    errs++;
-	    fprintf( stderr, "message 1 (%s) should be %s\n", rmsg1, msg1 );
+	    cerr << "message 1 (" << rmsg1 << ") should be " << msg1 << "\n";
 	}
 	if (rmsg2[0] != msg2[0] || rmsg2[1] != msg2[1]) {
 	    errs++;
-	    fprintf( stderr, 
-	  "message 2 incorrect, values are (%f,%f) but should be (%f,%f)\n",
-		     rmsg2[0], rmsg2[1], msg2[0], msg2[1] );
+	    cerr << "message 2 incorrect, values are (" << rmsg2[0] << "," 
+		 << rmsg2[1] << ") but should be (" << msg2[0] << "," 
+		 << msg2[1] << "\n";
 	}
 	if (strcmp( rmsg3, msg3 ) != 0) {
 	    errs++;
-	    fprintf( stderr, "message 3 (%s) should be %s\n", rmsg3, msg3 );
+	    cerr << "message 3 (" << rmsg3 << ") should be " << msg3 << "\n";
 	}
     }
 
     /* We can't guarantee that messages arrive until the detach */
-    MPI_Buffer_detach( &bbuf, &bsize );
+    bsize = MPI::Detach_buffer( bbuf );
+    if (bbuf != (void *)buf) {
+	errs++;
+	cerr << "Returned buffer from detach is not the same as the initial buffer\n";
+    }
 
-    
+    delete buf;
+
+    MTest_Finalize( errs );
+
     MPI::Finalize();
-#endif
+
     return 0;
 }
