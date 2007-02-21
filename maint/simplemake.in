@@ -1,5 +1,6 @@
 #! @PERL@ -w
 # -*- Mode: perl; -*-
+$abs_mpich2srcdir = "@abs_mpich2srcdir@";
 # 
 # (C) 2006 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
@@ -704,6 +705,15 @@ sub ReadMfile {
 		$libnum{$2.".la"} = $libcount++;
 	    }
 	    $found_profilelib = 1;
+	}
+	elsif (/^EXT_(\w+)_([\{\}\$\w]+)_SOURCES\s*=\s*(.*)/) {
+	    # This is the extension hook for EXT_foo_name_SOURCES = data
+	    # We can't just use foo_name_SOURCES because we allow
+	    # programs to be defined that way (foo_name with SOURCES)
+	    my $optype = $1;
+	    my $opname = $2;
+	    my $opsources = $3;
+	    &CallModule( $optype, $opname, $opsources );
 	}
 	elsif (/^install_([\w-]*)\s*=\s*(.*)\s*$/) {
 	    $install_files{$1} .= "$2 ";
@@ -4404,3 +4414,22 @@ sub checkForTargets {
 #    directory as the object files) when the objects are updated.  
 #
 #    For (3), the original design used a 
+
+# ( $optype, $opname, $opsources )
+sub CallModule {
+    my ( $optype, $opname, $opsources ) = @_;
+    # Have we already loaded the module?
+    my $fcname = "Module_" . $optype;
+    if (!defined($fcname)) {
+	foreach my $dir (split(/:/,".:$abs_mpich2srcdir/maint")) {
+	    if (-s $dir/$fcname) {
+		require "$dir/$fcname";
+		last;
+	    }
+	}
+	if (!defined($fcname)) {
+	}
+    }
+
+    &$fcname( $optype, $opname, $opsources );
+}

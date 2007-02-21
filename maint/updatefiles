@@ -415,10 +415,10 @@ if [ -x maint/f77tof90 -a $do_f77tof90 = "yes" ] ; then
 fi
 
 if [ $made_simplemake != "no" -a $do_makefiles = yes ] ; then
-    # Check that only the first line was changed:
+    # Check that only the first three lines were changed:
     rm -f .t1 .t2
-    sed -e 1d maint/simplemake.in > .t1
-    sed -e 1d maint/simplemake > .t2
+    sed -e 1,3d maint/simplemake.in > .t1
+    sed -e 1,3d maint/simplemake > .t2
     if diff .t1 .t2 >/dev/null 2>&1 ; then
         :
     else
