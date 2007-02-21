@@ -71,6 +71,13 @@
 #define MPIU_QUOTE(A) MPIU_QUOTE2(A)
 #define MPIU_QUOTE2(A) #A
 
+/* FIXME: The code base should not define two of these */
+/* This is used to quote a name in a definition (see FUNCNAME/FCNAME below) */
+#ifndef MPIDI_QUOTE
+#define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
+#define MPIDI_QUOTE2(A) #A
+#endif
+
 
 /* 
    Include the implementation definitions (e.g., error reporting, thread
@@ -1987,13 +1994,17 @@ extern MPICH_PerProcess_t MPIR_Process;
  *    Checks that the "NMPI" functions and the Nest_incr/decr calls
  *    are properly nested at runtime.  
  * 3. Debug logging (selected with --enable-g=log)
- *    Invokes MPIU_DBG_MSG at the entry and exit for each routine            */
+ *    Invokes MPIU_DBG_MSG at the entry and exit for each routine            
+ * 4. Additional memory validation of the memory arena (--enable-g=memarena)
+ */
 /* ------------------------------------------------------------------------- */
 /* if fine-grain nest testing is enabled then define the function enter/exit
    macros to track the nesting level; otherwise, allow the timing module the
    opportunity to define the macros */
 #if defined(MPICH_DEBUG_FINE_GRAIN_NESTING)
 #   include "mpidu_func_nesting.h"
+#elif defined(MPICH_DEBUG_MEMARENA)
+#   include "mpifuncmem.h"
 #elif defined(USE_DBG_LOGGING)
 #   include "mpifunclog.h"
 #elif !defined(NEEDS_FUNC_ENTER_EXIT_DEFS)
@@ -3295,8 +3306,8 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
 
 /* ------------------------------------------------------------------------- */
 /* Define a macro to allow us to select between statically selected functions
- * and dynamically loaded ones.  If USE_DYNAMIC_LIBS is defined, the macro   
- * MPIU_CALL(context,funccall) expands into
+ * and dynamically loaded ones.  If USE_DYNAMIC_LIBRARIES is defined,
+ * the macro MPIU_CALL(context,funccall) expands into
  *    MPIU_CALL##context.funccall.
  * For example,
  *    err = MPIU_CALL(MPIDI_CH3,iSend(...))
@@ -3312,8 +3323,8 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
  * contains the function pointers.
  */
 /* ------------------------------------------------------------------------- */
-#ifdef USE_DYNAMIC_LIBS
-#define MPIU_CALL(context,funccall) MPIU_CALL##context.funccall
+#ifdef USE_DYNAMIC_LIBRARIES
+#define MPIU_CALL(context,funccall) MPIU_CALL_##context.funccall
 #else
 #define MPIU_CALL(context,funccall) context##_##funccall
 #endif
