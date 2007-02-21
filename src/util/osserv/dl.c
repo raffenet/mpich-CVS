@@ -44,6 +44,11 @@ int MPIU_DLL_FindSym( void *handle, const char symbol[], void **value )
     }
     return mpi_errno;
 }
+int MPIU_DLL_Close( void *handle )
+{
+    dlclose( handle );
+    return 0;
+}
 #endif /* HAVE_FUNC_DLOPEN */
 
 #else
@@ -63,5 +68,9 @@ int MPIU_DLL_FindSym( void *handle, const char symbol[], void **value )
     int mpi_errno = MPI_SUCCESS;
     MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,"**notimpl" );
     return mpi_errno;
+}
+int MPIU_DLL_Close( void *handle )
+{
+    return 0;
 }
 #endif /* USE_DYNAMIC_LIBRARIES */
