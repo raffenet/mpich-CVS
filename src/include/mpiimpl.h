@@ -2210,7 +2210,10 @@ void MPIR_Nest_decr_export(void);
                           __FILE__,__LINE__,\
                           MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file,\
                           MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].line);\
-}}
+     }else if (MPIU_THREADPRIV_FIELD(nest_count) < 0){\
+	 MPIU_Msg_printf("Decremented nest count in file %s:%d is negative\n",\
+			 __FILE__,__LINE__);}\
+}
 #else
 #define MPIR_Nest_init()
 #define MPIR_Nest_incr() {MPIU_THREADPRIV_FIELD(nest_count)++;}
