@@ -135,6 +135,8 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		    /* --END ERROR HANDLING-- */
 
 		    MPIDI_VC_Init(vc_ptr, NULL, 0);
+#if 0
+		    MPIDI_CH3_VC_Init( vc_ptr );
 		    vc_ptr->ch.sendq_head = NULL;
 		    vc_ptr->ch.sendq_tail = NULL;
 		    vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
@@ -148,7 +150,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		    vc_ptr->ch.shm_next_reader = NULL;
 		    vc_ptr->ch.shm_next_writer = NULL;
 		    vc_ptr->ch.shm_read_connected = 0;
-
+#endif
 		    /*
 		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
 		    goto fn_exit;

@@ -133,3 +133,21 @@ int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *RMAFns )
     return MPI_SUCCESS;
 }
 
+int MPIDI_CH3_VC_Init( struct MPIDI_VC *vc_ptr )
+{
+    vc_ptr->ch.sendq_head = NULL;
+    vc_ptr->ch.sendq_tail = NULL;
+    vc_ptr->ch.state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
+    vc_ptr->ch.recv_active = NULL;
+    vc_ptr->ch.send_active = NULL;
+    vc_ptr->ch.req = NULL;
+    vc_ptr->ch.read_shmq = NULL;
+    vc_ptr->ch.write_shmq = NULL;
+    vc_ptr->ch.shm = NULL;
+    vc_ptr->ch.shm_state = 0;
+    vc_ptr->ch.shm_next_reader = NULL;
+    vc_ptr->ch.shm_next_writer = NULL;
+    vc_ptr->ch.shm_read_connected = 0;
+    
+    return MPI_SUCCESS;
+}
