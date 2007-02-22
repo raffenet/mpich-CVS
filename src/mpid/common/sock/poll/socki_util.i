@@ -947,7 +947,7 @@ static inline int MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, in
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_free_eventq_mem
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME "MPIDU_Socki_free_eventq_mem"
 static void MPIDU_Socki_free_eventq_mem(void)
 {
     struct MPIDU_Socki_eventq_table *eventq_table, *eventq_table_next;

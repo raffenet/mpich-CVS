@@ -9,6 +9,12 @@
 #include "mpiimpl.h"
 #include "mpid_locksconf.h"
 
+/* This is used to quote a name in a definition (see FUNCNAME/FCNAME below) */
+#ifndef MPIDI_QUOTE
+#define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
+#define MPIDI_QUOTE2(A) #A
+#endif
+
 #include <stdio.h>
 
 /* FIXME: First use the configure ifdefs to decide on an approach for 
