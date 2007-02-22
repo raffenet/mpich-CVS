@@ -10,7 +10,7 @@
 
 #ifdef USE_DYNAMIC_LIBRARIES
 
-#if defined(HAVE_FUNC_DLOPEN) && defined(HAVE_DLFCN_H)
+#if defined(HAVE_DLOPEN) && defined(HAVE_DLFCN_H) && defined(HAVE_DLSYM)
 #include <dlfcn.h>
 
 #ifndef RTLD_GLOBAL
@@ -51,7 +51,8 @@ int MPIU_DLL_Close( void *handle )
 }
 #endif /* HAVE_FUNC_DLOPEN */
 
-#else
+#else /* not USE_DYNAMIC_LIBRARIES */
+
 #undef FCNAME
 #define FCNAME "MPIU_DLL_Open"
 int MPIU_DLL_Open( const char libname[], void **handle )
@@ -73,4 +74,5 @@ int MPIU_DLL_Close( void *handle )
 {
     return 0;
 }
+
 #endif /* USE_DYNAMIC_LIBRARIES */
