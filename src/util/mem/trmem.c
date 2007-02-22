@@ -152,6 +152,7 @@ static long    TRMaxMemAllow = 0;
 
 /* 8 bytes = 16 hex chars + 0x (2 chars) + the null is 19 */
 #define MAX_ADDRESS_CHARS 19
+
 static void addrToHex( void *addr, char string[MAX_ADDRESS_CHARS] );
 
 /*+C
@@ -420,7 +421,7 @@ int MPIU_trvalid( const char str[] )
 	    if (!errs) MPIU_Error_printf( "%s\n", str );
 	    errs++;
 	    addrToHex( head, hexstring );
-	    MPIU_Error_printf( "[%d] Block at address %s is corrupted\n", 
+	    MPIU_Error_printf( "[%d] Block at address %s is corrupted (invalid cookie in head)\n", 
 			 world_rank, hexstring );
 	    /* Must stop because if head is invalid, then the data in the
 	       head is probably also invalid, and using could lead to 
