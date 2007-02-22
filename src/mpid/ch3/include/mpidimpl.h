@@ -785,14 +785,14 @@ int MPIDI_PrintConnStrToFile( FILE *fd, const char *file, int line,
 #define MPIU_DBG_VCSTATECHANGE(_vc,_newstate) \
      MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST, \
      "vc=%p: Setting state (vc) from %s to %s, vcchstate is %s", \
-                  _vc, MPIDI_VC_GetStateString((_vc)->state), \
-                  #_newstate, MPIDI_CH3_VC_GetStateString( (_vc) )) )
+                 _vc, MPIDI_VC_GetStateString((_vc)->state), \
+                 #_newstate, MPIU_CALL(MPIDI_CH3,VC_GetStateString( (_vc) ))) )
 
 #define MPIU_DBG_VCCHSTATECHANGE(_vc,_newstate) \
      MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST, \
      "vc=%p: Setting state (ch) from %s to %s, vc state is %s", \
-		   _vc, MPIDI_CH3_VC_GetStateString((_vc)), \
-                   #_newstate, MPIDI_VC_GetStateString( (_vc)->state )) )
+	   _vc, MPIU_CALL(MPIDI_CH3,VC_GetStateString((_vc))), \
+           #_newstate, MPIDI_VC_GetStateString( (_vc)->state )) )
 
 #define MPIU_DBG_CONNSTATECHANGE(_vc,_conn,_newstate) \
      MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST, \

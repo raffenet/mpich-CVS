@@ -107,10 +107,8 @@ int MPID_Finalize(void)
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 #endif
 
-    /* FIXME: Progress finalize should be in CH3_Finalize */
-    mpi_errno = MPIDI_CH3I_Progress_finalize();
-    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-
+    /* Note that the CH3I_Progress_finalize call has been removed; the
+       CH3_Finalize routine should call it */
     mpi_errno = MPIDI_CH3_Finalize();
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 

@@ -177,15 +177,11 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	csr_pkt->match.context_id = sreq->dev.match.context_id;
 	csr_pkt->sender_req_id = sreq->handle;
 	
-	mpi_errno = MPIDI_CH3_iStartMsg(vc, csr_pkt, sizeof(*csr_pkt), &csr_sreq);
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-					     "**ch3|cancelreq", 0);
-	    goto fn_exit;
+	mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, csr_pkt, 
+					  sizeof(*csr_pkt), &csr_sreq));
+	if (mpi_errno != MPI_SUCCESS) {
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|cancelreq");
 	}
-	/* --END ERROR HANDLING-- */
 	if (csr_sreq != NULL)
 	{
 	    MPID_Request_release(csr_sreq);
@@ -200,8 +196,8 @@ int MPID_Cancel_send(MPID_Request * sreq)
        handle. */
     /* FIXME: A timestamp is more than is necessary; a message sequence number
        should be adequate. */
-
-  fn_exit:
+ fn_fail:
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CANCEL_SEND);
     return mpi_errno;
 }
@@ -246,7 +242,8 @@ int MPIDI_CH3_PktHandler_CancelSendReq( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     MPIDI_Pkt_init(resp_pkt, MPIDI_CH3_PKT_CANCEL_SEND_RESP);
     resp_pkt->sender_req_id = req_pkt->sender_req_id;
     resp_pkt->ack = ack;
-    mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
+    mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, resp_pkt, 
+					      sizeof(*resp_pkt), &resp_sreq));
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
 			    "**ch3|cancelresp");

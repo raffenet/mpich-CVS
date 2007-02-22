@@ -204,7 +204,7 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     /* We may first need to initialize the channel before calling the channel 
        VC init functions.  This routine may be a no-op; look in the 
        ch3_init.c file in each channel */
-    MPIDI_CH3_PG_Init( pg );
+    MPIU_CALL(MPIDI_CH3,PG_Init( pg ));
 
     /* These are now done in MPIDI_VC_Init */
 #if 0

@@ -50,7 +50,7 @@ int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
     if (setupPortFunctions) {
-	MPIDI_CH3_PortFnsInit( &portFns );
+	MPIU_CALL(MPIDI_CH3,PortFnsInit( &portFns ));
 	setupPortFunctions = 0;
     }
 
@@ -101,7 +101,7 @@ int MPID_Close_port(const char *port_name)
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
     if (setupPortFunctions) {
-	MPIDI_CH3_PortFnsInit( &portFns );
+	MPIU_CALL(MPIDI_CH3,PortFnsInit( &portFns ));
 	setupPortFunctions = 0;
     }
 
@@ -135,7 +135,7 @@ int MPID_Comm_accept(char * port_name, MPID_Info * info, int root,
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
     if (setupPortFunctions) {
-	MPIDI_CH3_PortFnsInit( &portFns );
+	MPIU_CALL(MPIDI_CH3,PortFnsInit( &portFns ));
 	setupPortFunctions = 0;
     }
 
@@ -173,7 +173,7 @@ int MPID_Comm_connect(const char * port_name, MPID_Info * info, int root,
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
     if (setupPortFunctions) {
-	MPIDI_CH3_PortFnsInit( &portFns );
+	MPIU_CALL(MPIDI_CH3,PortFnsInit( &portFns ));
 	setupPortFunctions = 0;
     }
 

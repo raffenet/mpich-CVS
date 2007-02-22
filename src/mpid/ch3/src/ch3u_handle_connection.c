@@ -184,7 +184,8 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
 	vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
     }
 		
-    mpi_errno = MPIDI_CH3_iStartMsg(vc, close_pkt, sizeof(*close_pkt), &sreq);
+    mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, close_pkt, 
+					      sizeof(*close_pkt), &sreq));
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER,
 		     "**ch3|send_close_ack");
@@ -192,7 +193,7 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
     
     if (sreq != NULL) {
 	MPID_Request_release(sreq);
-	printf( "Panic on send close ack\n" ); fflush(stdout);
+	/* printf( "Panic on send close ack\n" ); fflush(stdout); */
     }
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_VC_SENDCLOSE);
@@ -218,8 +219,8 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	
 	MPIU_DBG_MSG_D(CH3_DISCONNECT,TYPICAL,"sending close(TRUE) to %d",
 		       vc->pg_rank);
-	mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), 
-					&resp_sreq);
+	mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, resp_pkt, 
+					  sizeof(*resp_pkt), &resp_sreq));
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
 				"**ch3|send_close_ack");
@@ -228,7 +229,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	if (resp_sreq != NULL)
 	{
 	    MPID_Request_release(resp_sreq);
-	    printf( "Panic on send close\n" ); fflush(stdout);
+	    /*printf( "Panic on send close\n" ); fflush(stdout);*/
 	}
     }
     

@@ -313,8 +313,8 @@ int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t *vc, MPI_Win source_win_handle)
     MPIDI_Pkt_init(lock_granted_pkt, MPIDI_CH3_PKT_LOCK_GRANTED);
     lock_granted_pkt->source_win_handle = source_win_handle;
         
-    mpi_errno = MPIDI_CH3_iStartMsg(vc, lock_granted_pkt,
-                                    sizeof(*lock_granted_pkt), &req);
+    mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, lock_granted_pkt,
+				      sizeof(*lock_granted_pkt), &req));
     if (mpi_errno) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|rmamsg");
     }
@@ -500,7 +500,7 @@ int MPIDI_CH3_PktHandler_Get( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	MPID_Datatype_get_size_macro(get_pkt->datatype, type_size);
 	iov[1].MPID_IOV_LEN = get_pkt->count * type_size;
 	
-	mpi_errno = MPIDI_CH3_iSendv(vc, req, iov, 2);
+	mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(vc, req, iov, 2));
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
@@ -980,7 +980,7 @@ int MPIDI_CH3_PktHandler_LockGetUnlock( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	MPID_Datatype_get_size_macro(lock_get_unlock_pkt->datatype, type_size);
 	iov[1].MPID_IOV_LEN = lock_get_unlock_pkt->count * type_size;
 	
-	mpi_errno = MPIDI_CH3_iSendv(vc, req, iov, 2);
+	mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(vc, req, iov, 2));
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{

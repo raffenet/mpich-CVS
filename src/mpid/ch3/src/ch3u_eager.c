@@ -38,7 +38,7 @@ int MPIDI_CH3_SendEagerNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq,
     {
 	iov_n += 1;
 	
-	mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
+	mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(vc, sreq, iov, iov_n));
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
@@ -167,7 +167,7 @@ int MPIDI_CH3_EagerContigSend( MPID_Request **sreq_p,
     MPIDI_Pkt_set_seqnum(eager_pkt, seqnum);
     
     MPIU_DBG_MSGPKT(vc,tag,eager_pkt->match.context_id,rank,data_sz,"EagerContig");
-    mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, sreq_p);
+    mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsgv(vc, iov, 2, sreq_p));
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|eagermsg");
     }
@@ -240,8 +240,8 @@ int MPIDI_CH3_EagerContigShortSend( MPID_Request **sreq_p,
 
     MPIU_DBG_MSGPKT(vc,tag,eagershort_pkt->match.context_id,rank,data_sz,
 		    "EagerShort");
-    mpi_errno = MPIDI_CH3_iStartMsg(vc, eagershort_pkt, sizeof(*eagershort_pkt),
-				    sreq_p );
+    mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, eagershort_pkt, 
+				      sizeof(*eagershort_pkt), sreq_p ));
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|eagermsg");
     }
@@ -498,7 +498,7 @@ int MPIDI_CH3_EagerContigIsend( MPID_Request **sreq_p,
     MPIDI_Request_set_seqnum(sreq, seqnum);
     
     MPIU_DBG_MSGPKT(vc,tag,eager_pkt->match.context_id,rank,data_sz,"EagerIsend");
-    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, 2 );
+    mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(vc, sreq, iov, 2 ));
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {

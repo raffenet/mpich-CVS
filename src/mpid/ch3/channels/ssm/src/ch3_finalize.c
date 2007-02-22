@@ -14,6 +14,8 @@ int MPIDI_CH3_Finalize()
 {
     int mpi_errno = MPI_SUCCESS;
     
+    mpi_errno = MPIDI_CH3I_Progress_finalize();
+
     /* Free memory allocated in ch3_progress */
     mpi_errno = MPIDI_CH3U_Finalize_ssm_memory();
 
