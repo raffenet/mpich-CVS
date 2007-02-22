@@ -819,7 +819,7 @@ const char *MPIDI_Pkt_GetDescString( MPIDI_CH3_Pkt_t *pkt );
 /* These macros help trace communication headers */
 #define MPIU_DBG_MSGPKT(_vc,_tag,_contextid,_dest,_size,_kind)	\
     MPIU_DBG_MSG_FMT(CH3_MSG,TYPICAL,(MPIU_DBG_FDEST,\
-		      "%s: vc=%x, tag=%d, context=%d, dest=%d, datasz=%d",\
+		      "%s: vc=%p, tag=%d, context=%d, dest=%d, datasz=%d",\
 		      _kind,_vc,_tag,_contextid,_dest,_size) )
 
 /* FIXME: Switch this to use the common debug code */
@@ -1079,9 +1079,6 @@ int MPIDI_PG_SetConnInfo( int rank, const char *connString );
 
 /* NOTE: Channel function prototypes are in mpidi_ch3_post.h since some of the 
    macros require their declarations. */
-
-/* Perform channel-specific initialization of a virtural connection */
-int MPIDI_CH3_VC_Init( MPIDI_VC_t *);
 
 /* FIXME: These should be defined only when these particular utility
    packages are used.  Best would be to keep these prototypes in the
@@ -1506,7 +1503,7 @@ int MPIDI_CH3_Channel_close( void );
 @*/
 int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size);
 
-/*E
+/*@
   MPIDI_CH3_Init - Initialize the channel implementation.
 
   Input Parameters:
@@ -1521,17 +1518,28 @@ int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size);
   Notes:
   MPID_Init has called 'PMI_Init' and created the process group structure 
   before this routine is called.
-E*/
+@*/
 int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_ptr, int pg_rank );
 
-/*E
+/*@
   MPIDI_CH3_Finalize - Shutdown the channel implementation.
 
   Return value:
   A MPI error class.
-E*/
+@*/
 int MPIDI_CH3_Finalize(void);
 
+/*@
+  MPIDI_CH3_VC_Init - Perform channel-specific initialization of a VC
+
+  Input Parameter:
+. vc - Virtual connection to initialize
+  @*/
+int MPIDI_CH3_VC_Init( struct MPIDI_VC *vc );
+
+#ifdef MPIDI_CH3_HASIMPL_HEADER
+#include "mpidi_ch3_mpid.h"
+#endif
 /* Routines in support of ch3 */
 
 /* Routine to return the tag associated with a port */
