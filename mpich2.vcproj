@@ -5053,7 +5053,43 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mpid\common\datatype\gen_contents_support.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_darray_support.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\mpid\common\datatype\gen_dataloop.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_dataloop_create.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_dataloop_create_blockindexed.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_dataloop_create_contig.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_dataloop_create_indexed.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_dataloop_create_pairtype.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_dataloop_create_struct.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\gen_dataloop_create_vector.c"
 				>
 			</File>
 			<File
@@ -5061,23 +5097,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\mpid\common\datatype\gen_type_blockindexed.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\mpid\common\datatype\gen_type_contiguous.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\mpid\common\datatype\gen_type_indexed.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\mpid\common\datatype\gen_type_struct.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\mpid\common\datatype\gen_type_vector.c"
+				RelativePath=".\src\mpid\common\datatype\gen_subarray_support.c"
 				>
 			</File>
 			<File
@@ -5762,6 +5782,10 @@
 			</File>
 			<File
 				RelativePath=".\src\mpid\common\datatype\mpid_type_vector.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\mpid_type_zerolen.c"
 				>
 			</File>
 			<File
