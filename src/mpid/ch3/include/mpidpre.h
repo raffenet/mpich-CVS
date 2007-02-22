@@ -12,11 +12,8 @@
 
 #include "mpidi_ch3_conf.h"
 
-#if 0
-#ifdef HAVE_ASSERT_H
-#include <assert.h>
-#endif
-#endif
+/* Tell the compiler that we're going to declare struct MPID_Request later */
+struct MPID_Request;
 
 #if defined(HAVE_SYS_TYPES_H)
 #include <sys/types.h>
