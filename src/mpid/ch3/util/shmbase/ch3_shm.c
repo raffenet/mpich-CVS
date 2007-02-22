@@ -1480,8 +1480,8 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout,
 int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len, 
 			     int (*rfn)(int, void*))
 {
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
     MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_POST_READ);
     MPIDI_DBG_PRINTF((60, FCNAME, "posting a read of %d bytes", len));
@@ -1502,8 +1502,8 @@ int MPIDI_CH3I_SHM_post_read(MPIDI_VC_t *vc, void *buf, int len,
 int MPIDI_CH3I_SHM_post_readv(MPIDI_VC_t *vc, MPID_IOV *iov, int n, 
 			      int (*rfn)(int, void*))
 {
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
     MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_POST_READV);
 #ifdef USE_SHM_IOV_COPY
     MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
 #endif

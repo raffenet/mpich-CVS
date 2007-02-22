@@ -11,6 +11,10 @@
    a request.  Because it may be used to queue a partial packet, we include
    a "bytes-sent-so-far" (nb) parameter.
 */
+#undef FUNCNAME
+#define FUNCNAME ssm_ch3istartmsg_createRequest
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int createRequest( void *pkt, MPIDI_msg_sz_t pkt_sz, int nb,
 			  MPID_Request **sreq_ptr )
 {

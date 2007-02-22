@@ -7,6 +7,14 @@
 #include "mpidi_ch3_impl.h"
 #include "pmi.h"
 
+/* FIXME: Packet types used for establishing connections */
+typedef struct
+{
+    MPIDI_CH3_Pkt_type_t type;
+    int port_name_tag;
+}
+MPIDI_CH3I_Pkt_sc_conn_accept_t;
+
 /* FIXME: What does this routine do? */
 /* FIXME: It appears that this routine is used as part of the 
    initial "get the peers connected" code in comm_connect/accept and
@@ -26,6 +34,8 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
     int port_name_tag;
     int connected;
     MPIDI_CH3_Pkt_t pkt;
+    MPIDI_CH3I_Pkt_sc_conn_accept_t *acceptpkt = 
+	    (MPIDI_CH3I_Pkt_sc_conn_accept_t *)&pkt;
     int num_written;
     char *cached_pg_id, *dummy_id = "";
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_CONNECT_TO_ROOT_SSHM);
@@ -80,10 +90,11 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
     vcch->shm_reading_pkt = TRUE;
     vcch->send_active = MPIDI_CH3I_SendQ_head(vcch); /* MT */
 
-    MPIDI_Pkt_init(&pkt, MPIDI_CH3I_PKT_SC_CONN_ACCEPT);
-    pkt.sc_conn_accept.port_name_tag = port_name_tag;
+    MPIDI_Pkt_init(acceptpkt, MPIDI_CH3I_PKT_SC_CONN_ACCEPT);
+    acceptpkt->port_name_tag = port_name_tag;
 
-    mpi_errno = MPIDI_CH3I_SHM_write(vc, &pkt, sizeof(MPIDI_CH3_Pkt_t), &num_written);
+    mpi_errno = MPIDI_CH3I_SHM_write(vc, acceptpkt, sizeof(MPIDI_CH3_Pkt_t), 
+				     &num_written);
     if (mpi_errno != MPI_SUCCESS || num_written != sizeof(MPIDI_CH3_Pkt_t)) {
 	MPIU_ERR_POP(mpi_errno);
     }

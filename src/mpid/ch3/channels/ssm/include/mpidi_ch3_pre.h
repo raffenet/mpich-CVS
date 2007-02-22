@@ -9,7 +9,7 @@
 
 /* mpidu_sock.h includes its own header file, so it may come before the 
    channel conf file */
-#include "mpidu_sock.h"
+/*#include "mpidu_sock.h" */
 #include "mpidi_ch3i_ssm_conf.h"
 #include "mpidi_ch3_conf.h"
 
@@ -89,6 +89,7 @@ MPIDI_CH3_PKT_CTS_IOV,                          \
 MPIDI_CH3_PKT_RELOAD,                           \
 MPIDI_CH3_PKT_IOV
 
+#if 0
 #define MPIDI_CH3_PKT_DEFS						\
 typedef struct								\
 {									\
@@ -162,6 +163,8 @@ MPIDI_CH3_Pkt_rdma_cts_iov_t cts_iov;		    \
 MPIDI_CH3_Pkt_rdma_reload_t reload;		    \
 MPIDI_CH3_Pkt_rdma_iov_t iov;
 
+#endif 
+
 #define MPIDI_CH3_PKT_RELOAD_SEND 1
 #define MPIDI_CH3_PKT_RELOAD_RECV 0
 
@@ -221,7 +224,6 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_Request * req;
     MPIDI_CH3I_VC_state_t state;
     int shm_read_connected;
-    /* MPIDU_Sock_t sock;*/
     struct MPIDU_Sock *sock;
     struct MPIDI_CH3I_Connection * conn;
     int port_name_tag;
