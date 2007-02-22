@@ -11,3 +11,10 @@ atomic_LDADD = -L../../lib -lmpich
 atomic_fai_SOURCES = atomic_fai.c
 atomic_fai_LDADD = -L../../lib -lmpich
 INCLUDES = -I../../src/include -I${top_srcdir}/src/include 
+
+#
+# Temp tests for dll support
+dluse: $(srcdir)/dluse.c
+	$(CC) -o dluse $(srcdir)/dluse.c -ldl
+libconftest.so: $(srcdir)/dltest.c
+	#(CC) -o libconftest.so -shared $(srcdir)/dltest.c
