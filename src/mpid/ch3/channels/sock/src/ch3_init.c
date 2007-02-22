@@ -78,15 +78,9 @@ int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a )
 /* Perform the channel-specific vc initialization */
 int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
-#if 0
-    vc->ch.sendq_head         = NULL;
-    vc->ch.sendq_tail         = NULL;
-    vc->ch.state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-#else
     vcch->sendq_head         = NULL;
     vcch->sendq_tail         = NULL;
     vcch->state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-#endif
     MPIDI_VC_InitSock( vc );
     MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"vc=%p: Setting state (ch) to VC_STATE_UNCONNECTED (Initialization)", vc );
     return 0;
