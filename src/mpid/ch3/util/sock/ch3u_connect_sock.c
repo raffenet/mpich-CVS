@@ -179,13 +179,10 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
 
     *new_vc = vc;
 
-    /* FIXME: Note that these *must* always happen together, so they should
-       be in a single routine */
-    /* FIXME: There may need to be a THIRD routine here, to ensure that the
+    /* FIXME: There may need to be an additional routine here, to ensure that the
        channel is initialized for this pair of process groups (this process
        and the remote process to which the vc will connect). */
     MPIDI_VC_Init(vc, NULL, 0);
-    MPIDI_CH3_VC_Init( vc );
 
     MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"Connect to root with portstring %s",
 		   port_name );
@@ -720,14 +717,10 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 	/* --END ERROR HANDLING-- */
 	/* FIXME - where does this vc get freed? */
 
-	vcch = (MPIDI_CH3I_VC *)vc->channel_private;
-	/* FIXME: There should be a single VC init function; this should
-	   invoke a channel-specific function to initialize channel-specific
-	   items */
 	MPIDI_VC_Init(vc, NULL, 0);
-	vcch->sendq_head = NULL;
-	vcch->sendq_tail = NULL;
-	MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
+
+	vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+	MPIU_DBG_VCCHSTATECHANGE(vcch,VC_STATE_CONNECTING);
 	vcch->state = MPIDI_CH3I_VC_STATE_CONNECTING;
 	vcch->sock = conn->sock;
 	vcch->conn = conn;

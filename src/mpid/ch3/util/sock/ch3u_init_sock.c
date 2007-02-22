@@ -63,6 +63,7 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
        so this should be MPIDI_CH3_VC_Init( &pg_p->vct[p] );
        followed by MPIDI_VC_InitSock( ditto );  
        In fact, there should be a single VC_Init call here */
+    /* FIXME: Why isn't this MPIDI_VC_Init( vc, NULL, 0 )? */
     for (p = 0; p < pg_size; p++)
     {
 	MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)pg_p->vct[p].channel_private;

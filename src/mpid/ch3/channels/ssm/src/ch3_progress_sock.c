@@ -411,27 +411,12 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    vcch = (MPIDI_CH3I_VC *)vc->channel_private;
 		    /* Initialize the device fields */
 		    MPIDI_VC_Init(vc, NULL, 0);
-		    /* Initialize the sock fields */
-		    vcch->sendq_head = NULL;
-		    vcch->sendq_tail = NULL;
+
 		    MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
 		    vcch->state = MPIDI_CH3I_VC_STATE_CONNECTING;
 		    vcch->sock = conn->sock;
 		    vcch->conn = conn;
 		    conn->vc = vc;
-
-		    /* Initialize the shm fields */
-		    vcch->recv_active = NULL;
-		    vcch->send_active = NULL;
-		    vcch->req = NULL;
-		    vcch->read_shmq = NULL;
-		    vcch->write_shmq = NULL;
-		    vcch->shm = NULL;
-		    vcch->shm_state = 0;
-		    vcch->shm_next_reader = NULL;
-		    vcch->shm_next_writer = NULL;
-		    vcch->shm_read_connected = 0;
-		    vcch->bShm = FALSE;
 
 
 		    MPIDI_Pkt_init(&conn->pkt, MPIDI_CH3I_PKT_SC_OPEN_RESP);

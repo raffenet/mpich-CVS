@@ -186,6 +186,14 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     MPIU_Object_set_ref(pg, 0);
     pg->size = vct_sz;
     pg->id   = pg_id;
+    /* Initialize the connection information to null.  Use
+       the appropriate MPIDI_PG_InitConnXXX routine to set up these 
+       fields */
+    pg->connData           = 0;
+    pg->getConnInfo        = 0;
+    pg->connInfoToString   = 0;
+    pg->connInfoFromString = 0;
+    pg->freeConnInfo       = 0;
     
     for (p = 0; p < vct_sz; p++)
     {
@@ -198,20 +206,14 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
        ch3_init.c file in each channel */
     MPIDI_CH3_PG_Init( pg );
 
+    /* These are now done in MPIDI_VC_Init */
+#if 0
     for (p = 0; p < vct_sz; p++)
     {
 	/* Initialize the channel fields in the VC object */
 	MPIDI_CH3_VC_Init( &pg->vct[p] );
     }
-    
-    /* Initialize the connection information to null.  Use
-       the appropriate MPIDI_PG_InitConnXXX routine to set up these 
-       fields */
-    pg->connData           = 0;
-    pg->getConnInfo        = 0;
-    pg->connInfoToString   = 0;
-    pg->connInfoFromString = 0;
-    pg->freeConnInfo       = 0;
+#endif
 
     /* The first process group is always the world group */
     if (!pg_world) { pg_world = pg; }

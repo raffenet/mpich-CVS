@@ -51,7 +51,6 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
 	*new_vc = vc;
 
 	MPIDI_VC_Init(vc, NULL, 0);
-	MPIDI_CH3_VC_Init(vc);
     }
     vcch = (MPIDI_CH3I_VC *)vc->channel_private;
     vcch->state = MPIDI_CH3I_VC_STATE_CONNECTING;

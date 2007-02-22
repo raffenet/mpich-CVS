@@ -141,7 +141,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     /* Initialize the VC table associated with this process group (and thus COMM_WORLD) */
     for (p = 0; p < pg_size; p++)
     {
-	MPIDI_CH3_VC_Init( &pg_p->vct[p] );
+	MPIU_CALL(MPIDI_CH3,VC_Init( &pg_p->vct[p] ));
     }
 
     /* brad : do the shared memory specific setup items so we can later do the

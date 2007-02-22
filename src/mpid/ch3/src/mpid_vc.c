@@ -659,7 +659,8 @@ int MPIDI_CH3U_Comm_FinishPending( MPID_Comm *comm_ptr )
  */
 static int lpid_counter = 0;
 
-/* FIXME: Should this fully initialize the vc_ entry? */
+/* Fully initialize a VC.  This invokes the channel-specific 
+   VC initialization routine MPIDI_CH3_VC_Init . */
 int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
 {
     vc->state = MPIDI_VC_STATE_INACTIVE;
@@ -674,6 +675,7 @@ int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
     vc->rndvRecv_fn           = MPIDI_CH3_RecvRndv;
     vc->eager_max_msg_sz      = MPIDI_CH3_EAGER_MAX_MSG_SIZE;
     vc->sendEagerNoncontig_fn = MPIDI_CH3_SendEagerNoncontig;
+    MPIU_CALL(MPIDI_CH3,VC_Init( vc ));
     MPIU_DBG_PrintVCState(vc);
 
     return MPI_SUCCESS;
