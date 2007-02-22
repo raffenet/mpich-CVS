@@ -365,10 +365,12 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     MPID_CS_INITIALIZE();
     MPIU_THREAD_SINGLE_CS_ENTER("init");
 
+#if 0
     /* Create the thread-private region if necessary and go ahead 
        and initialize it */
     MPIU_THREADPRIV_INITKEY;
     MPIU_THREADPRIV_INIT;
+#endif
 
     MPID_MPI_INIT_FUNC_ENTER(MPID_STATE_MPI_INIT_THREAD);
     
