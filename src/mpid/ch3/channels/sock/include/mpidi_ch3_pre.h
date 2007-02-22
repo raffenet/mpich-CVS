@@ -7,11 +7,6 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 
-/* #include "mpidu_sock.h" */
-#ifndef MPIDU_SOCK_H_INCLUDED
-/*typedef struct MPIDU_Sock * MPIDU_Sock_t;*/
-#endif
-
 /* These macros unlock shared code */
 #define MPIDI_CH3_USES_SOCK
 #define MPIDI_CH3_USES_ACCEPTQ
@@ -94,10 +89,6 @@ typedef struct MPIDI_CH3I_VC
     struct MPIDI_CH3I_Connection * conn;
 }
 MPIDI_CH3I_VC;
-
-#if 0
-#define MPIDI_CH3_VC_DECL MPIDI_CH3I_VC ch; 
-#endif
 
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
