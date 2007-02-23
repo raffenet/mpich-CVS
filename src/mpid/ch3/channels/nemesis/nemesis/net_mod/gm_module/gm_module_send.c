@@ -340,9 +340,9 @@ int MPID_nem_gm_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, MPIDI
     int mpi_errno = MPI_SUCCESS;
     int dataleft = data_sz;
     char *dataptr = (char *)data;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_GM_ISTARTCONTIGMSG);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_GM_ISENDCONTIGMSG);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_GM_ISTARTCONTIGMSG);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_GM_ISENDCONTIGMSG);
 
     if (!SEND_Q_EMPTY() && MPID_nem_module_gm_num_send_tokens)
         /* MT */
@@ -414,7 +414,7 @@ int MPID_nem_gm_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, MPIDI
         SEND_Q_ENQUEUE(sreq);
   
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_GM_ISTARTCONTIGMSG);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_GM_ISENDCONTIGMSG);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
