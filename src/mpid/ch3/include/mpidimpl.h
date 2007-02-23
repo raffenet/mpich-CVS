@@ -1349,6 +1349,8 @@ void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount,
 int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp);
 int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreqp);
 int MPIDI_CH3U_Post_data_receive_unexpected(MPID_Request * rreqp);
+int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t *buflen, int *complete);
+int MPIDI_CH3U_Receive_data_unexpected(MPID_Request * rreq, char *buf, MPIDI_msg_sz_t *buflen, int *complete);
 
 /* FIXME: This is a macro! */
 #ifndef MPIDI_CH3_Request_add_ref
@@ -1446,7 +1448,7 @@ int MPIDI_CH3U_Finalize_sshm(void);
   if the channel has made guarantees about ordering.
 E*/
 int MPIDI_CH3U_Handle_recv_pkt(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, 
-			       MPID_Request ** rreqp);
+			       MPIDI_msg_sz_t *buflen, MPID_Request ** rreqp);
 
 /*@
   MPIDI_CH3U_Handle_recv_req - Process a receive request for which all of the 
@@ -1554,61 +1556,71 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
 
 /* Here are the packet handlers */
 int MPIDI_CH3_PktHandler_EagerSend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-				   MPID_Request ** );
+				   MPIDI_msg_sz_t *, MPID_Request ** );
 #ifdef USE_EAGER_SHORT
 int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					 MPID_Request ** );
+					 MPIDI_msg_sz_t *, MPID_Request ** );
 #endif
 int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-				    MPID_Request ** );
+				    MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					MPID_Request ** );
+					MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_EagerSyncAck( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-				       MPID_Request ** );
+				       MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_RndvReqToSend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					MPID_Request ** );
+					MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					MPID_Request ** );
+					MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_RndvSend( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-				   MPID_Request ** );
+				   MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_CancelSendReq( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					MPID_Request ** );
+					MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_CancelSendResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					 MPID_Request ** );
+					 MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Put( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-			      MPID_Request ** );
+			      MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Accumulate( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-				     MPID_Request ** );
+				     MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Get( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-			      MPID_Request ** );
+			      MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_GetResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-				 MPID_Request ** );
+				 MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Lock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-			      MPID_Request ** );
+			      MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_LockGranted( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-				      MPID_Request ** );
+				      MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_PtRMADone( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-				    MPID_Request ** );
+				    MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_LockPutUnlock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					MPID_Request ** );
+					MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_LockAccumUnlock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					  MPID_Request ** );
+					  MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_LockGetUnlock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					MPID_Request ** );
+					MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_FlowCntlUpdate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
-					 MPID_Request ** );
+					 MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-				MPID_Request ** );
+				MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_EndCH3( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
-				 MPID_Request ** );
+				 MPIDI_msg_sz_t *, MPID_Request ** );
 
 int MPIDI_CH3_PktHandler_CancelSendReq( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					MPID_Request ** );
+					MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_CancelSendResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					 MPID_Request ** );
+					 MPIDI_msg_sz_t *, MPID_Request ** );
 
-typedef int MPIDI_CH3_PktHandler_Fcn(MPIDI_VC_t *, MPIDI_CH3_Pkt_t*,
-				     MPID_Request ** );
+/* PktHandler function:
+   vc  (INPUT) -- vc on which the packet was received
+   pkt (INPUT) -- pointer to packet header at beginning of receive buffer
+   buflen (I/O) -- IN: number of bytes received into receive buffer
+                   OUT: number of bytes processed by the handler function
+   req (OUTPUT) -- NULL, if the whole message has been processed by the handler
+                   function, otherwise, pointer to the receive request for this
+                   message.  The IOV will be set describing where the rest of the
+                   message should be received.
+*/
+typedef int MPIDI_CH3_PktHandler_Fcn(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
+				     MPIDI_msg_sz_t *buflen, MPID_Request **req );
 int MPIDI_CH3_PktHandler_Init( MPIDI_CH3_PktHandler_Fcn *[], int );
 
 #ifdef MPICH_DBG_OUTPUT

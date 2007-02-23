@@ -207,7 +207,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
  */
 
 int MPIDI_CH3_PktHandler_CancelSendReq( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
-					MPID_Request **rreqp )
+					MPIDI_msg_sz_t *buflen, MPID_Request **rreqp )
 {
     MPIDI_CH3_Pkt_cancel_send_req_t * req_pkt = &pkt->cancel_send_req;
     MPID_Request * rreq;
@@ -222,6 +222,7 @@ int MPIDI_CH3_PktHandler_CancelSendReq( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		      req_pkt->sender_req_id, req_pkt->match.rank, 
 		      req_pkt->match.tag, req_pkt->match.context_id));
 	    
+    *buflen = sizeof(MPIDI_CH3_Pkt_t);
     rreq = MPIDI_CH3U_Recvq_FDU(req_pkt->sender_req_id, &req_pkt->match);
     if (rreq != NULL)
     {
@@ -260,7 +261,7 @@ int MPIDI_CH3_PktHandler_CancelSendReq( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 }
 
 int MPIDI_CH3_PktHandler_CancelSendResp( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
-					 MPID_Request **rreqp )
+					 MPIDI_msg_sz_t *buflen, MPID_Request **rreqp )
 {
     MPIDI_CH3_Pkt_cancel_send_resp_t * resp_pkt = &pkt->cancel_send_resp;
     MPID_Request * sreq;
@@ -269,6 +270,8 @@ int MPIDI_CH3_PktHandler_CancelSendResp( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 			"received cancel send resp pkt, sreq=0x%08x, ack=%d",
 			resp_pkt->sender_req_id, resp_pkt->ack));
 	    
+    *buflen = sizeof(MPIDI_CH3_Pkt_t);
+
     MPID_Request_get_ptr(resp_pkt->sender_req_id, sreq);
     
     if (resp_pkt->ack)

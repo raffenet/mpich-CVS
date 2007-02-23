@@ -158,7 +158,7 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
 }
 
 int MPIDI_CH3_PktHandler_RndvReqToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
-					MPID_Request **rreqp )
+					MPIDI_msg_sz_t *buflen, MPID_Request **rreqp )
 {
     MPID_Request * rreq;
     int found;
@@ -179,6 +179,8 @@ int MPIDI_CH3_PktHandler_RndvReqToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     }
     
     set_request_info(rreq, rts_pkt, MPIDI_REQUEST_RNDV_MSG);
+
+    *buflen = sizeof(MPIDI_CH3_Pkt_t);
     
     if (found)
     {
@@ -229,7 +231,7 @@ int MPIDI_CH3_PktHandler_RndvReqToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 }
 
 int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
-					MPID_Request **rreqp )
+					MPIDI_msg_sz_t *buflen, MPID_Request **rreqp )
 {
     MPIDI_CH3_Pkt_rndv_clr_to_send_t * cts_pkt = &pkt->rndv_clr_to_send;
     MPID_Request * sreq;
@@ -262,6 +264,8 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	MPID_Request_release(rts_sreq);
     }
     
+    *buflen = sizeof(MPIDI_CH3_Pkt_t);
+
     MPIDI_Pkt_init(rs_pkt, MPIDI_CH3_PKT_RNDV_SEND);
     rs_pkt->receiver_req_id = cts_pkt->receiver_req_id;
     iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rs_pkt;
@@ -310,26 +314,42 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 }
 
 int MPIDI_CH3_PktHandler_RndvSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
-				   MPID_Request **rreqp )
+				   MPIDI_msg_sz_t *buflen, MPID_Request **rreqp )
 {
     MPIDI_CH3_Pkt_rndv_send_t * rs_pkt = &pkt->rndv_send;
     int mpi_errno = MPI_SUCCESS;
+    int complete;
+    char *data_buf;
+    MPIDI_msg_sz_t data_len;
     MPID_Request *req;
     
     MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"received rndv send (data) pkt");
+
+    data_len = *buflen - sizeof(MPIDI_CH3_Pkt_t);
+    data_buf = (char *)pkt + sizeof(MPIDI_CH3_Pkt_t);
+    
     MPID_Request_get_ptr(rs_pkt->receiver_req_id, *rreqp);
     req = *rreqp;
     if (req->dev.recv_data_sz == 0) {
+        *buflen = sizeof(MPIDI_CH3_Pkt_t);
 	MPIDI_CH3U_Request_complete(req);
 	*rreqp = NULL;
     }
     else {
-	mpi_errno = MPIDI_CH3U_Post_data_receive_found(req);
+        mpi_errno = MPIDI_CH3U_Receive_data_found(req, data_buf, &data_len,
+                                                  &complete);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
 			     "**ch3|postrecv %s", "MPIDI_CH3_PKT_RNDV_SEND");
 	}
-    }
+        if (complete) 
+        {
+            MPIDI_CH3U_Request_complete(req);
+            *rreqp = NULL;
+        }
+        /* return the number of bytes processed in this function */
+        *buflen = data_len + sizeof(MPIDI_CH3_Pkt_t);
+   }
 	
  fn_fail:
     return mpi_errno;

@@ -1156,10 +1156,11 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout,
 		{
 #if 1
 		    {
-			MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t*)mem_ptr;
+                        MPIDI_msg_sz_t buflen = sizeof (MPIDI_CH3_Pkt_t);
+                        MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t*)mem_ptr;
 			mpi_errno = MPIDI_pktArray[pkt->type]( 
-			    recv_vc_ptr, pkt, &recv_vcch->recv_active);
-
+			    recv_vc_ptr, pkt, &buflen, &recv_vcch->recv_active);
+                        MPIU_Assert(mpi_errno || buflen == sizeof (MPIDI_CH3_Pkt_t));
 		    }
 #else		    
 		    mpi_errno = MPIDI_CH3U_Handle_recv_pkt(recv_vc_ptr, (MPIDI_CH3_Pkt_t*)mem_ptr, &recv_vcch->recv_active);

@@ -174,6 +174,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
             
                 if (in_fbox)
                 {
+                    MPIDI_msg_sz_t buflen = sizeof (MPIDI_CH3_Pkt_t);
                     MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
                     /* This packet must be the first packet of a new message */
                     MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Recv new pkt");
@@ -182,8 +183,9 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                     MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE (cell), &vc);
                     MPIU_Assert (vc->ch.recv_active == NULL);
 
-                    mpi_errno = pktArray[pkt->type] (vc, pkt, &rreq);
+                    mpi_errno = pktArray[pkt->type] (vc, pkt, &buflen, &rreq);
                     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+                    MPIU_Assert(buflen == sizeof (MPIDI_CH3_Pkt_t));
                 
                     /* Channel fields don't get initialized on request creation, init them here */
                     if (rreq)
@@ -207,13 +209,15 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
                     if (!rreq)
                     {
-                        /* This packet must be the first packet of a new message */
+                        MPIDI_msg_sz_t buflen = sizeof (MPIDI_CH3_Pkt_t);
+                       /* This packet must be the first packet of a new message */
                         MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Recv new pkt");
                         MPIU_Assert (payload_len >= sizeof (MPIDI_CH3_Pkt_t));
 		    
-                        mpi_errno = pktArray[pkt->type] (vc, pkt, &rreq);
+                        mpi_errno = pktArray[pkt->type] (vc, pkt, &buflen, &rreq);
                         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-                    
+                        MPIU_Assert(buflen == sizeof (MPIDI_CH3_Pkt_t));
+
                         /* Channel fields don't get initialized on request creation, init them here */
                         if (rreq)
                             rreq->ch.iov_offset = 0;

@@ -203,7 +203,7 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
 /* Here is the matching code that processes a close packet when it is 
    received */
 int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
-				MPID_Request **rreqp )
+				MPIDI_msg_sz_t *buflen, MPID_Request **rreqp )
 {
     MPIDI_CH3_Pkt_close_t * close_pkt = &pkt->close;
     int mpi_errno = MPI_SUCCESS;
@@ -291,6 +291,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	mpi_errno = MPIDI_CH3_Connection_terminate(vc);
     }
     
+    *buflen = sizeof(MPIDI_CH3_Pkt_t);
     *rreqp = NULL;
 
  fn_fail:

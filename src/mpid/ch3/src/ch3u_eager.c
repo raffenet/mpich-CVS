@@ -264,7 +264,7 @@ int MPIDI_CH3_EagerContigShortSend( MPID_Request **sreq_p,
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
-					 MPID_Request **rreqp )
+					 MPIDI_msg_sz_t *buflen, MPID_Request **rreqp )
 {
     MPIDI_CH3_Pkt_eagershort_send_t * eagershort_pkt = &pkt->eagershort_send;
     MPID_Request * rreq;
@@ -301,6 +301,7 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
        The packet handler returns null for a request that requires
        no further communication */
     *rreqp = NULL;
+    *buflen = sizeof(MPIDI_CH3_Pkt_t);
 
     /* Extract the data from the packet */
     /* Note that if the data size if zero, we're already done */
@@ -536,11 +537,14 @@ int MPIDI_CH3_EagerContigIsend( MPID_Request **sreq_p,
    should have the data in the same packet when the data is
    particularly short (e.g., one 8 byte long word) */
 int MPIDI_CH3_PktHandler_EagerSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, 
-				    MPID_Request **rreqp )
+				    MPIDI_msg_sz_t *buflen, MPID_Request **rreqp )
 {
     MPIDI_CH3_Pkt_eager_send_t * eager_pkt = &pkt->eager_send;
     MPID_Request * rreq;
     int found;
+    int complete;
+    char *data_buf;
+    MPIDI_msg_sz_t data_len;
     int mpi_errno = MPI_SUCCESS;
     
     MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
@@ -555,28 +559,39 @@ int MPIDI_CH3_PktHandler_EagerSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     if (rreq == NULL) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
     }
+
+    data_len = *buflen - sizeof(MPIDI_CH3_Pkt_t);
+    data_buf = (char *)pkt + sizeof(MPIDI_CH3_Pkt_t);
     
     set_request_info(rreq, eager_pkt, MPIDI_REQUEST_EAGER_MSG);
     if (rreq->dev.recv_data_sz == 0) {
+        /* return the number of bytes processed in this function */
+        *buflen = sizeof(MPIDI_CH3_Pkt_t);
 	MPIDI_CH3U_Request_complete(rreq);
 	*rreqp = NULL;
     }
     else {
-	/* FIXME: What is the logic here?  On an eager receive, the data
-	   should be available already, and we should be optimizing
-	   for short messages */
 	*rreqp = rreq;
 	if (found) {
-	    mpi_errno = MPIDI_CH3U_Post_data_receive_found( rreq );
+	    mpi_errno = MPIDI_CH3U_Receive_data_found( rreq, data_buf,
+                                                       &data_len, &complete );
 	}
 	else {
-	    mpi_errno = MPIDI_CH3U_Post_data_receive_unexpected( rreq );
+	    mpi_errno = MPIDI_CH3U_Receive_data_unexpected( rreq, data_buf,
+                                                            &data_len, &complete );
 	}
 
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
 			     "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SEND");
 	}
+        if (complete) 
+        {
+            MPIDI_CH3U_Request_complete(rreq);
+            *rreqp = NULL;
+        }
+        /* return the number of bytes processed in this function */
+        *buflen = data_len + sizeof(MPIDI_CH3_Pkt_t);
     }
 
  fn_fail:
@@ -585,11 +600,14 @@ int MPIDI_CH3_PktHandler_EagerSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 
 
 int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
-				    MPID_Request **rreqp )
+				    MPIDI_msg_sz_t *buflen, MPID_Request **rreqp )
 {
     MPIDI_CH3_Pkt_ready_send_t * ready_pkt = &pkt->ready_send;
     MPID_Request * rreq;
     int found;
+    int complete;
+    char *data_buf;
+    MPIDI_msg_sz_t data_len;
     int mpi_errno = MPI_SUCCESS;
     
     MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
@@ -605,21 +623,34 @@ int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
     }
     
+    data_len = *buflen - sizeof(MPIDI_CH3_Pkt_t);
+    data_buf = (char *)pkt + sizeof(MPIDI_CH3_Pkt_t);
+    
     set_request_info(rreq, ready_pkt, MPIDI_REQUEST_EAGER_MSG);
     if (found) {
 	if (rreq->dev.recv_data_sz == 0) {
+            /* return the number of bytes processed in this function */
+            *buflen = sizeof(MPIDI_CH3_Pkt_t);
 	    MPIDI_CH3U_Request_complete(rreq);
 	    *rreqp = NULL;
 	}
 	else {
 	    *rreqp = rreq;
-	    mpi_errno = MPIDI_CH3U_Post_data_receive_found(rreq);
+	    mpi_errno = MPIDI_CH3U_Receive_data_found(rreq, data_buf, &data_len,
+                                                      &complete);
 	    if (mpi_errno != MPI_SUCCESS) {
 		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, 
 				     "**ch3|postrecv",
 				     "**ch3|postrecv %s", 
 				     "MPIDI_CH3_PKT_READY_SEND");
 	    }
+            if (complete) 
+            {
+                MPIDI_CH3U_Request_complete(rreq);
+                *rreqp = NULL;
+            }
+            /* return the number of bytes processed in this function */
+            *buflen = data_len + sizeof(MPIDI_CH3_Pkt_t);
 	}
     }
     else
@@ -658,6 +689,8 @@ int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    MPIDI_CH3U_Request_complete(rreq);
 	    *rreqp = NULL;
 	}
+        /* we didn't process anything but the header in this case */
+        *buflen = sizeof(MPIDI_CH3_Pkt_t);
     }
  fn_fail:
     return mpi_errno;
