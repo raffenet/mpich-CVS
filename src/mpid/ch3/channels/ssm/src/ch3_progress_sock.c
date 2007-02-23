@@ -9,7 +9,9 @@
    not static */
 static int shutting_down = FALSE;
 
+#if 0
 static int connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn);
+#endif
 static inline int connection_post_recv_pkt(MPIDI_CH3I_Connection_t * conn);
 static inline int connection_post_send_pkt(MPIDI_CH3I_Connection_t * conn);
 static inline int connection_post_sendq_req(MPIDI_CH3I_Connection_t * conn);
@@ -120,6 +122,7 @@ static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb)
     return (*countp == 0);
 }
 
+#if 0
 #undef FUNCNAME
 #define FUNCNAME connection_post_send_pkt_and_pgid
 #undef FCNAME
@@ -145,7 +148,7 @@ static int connection_post_send_pkt_and_pgid(MPIDI_CH3I_Connection_t * conn)
     MPIDI_FUNC_EXIT(MPID_STATE_CONNECTION_POST_SEND_PKT_AND_PGID);
     return mpi_errno;
 }
-
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_handle_sock_event
@@ -384,6 +387,9 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	    else /* Handling some internal connection establishment or 
 		    tear down packet */
 	    { 
+		mpi_errno = MPIDI_CH3_Sockconn_handle_conn_event( conn );
+		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+#if 0
 		if (conn->pkt.type == MPIDI_CH3I_PKT_SC_OPEN_REQ)
 		{
 		    conn->state = CONN_STATE_OPEN_LRECV_DATA;
@@ -474,8 +480,8 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 		    goto fn_exit;
 		}
 		/* --END ERROR HANDLING-- */
+#endif
 	    }
-
 	    break;
 	}
 	    
@@ -581,6 +587,10 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 	    }
 	    else /* finished writing internal packet header */
 	    {
+		/* the connection is not active yet */
+		mpi_errno = MPIDI_CH3_Sockconn_handle_connwrite( conn );
+		if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
+#if 0
 		if (conn->state == CONN_STATE_OPEN_CSEND)
 		{
 		    /* finished sending open request packet */
@@ -620,6 +630,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			}
 		    }
 		}
+#endif
 	    }
 
 	    break;
