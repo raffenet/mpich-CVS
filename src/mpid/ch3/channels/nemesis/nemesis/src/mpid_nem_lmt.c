@@ -212,7 +212,7 @@ static int pkt_RTS_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPIDI_msg_sz_t 
 
     data_len = *buflen - sizeof(MPIDI_CH3_Pkt_t);
     data_buf = (char *)pkt + sizeof(MPIDI_CH3_Pkt_t);
-    
+
     if (rts_pkt->cookie_len == 0)
     {
         rreq->ch.lmt_tmp_cookie.MPID_IOV_LEN = 0;
@@ -326,8 +326,10 @@ static int pkt_CTS_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPIDI_msg_sz_t 
         if (data_len >= cts_pkt->cookie_len)
         {
             MPID_NEM_MEMCPY(sreq->ch.lmt_tmp_cookie.MPID_IOV_BUF, data_buf, cts_pkt->cookie_len);
-            *rreqp = NULL;
+            mpi_errno = vc->ch.lmt_start_send(vc, sreq, sreq->ch.lmt_tmp_cookie);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
             *buflen = sizeof(MPIDI_CH3_Pkt_t) + cts_pkt->cookie_len;
+            *rreqp = NULL;
         }
         else
         {
@@ -340,8 +342,8 @@ static int pkt_CTS_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPIDI_msg_sz_t 
             rreq->dev.iov_count = 1;
             rreq->ch.lmt_req = sreq;
             rreq->dev.OnDataAvail = do_send;
-            *rreqp = rreq;
             *buflen = sizeof(MPIDI_CH3_Pkt_t);
+            *rreqp = rreq;
         }
     }
     else

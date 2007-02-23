@@ -201,6 +201,7 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
                 (MPID_IOV_BUF_CAST)((char*)(rreq->dev.user_buf) + dt_true_lb);
             rreq->dev.iov[0].MPID_IOV_LEN = data_sz;
             rreq->dev.iov_count = 1;
+            *buflen = 0;
             *complete = FALSE;
         }
         
@@ -226,6 +227,19 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
             MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"Copying noncontiguous data to user buffer");
             last = data_sz;
             MPID_Segment_unpack(&rreq->dev.segment, rreq->dev.segment_first, &last, buf);
+            /* --BEGIN ERROR HANDLING-- */
+            if (last != data_sz)
+            {
+                /* If the data can't be unpacked, the we have a
+                   mismatch between the datatype and the amount of
+                   data received.  Throw away received data. */
+                MPIU_ERR_SET(rreq->status.MPI_ERROR, MPI_ERR_TYPE, "**dtypemismatch");
+                rreq->status.count = (int)rreq->dev.segment_first;
+                *buflen = data_sz;
+                *complete = TRUE;
+                goto fn_exit;
+            }
+            /* --END ERROR HANDLING-- */
             *buflen = data_sz;
             rreq->dev.OnDataAvail = 0;
             *complete = TRUE;
@@ -239,13 +253,16 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
                 MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,
                                          "**ch3|loadrecviov");
             }
+            *buflen = 0;
             *complete = FALSE;
         }
     }
 
-fn_fail:
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_RECEIVE_DATA_FOUND);
     return mpi_errno;
+fn_fail:
+    goto fn_fail;
 }
 
 #undef FUNCNAME
@@ -286,6 +303,7 @@ int MPIDI_CH3U_Receive_data_unexpected(MPID_Request * rreq, char *buf, MPIDI_msg
         rreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.recv_data_sz;
         rreq->dev.iov_count = 1;
         rreq->dev.recv_pending_count = 2;
+        *buflen = 0;
         *complete = FALSE;
     }
 
@@ -843,9 +861,7 @@ int MPIDI_CH3_PktHandler_GetResp( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	*rreqp = req;
         mpi_errno = MPIDI_CH3U_Receive_data_found(req, data_buf,
                                                   &data_len, &complete);
-	if (mpi_errno != MPI_SUCCESS) {
-	    MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER,"**ch3|postrecv", 
-			  "**ch3|postrecv %s", "MPIDI_CH3_PKT_GET_RESP");
+        MPIU_ERR_CHKANDJUMP1(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|postrecv", "**ch3|postrecv %s", "MPIDI_CH3_PKT_GET_RESP");
         if (complete) 
         {
             MPIDI_CH3U_Request_complete(req);
@@ -853,10 +869,12 @@ int MPIDI_CH3_PktHandler_GetResp( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
         }
         /* return the number of bytes processed in this function */
         *buflen = data_len + sizeof(MPIDI_CH3_Pkt_t);
-	}
     }
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PKTHANDLER_GETRESP);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME

@@ -174,7 +174,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
             
                 if (in_fbox)
                 {
-                    MPIDI_msg_sz_t buflen = sizeof (MPIDI_CH3_Pkt_t);
+                    MPIDI_msg_sz_t buflen = payload_len;
                     MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
                     /* This packet must be the first packet of a new message */
                     MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Recv new pkt");
@@ -185,13 +185,12 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
                     mpi_errno = pktArray[pkt->type] (vc, pkt, &buflen, &rreq);
                     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-                    MPIU_Assert(buflen == sizeof (MPIDI_CH3_Pkt_t));
                 
                     /* Channel fields don't get initialized on request creation, init them here */
                     if (rreq)
                         rreq->ch.iov_offset = 0;
-                    cell_buf    += sizeof (MPIDI_CH3_Pkt_t);
-                    payload_len -= sizeof (MPIDI_CH3_Pkt_t);
+                    cell_buf    += buflen;
+                    payload_len -= buflen;
                     MPIU_Assert (!rreq || rreq->ch.iov_offset == 0);
                 }
                 else
@@ -209,20 +208,19 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
                     if (!rreq)
                     {
-                        MPIDI_msg_sz_t buflen = sizeof (MPIDI_CH3_Pkt_t);
+                        MPIDI_msg_sz_t buflen = payload_len;
                        /* This packet must be the first packet of a new message */
                         MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Recv new pkt");
                         MPIU_Assert (payload_len >= sizeof (MPIDI_CH3_Pkt_t));
 		    
                         mpi_errno = pktArray[pkt->type] (vc, pkt, &buflen, &rreq);
                         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-                        MPIU_Assert(buflen == sizeof (MPIDI_CH3_Pkt_t));
 
                         /* Channel fields don't get initialized on request creation, init them here */
                         if (rreq)
                             rreq->ch.iov_offset = 0;
-                        cell_buf += sizeof (MPIDI_CH3_Pkt_t);
-                        payload_len -= sizeof (MPIDI_CH3_Pkt_t);
+                        cell_buf += buflen;
+                        payload_len -= buflen;
                         MPIU_Assert (!rreq || rreq->ch.iov_offset == 0);
                     }
                 }            
