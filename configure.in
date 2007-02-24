@@ -2291,6 +2291,9 @@ PAC_ARG_SHAREDLIBS
 # We allow aliases for enable_sharedlibs, but after ARG_SHAREDLIBS, 
 # enable_sharedlibs contains the cannonical version
 ENABLE_SHLIB="$enable_sharedlibs"
+if test -z "$ENABLE_SHLIB" -o "$ENABLE_SHLIB" = "no" ; then
+    ENABLE_SHLIB=none
+fi
 # Special restrictions for some shared libraries
 # It is difficult to import/export symbols from some shared libraries, so
 # in that case, we require PMPILIBNAME and MPILIBNAME be the same
