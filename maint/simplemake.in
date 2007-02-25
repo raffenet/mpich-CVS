@@ -324,7 +324,8 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 
 #InstallDirFromKind maps XXX from install_XXX into the GNU name
 %InstallDirFromKind = ( 'LIB' => 'libdir', 
-		 'SHLIB' => 'libdir',     # SHLIB also signals library to build
+		 'SHLIB' => 'libdir',    # SHLIB also signals library to build
+		 'DLLLIB' => 'libdir',   # DLLLIB also signals library to build
 		 'BIN' => 'bindir',
 		 'INCLUDE' => 'includedir', 
 		 'MAN' => 'mandir',
@@ -724,6 +725,14 @@ sub ReadMfile {
 	elsif (/^optinstall_([\w-]*)\s*=\s*(.*)\s*$/) {
 	    # This is for files that will be installed only if present
 	    $optinstall_files{$1} .= "$2 ";
+	    if ($1 eq "DLLLIB") {
+		my $libname = $2;
+		$libname =~ s/\.\@SHLIB_EXT\@//;
+		$libname =~ s/^\s*lib//;
+	    	$alldlllibtargets[$#alldlllibtargets+1] = 
+		    "${libloc}lib$libname.la";
+	    }
+
 	}
 	elsif (/^optinstalldirs_([\w-]*)\s*=\s*(.*)\s*$/) {
 	    # This is for files that will be installed only if present
@@ -918,8 +927,8 @@ sub WriteMfile {
     $maxline = 80;
     $output_filename = $_[0];
     # Write out the generated Makefile
-    unlink $output_filename;
-    open( FD, ">$output_filename" ) || die "Could not open $output_filename\n";
+    unlink $output_filename . ".new";
+    open( FD, ">$output_filename.new" ) || die "Could not open $output_filename\n.new";
 
     print FD "# This $output_filename created by simplemake.  Do not edit$newline$newline";
     if ($output_filename =~ /Makefile\.in/) {
@@ -978,40 +987,11 @@ sub WriteMfile {
     if ($do_sharedlibs) {
 	&TargetSharedLibraries( \%libraries );
 	if (defined($optinstall_files{'SHLIB'})) {
-	    foreach $libspec (split(/\s+/,$optinstall_files{'SHLIB'})) {
-		if ($libspec =~ /(.*)\/([^\/]*)/) {
-		    $libdir = $1;
-		    $libname = $2;
-		}
-		else {
-		    # The library is built in this directory
-		    $libdir = ".";
-		    $libname = $libspec;
-		}
-		$libsrc = $libname;
-		if ($libsrc =~ /\.so$/) {
-		    $libsrc =~ s/\.so/\.la/;
-		}
-		elsif ($libsrc =~ /\.\@SHLIB_EXT\@$/) {
-		    $libsrc =~ s/\.\@SHLIB_EXT\@$/.la/;
-		}
-		else {
-		    print STDERR "Unrecognized suffix on library $libsrc\n";
-		}
-		# Note that we skip the related file names, since
-		# their build is already handled
-		my $baselibname = $libname;
-		$baselibname =~ s/^lib//;
-		$baselibname =~ s/\..*//;
-		if (!defined($profile_libraries_basename{$baselibname})) {
-		    # Skip libraries that will be built in the step 
-		    # below
-		    if (!defined($shared_libraries{$baselibname})) {
-			print "Building sharedlib library $baselibname (from $libname) in $libdir as part of optinstall\n" if $gDebugWhy;
-			&TargetSharedLibraryFinal( $libsrc, $libname, $libdir );
-		    }
-		}
-	    }
+	    &CreateOptInstallSHLibs( 'SHLIB' );
+	}
+	if (defined($optinstall_files{'DLLLIB'})) {
+	    print STDOUT "DLLLIB target in $curdir\n";
+	    &CreateOptInstallSHLibs( 'DLLLIB' );
 	}
     }
 
@@ -1076,6 +1056,8 @@ sub WriteMfile {
 
     close FD;
 
+    &ReplaceIfDifferent( $output_filename, $output_filename . ".new" );
+
     # FIXME: Make the file read only
     # ($dev,$ino,$mode) = stat $output_filename
     # Modifiy $mode to remove write permissions
@@ -1106,7 +1088,8 @@ sub DefaultVariables {
 	printMakeVariable( FD, "RANLIB", "\@RANLIB\@" );
     }
     if ($do_sharedlibs) {
-	if (defined($optinstall_files{'SHLIB'})) {
+	if (defined($optinstall_files{'SHLIB'}) ||
+	    defined($optinstall_files{'DLLLIB'})) {
 	    # Add the definition of libtool in case we're using
 	    # libtool to provide the shared library.
 	    printMakeVariable( FD, "LIBTOOL", "\@LIBTOOL\@" );
@@ -1639,6 +1622,7 @@ sub ClearVars {
     # Targets
     @alltargets = ();   # implicit targets 
     @allshlibtargets = (); # implicit shared library targets
+    @alldlllibtargets = (); # implicit dynamically loaded library targets
     %altalltargets = ();   # related targets to items in alltargets
     %usertargets = ();  # explicit, user-defined targets
     %extra_programs = ();
@@ -2184,6 +2168,7 @@ sub TargetAll {
 	    print_make_endline( FD );
 	    # Add generation of shared libraries if necessary
 	    &TargetAllCommandsForSharedLibs;
+	    &TargetAllCommandsForDLLLibs;
 	}
 	
 	#  Create the final shared library (typically .so) from the .la file
@@ -2219,7 +2204,39 @@ sub TargetAll {
 	    }
 	    print FD "\tfi\n";
 	}
-
+	if (defined($optinstall_files{'DLLLIB'})) {
+	    print STDOUT "in optinstall_files dlllib\n";
+	    # Conditionally create the dynamically loadable shared libraries.
+	    print FD "\t\@if [ \"\@BUILD_DLLS\@\" = \"yes\" ] ; then \\\n";
+	    foreach $libspec (split(/\s+/,$optinstall_files{'DLLLIB'})) {
+		# Be careful of library names that are related to
+		# the profile library (those libraries are built
+		# as part of the "master" library name build)
+		my $baselibname = $libspec;
+		$baselibname =~ s/^.*\///g;
+		$baselibname =~ s/^lib//;
+		$baselibname =~ s/\..*//;
+		# We need to be careful about the optional files, since
+		# the prerequisites may not exist
+		# We could either test on the conditions under which
+		# the optional files should exist (this is probably the
+		# best option), or we can coordinate with the
+		# target that we invoke for each case.  We'll do the
+		# latter for now and consider adding an optional predicate
+		# that can be supplied for each OPTINSTALL item.
+		if (!defined($profile_libraries_basename{$baselibname})) {
+		    print "Building sharedlib library $baselibname (from $libspec) as part of all-redirect\n" if $gDebugWhy;
+		    # Get the condition
+		    my $prereq = $libspec;
+		    $prereq =~ s/\.\@SHLIB_EXT\@/.la/;
+		    print FD "\t    if [ -s $prereq ] ; then \\\n";
+		    print FD "\t        echo \"make $libspec\" ;\\\n";
+		    print FD "\t        \${MAKE} $libspec ; \\\n";
+		    print FD "\t    fi ; \\\n";
+		}
+	    }
+	    print FD "\tfi\n";
+	}
 	&TargetPostamble( "all" );
     }
     else {
@@ -2246,10 +2263,11 @@ sub TargetAll {
 	}
 	print_make_endline( FD );
 	&TargetAllCommandsForSharedLibs;
+	&TargetAllCommandsForDLLLibs;
 	&TargetPostamble( "all" );
     }
     print_make_endline( FD );
-}
+} # TargetAll
 # ---------------------------------------------------------------------------
 # Routines to provide standard extensions through -preamble, -postamble,
 # and -local
@@ -2315,6 +2333,26 @@ sub TargetAllCommandsForSharedLibs {
 #		print FD "\t        \${MAKE} $fullname ; \\\n";
 	    }
 	    print FD "\t    fi ; \\\n";
+	}
+	print FD "\tfi\n";
+    }
+}
+
+sub TargetAllCommandsForDLLLibs {
+    if ($do_sharedlibs && $#alldlllibtargets >= 0) {
+	# Add a conditional step
+	print FD "\t\@if [ \"\@BUILD_DLLS\@\" = \"yes\" ] ; then \\\n";
+	foreach $shlib (@alldlllibtargets) {
+	    # Get the library stamp name from the lib name
+	    my $libbase = $shlib;
+	    if ($shlib =~ /.*\/lib([^\/]*)/) {
+		$libbase = $1;
+	    }
+	    my $libstamp = $shlib;
+	    if (defined($libnum{$libbase})) {
+		$libstamp = ".libstamp" . $libnum{$libbase};
+	    }
+	    print FD "\t    \${MAKE} $libstamp ; \\\n";
 	}
 	print FD "\tfi\n";
     }
@@ -3862,8 +3900,13 @@ sub TargetDependenciesDynamic {
 	# target name.  This requires that the MAKE_DEPEND_C compiler
 	# accept the -MT option
 	#
+	my %sawFile = ();
 	foreach $lib (keys(%libraries)) {
+	    # Its possible that the same file is used in several libraries.
+	    # Thus, we only look at unique files.
 	    foreach $sourcefile (split(/\s+/,&ExpandMakeVars($libraries{$lib}))) {
+		if (defined($sawFile{$sourcefile})) { next; }
+		$sawFile{$sourcefile} = 1;
 		# FIXME: If, for some reason, the source file is created by
 		# configure, then simplemake will get confused.
 		my $srcdirloc = '$(srcdir)/';
@@ -3908,8 +3951,11 @@ in the build directory\n";
 	# We always use a "newalldeps" incase there is a failure 
 	# creating the new list of dependency files.
 	print FD "\trm -f \$(DEPS_DIR)/newalldeps$newline";
+	my %sawFile = ();
 	foreach $lib (keys(%libraries)) {
 	    foreach $sourcefile (split(/\s+/,&ExpandMakeVars($libraries{$lib}))) {
+		if (defined($sawFile{$sourcefile})) { next; }
+		$sawFile{$sourcefile} = 1;
 		my $srcdirloc = '$(srcdir)/';
 		$ext = $sourcefile;
 		$ext =~ s/^.*\.//g;
@@ -4432,4 +4478,75 @@ sub CallModule {
     }
 
     &$fcname( $optype, $opname, $opsources );
+}
+
+#
+# Replace old file with new file only if new file is different
+# Otherwise, remove new filename 
+sub ReplaceIfDifferent {
+    my ($oldfilename,$newfilename) = @_;
+    my $rc = 1;
+    if (-s $oldfilename) { 
+	$rc = system "cmp -s $newfilename $oldfilename";
+	$rc >>= 8;   # Shift right to get exit status
+    }
+    if ($rc != 0) {
+	# The files differ.  Replace the old file 
+	# with the new one
+	if (-s $oldfilename) {
+	    print STDERR "Replacing $curdir/$oldfilename\n";
+	    unlink $oldfilename;
+	}
+	else {
+	    print STDERR "Creating $curdir/$oldfilename\n";
+	}
+	rename $newfilename, $oldfilename || 
+	    die "Could not replace $curdir/$oldfilename";
+    }
+    else {
+	unlink $newfilename;
+    }
+}
+
+#
+# For all libraries in a given optional_files install class, generate the
+# steps to create the shared library 
+# 
+sub CreateOptInstallSHLibs {
+    my $libClass = $_[0];
+
+    foreach $libspec (split(/\s+/,$optinstall_files{$libClass})) {
+	if ($libspec =~ /(.*)\/([^\/]*)/) {
+	    $libdir = $1;
+	    $libname = $2;
+	}
+	else {
+	    # The library is built in this directory
+	    $libdir = ".";
+	    $libname = $libspec;
+	}
+	$libsrc = $libname;
+	if ($libsrc =~ /\.so$/) {
+	    $libsrc =~ s/\.so/\.la/;
+	}
+	elsif ($libsrc =~ /\.\@SHLIB_EXT\@$/) {
+	    $libsrc =~ s/\.\@SHLIB_EXT\@$/.la/;
+	}
+	else {
+	    print STDERR "Unrecognized suffix on library $libsrc\n";
+	}
+	# Note that we skip the related file names, since
+	# their build is already handled
+	my $baselibname = $libname;
+	$baselibname =~ s/^lib//;
+	$baselibname =~ s/\..*//;
+	if (!defined($profile_libraries_basename{$baselibname})) {
+	    # Skip libraries that will be built in the step 
+	    # below
+	    if (!defined($shared_libraries{$baselibname})) {
+		print "Building sharedlib library $baselibname (from $libname) in $libdir as part of optinstall\n" if $gDebugWhy;
+		&TargetSharedLibraryFinal( $libsrc, $libname, $libdir );
+	    }
+	}
+    }
 }
