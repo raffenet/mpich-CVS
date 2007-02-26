@@ -7,7 +7,6 @@ lib${MPILIBNAME}_a_SOURCES = \
  ch3_istartmsgv.c            \
  ch3_isend.c                 \
  ch3_isendv.c                \
- ch3i_get_business_card.c    \
  ch3_progress.c              \
  ch3_shm_memory.c            \
  ch3_progress_shm.c          \

@@ -152,6 +152,31 @@ int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *a )
 { 
     return 0;
 }
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_Get_business_card
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3_Get_business_card(int myRank, char *value, int length)
+{
+    int mpi_errno;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_GET_BUSINESS_CARD);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_GET_BUSINESS_CARD);
+
+    mpi_errno = MPIDI_CH3U_Get_business_card_sock(myRank, &value, &length);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**buscard");
+    }
+
+    mpi_errno = MPIDI_CH3U_Get_business_card_sshm(&value, &length);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**buscard");
+    }
+
+ fn_fail:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_GET_BUSINESS_CARD);
+    return mpi_errno;
+}
 
 /* This function simply tells the CH3 device to use the defaults for the 
    MPI-2 RMA functions */
