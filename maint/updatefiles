@@ -30,6 +30,7 @@ fi
 # depend choices are dynamic, static, no
 do_depend=dynamic
 do_geterrmsgs=yes
+do_getparms=no
 do_bindings=yes
 do_f77=yes
 do_f77tof90=yes
@@ -44,7 +45,7 @@ MAKE=${MAKE-make}
 
 # List of steps that we will consider
 # (We do not include depend because the values for depend are not just yes/no)
-AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates makefiles smpdversion"
+AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates makefiles smpdversion getparms"
 stepsCleared=no
 
 # Options for some steps
@@ -400,6 +401,9 @@ fi
 if [ -x maint/extractstates -a $do_genstates = "yes" ] ; then
     echo "Creating the enumeration of logging states into src/include/mpiallstates.h"
     maint/extractstates
+fi
+if [ -x maint/extractparms -a $do_getparms = "yes" ] ; then
+    maint/extractparms -outfile=parms.htm
 fi
 # Create and/or update the f90 tests
 if [ -x maint/f77tof90 -a $do_f77tof90 = "yes" ] ; then
