@@ -1047,10 +1047,19 @@ int MPIDI_CH3I_Progress_finalize(void);
  * to wake up any (and all) threads blocking in MPIDI_CH3_Progress().
  */
 
+/* This allows the channel to define an alternate to the 
+   completion counter.  The dllchannel uses this to access the 
+   counter through a pointer.  Others could use this to provide
+   more complex operations */
+#ifndef MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT
+#define MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT \
+        MPIDI_CH3I_progress_completion_count++
+#endif
+
 #ifndef MPICH_IS_THREADED
 #   define MPIDI_CH3_Progress_signal_completion()	\
     {							\
-        MPIDI_CH3I_progress_completion_count++;		\
+       MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT;		\
     }
 #else
     extern volatile int MPIDI_CH3I_progress_blocked;
@@ -1059,7 +1068,7 @@ int MPIDI_CH3I_Progress_finalize(void);
     void MPIDI_CH3I_Progress_wakeup(void);
 #   define MPIDI_CH3_Progress_signal_completion()			\
     {									\
-	MPIDI_CH3I_progress_completion_count++;				\
+        MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT;                      \
 	if (MPIDI_CH3I_progress_blocked == TRUE && MPIDI_CH3I_progress_wakeup_signalled == FALSE)\
 	{								\
 	    MPIDI_CH3I_progress_wakeup_signalled = TRUE;		\

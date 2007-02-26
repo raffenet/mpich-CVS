@@ -1034,8 +1034,6 @@ int MPIDI_PG_Close_VCs( void )
 		vc->state == MPIDI_VC_STATE_REMOTE_CLOSE
 #ifdef MPIDI_CH3_USES_SSHM
 		/* FIXME: Remove this IFDEF */
-		/* FIXME: There should be no vc->ch.xxx refs in this code 
-		   (those are channel-only fields) */
 		/* sshm queues are uni-directional.  A VC that is connected 
 		 * in the read direction is marked MPIDI_VC_STATE_INACTIVE
 		 * so that a connection will be formed on the first write.  

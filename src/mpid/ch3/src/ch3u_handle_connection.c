@@ -258,7 +258,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    /* We need this terminate to decrement the outstanding closes */
 	    /* For example, with sockets, Connection_terminate will close
 	       the socket */
-	    mpi_errno = MPIDI_CH3_Connection_terminate(vc);
+	    mpi_errno = MPIU_CALL(MPIDI_CH3,Connection_terminate(vc));
 	}
 #endif
 	else /* (vc->state == MPIDI_VC_STATE_ACTIVE) */
@@ -288,7 +288,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	vc->state = MPIDI_VC_STATE_CLOSE_ACKED;
 	/* For example, with sockets, Connection_terminate will close
 	   the socket */
-	mpi_errno = MPIDI_CH3_Connection_terminate(vc);
+	mpi_errno = MPIU_CALL(MPIDI_CH3,Connection_terminate(vc));
     }
     
     *buflen = sizeof(MPIDI_CH3_Pkt_t);
