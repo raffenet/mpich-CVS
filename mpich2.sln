@@ -1267,7 +1267,7 @@ Global
 		{BB4554EE-65E6-4936-B4A5-83D1583F0BFC}.mt_mpich2ReleaseConfig_1_0_4|Win32.ActiveCfg = mt_mpich2ReleaseConfig_1_0_4|Win32
 		{BB4554EE-65E6-4936-B4A5-83D1583F0BFC}.mt_mpich2ReleaseConfig_1_0_4|Win32.Build.0 = mt_mpich2ReleaseConfig_1_0_4|Win32
 		{BB4554EE-65E6-4936-B4A5-83D1583F0BFC}.Release|Any CPU.ActiveCfg = ch3sockmtPRelease|Win32
-		{BB4554EE-65E6-4936-B4A5-83D1583F0BFC}.Release|Mixed Platforms.ActiveCfg = ch3sockPRelease|Win32
+		{BB4554EE-65E6-4936-B4A5-83D1583F0BFC}.Release|Mixed Platforms.ActiveCfg = ch3sockRelease|Win32
 		{BB4554EE-65E6-4936-B4A5-83D1583F0BFC}.Release|Win32.ActiveCfg = ch3sockmtPRelease|Win32
 		{BB4554EE-65E6-4936-B4A5-83D1583F0BFC}.Release|Win32.Build.0 = ch3sockmtPRelease|Win32
 		{BB4554EE-65E6-4936-B4A5-83D1583F0BFC}.sfortDebug|Any CPU.ActiveCfg = ch3sockmtPRelease|Win32
