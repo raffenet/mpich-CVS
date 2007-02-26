@@ -782,6 +782,12 @@ sub ReadMfile {
 	    }
 	    $smmakevars{'EXTRA_PROGRAMS'} = $1;
 	}
+        elsif (/^EXTRA_LIBS\s*=\s*(.*)\s*$/) {
+	    foreach $lib (split(/\s+/,$1)) {
+		$extra_libs{$lib} = 1;
+	    }
+	    $smmakevars{'EXTRA_LIBS'} = $1;
+	}
 	elsif (/^TAGS_DIRS\s*=\s*(.*)\s*$/) {
 	    # Keep track of tags dirs
 	    @tags_dirs = split( /\s+/,$1);
@@ -1626,6 +1632,7 @@ sub ClearVars {
     %altalltargets = ();   # related targets to items in alltargets
     %usertargets = ();  # explicit, user-defined targets
     %extra_programs = ();
+    %extra_libs     = ();
     %libraries = ();
     $libcount = 0;
     %libnum    = ();    # Gives number associated with library
@@ -1908,6 +1915,7 @@ sub ListTargets {
   foreach $target (@alltargets) {
       # Skip the extra programs
       if (defined($extra_programs{$target})) { next; }
+      if (defined($extra_libs{$target})) { next; }
       # Add any alternate target (used for targets in other directories
       # to work around timestamp problems).
       if (defined($altalltargets{$target})) {
@@ -2118,7 +2126,8 @@ sub LookForSuffixes {
 # ===========================================================================
 # The "all" target.
 #
-# Output the target list.  If there are extra_programs, note that.
+# Output the target list.  If there are extra_programs or 
+# extra_libs, note that.
 # FIXME: there needs to be way to specify other local targets
 # beyond the implicitly determined ones.  This needs to allow
 # for both pre and post implicit target values
@@ -2176,6 +2185,7 @@ sub TargetAll {
 	    # Conditionally create the shared libraries.
 	    print FD "\t\@if [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
 	    foreach $libspec (split(/\s+/,$optinstall_files{'SHLIB'})) {
+		if (defined($extra_libs{$libspec})) { next; }
 		# Be careful of library names that are related to
 		# the profile library (those libraries are built
 		# as part of the "master" library name build)
@@ -2311,6 +2321,7 @@ sub TargetAllCommandsForSharedLibs {
 	# Add a conditional step
 	print FD "\t\@if [ \"\@ENABLE_SHLIB\@\" != \"none\" ] ; then \\\n";
 	foreach $shlib (@allshlibtargets) {
+	    if (defined($extra_libs{$shlib})) { next; }
 	    # Get the library stamp name from the lib name
 	    my $libbase = $shlib;
 	    if ($shlib =~ /.*\/lib([^\/]*)/) {
@@ -3761,6 +3772,8 @@ simplemake [ -nocomments ] [ -am ] [ -libdir=NAME=DIR ] [ -include=LIST ]\
               documentation but no code source.  These directories may\
               contain files used as input to documentation generators.\
     EXTRA_PROGRAMS = names of programs to define rules for but not to build\
+                     by default\
+    EXTRA_LIBS = names of libraries to define rules for but not to build\
                      by default\
     name_SOURCES = source files for program \"name\"\
     name_LDADD   = extra linker flags for building program \"name\"\
