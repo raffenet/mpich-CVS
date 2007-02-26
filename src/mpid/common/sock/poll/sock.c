@@ -6,7 +6,13 @@
  */
 
 #include "mpidu_sock.h"
-#include "mpiimpl.h"
+/*#include "mpiimpl.h"*/
+#ifdef HAVE_STRING_H
+/* Include for memcpy and memset */
+#include <string.h>
+#endif
+
+#include "mpishared.h"
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -22,6 +28,7 @@
 #endif
 #include <netdb.h>
 #include <errno.h>
+
 
 /* FIXME: What do these mean?  Why is 32 a good size (e.g., is it because
    32*32 = 1024 if these are bits in a 4-byte int?  In that case, should

@@ -173,7 +173,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
 	/* The logic for this case is just complicated enough that
 	   we write separate code for each possibility */
 #       ifdef HAVE_RUNTIME_THREADCHECK
-	if (MPIR_Process.isThreaded) {
+	if (MPIR_ThreadInfo.isThreaded) {
 	    MPIDI_CH3I_progress_blocked = TRUE;
 	    mpi_errno = MPIDU_Sock_wait(MPIDI_CH3I_sock_set, 
 				    MPIDU_SOCK_INFINITE_TIME, &event);
@@ -819,7 +819,7 @@ static int MPIDI_CH3I_Progress_delay(unsigned int completion_count)
 	while (completion_count == MPIDI_CH3I_progress_completion_count)
 	{
 	    MPID_Thread_cond_wait(&MPIDI_CH3I_progress_completion_cond, 
-				  &MPIR_Process.global_mutex);
+				  &MPIR_ThreadInfo.global_mutex);
 	}
     }
 #   endif

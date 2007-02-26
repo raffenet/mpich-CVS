@@ -32,6 +32,7 @@
 
 /* Global variables can be initialized here */
 MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevant */
+MPICH_ThreadInfo_t MPIR_ThreadInfo = { 0 };
 
 /* These are initialized as null (avoids making these into common symbols).
    If the Fortran binding is supported, these can be initialized to 
@@ -138,7 +139,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     /* We need this inorder to implement IS_THREAD_MAIN */
 #   if (MPICH_THREAD_LEVEL >= MPI_THREAD_SERIALIZED)
     {
-	MPID_Thread_self(&MPIR_Process.master_thread);
+	MPID_Thread_self(&MPIR_ThreadInfo.master_thread);
     }
 #   endif
     
@@ -249,7 +250,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
        decisions on the value of isThreaded, set a provisional
        value here. We could let the MPID_Init routine override this */
 #ifdef HAVE_RUNTIME_THREADCHECK
-    MPIR_Process.isThreaded = required == MPI_THREAD_MULTIPLE;
+    MPIR_ThreadInfo.isThreaded = required == MPI_THREAD_MULTIPLE;
 #endif
     mpi_errno = MPID_Init(argc, argv, required, &thread_provided, 
 			  &has_args, &has_env);
@@ -269,11 +270,11 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     /* --END ERROR HANDLING-- */
 
     /* Capture the level of thread support provided */
-    MPIR_Process.thread_provided = thread_provided;
+    MPIR_ThreadInfo.thread_provided = thread_provided;
     if (provided) *provided = thread_provided;
     /* FIXME: Rationalize this with the above */
 #ifdef HAVE_RUNTIME_THREADCHECK
-    MPIR_Process.isThreaded = required == MPI_THREAD_MULTIPLE;
+    MPIR_ThreadInfo.isThreaded = required == MPI_THREAD_MULTIPLE;
     if (provided) *provided = required;
 #endif
 

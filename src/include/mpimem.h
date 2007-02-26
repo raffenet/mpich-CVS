@@ -7,6 +7,9 @@
 #ifndef MPIMEM_H_INCLUDED
 #define MPIMEM_H_INCLUDED
 
+/* Make sure that we have the definitions for the malloc routines and size_t */
+#include <stdlib.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -236,9 +239,12 @@ void *MPIU_trstrdup( const char *, int, const char * );
 void *MPIU_trcalloc ( unsigned, unsigned, int, const char * );
 void *MPIU_trrealloc ( void *, int, int, const char * );
 void MPIU_TrSetMaxMem ( int );
+
+#ifndef MPIU_MEM_NOSTDIO
 void MPIU_trdump ( FILE *, int );
 void MPIU_trSummary ( FILE *, int );
 void MPIU_trdumpGrouped ( FILE *, int );
+#endif
 
 #else /* USE_MEMORY_TRACING */
 /* No memory tracing; just use native functions */

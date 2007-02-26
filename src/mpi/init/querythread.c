@@ -83,7 +83,7 @@ int MPI_Query_thread( int *provided )
 #   endif /* HAVE_ERROR_CHECKING */
     
     /* ... body of routine ...  */
-    *provided = MPIR_Process.thread_provided;
+    *provided = MPIR_ThreadInfo.thread_provided;
     /* ... end of body of routine ... */
 
 #ifdef HAVE_ERROR_CHECKING

@@ -1891,6 +1891,7 @@ struct MPID_Datatype;
 
 typedef struct MPICH_PerProcess_t {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */
+#if 0
     int               thread_provided;  /* Provided level of thread support */
     /* This is a special case for is_thread_main, which must be
        implemented even if MPICH2 itself is single threaded.  */
@@ -1902,14 +1903,17 @@ typedef struct MPICH_PerProcess_t {
     int isThreaded;                      /* Set to true if user requested
 					    THREAD_MULTIPLE */
 #endif
+#endif
     int               do_error_checks;  /* runtime error check control */
-    MPID_Comm         *comm_world;      /* Easy access to comm_world for
+    struct MPID_Comm  *comm_world;      /* Easy access to comm_world for
                                            error handler */
-    MPID_Comm         *comm_self;       /* Easy access to comm_self */
-    MPID_Comm         *comm_parent;     /* Easy access to comm_parent */
+    struct MPID_Comm  *comm_self;       /* Easy access to comm_self */
+    struct MPID_Comm  *comm_parent;     /* Easy access to comm_parent */
     PreDefined_attrs  attrs;            /* Predefined attribute values */
+#if 0
     /* Communicator context ids.  Special data is needed for thread-safety */
     int context_id_mask[32];
+#endif
 
     /* The topology routines dimsCreate is independent of any communicator.
        If this pointer is null, the default routine is used */
@@ -1941,9 +1945,11 @@ typedef struct MPICH_PerProcess_t {
        to specify the kind (comm,file,win) */
     void  (*cxx_call_errfn) ( int, int *, int *, void (*)(void) );
 #endif
+#if 0
 # if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     MPID_Thread_mutex_t global_mutex;
 # endif
+#endif
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
@@ -2062,6 +2068,11 @@ extern MPICH_PerProcess_t MPIR_Process;
 /* Definitions for error handling and reporting */
 #include "mpierror.h"
 #include "mpierrs.h"
+
+/* FIXME: This routine is only used within mpi/src/err/errutil.c and 
+   smpd.  We may not want to export it.  */
+void MPIR_Err_print_stack(FILE *, int);
+
 
 /* ------------------------------------------------------------------------- */
 /* FIXME: Merge these with the object refcount update routines (perhaps as

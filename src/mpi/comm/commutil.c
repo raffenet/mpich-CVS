@@ -416,18 +416,18 @@ int MPIR_Get_contextid( MPID_Comm *comm_ptr )
 		   as using a condition variable (if we know for sure that
 		   there is another thread on this process that is waiting).
 		*/
-		MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
+		MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);
 		MPID_Thread_yield();
-		MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
+		MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
 	    }
 	    mask_in_use = 0;
 	    /* MPIU_THREAD_SINGLE_CS_EXIT("context_id"); */
 	}
 	else {
 	    /* As above, force this thread to yield */
-	    MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
+	    MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);
 	    MPID_Thread_yield();
-	    MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
+	    MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
 	}
     }
 

@@ -1419,7 +1419,8 @@ int MPIDI_SHM_ReadProcessMemory( int, int, const char *, char *, size_t );
 int MPIDI_CH3U_Get_business_card_sock(int myRank, 
 				      char **bc_val_p, int *val_max_sz_p);
 int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p);
-int MPIDI_CH3I_Get_business_card(int myRank, char *value, int length);
+
+int MPIDI_CH3_Get_business_card(int myRank, char *value, int length);
 
 /* added by brad.  finalization related upcalls */
 int MPIDI_CH3U_Finalize_sshm(void);
