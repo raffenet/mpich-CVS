@@ -59,7 +59,12 @@ void MPE_Log_thread_init( void );
 
 #else
 
-#define MPE_LOG_THREAD_DECL
+#define MPE_ThreadID_t   int
+#define MPE_LOG_THREAD_DECL \
+    MPE_ThreadID_t *thdID_ptr = NULL; \
+    MPE_ThreadID_t  thdID; \
+    int             thd_fn_rc;
+    
 #define MPE_LOG_THREAD_LOCK
 #define MPE_LOG_THREAD_UNLOCK
 #define MPE_LOG_THREADID_SET

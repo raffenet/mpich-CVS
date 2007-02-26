@@ -1331,6 +1331,18 @@ fin.Close()
 fout.Close()
 
 '
+' Generate mpe_log_thread.h
+'
+cEcho "Creating src\mpe2\src\wrappers\mpe_log_thread.h"
+set fout = f.CreateTextFile("src\mpe2\src\wrappers\include\mpe_log_thread.h")
+set fin  = f.OpenTextFile("src\mpe2\src\wrappers\include\mpe_log_thread.h.in")
+contents = fin.ReadAll()
+contents = ReplaceAts(contents, false, false)
+fout.Write(contents)
+fin.Close()
+fout.Close()
+
+'
 ' Generate mpio.h
 '
 
@@ -1346,6 +1358,7 @@ end if
 fout.Write(contents)
 fin.Close()
 fout.Close()
+
 
 'cEcho "Creating src\include\win64\mpio.h"
 'set fout = f.CreateTextFile("src\include\win64\mpio.h")
@@ -2294,6 +2307,8 @@ Function ReplaceAts( str, use_f77, b64 )
 				str = Replace(str, "@mpe_int32_fmt@", """%ld""")
 			Case "@mpe_int64_fmt@"
 				str = Replace(str, "@mpe_int64_fmt@", """%lld""")
+			Case "@PTHREAD_IN_MPI_DEF@"
+				str = Replace(str, "@PTHREAD_IN_MPI_DEF@", "#undef HAVE_PTHREAD_IN_MPI")
 			Case Else
 			'	unhandled_ats = unhandled_ats & Match & vbNewLine
 			'	unhandled_ats_count = unhandled_ats_count + 1
