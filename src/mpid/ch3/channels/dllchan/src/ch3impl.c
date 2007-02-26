@@ -20,24 +20,16 @@ struct MPIDI_CH3_Funcs MPIU_CALL_MPIDI_CH3 = { 0 };
 int *MPIDI_CH3I_progress_completion_count_ptr = 0;
 
 #undef FUNCNAME
-#define FUNCNAME MPIDH_CH3_PreInit
+#define FUNCNAME MPICH_CH3_PreLoad
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_PreInit( )
-{
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Init
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank )
+int MPIDI_CH3_PreLoad( void )
 {
     int mpi_errno = MPI_SUCCESS;
     char *dllname = 0;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_CH3_INIT);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_CH3_PRELOAD);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_INIT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_PRELOAD);
 
     /* Determine the channel to load.  There is a default (selected
        at configure time and an override (provided by an environment
@@ -111,7 +103,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank )
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_CH3_INIT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_CH3_PRELOAD);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -119,8 +111,9 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg_p, int pg_rank )
 
 int MPIDI_CH3_Finalize( )
 {
+    int mpi_errno = MPIU_CALL(MPIDI_CH3,Finalize());
     MPIU_DLL_Close( dllhandle );
-    return MPI_SUCCESS;
+    return mpi_errno;
 }
 
 /* This routine must be exported beyond ch3 device because ch3 defines

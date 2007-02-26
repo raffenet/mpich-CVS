@@ -82,24 +82,36 @@ if test ! -d $srcdir/../${subchannel_name} ; then
 elif test ! -x $srcdir/../${subchannel_name}/configure ; then
     AC_MSG_ERROR([Channel ${subchannel_name} has no configure])
 fi
-if test -s $srcdir/../$subchannel_name/setup_$subchannel_name ; then
-    # Typically, this will set ch3subsystems.  For now,
-    # we use this configure to create the configuration file
-    # for those subsystems.  Eventually, they may have their	
-    # own configure
-    . $srcdir/../$subchannel_name/setup_$subchannel_name
-    if test "$needs_sock" = yes ; then
-        AC_DEFINE(HAVE_UTIL_SOCK,1,[Define if the channel needs util/sock])
-	CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/sock"
-    fi				   	
-    if test "$needs_shm" = yes ; then
-        AC_DEFINE(HAVE_UTIL_SHM,1,[Define if the channel needs util/shm])
-	#CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/shm"
-    fi				   	
-fi
+dnl if test -s $srcdir/../$subchannel_name/setup_$subchannel_name ; then
+dnl     # Typically, this will set ch3subsystems.  For now,
+dnl     # we use this configure to create the configuration file
+dnl     # for those subsystems.  Eventually, they may have their	
+dnl     # own configure
+dnl     . $srcdir/../$subchannel_name/setup_$subchannel_name
+dnl     if test "$needs_sock" = yes ; then
+dnl         AC_DEFINE(HAVE_UTIL_SOCK,1,[Define if the channel needs util/sock])
+dnl 	CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/sock"
+dnl     fi				   	
+dnl     if test "$needs_shm" = yes ; then
+dnl         AC_DEFINE(HAVE_UTIL_SHM,1,[Define if the channel needs util/shm])
+dnl 	#CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/shm"
+dnl     fi				   	
+dnl fi
 dnl AC_SUBST(ch3subsystems)
+
+#
+# Because of the complexity in setting up channels, we invoke a script 
+# for those channels that are prepared to provide dynamically-loaded modules
+for channel in $subchannel_name ; do
+    builddir=`(cd .. && pwd)`
+    if test -s $builddir/$subchannel_name/builddll ; then
+        (cd ../$subchannel_name && $srcdir/../$subchannel_name/builddll)
+    else
+        echo "Channel $subchannel_name does not support dynamic loading"
+    fi
+done
 # -------------------------------------------------------------------------
-AC_CONFIG_SUBDIRS(../${subchannel_name})
+
 
 # Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
 # which include flags should start in MPICH2_INCLUDE_FLAGS and which in 

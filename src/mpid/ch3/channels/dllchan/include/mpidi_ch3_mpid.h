@@ -6,6 +6,7 @@
 
 #if !defined(MPICH_MPIDI_CH3_MPID_H_INCLUDED)
 #define MPICH_MPIDI_CH3_MPID_H_INCLUDED
+#define HAVE_CH3_PRELOAD
 
 typedef struct MPIDI_CH3_Funcs {
     int (*Init)( int, MPIDI_PG_t *, int );
