@@ -15,5 +15,4 @@ lib${MPILIBNAME}_a_SOURCES = \
  ch3_mem.c                   \
  ch3_rma_ops.c               \
  ch3_rma_sync.c              \
- ch3i_get_business_card.c    \
  ch3i_connaccept.c

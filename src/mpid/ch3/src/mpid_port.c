@@ -251,7 +251,7 @@ static int MPIDI_Open_port(MPID_Info *info_ptr, char *port_name)
        connections between processes that are started separately (e.g.,
        may not use shared memory).  We may need a channel-specific 
        function to create an exportable connection string.  */
-    mpi_errno = MPIDI_CH3I_Get_business_card(myRank, port_name, len);
+    mpi_errno = MPIU_CALL(MPIDI_CH3,Get_business_card(myRank, port_name, len));
 
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_OPEN_PORT);
