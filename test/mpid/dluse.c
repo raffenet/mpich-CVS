@@ -14,7 +14,7 @@ int main( int argc, char *argv[] )
 
     handle = dlopen( "./libconftest.so", RTLD_LAZY );
     if (!handle) {
-	fprintf( stderr, "Could not open test library\n" );
+	fprintf( stderr, "Could not open test library: %s\n", dlerror() );
 	exit(1);
     }
 
@@ -45,4 +45,9 @@ int main( int argc, char *argv[] )
 
     printf( "Found %d errors\n", errs );
     return 0;
+}
+
+int upcall( int a )
+{
+    return a + 1;
 }

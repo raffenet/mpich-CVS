@@ -15,6 +15,6 @@ INCLUDES = -I../../src/include -I${top_srcdir}/src/include
 #
 # Temp tests for dll support
 dluse: $(srcdir)/dluse.c
-	$(CC) -o dluse $(srcdir)/dluse.c -ldl
+	$(CC) -o dluse -Wl,-export-dynamic $(srcdir)/dluse.c -ldl
 libconftest.so: $(srcdir)/dltest.c
 	$(CC) -o libconftest.so -shared $(srcdir)/dltest.c
