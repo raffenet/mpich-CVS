@@ -359,6 +359,22 @@ static int InitPG( int *argc, char ***argv,
     if (usePMI) {
 	/* Tell the process group how to get connection information */
 	MPIDI_PG_InitConnKVS( pg );
+
+#if 0
+	/* If we're supporting the debugger, we can save our host and 
+	   pid here.  This publishes the data in the kvs space. 
+	   This allows the MPI processes to access the information 
+	   about the other processes without any PMI changes. */
+#ifdef HAVE_DEBUGGER_SUPPORT
+	{
+	    char key[64];
+	    char myinfo[512];
+	    MPIU_Snprintf( key, sizeof(key), "hpid-%d", pg_rank );
+	    MPIU_Snpritnf( myinfo, sizeof(key), "%s:%d", hostname, getpid() );
+	    PMI_KVS_Put( pg->world->connData, key, myinfo );
+	}
+#endif
+#endif
     }
 
     /* FIXME: Who is this for and where does it belong? */
