@@ -4505,7 +4505,7 @@ sub ReplaceIfDifferent {
     }
     if ($rc != 0) {
 	my $cleancurdir = $curdir;
-	$curdir =~ s/\/$//;
+	$cleancurdir =~ s/\/$//;
 	# The files differ.  Replace the old file 
 	# with the new one
 	if (-s $oldfilename) {
@@ -4516,7 +4516,7 @@ sub ReplaceIfDifferent {
 	    print STDERR "Creating $cleancurdir/$oldfilename\n";
 	}
 	rename $newfilename, $oldfilename || 
-	    die "Could not replace $cleancurdir/$oldfilename";
+	    die "Could not replace $cleancurdir/$oldfilename\n";
     }
     else {
 	unlink $newfilename;
