@@ -83,13 +83,14 @@ for arg in "$@" ; do
        ;;
        -echo) set -x ;;
        -dryrun) Show=echo ;;
-       -l*|-L*)
-       dependentLibs="$dependentLibs $arg"
-       ;;
        # -cc and -clink allow us to override the commands used to 
        # build the shared library
        -cc=*) CC_SHL=$option ;;
        -clink=*) C_LINK_SHL=$option ;;
+       -libtype=*) libtype=$option ;;
+       -l*|-L*)
+       dependentLibs="$dependentLibs $arg"
+       ;;
        *)
        # The remaining arguments are used for install
        if [ -z "$srclibname" ] ; then
@@ -174,6 +175,14 @@ if [ -z "$ABIVersion" ] ; then ABIVersion="1:1" ; fi
 # the library names)
 majorVersion=`expr $ABIVersion : '\(.*\):.*'`
 minorVersion=`expr $ABIVersion : '.*:\(.*\)'`
+if [ -z "$majorVersion" ] ; then
+    echo "Invalid ABIVerion $ABIVersion - should be n:m"
+    exit 1
+fi
+if [ -z "$minorVersion" ] ; then
+    echo "Invalid ABIVerion $ABIVersion - should be n:m"
+    exit 1
+fi
 if [ "$minorVersion" = "0" ] ; then
     echo "Minor version number must be greater than zero"
     exit 1
