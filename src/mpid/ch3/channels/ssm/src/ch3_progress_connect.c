@@ -286,10 +286,10 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 #ifdef HAVE_SHARED_PROCESS_READ
 #ifdef HAVE_WINDOWS_H
     /*MPIU_DBG_PRINTF(("Opening process[%d]: %d\n", i, pSharedProcess[i].nPid));*/
-    vc->ch.hSharedProcessHandle =
+    vcch->hSharedProcessHandle =
 	OpenProcess(STANDARD_RIGHTS_REQUIRED | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION, 
 	FALSE, atoi(pid_str));
-    if (vc->ch.hSharedProcessHandle == NULL)
+    if (vcch->hSharedProcessHandle == NULL)
     {
 	int err = GetLastError();
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**OpenProcess", "**OpenProcess %d %d", i, err);
