@@ -1803,7 +1803,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	    /* Release the lock so that other threads may make progress while this thread waits for something to do */
 	    MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");
 	    MPIU_THREAD_CHECK_BEGIN 
-	    MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
+	    MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);
 	    MPIU_THREAD_CHECK_END
 	}
 #       else
@@ -1827,7 +1827,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		/* Reaquire the lock before processing any of the information returned from GetQueuedCompletionStatus */
 		MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");
 		MPIU_THREAD_CHECK_BEGIN 
-		MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
+		MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
 		MPIU_THREAD_CHECK_END
 	    }
 #           else
