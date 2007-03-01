@@ -161,7 +161,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
     if (!filetype_is_contig) {
 	flat_file = ADIOI_Flatlist;
 	while (flat_file->type != fd->filetype) flat_file = flat_file->next;
-	if (flat_file->count == 1)
+	if (flat_file->count == 1 && !buftype_is_contig)
 	    filetype_is_contig = 1;
     }
 
@@ -986,7 +986,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
     ADIOI_Free(file_offsets);
     ADIOI_Free(file_lengths);
 
-    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += total_bytes_written; 
+    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += total_bytes_written;
     *error_code = MPI_SUCCESS;
 
 error_state:

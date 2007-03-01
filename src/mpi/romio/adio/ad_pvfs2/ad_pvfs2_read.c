@@ -140,7 +140,7 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
     if (!filetype_is_contig) {
 	flat_file = ADIOI_Flatlist;
 	while (flat_file->type != fd->filetype) flat_file = flat_file->next;
-	if (flat_file->count == 1)
+	if (flat_file->count == 1 && !buftype_is_contig)
 	    filetype_is_contig = 1;
     }
 
