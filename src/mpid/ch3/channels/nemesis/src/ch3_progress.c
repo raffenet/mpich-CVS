@@ -101,7 +101,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 MPIU_THREAD_CHECK_BEGIN;
                 {
                     MPIDI_CH3I_progress_blocked = TRUE;   
-                    MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex);
+                    MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);
                     while ((MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) ||
                             !MPID_nem_recv_seqno_matches (MPID_nem_mem_region.my_recvQ)) &&
                            completions == MPIDI_CH3I_progress_completion_count)
@@ -119,7 +119,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                             MPID_nem_curr_fbox_all_poll = MPID_nem_fboxq_elem_list;
                     }
                     
-                    MPID_Thread_mutex_lock(&MPIR_Process.global_mutex);
+                    MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
                     MPIDI_CH3I_progress_blocked = FALSE;   
                     MPIDI_CH3I_progress_wakeup_signalled = FALSE;
                 }
@@ -137,9 +137,9 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 /*                 { */
                 /*                     MPIDI_CH3I_progress_blocked = TRUE;    */
                 /*                     nem_completions = MPIDI_CH3I_progress_completion_count; */
-                /*                     MPID_Thread_mutex_unlock(&MPIR_Process.global_mutex); */
+                /*                     MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex); */
                 /*                     mpi_errno = MPID_nem_mpich2_blocking_recv (&cell, &in_fbox, nem_completions); */
-                /*                     MPID_Thread_mutex_lock(&MPIR_Process.global_mutex); */
+                /*                     MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex); */
                 /*                     MPIDI_CH3I_progress_blocked = FALSE;    */
                 /*                     MPIDI_CH3I_progress_wakeup_signalled = FALSE; */
                 /*                 } */
@@ -513,7 +513,7 @@ static int MPIDI_CH3I_Progress_delay(unsigned int completion_count)
     {
 	while (completion_count == MPIDI_CH3I_progress_completion_count)
 	{
-	    MPID_Thread_cond_wait(&MPIDI_CH3I_progress_completion_cond, &MPIR_Process.global_mutex);
+	    MPID_Thread_cond_wait(&MPIDI_CH3I_progress_completion_cond, &MPIR_ThreadInfo.global_mutex);
 	}
     }
 #   endif
