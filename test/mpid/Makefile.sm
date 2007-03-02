@@ -14,7 +14,15 @@ INCLUDES = -I../../src/include -I${top_srcdir}/src/include
 
 #
 # Temp tests for dll support
-dluse: $(srcdir)/dluse.c
-	$(CC) -o dluse -Wl,-export-dynamic $(srcdir)/dluse.c -ldl
-libconftest.so: $(srcdir)/dltest.c
-	$(CC) -o libconftest.so -shared $(srcdir)/dltest.c
+
+dluse: $(srcdir)/dluse.c libconftest.@SHLIB_EXT@
+	$(CC) -o dluse -DSHLIB_EXT=@SHLIB_EXT@ $(srcdir)/dluse.c -ldl
+#	$(CC) -o dluse -Wl,-export-dynamic $(srcdir)/dluse.c -ldl
+dltest.lo: $(srcdir)/dltest.c
+	$(C_COMPILE_SHL) -c $(srcdir)/dltest.c -o dltest.lo
+libconftest.la: dltest.lo
+	$(AR) cr libconftest.la dltest.lo
+libconftest.@SHLIB_EXT@: libconftest.la
+	../../src/util/createshlib --mode=link -version-info "1:1" \
+				   -o libconftest.la -rpath `pwd`
+#	$(CC) -o libconftest.so -shared $(srcdir)/dltest.c

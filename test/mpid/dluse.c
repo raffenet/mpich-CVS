@@ -12,7 +12,9 @@ int main( int argc, char *argv[] )
     int *counter;
     int errs = 0, rc;
 
-    handle = dlopen( "./libconftest.so", RTLD_LAZY );
+    /* We allow different extensions for the shared libraries here, 
+     as OSX uses .dylib and Cygwin may use .dll . */
+    handle = dlopen( "./libconftest."## #SHLIBEXT, RTLD_LAZY );
     if (!handle) {
 	fprintf( stderr, "Could not open test library: %s\n", dlerror() );
 	exit(1);
