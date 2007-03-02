@@ -63,7 +63,7 @@ int MPID_nem_newtcp_module_set_sockopts (int fd)
 /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
     /* I heard you have to read the options after setting them in some implementations */
 
-    option = 0;
+    option = 1;
     len = sizeof(int);
     ret = setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &option, len);
     MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
