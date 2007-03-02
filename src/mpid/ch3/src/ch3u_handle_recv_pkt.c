@@ -262,7 +262,7 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_RECEIVE_DATA_FOUND);
     return mpi_errno;
 fn_fail:
-    goto fn_fail;
+    goto fn_exit;
 }
 
 #undef FUNCNAME
