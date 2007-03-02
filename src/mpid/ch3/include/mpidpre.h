@@ -63,7 +63,7 @@ MPIDI_Message_match;
    packet header can be copied in the event that a message cannot be
    send immediately.  
 */
-typedef struct { int32_t kind; int32_t *pktptrs[1]; int32_t pktwords[6]; } 
+typedef struct MPIDI_CH3_PktGeneric { int32_t kind; int32_t *pktptrs[1]; int32_t pktwords[6]; } 
     MPIDI_CH3_PktGeneric_t;
 
 /*
