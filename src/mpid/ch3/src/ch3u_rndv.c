@@ -325,11 +325,12 @@ int MPIDI_CH3_PktHandler_RndvSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     
     MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"received rndv send (data) pkt");
 
-    data_len = *buflen - sizeof(MPIDI_CH3_Pkt_t);
+    MPID_Request_get_ptr(rs_pkt->receiver_req_id, req);
+
+    data_len = ((*buflen - sizeof(MPIDI_CH3_Pkt_t) >= req->dev.recv_data_sz)
+                ? req->dev.recv_data_sz : *buflen - sizeof(MPIDI_CH3_Pkt_t));
     data_buf = (char *)pkt + sizeof(MPIDI_CH3_Pkt_t);
     
-    MPID_Request_get_ptr(rs_pkt->receiver_req_id, *rreqp);
-    req = *rreqp;
     if (req->dev.recv_data_sz == 0) {
         *buflen = sizeof(MPIDI_CH3_Pkt_t);
 	MPIDI_CH3U_Request_complete(req);
@@ -342,13 +343,18 @@ int MPIDI_CH3_PktHandler_RndvSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
 			     "**ch3|postrecv %s", "MPIDI_CH3_PKT_RNDV_SEND");
 	}
+
+        *buflen = sizeof(MPIDI_CH3_Pkt_t) + data_len;
+
         if (complete) 
         {
             MPIDI_CH3U_Request_complete(req);
             *rreqp = NULL;
         }
-        /* return the number of bytes processed in this function */
-        *buflen = data_len + sizeof(MPIDI_CH3_Pkt_t);
+        else
+        {
+            *rreqp = req;
+        }
    }
 	
  fn_fail:

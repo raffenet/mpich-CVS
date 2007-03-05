@@ -219,9 +219,10 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
 	rreq->dev.segment_first = 0;
 	rreq->dev.segment_size = data_sz;
 
-        /* if all of the data has already been received, unpack it
-           now, otherwise build an iov and let the channel unpack */
-        if (*buflen >= data_sz)
+        /* if all of the data has already been received, and the
+           message is not truncated, unpack it now, otherwise build an
+           iov and let the channel unpack */
+        if (data_sz == rreq->dev.recv_data_sz && *buflen >= data_sz)
         {
             int last;
             MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"Copying noncontiguous data to user buffer");
@@ -617,11 +618,13 @@ int MPIDI_CH3_PktHandler_Put( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
         }
         
         /* return the number of bytes processed in this function */
-        *buflen = data_len + sizeof(MPIDI_CH3_Pkt_t);
+        *buflen = sizeof(MPIDI_CH3_Pkt_t) + data_len;
 
         if (complete) 
         {
             mpi_errno = MPIDI_CH3_ReqHandler_PutAccumRespComplete(vc, req, &complete);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            
             if (complete)
             {
                 *rreqp = NULL;
@@ -966,6 +969,7 @@ int MPIDI_CH3_PktHandler_Accumulate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
             if (complete) 
             {
                 mpi_errno = MPIDI_CH3_ReqHandler_PutAccumRespComplete(vc, req, &complete);
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
                 if (complete)
                 {
                     *rreqp = NULL;
@@ -1536,6 +1540,7 @@ int MPIDI_CH3_PktHandler_LockAccumUnlock( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 int MPIDI_CH3_PktHandler_FlowCntlUpdate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 					 MPIDI_msg_sz_t *buflen, MPID_Request **rreqp)
 {
+    *buflen = sizeof(MPIDI_CH3_Pkt_t);
     return MPI_SUCCESS;
 }
 

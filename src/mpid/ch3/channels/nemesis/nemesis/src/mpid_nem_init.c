@@ -583,10 +583,14 @@ int
 MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL (MPID_STATE_MPID_NEM_VC_INIT);
 
     MPIDI_FUNC_ENTER (MPID_STATE_MPID_NEM_VC_INIT);
     vc->ch.send_seqno = 0;
+
+    vc->ch.pending_pkt_len = 0;
+    MPIU_CHKPMEM_MALLOC (vc->ch.pending_pkt, MPIDI_CH3_PktGeneric_t *, sizeof (MPIDI_CH3_PktGeneric_t), mpi_errno, "pending_pkt");
 
     /* We do different things for vcs in the COMM_WORLD pg vs other pgs
        COMM_WORLD vcs may use shared memory, and already have queues allocated
@@ -670,10 +674,12 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
        to NULL */
     vc->ch.sendq_head = NULL;
     
- fn_exit:
+     MPIU_CHKPMEM_COMMIT();
+fn_exit:
     MPIDI_FUNC_EXIT (MPID_STATE_MPID_NEM_VC_INIT);
     return mpi_errno;
  fn_fail:
+    MPIU_CHKPMEM_REAP();
     goto fn_exit;
 }
 

@@ -218,10 +218,12 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomemreq");
     }
     
-    data_len = *buflen - sizeof(MPIDI_CH3_Pkt_t);
+    set_request_info(rreq, es_pkt, MPIDI_REQUEST_EAGER_MSG);
+
+    data_len = ((*buflen - sizeof(MPIDI_CH3_Pkt_t) >= rreq->dev.recv_data_sz)
+                ? rreq->dev.recv_data_sz : *buflen - sizeof(MPIDI_CH3_Pkt_t));
     data_buf = (char *)pkt + sizeof(MPIDI_CH3_Pkt_t);
     
-    set_request_info(rreq, es_pkt, MPIDI_REQUEST_EAGER_MSG);
     if (found)
     {
 	MPIDI_CH3_Pkt_t upkt;
@@ -234,20 +236,24 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    *rreqp = NULL;
 	}
 	else {
-	    *rreqp = rreq;
 	    mpi_errno = MPIDI_CH3U_Receive_data_found( rreq, data_buf,
                                                        &data_len, &complete );
 	    if (mpi_errno != MPI_SUCCESS) {
 		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
 		    "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SYNC_SEND");
 	    }
+
+            *buflen = sizeof(MPIDI_CH3_Pkt_t) + data_len;
+
             if (complete) 
             {
                 MPIDI_CH3U_Request_complete(rreq);
                 *rreqp = NULL;
             }
-            /* return the number of bytes processed in this function */
-            *buflen = data_len + sizeof(MPIDI_CH3_Pkt_t);
+            else
+            {
+                *rreqp = rreq;
+            }
 	}
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending eager sync ack");
 	
@@ -271,20 +277,24 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    *rreqp = NULL;
 	}
 	else {
-	    *rreqp = rreq;
 	    mpi_errno = MPIDI_CH3U_Receive_data_unexpected( rreq, data_buf,
                                                             &data_len, &complete );
 	    if (mpi_errno != MPI_SUCCESS) {
 		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**ch3|postrecv",
 		    "**ch3|postrecv %s", "MPIDI_CH3_PKT_EAGER_SYNC_SEND");
 	    }
+
+            *buflen = sizeof(MPIDI_CH3_Pkt_t) + data_len;
+
             if (complete) 
             {
                 MPIDI_CH3U_Request_complete(rreq);
                 *rreqp = NULL;
             }
-            /* return the number of bytes processed in this function */
-            *buflen = data_len + sizeof(MPIDI_CH3_Pkt_t);
+            else
+            {
+                *rreqp = rreq;
+            }
 	}
 	MPIDI_Request_set_sync_send_flag(rreq, TRUE);
     }

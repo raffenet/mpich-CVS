@@ -70,6 +70,8 @@ int MPID_nem_lmt_shm_handle_cookie(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV c
 int MPID_nem_lmt_shm_done_send(MPIDI_VC_t *vc, MPID_Request *req);
 int MPID_nem_lmt_shm_done_recv(MPIDI_VC_t *vc, MPID_Request *req);
 
+int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, int buflen);
+
 /* #define BYPASS_PROGRESS */
 
 /* short MPIDI_CH3I_Listener_get_port(void); */

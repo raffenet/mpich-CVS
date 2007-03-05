@@ -120,6 +120,7 @@ struct MPID_Request;
 struct MPID_nem_copy_buf;
 union MPIDI_CH3_Pkt;
 struct MPID_nem_lmt_shm_wait_element;
+struct MPIDI_CH3_PktGeneric;
 
 typedef struct MPIDI_CH3I_VC
 {
@@ -134,6 +135,10 @@ typedef struct MPIDI_CH3I_VC
     MPID_nem_queue_ptr_t free_queue;
 
     int node_id;
+
+    /* temp buffer to store partially received header */
+    MPIDI_msg_sz_t pending_pkt_len;
+    struct MPIDI_CH3_PktGeneric *pending_pkt;
 
     /* can be used by netmods to put this vc on a send queue or list */
     struct MPIDI_VC *next;

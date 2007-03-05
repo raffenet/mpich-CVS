@@ -168,6 +168,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
             {
                 char *cell_buf    = (char *)cell->pkt.mpich2.payload;
                 int   payload_len = cell->pkt.mpich2.datalen;
+                MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
 
                 /* Empty packets are not allowed */
                 MPIU_Assert (payload_len >= 0);
@@ -175,7 +176,6 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 if (in_fbox)
                 {
                     MPIDI_msg_sz_t buflen = payload_len;
-                    MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
                     /* This packet must be the first packet of a new message */
                     MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Recv new pkt");
                     MPIU_Assert (payload_len >= sizeof (MPIDI_CH3_Pkt_t));
@@ -185,19 +185,31 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
                     mpi_errno = pktArray[pkt->type] (vc, pkt, &buflen, &rreq);
                     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-                
-                    /* Channel fields don't get initialized on request creation, init them here */
-                    if (rreq)
-                        rreq->ch.iov_offset = 0;
-                    cell_buf    += buflen;
-                    payload_len -= buflen;
-                    MPIU_Assert (!rreq || rreq->ch.iov_offset == 0);
+
+                    /* we should only receive whole messages in a fastbox */
+                    MPIU_Assert(!rreq);
+                    MPID_nem_mpich2_release_fbox(cell);
+
+                    break; /* break out of recv progress block */
+                    
+/*                     /\* Channel fields don't get initialized on request creation, init them here *\/ */
+/*                     if (rreq) */
+/*                         rreq->ch.iov_offset = 0; */
+/*                     cell_buf    += buflen; */
+/*                     payload_len -= buflen; */
+/*                     MPIU_Assert (!rreq || rreq->ch.iov_offset == 0); */
                 }
-                else
-                {
-                    MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
+/*                 else */
+/*                 { */
+/*                     MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf; */
                     MPIDI_PG_Get_vc (MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE (cell), &vc);
-		
+
+                    mpi_errno = MPID_nem_handle_pkt(vc, cell_buf, payload_len);
+                    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+                    MPID_nem_mpich2_release_cell (cell, vc);
+                    break; /* break out of recv progress block */
+                    
+                    
                     rreq = vc->ch.recv_active;
                     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
                             if (rreq)
@@ -223,7 +235,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                         payload_len -= buflen;
                         MPIU_Assert (!rreq || rreq->ch.iov_offset == 0);
                     }
-                }            
+/*                 }             */
 	    
                 if (rreq)
                 {
@@ -305,14 +317,17 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                         });
                 }
 
-                if (!in_fbox)
-                {
-                    MPID_nem_mpich2_release_cell (cell, vc);
-                }
-                else
-                {
-                    MPID_nem_mpich2_release_fbox (cell);
-                }	    
+                MPIU_Assert(!in_fbox);
+                MPID_nem_mpich2_release_cell (cell, vc);
+
+/*                 if (!in_fbox) */
+/*                 { */
+/*                     MPID_nem_mpich2_release_cell (cell, vc); */
+/*                 } */
+/*                 else */
+/*                 { */
+/*                     MPID_nem_mpich2_release_fbox (cell); */
+/*                 }	     */
             }
         }
         while(0);  /* do the loop exactly once.  Used so we can jump out of recv progress using break. */
@@ -551,12 +566,175 @@ void MPIDI_CH3I_Progress_wakeup(void)
     /* no processes sleep in nemesis progress */
     return;
 }
-
-
-
 #endif /* MPICH_IS_THREADED */
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_handle_pkt
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, int buflen)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPID_Request *rreq;
+    int complete;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_HANDLE_PKT);
 
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_HANDLE_PKT);    
+
+    do
+    {
+        if (!vc->ch.recv_active && vc->ch.pending_pkt_len == 0 && buflen >= sizeof(MPIDI_CH3_Pkt_t))
+        {
+            /* handle fast-path first: received a new whole message */
+            do
+            {
+                int len = buflen;
+                MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)buf;
+                
+                MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "received new message");
+                    
+                mpi_errno = pktArray[pkt->type](vc, pkt, &len, &rreq);
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+                buflen -= len;
+                buf    += len;
+            }
+            while (!rreq && buflen >= sizeof(MPIDI_CH3_Pkt_t));
+
+            if (!rreq)
+                continue;
+
+            /* Channel fields don't get initialized on request creation, init them here */
+            if (rreq)
+                rreq->ch.iov_offset = 0;
+        }
+        else if (vc->ch.recv_active)
+        {
+            MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "continuing recv");
+            rreq = vc->ch.recv_active;
+        }
+        else
+        {
+            /* collect header fragments in vc's pending_pkt */
+            int copylen;
+            int pktlen;
+            MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)vc->ch.pending_pkt;
+
+            MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "received header fragment");
+            
+            copylen = ((vc->ch.pending_pkt_len + buflen <= sizeof(MPIDI_CH3_Pkt_t))
+                       ? buflen
+                       : sizeof(MPIDI_CH3_Pkt_t) - vc->ch.pending_pkt_len);            
+            MPID_NEM_MEMCPY((char *)vc->ch.pending_pkt + vc->ch.pending_pkt_len, buf, copylen);
+            vc->ch.pending_pkt_len += copylen;
+            if (vc->ch.pending_pkt_len < sizeof(MPIDI_CH3_Pkt_t))
+                goto fn_exit;
+            
+            /* we have a whole header */
+            MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "    completed header");
+            MPIU_Assert(vc->ch.pending_pkt_len == sizeof(MPIDI_CH3_Pkt_t));
+            
+            buflen -= copylen;
+            buf    += copylen;
+            
+            pktlen = sizeof(MPIDI_CH3_Pkt_t);
+            mpi_errno = pktArray[pkt->type](vc, pkt, &pktlen, &rreq);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            MPIU_Assert(pktlen == sizeof(MPIDI_CH3_Pkt_t));
+
+            vc->ch.pending_pkt_len = 0;
+
+            if (!rreq)
+                continue;
+
+            /* Channel fields don't get initialized on request creation, init them here */
+            rreq->ch.iov_offset = 0;
+        }
+        
+        /* copy data into user buffer described by iov in rreq */
+        MPIU_Assert(rreq);
+        MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN > 0);
+
+        MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "    copying into user buffer from IOV");
+
+/*         if (buflen == 0) */
+/*         { */
+/*             vc->ch.recv_active = rreq; */
+/*             goto fn_exit; */
+/*         } */
+
+        complete = 0;
+
+        while (buflen && !complete)
+        {
+            MPID_IOV *iov;
+            int n_iov;
+                
+            iov = &rreq->dev.iov[rreq->ch.iov_offset];
+            n_iov = rreq->dev.iov_count;
+		
+            while (n_iov && buflen >= iov->MPID_IOV_LEN)
+            {
+                int iov_len = iov->MPID_IOV_LEN;
+                MPID_NEM_MEMCPY (iov->MPID_IOV_BUF, buf, iov_len);
+                buflen -= iov_len;
+                buf    += iov_len;
+                --n_iov;
+                ++iov;
+            }
+		
+            if (n_iov)
+            {
+                if (buflen > 0)
+                {
+                    MPID_NEM_MEMCPY (iov->MPID_IOV_BUF, buf, buflen);
+                    iov->MPID_IOV_BUF = (void *)((char *)iov->MPID_IOV_BUF + buflen);
+                    iov->MPID_IOV_LEN -= buflen;
+                    buflen = 0;
+                }
+		    
+                rreq->ch.iov_offset = iov - rreq->dev.iov;
+                rreq->dev.iov_count = n_iov;
+                vc->ch.recv_active = rreq;
+            }
+            else
+            {				       
+                int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+
+                reqFn = rreq->dev.OnDataAvail;
+                if (!reqFn)
+                {
+                    MPIU_Assert(MPIDI_Request_get_type(rreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+                    MPIDI_CH3U_Request_complete(rreq);
+                    complete = TRUE;
+                }
+                else
+                {   
+                    mpi_errno = reqFn(vc, rreq, &complete);
+                    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+                }
+                        
+                if (!complete)
+                {
+                    rreq->ch.iov_offset = 0;
+                    MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN > 0);
+                }
+                else
+                {
+                    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+                    vc->ch.recv_active = NULL;    
+                }
+            }
+        }
+    }
+    while (buflen);
+    
+
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_HANDLE_PKT);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
 
 
 #define set_request_info(rreq_, pkt_, msg_type_)                \
