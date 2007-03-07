@@ -30,7 +30,7 @@ typedef struct open_status_s open_status;
      * handle to everyone else in the communicator
      */
 static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
-	                 int nr_datafiles, int strip_size,
+	                 int nr_datafiles, PVFS_size strip_size,
                          ADIOI_PVFS2_fs *pvfs2_fs, 
 			 open_status *o_status)
 {
