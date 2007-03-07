@@ -4258,6 +4258,9 @@ Function CompileFile(fname)
 	If fname = "${mpi_sources}" Then
 		CompileFile = false
 	End If
+	If fname = "${socksources}" Then
+		CompileFile = false
+	End If
 	If fname = "timelimit.c" Then
 		CompileFile = false
 	End If
@@ -4300,6 +4303,10 @@ Sub OutputLine(path, line)
 		do_output = true
 	End If
 	If Left(line, 14) = "win_sources = " Then
+		line = Right(line, Len(line) - 14)
+		do_output = true
+	End If
+	If Left(line, 14) = "socksources = " Then
 		line = Right(line, Len(line) - 14)
 		do_output = true
 	End If
@@ -4984,9 +4991,11 @@ Function GenBuild()
 	CreateRules f.GetFolder("src\mpid\ch3\channels\ssm"), trimlength
 	CreateRules f.GetFolder("src\mpid\ch3\util\sock"), trimlength
 	CreateRules f.GetFolder("src\mpid\ch3\util\shm"), trimlength
+	CreateRules f.GetFolder("src\mpid\ch3\util\shmproc"), trimlength
 	CreateRules f.GetFolder("src\mpid\ch3\util\shmbase"), trimlength
 	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\channels\ssm"), trimlength, true, false
 	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\util\shm"), trimlength, false, false
+	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\util\shmproc"), trimlength, false, false
 	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\util\shmbase"), trimlength, false, false
 	CreateObjs "ch3ssm", f.GetFolder("src\mpid\ch3\util\sock"), trimlength, false, true
 
