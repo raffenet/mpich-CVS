@@ -6,8 +6,6 @@
 
 #include "gm_module_impl.h"
 
-#define SENDPKT_DATALEN (64*1024)
-
 typedef struct sendbuf
 {
     struct sendbuf *next;
@@ -21,9 +19,9 @@ typedef struct sendbuf
     } pkt;
 } sendbuf_t;
 
-static struct {sendbuf_t *top;} sendbuf_stack = {0};
-static struct {MPID_Request *head, *tail;} send_queue = {0};    
-static MPID_Request *active_send = NULL;
+static struct {sendbuf_t *top;} sendbuf_stack;
+static struct {MPID_Request *head, *tail;} send_queue;
+static MPID_Request *active_send;
 static sendbuf_t *sendbufs;
 
 #define SENDBUF_S_EMPTY() GENERIC_S_EMPTY(sendbuf_stack)
@@ -55,14 +53,18 @@ int MPID_nem_gm_module_send_init()
 
     active_send = NULL;
     send_queue.head = send_queue.tail = NULL;
-
+    sendbuf_stack.top = NULL;
+    
     MPIU_CHKPMEM_MALLOC(sendbufs, sendbuf_t *, MPID_nem_module_gm_num_send_tokens * sizeof(sendbuf_t), mpi_errno, "sendbufs");
 
-    status = gm_register_memory(MPID_nem_module_gm_port, (void *)sendbufs, MPID_nem_module_gm_num_send_tokens * sizeof (sendbufs));
+    status = gm_register_memory(MPID_nem_module_gm_port, (void *)sendbufs, MPID_nem_module_gm_num_send_tokens * sizeof (sendbuf_t));
     MPIU_ERR_CHKANDJUMP1(status != GM_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**gm_regmem", "**gm_regmem %d", status);
 
     for (i = 0; i < MPID_nem_module_gm_num_send_tokens; ++i)
+    {
+        sendbufs[i].next = NULL;
         SENDBUF_S_PUSH(&sendbufs[i]);
+    }
     
     MPIU_CHKPMEM_COMMIT();
  fn_exit:
@@ -100,6 +102,7 @@ static inline void send_header_pkt(int node_id, int port_id, int source_id, void
                                    char **dataptr, MPIDI_msg_sz_t *dataleft)
 {
     sendbuf_t *sb;
+    MPIDI_msg_sz_t payload_len;
     MPIDI_STATE_DECL(MPID_STATE_SEND_HEADER_PKT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SEND_HEADER_PKT);
@@ -108,22 +111,24 @@ static inline void send_header_pkt(int node_id, int port_id, int source_id, void
     MPIU_Assert(SENDPKT_DATALEN > sizeof(MPIDI_CH3_Pkt_t));
 
     SENDBUF_S_POP(&sb);
+        
+    payload_len = (*dataleft > SENDPKT_DATALEN - sizeof(MPIDI_CH3_Pkt_t)) ? SENDPKT_DATALEN - sizeof(MPIDI_CH3_Pkt_t) : *dataleft;
 
     sb->node_id = node_id;
     sb->port_id = port_id;
-    sb->datalen = (sizeof(MPIDI_CH3_Pkt_t) + *dataleft > SENDPKT_DATALEN) ? SENDPKT_DATALEN : sizeof(MPIDI_CH3_Pkt_t) + *dataleft;
+    sb->datalen = PKT_HEADER_LEN + sizeof(MPIDI_CH3_Pkt_t) + payload_len;
     sb->pkt.source_id = source_id;
 
     /* copy header, then copy data starting at max header length */
     MPID_NEM_MEMCPY(&sb->pkt.buf, hdr, hdr_sz);
-    MPID_NEM_MEMCPY(((char *)&sb->pkt.buf) + sizeof(MPIDI_CH3_Pkt_t), *dataptr, sb->datalen - sizeof(MPIDI_CH3_Pkt_t));
-            
+    MPID_NEM_MEMCPY(((char *)&sb->pkt.buf) + sizeof(MPIDI_CH3_Pkt_t), *dataptr, payload_len);
+    
     gm_send_with_callback(MPID_nem_module_gm_port, &sb->pkt, PACKET_SIZE, sb->datalen, GM_LOW_PRIORITY, node_id, port_id,
                           send_callback, (void *)sb);
     --MPID_nem_module_gm_num_send_tokens;
     
-    *dataleft -= (sb->datalen - sizeof(MPIDI_CH3_Pkt_t));
-    *dataptr += (sb->datalen - sizeof(MPIDI_CH3_Pkt_t));
+    *dataleft -= payload_len;
+    *dataptr  += payload_len;
 
     MPIDI_FUNC_EXIT(MPID_STATE_SEND_HEADER_PKT);
 }
@@ -138,6 +143,7 @@ static inline void send_header_pkt(int node_id, int port_id, int source_id, void
 static inline void send_pkt(int node_id, int port_id, int source_id, char **dataptr, MPIDI_msg_sz_t *dataleft)
 {
     sendbuf_t *sb;
+    MPIDI_msg_sz_t payload_len;
     MPIDI_STATE_DECL(MPID_STATE_SEND_PKT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_SEND_PKT);
@@ -146,21 +152,24 @@ static inline void send_pkt(int node_id, int port_id, int source_id, char **data
 
     if (*dataleft == 0)
         goto fn_exit;
+
+    payload_len = ((*dataleft > SENDPKT_DATALEN) ? SENDPKT_DATALEN : *dataleft);
                 
     SENDBUF_S_POP(&sb);
+
     sb->node_id = node_id;
     sb->port_id = port_id;
-    sb->datalen = (*dataleft > SENDPKT_DATALEN) ? SENDPKT_DATALEN : *dataleft;
+    sb->datalen = PKT_HEADER_LEN + payload_len;
     sb->pkt.source_id = source_id;
             
-    MPID_NEM_MEMCPY(&sb->pkt.buf, *dataptr, sb->datalen);
-                
+    MPID_NEM_MEMCPY(&sb->pkt.buf, *dataptr, payload_len);
+           
     gm_send_with_callback (MPID_nem_module_gm_port, &sb->pkt, PACKET_SIZE, sb->datalen, GM_LOW_PRIORITY, sb->node_id,
                            sb->port_id, send_callback, (void *)sb);
     --MPID_nem_module_gm_num_send_tokens;
 
-    *dataleft -= sb->datalen;
-    *dataptr += sb->datalen;
+    *dataleft -= payload_len;
+    *dataptr  += payload_len;
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_SEND_PKT);
@@ -204,8 +213,8 @@ int MPID_nem_send_from_queue()
                 if (!reqFn)
                 {
                     MPIDI_CH3U_Request_complete(active_send);
-                    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
-                    active_send == NULL;
+                    //MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+                    active_send = NULL;
                 }
                 else
                 {
@@ -217,7 +226,7 @@ int MPID_nem_send_from_queue()
                     if (complete)
                     {
                         MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
-                        active_send == NULL;
+                        active_send = NULL;
                     }
                 }
             }
@@ -270,7 +279,7 @@ int MPID_nem_gm_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz
     MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
     
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)hdr);
-    if (!SEND_Q_EMPTY() && MPID_nem_module_gm_num_send_tokens)
+    if (SEND_Q_EMPTY() && MPID_nem_module_gm_num_send_tokens)
         /* MT */
     {
         int node_id = VC_FIELD(vc, gm_node_id);
@@ -344,7 +353,7 @@ int MPID_nem_gm_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, MPIDI
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_GM_ISENDCONTIGMSG);
 
-    if (!SEND_Q_EMPTY() && MPID_nem_module_gm_num_send_tokens)
+    if (SEND_Q_EMPTY() && MPID_nem_module_gm_num_send_tokens)
         /* MT */
     {
         sendbuf_t *sb;
@@ -388,9 +397,12 @@ int MPID_nem_gm_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, MPIDI
                     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
                     goto fn_exit;
                 }
+
+                MPIU_Assert(0); /* FIXME:  I don't think we should get here with contig messages */
                 
                 sreq->ch.vc = vc;
-                SEND_Q_ENQUEUE(sreq);            
+                active_send = sreq;
+                goto fn_exit;
             }
         }
     }
