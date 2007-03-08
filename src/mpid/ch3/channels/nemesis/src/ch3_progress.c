@@ -166,9 +166,9 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
             if (cell)
             {
-                char *cell_buf    = (char *)cell->pkt.mpich2.payload;
-                int   payload_len = cell->pkt.mpich2.datalen;
-                MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)cell_buf;
+                char            *cell_buf    = (char *)cell->pkt.mpich2.payload;
+                MPIDI_msg_sz_t   payload_len = cell->pkt.mpich2.datalen;
+                MPIDI_CH3_Pkt_t *pkt         = (MPIDI_CH3_Pkt_t *)cell_buf;
 
                 /* Empty packets are not allowed */
                 MPIU_Assert (payload_len >= 0);
@@ -572,7 +572,7 @@ void MPIDI_CH3I_Progress_wakeup(void)
 #define FUNCNAME MPID_nem_handle_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, int buflen)
+int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *rreq;
@@ -588,7 +588,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, int buflen)
             /* handle fast-path first: received a new whole message */
             do
             {
-                int len = buflen;
+                MPIDI_msg_sz_t len = buflen;
                 MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)buf;
                 
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "received new message");
@@ -615,8 +615,8 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, int buflen)
         else
         {
             /* collect header fragments in vc's pending_pkt */
-            int copylen;
-            int pktlen;
+            MPIDI_msg_sz_t copylen;
+            MPIDI_msg_sz_t pktlen;
             MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)vc->ch.pending_pkt;
 
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "received header fragment");

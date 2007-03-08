@@ -224,7 +224,7 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
            iov and let the channel unpack */
         if (data_sz == rreq->dev.recv_data_sz && *buflen >= data_sz)
         {
-            int last;
+            MPIDI_msg_sz_t last;
             MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"Copying noncontiguous data to user buffer");
             last = data_sz;
             MPID_Segment_unpack(&rreq->dev.segment, rreq->dev.segment_first, &last, buf);

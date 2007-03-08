@@ -226,7 +226,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *agai
     int mpi_errno = MPI_SUCCESS;
     MPID_nem_cell_ptr_t el;
     char *cell_buf;
-    int payload_len;    
+    MPIDI_msg_sz_t payload_len;    
     int my_rank;
 
     MPIU_Assert (*n_iov > 0 && (*iov)->iov_len > 0);
@@ -341,7 +341,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, in
     int mpi_errno = MPI_SUCCESS;
     MPID_nem_cell_ptr_t el;
     char *cell_buf;
-    int payload_len;    
+    MPIDI_msg_sz_t payload_len;    
     int my_rank;
 
 #ifdef ENABLED_CHECKPOINTING
@@ -536,9 +536,9 @@ MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_
 {
     MPID_nem_cell_ptr_t el;
     char *cell_buf;
-    int datalen;    
+    MPIDI_msg_sz_t datalen;    
     int my_rank;
-    int last;
+    MPIDI_msg_sz_t last;
     
     MPIU_Assert(vc->ch.is_local); /* netmods will have their own implementation */
     MPIU_Assert(header_sz <= sizeof(MPIDI_CH3_Pkt_t));
@@ -570,8 +570,6 @@ MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_
 	    goto usequeue_l;
 #endif /*BLOCKING_FBOX */
 	{
-            int last;
-
 	    pbox->cell.pkt.mpich2.source  = MPID_nem_mem_region.local_rank;
 	    pbox->cell.pkt.mpich2.datalen = sizeof(MPIDI_CH3_Pkt_t) + segment_size;
 	    pbox->cell.pkt.mpich2.seqno   = vc->ch.send_seqno++;
@@ -684,9 +682,9 @@ MPID_nem_mpich2_send_seg (MPID_Segment *segment, MPIDI_msg_sz_t *segment_first, 
 {
     MPID_nem_cell_ptr_t el;
     char *cell_buf;
-    int datalen;    
+    MPIDI_msg_sz_t datalen;    
     int my_rank;
-    int last;
+    MPIDI_msg_sz_t last;
     
     MPIU_Assert(vc->ch.is_local); /* netmods will have their own implementation */
     

@@ -265,7 +265,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	{
 	    /* FIXME: Debugging */
 	    if (vc->state != MPIDI_VC_STATE_ACTIVE) {
-		printf( "Unexpected state %d in vc %x\n", vc->state, (int)vc);
+		printf( "Unexpected state %d in vc %x\n", vc->state, (MPI_Aint)vc);
 		fflush(stdout);
 	    }
 	    MPIU_DBG_MSG_D(CH3_DISCONNECT,TYPICAL,
