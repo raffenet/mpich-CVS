@@ -338,8 +338,10 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
 
-/*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
+    /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
 
+    vc->ch.iStartContigMsg  = MPID_nem_newtcp_iStartContigMsg;
+    vc->ch.iSendContig      = MPID_nem_newtcp_iSendContig;
     memset (&VC_FIELD(vc, sock_id), 0, sizeof(VC_FIELD(vc, sock_id)));
     VC_FIELD(vc, sock_id).sin_family = AF_INET;
     
@@ -354,11 +356,11 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     VC_FIELD(vc, send_queue).head = VC_FIELD(vc, send_queue).tail = NULL;
     
  fn_exit:
-/*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
+    /*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
     return mpi_errno;
  fn_fail:
-/*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
+    /*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }

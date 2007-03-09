@@ -11,6 +11,12 @@
 #define NUM_PREALLOC_SENDQ 10
 #define MAX_SEND_IOV 10
 
+#define SENDQ_EMPTY(q) GENERIC_Q_EMPTY (q)
+#define SENDQ_HEAD(q) GENERIC_Q_HEAD (q)
+#define SENDQ_ENQUEUE(qp, ep) GENERIC_Q_ENQUEUE (qp, ep, dev.next)
+#define SENDQ_DEQUEUE(qp, ep) GENERIC_Q_DEQUEUE (qp, ep, dev.next)
+
+
 typedef struct MPID_nem_newtcp_module_send_q_element
 {
     struct MPID_nem_newtcp_module_send_q_element *next;
@@ -75,7 +81,8 @@ int MPID_nem_newtcp_module_send_init()
 int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_CH3I_VC *vc_ch = &vc->ch;
+ #if 0
+   MPIDI_CH3I_VC *vc_ch = &vc->ch;
     size_t offset;
     MPID_nem_pkt_t *pkt;
     MPID_nem_newtcp_module_send_q_element_t *e;
@@ -167,8 +174,10 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
 /*     printf ("num_elements = %d\n", num_elements);//DARIUS     */
 /*     printf ("num_alloced = %d\n", num_alloced);//DARIUS     */
 /*     printf ("num_freed = %d\n", num_freed);//DARIUS     */
+#endif
     return mpi_errno;
 }
+
 
 #undef FUNCNAME
 #define FUNCNAME send_queued
@@ -178,94 +187,76 @@ static int send_queued (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_VC *vc_ch = &vc->ch;
-    MPID_IOV iov[MAX_SEND_IOV];
-    int count;
-    MPID_nem_newtcp_module_send_q_element_t *e, *e_first, *e_last;
-    ssize_t bytes_sent;
-    ssize_t bytes_queued;    
+    MPID_Request *sreq;
+    MPIDI_msg_sz_t offset;
+    MPID_IOV *iov;
+    int i;
+    int complete;
 
-    MPIU_Assert (!Q_EMPTY (VC_FIELD(vc, send_queue)));
-
-    /* construct iov of pending sends */
-    bytes_queued = 0;
-    count = 0;
-    e_last = NULL;
-    e = Q_HEAD (VC_FIELD(vc, send_queue));
-    do
+    while (!SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
     {
-        iov[count].MPID_IOV_BUF = e->start;
-        iov[count].MPID_IOV_LEN = e->len;
-
-        bytes_queued += e->len;
-        ++count;
-        e_last = e;
-        e = e->next;
-    }
-    while (count < MAX_SEND_IOV && e);
-
-    /* write iov */
-    CHECK_EINTR (bytes_sent, writev (VC_FIELD(vc, sc)->fd, iov, count));
-/*     MPIU_Assert (bytes_sent != 0);//DARIUS */
-    MPIU_ERR_CHKANDJUMP1 (bytes_sent == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**writev", "**writev %s", strerror (errno));
-    MPIU_ERR_CHKANDJUMP (bytes_sent == 0, mpi_errno, MPI_ERR_OTHER, "**sock_closed");
-
-    /*if (bytes_sent != -1)
-    {
-        int i;
+        sreq = SENDQ_HEAD(VC_FIELD(vc, send_queue));
+        MPIU_Assert(sreq->dev.iov_count <= 2);
         
-        printf("  writev %d (", bytes_sent);
-        for (i = 0; i < count; ++i)
-            printf ("%d ", iov[i].MPID_IOV_LEN);
-        printf (")\n");
-        }*/
-    
-
-    /* remove pending sends that were sent */
-
-    if (bytes_sent <= 0) /* nothing was sent */
-        goto fn_exit;
-
-/*     printf ("packets sent\n");//DARIUS */
-    e_first = Q_HEAD (VC_FIELD(vc, send_queue));    
-    e_last = NULL;
-    e = Q_HEAD (VC_FIELD(vc, send_queue));
-    while (1)
-    {        
-        MPIU_Assert (bytes_sent);
-        MPIU_Assert (e);
+        iov = &sreq->dev.iov[sreq->ch.iov_offset];
         
-        if (e->len < bytes_sent)
+        CHECK_EINTR(offset, writev(VC_FIELD(vc, sc)->fd, iov, sreq->dev.iov_count));
+        MPIU_ERR_CHKANDJUMP(offset == 0, mpi_errno, MPI_ERR_OTHER, "**sock_closed");
+        if (offset == -1)
         {
-/*             printf ("  %d (%d)\n", MPID_NEM_PACKET_LEN (&e->cell->pkt), e->cell->pkt.header.seqno);//DARIUS */
-            MPID_nem_queue_enqueue (MPID_nem_process_free_queue, e->cell);
-            bytes_sent -= e->len;
-            e_last = e;
-            e = e->next;
+            if (errno == EAGAIN)
+                offset = 0;
+            else
+                MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**writev", "**writev %s", strerror (errno));
         }
-        else if (e->len > bytes_sent)
-        {
-/*             printf ("  %d leftover\n", bytes_sent);//DARIUS */
-            e->len -= bytes_sent;
-            e->start += bytes_sent;
-            break;
-        }
-        else /* (e->len == bytes_sent) */
-        {
-/*             printf ("  %d (%d)\n", MPID_NEM_PACKET_LEN (&e->cell->pkt), e->cell->pkt.header.seqno);//DARIUS */
-            MPID_nem_queue_enqueue (MPID_nem_process_free_queue, e->cell);
-            e_last = e;
-            break;
-        }
-    }
 
-    if (e_last != NULL) /* did we send at least one queued send? */
-    {
-        Q_REMOVE_ELEMENTS (&VC_FIELD(vc, send_queue), e_first, e_last);
-        FREE_Q_ELEMENTS (e_first, e_last);
-        if (Q_EMPTY (VC_FIELD(vc, send_queue)))
-            VC_L_REMOVE (&send_list, vc);
-    }
+        complete = 1;
+        for (iov = &sreq->dev.iov[sreq->ch.iov_offset]; iov < &sreq->dev.iov[sreq->ch.iov_offset + sreq->dev.iov_count]; ++iov)
+        {
+            if (offset < iov->MPID_IOV_LEN)
+            {
+                iov->MPID_IOV_BUF = (char *)iov->MPID_IOV_BUF + offset;
+                iov->MPID_IOV_LEN -= offset;
+                sreq->ch.iov_offset = iov - sreq->dev.iov;
+                complete = 0;
+                break;
+            }
+            offset -= iov->MPID_IOV_LEN;
+        }
+        if (complete)
+        {
+            /* sent whole message */
+            int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 
+            reqFn = sreq->dev.OnDataAvail;
+            if (!reqFn)
+            {
+                MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+                MPIDI_CH3U_Request_complete(sreq);
+                MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+                break;
+            }
+            else
+            {
+                int complete = 0;
+                
+                mpi_errno = reqFn(vc, sreq, &complete);
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+                if (complete)
+                {
+                    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+                    break;
+                }
+
+                MPIU_Assert(0); /* FIXME:  I don't think we should get here with contig messages */
+                
+                sreq->ch.vc = vc;
+                break;
+            }
+        }
+        SENDQ_DEQUEUE(&VC_FIELD(vc, send_queue), &sreq);
+    }
     
  fn_exit:
     return mpi_errno;
@@ -329,7 +320,7 @@ int MPID_nem_newtcp_module_conn_est (MPIDI_VC_t *vc)
 
 /*     printf ("*** connected *** %d\n", VC_FIELD(vc, sc)->fd); //DARIUS     */
 
-    if (!Q_EMPTY (VC_FIELD(vc, send_queue)))
+    if (!SENDQ_EMPTY (VC_FIELD(vc, send_queue)))
     {
         VC_L_ADD (&send_list, vc);
         mpi_errno = send_queued (vc);
@@ -340,3 +331,205 @@ int MPID_nem_newtcp_module_conn_est (MPIDI_VC_t *vc)
     return mpi_errno;
 }
 
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_iStartContigMsg
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, void *data, MPIDI_msg_sz_t data_sz,
+                                    MPID_Request **sreq_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPID_Request * sreq = NULL;
+    MPIDI_msg_sz_t offset = 0;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_ISTARTCONTIGMSG);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_ISTARTCONTIGMSG);
+    
+    MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
+    
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)hdr);
+    if (MPID_nem_newtcp_module_vc_is_connected(vc))
+    {
+        if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
+        {
+            MPID_IOV iov[2];
+            MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "newtcp_iStartContigMsg");
+
+            iov[0].MPID_IOV_BUF = hdr;
+            iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_PktGeneric_t);
+            iov[1].MPID_IOV_BUF = data;
+            iov[2].MPID_IOV_LEN = data_sz;
+        
+            CHECK_EINTR(offset, writev(VC_FIELD(vc, sc)->fd, iov, 2));
+            MPIU_ERR_CHKANDJUMP(offset == 0, mpi_errno, MPI_ERR_OTHER, "**sock_closed");
+            if (offset == -1)
+            {
+                if (errno == EAGAIN)
+                    offset = 0;
+                else
+                    MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**writev", "**writev %s", strerror (errno));
+            }
+
+            if (offset == sizeof(MPIDI_CH3_PktGeneric_t) + data_sz)
+            {
+                /* sent whole message */
+                *sreq_ptr = NULL;
+                goto fn_exit;
+            }
+        }
+    }
+    else
+    {
+        mpi_errno = MPID_nem_newtcp_module_connect(vc);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+
+    /* create and enqueue request */
+    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "enqueuing");
+
+    /* create a request */
+    sreq = MPID_Request_create();
+    MPIU_Assert (sreq != NULL);
+    MPIU_Object_set_ref (sreq, 2);
+    sreq->kind = MPID_REQUEST_SEND;
+
+    sreq->dev.OnDataAvail = 0;
+    sreq->ch.vc = vc;
+    sreq->ch.iov_offset = 0;
+
+    if (offset < sizeof(MPIDI_CH3_PktGeneric_t))
+    {
+        sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *)hdr;
+        sreq->dev.iov[0].MPID_IOV_BUF = (char *)&sreq->dev.pending_pkt + offset;
+        sreq->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_PktGeneric_t) - offset ;
+        sreq->dev.iov[1].MPID_IOV_BUF = data;
+        sreq->dev.iov[1].MPID_IOV_LEN = data_sz;
+        sreq->dev.iov_count = 2;
+    }
+    else
+    {
+        sreq->dev.iov[0].MPID_IOV_BUF = (char *)data + (offset - sizeof(MPIDI_CH3_PktGeneric_t));
+        sreq->dev.iov[0].MPID_IOV_LEN = data_sz - (offset - sizeof(MPIDI_CH3_PktGeneric_t));
+        sreq->dev.iov_count = 1;
+    }
+
+    SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
+    
+    *sreq_ptr = sreq;
+    
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_ISTARTCONTIGMSG);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_iSendContig
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, MPIDI_msg_sz_t hdr_sz,
+                                void *data, MPIDI_msg_sz_t data_sz)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_msg_sz_t offset = 0;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIGMSG);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIGMSG);
+    
+    MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
+    
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)hdr);
+    if (MPID_nem_newtcp_module_vc_is_connected(vc))
+    {
+        if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
+        {
+            MPID_IOV iov[2];
+            MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "newtcp_iSendContig");
+
+            iov[0].MPID_IOV_BUF = hdr;
+            iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_PktGeneric_t);
+            iov[1].MPID_IOV_BUF = data;
+            iov[2].MPID_IOV_LEN = data_sz;
+        
+            CHECK_EINTR(offset, writev(VC_FIELD(vc, sc)->fd, iov, 2));
+            MPIU_ERR_CHKANDJUMP(offset == 0, mpi_errno, MPI_ERR_OTHER, "**sock_closed");
+            if (offset == -1)
+            {
+                if (errno == EAGAIN)
+                    offset = 0;
+                else
+                    MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**writev", "**writev %s", strerror (errno));
+            }
+
+            if (offset == sizeof(MPIDI_CH3_PktGeneric_t) + data_sz)
+            {
+                /* sent whole message */
+                int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+
+                reqFn = sreq->dev.OnDataAvail;
+                if (!reqFn)
+                {
+                    MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+                    MPIDI_CH3U_Request_complete(sreq);
+                    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+                    goto fn_exit;
+                }
+                else
+                {
+                    int complete = 0;
+                
+                    mpi_errno = reqFn(vc, sreq, &complete);
+                    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+                    if (complete)
+                    {
+                        MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+                        goto fn_exit;
+                    }
+
+                    MPIU_Assert(0); /* FIXME:  I don't think we should get here with contig messages */
+                
+                    sreq->ch.vc = vc;
+                    goto fn_exit;
+                }
+            }
+        }
+    }
+    else
+    {
+        mpi_errno = MPID_nem_newtcp_module_connect(vc);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+
+    /* create and enqueue request */
+    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "enqueuing");
+
+    sreq->ch.vc = vc;
+    sreq->ch.iov_offset = 0;
+
+    if (offset < sizeof(MPIDI_CH3_PktGeneric_t))
+    {
+        sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *)hdr;
+        sreq->dev.iov[0].MPID_IOV_BUF = (char *)&sreq->dev.pending_pkt + offset;
+        sreq->dev.iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_PktGeneric_t) - offset ;
+        sreq->dev.iov[1].MPID_IOV_BUF = data;
+        sreq->dev.iov[1].MPID_IOV_LEN = data_sz;
+        sreq->dev.iov_count = 2;
+    }
+    else
+    {
+        sreq->dev.iov[0].MPID_IOV_BUF = (char *)data + (offset - sizeof(MPIDI_CH3_PktGeneric_t));
+        sreq->dev.iov[0].MPID_IOV_LEN = data_sz - (offset - sizeof(MPIDI_CH3_PktGeneric_t));
+        sreq->dev.iov_count = 1;
+    }
+
+    SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
+    
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIGMSG);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}

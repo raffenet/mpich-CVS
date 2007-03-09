@@ -33,15 +33,9 @@ typedef struct
     struct MPID_nem_new_tcp_module_sockconn *sc;
     struct
     {
-        struct MPID_nem_newtcp_module_send_q_element *head;
-        struct MPID_nem_newtcp_module_send_q_element *tail;
+        struct MPID_Request *head;
+        struct MPID_Request *tail;
     } send_queue;
-    struct 
-    {
-        MPID_nem_cell_t *cell;
-        char *end;
-        int len;
-    } pending_recv;
 } MPID_nem_newtcp_module_vc_area;
 
 /* accessor macro to private fields in VC */

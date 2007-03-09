@@ -365,7 +365,8 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             else
                 MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
         }
-	MPID_nem_handle_pkt(sc->vc, recv_buf, bytes_recvd);
+	mpi_errno = MPID_nem_handle_pkt(sc->vc, recv_buf, bytes_recvd);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         
 #if 0 /* Just enqueue everything; don't care if its a complete packet */
         /* there is a partially received pkt in tmp_cell, continue receiving into it */
@@ -451,7 +452,6 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
 #endif
     
  fn_exit:
-    MPIU_Assert (VC_FIELD(vc, pending_recv).cell == NULL || VC_FIELD(vc, pending_recv).len < MPID_NEM_MAX_PACKET_LEN);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
