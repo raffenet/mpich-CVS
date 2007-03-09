@@ -352,9 +352,6 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     vc->ch.prev = NULL;
     VC_FIELD(vc, sc) = NULL;
     VC_FIELD(vc, send_queue).head = VC_FIELD(vc, send_queue).tail = NULL;
-    VC_FIELD(vc, pending_recv).cell = NULL;
-    VC_FIELD(vc, pending_recv).end = NULL;
-    VC_FIELD(vc, pending_recv).len = 0;
     
  fn_exit:
 /*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
