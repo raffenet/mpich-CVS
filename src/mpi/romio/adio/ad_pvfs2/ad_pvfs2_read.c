@@ -340,7 +340,11 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	/* determine how many blocks in file to read */
 	f_data_read = ADIOI_MIN(st_frd_size, bufsize);
 	total_blks_to_read = 1;
-	j++;
+	if (j < (flat_file->count-1)) j++;
+	else {
+	    j = 0;
+	    n_filetypes++;
+	}
 	while (f_data_read < bufsize) {
 	    f_data_read += flat_file->blocklens[j];
 	    total_blks_to_read++;
@@ -924,7 +928,16 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
     ADIOI_Free(file_lengths);
     
     /* Other ADIO routines will convert absolute bytes into counts of datatypes */
-    if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += total_bytes_read;
+    /* when incrementing fp_ind, need to also take into account the file type:
+     * consider an N-element 1-d subarray with a lb and ub: ( |---xxxxx-----|
+     * if we wrote N elements, offset needs to point at beginning of type, not
+     * at empty region at offset N+1) */
+    if (file_ptr_type == ADIO_INDIVIDUAL) {
+	/* this is closer, but still incorrect for the cases where a small
+	 * amount of a file type is "leftover" after a write */
+	fd->fp_ind = disp + flat_file->indices[j] + 
+	    (ADIO_Offset)n_filetypes*filetype_extent;
+    }
     if (err_flag == 0) *error_code = MPI_SUCCESS;
 
 error_state:
