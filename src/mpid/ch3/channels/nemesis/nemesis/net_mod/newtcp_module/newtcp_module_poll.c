@@ -7,6 +7,9 @@
 #include "newtcp_module_impl.h"
 #include <errno.h>
 
+#define RECV_MAX_PKT_LEN 1024
+
+#if 0
 /* void _enqueue (MPID_nem_queue_ptr_t Q, MPID_nem_cell_ptr_t C, int line) */
 /* { */
 /*     printf ("enqueue %s %p (%d)\n", (Q==MPID_nem_process_recv_queue) ? "PRECVQ" : ((Q==MPID_nem_process_free_queue) ? "PFREEQ" : "UNKNOWN"), C, line); */
@@ -45,6 +48,9 @@ typedef struct recv_overflow_buf
 } recv_overflow_buf_t;
 
 static recv_overflow_buf_t recv_overflow_buf;
+#endif
+
+static char *recv_buf;
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_poll_init
@@ -53,11 +59,21 @@ static recv_overflow_buf_t recv_overflow_buf;
 int MPID_nem_newtcp_module_poll_init()
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIU_CHKPMEM_DECL(1);
 
+#if 0
     recv_overflow_buf.start = NULL;
     recv_overflow_buf.len = 0;
-        
+#endif
+
+    MPIU_CHKPMEM_MALLOC(recv_buf, char*, RECV_MAX_PKT_LEN, mpi_errno, "NewTCP temporary buffer");
+    MPIU_CHKPMEM_COMMIT();
+
+ fn_exit:
     return mpi_errno;
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
 }
 
 int MPID_nem_newtcp_module_poll_finalize()
@@ -65,6 +81,7 @@ int MPID_nem_newtcp_module_poll_finalize()
     return MPI_SUCCESS;
 }
 
+#if 0
 static int receive_exactly_one_packet (MPIDI_VC_t *vc);
 
 /* breakout_pkts -- This is called after receiving data into a cell.
@@ -304,7 +321,7 @@ static int receive_exactly_one_packet (MPIDI_VC_t *vc)
  fn_fail:
     goto fn_exit;
 }
-
+#endif
 
 
 #undef FUNCNAME
@@ -315,6 +332,8 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
 {
     int mpi_errno = MPI_SUCCESS;
     ssize_t bytes_recvd;
+
+#if 0
     MPIDI_VC_t *vc = sc->vc;
     MPIDI_CH3I_VC *vc_ch = &vc->ch;
     MPID_nem_cell_ptr_t v_cell;
@@ -331,7 +350,24 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             if (mpi_errno) MPIU_ERR_POP (mpi_errno);
             goto fn_exit;
         }
+#endif
+
+	CHECK_EINTR (bytes_recvd, recv (sc->fd, recv_buf, RECV_MAX_PKT_LEN, 0));
+        if (bytes_recvd <= 0)
+        {
+            if (bytes_recvd == -1 && errno == EAGAIN) /* handle this fast */
+                goto fn_exit;
+            
+            if (bytes_recvd == 0)
+            {
+                MPIU_ERR_SETANDJUMP (mpi_errno, MPI_ERR_OTHER, "**sock_closed");
+            }
+            else
+                MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
+        }
+	MPID_nem_handle_pkt(sc->vc, recv_buf, bytes_recvd);
         
+#if 0 /* Just enqueue everything; don't care if its a complete packet */
         /* there is a partially received pkt in tmp_cell, continue receiving into it */
         CHECK_EINTR (bytes_recvd, recv (sc->fd, VC_FIELD(vc, pending_recv).end, MPID_NEM_MAX_PACKET_LEN - VC_FIELD(vc, pending_recv).len, 0));
 /*         if (bytes_recvd != -1)//DARIUS */
@@ -412,6 +448,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
 
         goto fn_exit;
     }
+#endif
     
  fn_exit:
     MPIU_Assert (VC_FIELD(vc, pending_recv).cell == NULL || VC_FIELD(vc, pending_recv).len < MPID_NEM_MAX_PACKET_LEN);
@@ -420,6 +457,8 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
     goto fn_exit;
 }
 
+
+#if 0
 #undef FUNCNAME
 #define FUNCNAME recv_progress
 #undef FCNAME
@@ -491,6 +530,7 @@ static inline int recv_progress (void)
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure"));
     goto fn_exit;
 }
+#endif
 
 
 #undef FUNCNAME
@@ -504,12 +544,16 @@ int MPID_nem_newtcp_module_poll (MPID_nem_poll_dir_t in_or_out)
     mpi_errno = MPID_nem_newtcp_module_send_progress();
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
+    mpi_errno = MPID_nem_newtcp_module_connpoll();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+#if 0
     mpi_errno = recv_progress();
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+#endif
 
  fn_exit:
     return mpi_errno;
  fn_fail:
     goto fn_exit;
 }
-
