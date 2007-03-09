@@ -228,6 +228,8 @@ static int send_queued (MPIDI_VC_t *vc)
             /* sent whole message */
             int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 
+            SENDQ_DEQUEUE(&VC_FIELD(vc, send_queue), &sreq);
+
             reqFn = sreq->dev.OnDataAvail;
             if (!reqFn)
             {
@@ -255,13 +257,12 @@ static int send_queued (MPIDI_VC_t *vc)
                 break;
             }
         }
-        SENDQ_DEQUEUE(&VC_FIELD(vc, send_queue), &sreq);
     }
     
  fn_exit:
     return mpi_errno;
  fn_fail:
-    return mpi_errno;
+    goto fn_exit;
 }
 
 #undef FUNCNAME
