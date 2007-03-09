@@ -363,7 +363,7 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
             iov[0].MPID_IOV_BUF = hdr;
             iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_PktGeneric_t);
             iov[1].MPID_IOV_BUF = data;
-            iov[2].MPID_IOV_LEN = data_sz;
+            iov[1].MPID_IOV_LEN = data_sz;
         
             CHECK_EINTR(offset, writev(VC_FIELD(vc, sc)->fd, iov, 2));
             MPIU_ERR_CHKANDJUMP(offset == 0, mpi_errno, MPI_ERR_OTHER, "**sock_closed");
@@ -457,7 +457,7 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
             iov[0].MPID_IOV_BUF = hdr;
             iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_PktGeneric_t);
             iov[1].MPID_IOV_BUF = data;
-            iov[2].MPID_IOV_LEN = data_sz;
+            iov[1].MPID_IOV_LEN = data_sz;
         
             CHECK_EINTR(offset, writev(VC_FIELD(vc, sc)->fd, iov, 2));
             MPIU_ERR_CHKANDJUMP(offset == 0, mpi_errno, MPI_ERR_OTHER, "**sock_closed");
