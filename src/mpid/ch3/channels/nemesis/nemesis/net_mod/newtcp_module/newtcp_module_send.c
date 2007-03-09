@@ -418,7 +418,7 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
         sreq->dev.iov_count = 1;
     }
 
-    if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)) && !MPID_nem_newtcp_module_vc_is_connected(vc))
+    if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)) && MPID_nem_newtcp_module_vc_is_connected(vc))
         VC_L_ADD(&send_list, vc);
     SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
 
@@ -531,7 +531,7 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
         sreq->dev.iov_count = 1;
     }
 
-    if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)) && !MPID_nem_newtcp_module_vc_is_connected(vc))
+    if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)) && MPID_nem_newtcp_module_vc_is_connected(vc))
         VC_L_ADD(&send_list, vc);
     SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
 
