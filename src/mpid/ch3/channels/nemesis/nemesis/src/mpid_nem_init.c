@@ -56,7 +56,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     char  *bc_val          = NULL;
     int    val_max_remaining;
     int    num_nodes;
-    int   *node_ids;    
+    int   *node_ids = 0;    
     MPIU_CHKPMEM_DECL(4);
     
     /* Initialize the business card */

@@ -325,8 +325,6 @@ static int barrier (MPID_Comm *comm_ptr)
         /* do barrier between local and external */
         int external_rank = comm_ptr->ch.external_rank;
         int *external_ranks = comm_ptr->ch.external_ranks;
-        int src, dst, mask;
-        MPI_Comm comm = comm_ptr->handle;
         
         /* wait for local procs to reach barrier */
         if (local_size > 1)

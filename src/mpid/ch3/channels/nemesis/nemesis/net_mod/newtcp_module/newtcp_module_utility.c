@@ -58,7 +58,7 @@ int MPID_nem_newtcp_module_set_sockopts (int fd)
     int mpi_errno = MPI_SUCCESS;
     int option, flags;
     int ret;
-    size_t len;
+    socklen_t len;
 
 /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
     /* I heard you have to read the options after setting them in some implementations */
@@ -144,9 +144,8 @@ MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd)
     }
     if (plfd->revents & POLLIN || plfd->revents & POLLOUT) 
     {
-        char buf[1];
-        int buf_len = sizeof(buf)/sizeof(buf[0]), ret_recv, error=0;
-        size_t n = sizeof(error);
+        int error=0;
+        socklen_t n = sizeof(error);
 
         n = sizeof(error);
         if (getsockopt(plfd->fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error != 0) 
@@ -172,7 +171,7 @@ int MPID_nem_newtcp_module_is_sock_connected(int fd)
     int rc = FALSE;
     char buf[1];
     int buf_len = sizeof(buf)/sizeof(buf[0]), ret_recv, error=0;
-    size_t n = sizeof(error);
+    socklen_t n = sizeof(error);
 
     n = sizeof(error);
     if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error != 0) 

@@ -369,7 +369,6 @@ MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
 {
     int mpi_errno = MPI_SUCCESS;
     int fd;
-    struct stat buf;
     int ret;
     const char dev_fname[] = "/dev/shm/nemesis_shar_tmpXXXXXX";
     const char tmp_fname[] = "/tmp/nemesis_shar_tmpXXXXXX";

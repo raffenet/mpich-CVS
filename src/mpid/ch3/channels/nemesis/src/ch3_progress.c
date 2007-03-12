@@ -609,6 +609,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
         }
         else if (vc->ch.recv_active)
         {
+            MPIU_Assert(vc->ch.pending_pkt_len == 0);
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "continuing recv");
             rreq = vc->ch.recv_active;
         }
@@ -717,6 +718,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
                 {
                     rreq->ch.iov_offset = 0;
                     MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN > 0);
+                    vc->ch.recv_active = rreq;
                 }
                 else
                 {

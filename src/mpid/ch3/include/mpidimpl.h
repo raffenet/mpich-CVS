@@ -608,7 +608,7 @@ typedef struct MPIDI_VC
     /* rendezvous function pointers.  Called to send a rendevous
        message or when one is matched */
     int (* rndvSend_fn)( struct MPID_Request **sreq_p, const void * buf, int count, 
-                         MPI_Datatype datatype, int dt_contig, int data_sz, 
+                         MPI_Datatype datatype, int dt_contig, MPIDI_msg_sz_t data_sz, 
                          MPI_Aint dt_true_lb, int rank, int tag,
                          struct MPID_Comm * comm, int context_offset );
     int (* rndvRecv_fn)( struct MPIDI_VC * vc, struct MPID_Request *rreq );
@@ -828,7 +828,7 @@ const char *MPIDI_Pkt_GetDescString( MPIDI_CH3_Pkt_t *pkt );
 /* These macros help trace communication headers */
 #define MPIU_DBG_MSGPKT(_vc,_tag,_contextid,_dest,_size,_kind)	\
     MPIU_DBG_MSG_FMT(CH3_MSG,TYPICAL,(MPIU_DBG_FDEST,\
-		      "%s: vc=%p, tag=%d, context=%d, dest=%d, datasz=%d",\
+		      "%s: vc=%p, tag=%d, context=%d, dest=%d, datasz=" MPIDI_MSG_SZ_FMT,\
 		      _kind,_vc,_tag,_contextid,_dest,_size) )
 
 /* FIXME: Switch this to use the common debug code */
@@ -1589,7 +1589,7 @@ int MPIDI_GetTagFromPort( const char *, int * );
 
 /* Implement the send side of a rendevous send */
 int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count, 
-			MPI_Datatype datatype, int dt_contig, int data_sz, 
+			MPI_Datatype datatype, int dt_contig, MPIDI_msg_sz_t data_sz, 
 			MPI_Aint dt_true_lb,
 			int rank, 
 			int tag, MPID_Comm * comm, int context_offset );
@@ -1692,7 +1692,7 @@ int MPIDI_CH3_EagerContigIsend( MPID_Request **, MPIDI_CH3_Pkt_type_t,
 
 
 int MPIDI_CH3_RndvSend( MPID_Request **, const void *, int, MPI_Datatype, 
-			int, int, MPI_Aint, int, int, MPID_Comm *, int );
+			int, MPIDI_msg_sz_t, MPI_Aint, int, int, MPID_Comm *, int );
 
 int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **, const void *, int, 
 				      MPI_Datatype, int, int, MPI_Aint,

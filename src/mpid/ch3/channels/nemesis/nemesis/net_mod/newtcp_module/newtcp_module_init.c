@@ -215,38 +215,14 @@ int MPID_nem_newtcp_module_get_business_card (int my_rank, char **bc_val_p, int 
     char ifname[MAX_HOST_DESCRIPTION_LEN];
     int ret;
     struct sockaddr_in sock_id;
-    struct hostent *hp = NULL;
     socklen_t len;
-    char ipaddr_str[INET_ADDRSTRLEN];
-    const char *p;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
-
-/*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
-    /* The business card consists of the numeric ip address (represented as a string), and the port id */
     
-    /*printf("MPID_nem_newtcp_module_get_business_card Enter. host=%s\n", MPID_nem_hostname);*/
     mpi_errno = GetSockInterfaceAddr(my_rank, ifname, sizeof(ifname), &ifaddr);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     
-/*     hp = gethostbyname (MPID_nem_hostname);  */
-    
-/*     MPIU_ERR_CHKANDJUMP1 (hp == NULL, mpi_errno, MPI_ERR_OTHER, "**gethostbyname", "**gethostbyname %d", h_errno);  */
-/*     MPIU_ERR_CHKANDJUMP (hp->h_addrtype != AF_INET, mpi_errno, MPI_ERR_OTHER, "**gethostbyname"); /\*FIXME add error string "**gethostbyname returned other than AF_INET type address"*\/ */
-    
-/*     /\* printf("MPID_nem_newtcp_module_get_business_card. gethostbyname success \n"); *\/ */
-
-/*     p = inet_ntop (AF_INET, (struct in_addr *)hp->h_addr, ipaddr_str, sizeof(ipaddr_str)); */
-
-/* /\*     if (p) *\/ */
-/* /\*         printf("MPID_nem_newtcp_module_get_business_card. inet_ntop ipaddrstr=%s, \n",  *\/ */
-/* /\*                ipaddr_str); *\/ */
-/* /\*     else *\/ */
-/* /\*         printf("MPID_nem_newtcp_module_get_business_card. inet_ntop errno=%d err=%s, \n",  *\/ */
-/* /\*                errno, strerror(errno)); *\/ */
-
-/*     MPIU_ERR_CHKANDJUMP1 (p == NULL, mpi_errno, MPI_ERR_OTHER, "**inet_ntop", "**inet_ntop %s", strerror (errno)); */
     
     mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_ADDR_KEY, ifname);
     if (mpi_errno != MPIU_STR_SUCCESS)

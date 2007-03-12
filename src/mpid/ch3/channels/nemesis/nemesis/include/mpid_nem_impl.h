@@ -27,6 +27,8 @@ int MPID_nem_check_alloc(int);
 int MPID_nem_mpich2_init (int ckpt_restart);
 int MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_again);
 int MPID_nem_coll_barrier_init (void);
+int MPID_nem_send_iov(MPIDI_VC_t *vc, MPID_Request **sreq_ptr, MPID_IOV *iov, int n_iov);
+int MPID_nem_lmt_pkthandler_init(MPIDI_CH3_PktHandler_Fcn *pktArray[], int arraySize);
 
 #define MPID_nem_mpich2_release_fbox(cell) (MPID_nem_mem_region.mailboxes.in[(cell)->pkt.mpich2.source]->mpich2.flag.value = 0, \
 					    MPI_SUCCESS)

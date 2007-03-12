@@ -6,8 +6,6 @@
 
 #include "newtcp_module_impl.h"
 
-//#define printf(x...) do {} while(0)
-
 #define NUM_PREALLOC_SENDQ 10
 #define MAX_SEND_IOV 10
 
@@ -93,11 +91,9 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
 static int send_queued (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_CH3I_VC *vc_ch = &vc->ch;
     MPID_Request *sreq;
     MPIDI_msg_sz_t offset;
     MPID_IOV *iov;
-    int i;
     int complete;
 
     while (!SENDQ_EMPTY(VC_FIELD(vc, send_queue)))

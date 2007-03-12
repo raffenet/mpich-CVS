@@ -33,6 +33,12 @@ MPID_NEM_INLINE_DECL int MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, i
 MPID_NEM_INLINE_DECL int MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_completions);
 MPID_NEM_INLINE_DECL int MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int timeout);
 MPID_NEM_INLINE_DECL int MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc);
+MPID_NEM_INLINE_DECL void MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_first,
+                                                           MPIDI_msg_sz_t segment_size, void *header, MPIDI_msg_sz_t header_sz,
+                                                           MPIDI_VC_t *vc, int *again);
+MPID_NEM_INLINE_DECL void MPID_nem_mpich2_send_seg (MPID_Segment *segment, MPIDI_msg_sz_t *segment_first, MPIDI_msg_sz_t segment_size,
+                                                    MPIDI_VC_t *vc, int *again);
+
 
 /* MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc)
    same as above, but sends MPICH2 32 byte header */
@@ -535,7 +541,6 @@ MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_
                                  void *header, MPIDI_msg_sz_t header_sz, MPIDI_VC_t *vc, int *again)
 {
     MPID_nem_cell_ptr_t el;
-    char *cell_buf;
     MPIDI_msg_sz_t datalen;    
     int my_rank;
     MPIDI_msg_sz_t last;
@@ -667,8 +672,6 @@ MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_
     goto fn_exit;
  fn_exit:
     return;
- fn_fail:
-    goto fn_exit;
 }
 
 /* similar to MPID_nem_mpich2_send_seg_header, except there is no
@@ -681,7 +684,6 @@ MPID_NEM_INLINE_DECL void
 MPID_nem_mpich2_send_seg (MPID_Segment *segment, MPIDI_msg_sz_t *segment_first, MPIDI_msg_sz_t segment_size, MPIDI_VC_t *vc, int *again)
 {
     MPID_nem_cell_ptr_t el;
-    char *cell_buf;
     MPIDI_msg_sz_t datalen;    
     int my_rank;
     MPIDI_msg_sz_t last;
@@ -762,8 +764,6 @@ MPID_nem_mpich2_send_seg (MPID_Segment *segment, MPIDI_msg_sz_t *segment_first, 
     goto fn_exit;
  fn_exit:
     return;
- fn_fail:
-    goto fn_exit;
 }
 
 /*
