@@ -78,10 +78,8 @@ int MPID_nem_newtcp_module_poll (MPID_nem_poll_dir_t in_or_out)
 {
     int mpi_errno = MPI_SUCCESS;
 
-#if 0
     mpi_errno = MPID_nem_newtcp_module_send_progress();
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-#endif
 
     mpi_errno = MPID_nem_newtcp_module_connpoll();
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
