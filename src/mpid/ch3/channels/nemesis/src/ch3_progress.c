@@ -656,11 +656,11 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
 
         MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "    copying into user buffer from IOV");
 
-/*         if (buflen == 0) */
-/*         { */
-/*             vc->ch.recv_active = rreq; */
-/*             goto fn_exit; */
-/*         } */
+        if (buflen == 0)
+        {
+            vc->ch.recv_active = rreq;
+            goto fn_exit;
+        }
 
         complete = 0;
 
