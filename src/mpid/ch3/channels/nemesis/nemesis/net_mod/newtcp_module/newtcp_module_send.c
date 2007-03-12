@@ -186,9 +186,7 @@ int MPID_nem_newtcp_module_send_finalize()
 {
     int mpi_errno = MPI_SUCCESS;
 
-/*     printf ("MPID_nem_newtcp_module_send_finalize\n");//DARIUS */
     while (!VC_L_EMPTY (send_list))
-/*         MPID_nem_newtcp_module_send_progress(); */
 	MPID_nem_newtcp_module_connpoll();
 
     while (!S_EMPTY (free_buffers))
