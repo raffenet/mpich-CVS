@@ -120,9 +120,9 @@ static int alloc_sc_plfd_tbls (void)
     mpi_errno = find_free_entry(&index);
     if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
 
-    g_sc_tbl[index]->fd = g_plfd_tbl[index]->fd = g_lstn_plfd.fd;
-    g_plfd_tbl[index]->events = POLLIN;
-    g_sc_tbl[index]->handler = g_lstn_sc.handler;
+    g_sc_tbl[index].fd = g_plfd_tbl[index].fd = g_lstn_plfd.fd;
+    g_plfd_tbl[index].events = POLLIN;
+    g_sc_tbl[index].handler = g_lstn_sc.handler;
 
  fn_exit:
     return mpi_errno;
