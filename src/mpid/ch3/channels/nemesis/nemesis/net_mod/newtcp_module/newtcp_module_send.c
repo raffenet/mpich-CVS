@@ -43,7 +43,7 @@ struct {MPID_nem_newtcp_module_send_q_element_t *top;} free_buffers = {0};
 #define FREE_Q_ELEMENTS(e0, e1) S_PUSH_MULTIPLE (&free_buffers, e0, e1)
 #define FREE_Q_ELEMENT(e) S_PUSH (&free_buffers, e)
 
-static int send_queued (MPIDI_VC_t *vc);
+int send_queued (MPIDI_VC_t *vc);
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_send_init
@@ -88,13 +88,16 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
 #define FUNCNAME send_queued
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int send_queued (MPIDI_VC_t *vc)
+int send_queued (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *sreq;
     MPIDI_msg_sz_t offset;
     MPID_IOV *iov;
     int complete;
+
+    if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
+	goto fn_exit;
 
     while (!SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
     {
@@ -176,27 +179,6 @@ static int send_queued (MPIDI_VC_t *vc)
 }
 
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_newtcp_module_send_progress
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_newtcp_module_send_progress()
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_VC_t *vc;
-    
-    for (vc = send_list.head; vc; vc = vc->ch.next)
-    {
-        mpi_errno = send_queued (vc);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-    }
-
- fn_exit:
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-#undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_send_finalize
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
@@ -206,7 +188,8 @@ int MPID_nem_newtcp_module_send_finalize()
 
 /*     printf ("MPID_nem_newtcp_module_send_finalize\n");//DARIUS */
     while (!VC_L_EMPTY (send_list))
-        MPID_nem_newtcp_module_send_progress();
+/*         MPID_nem_newtcp_module_send_progress(); */
+	MPID_nem_newtcp_module_connpoll();
 
     while (!S_EMPTY (free_buffers))
     {

@@ -922,6 +922,11 @@ static int state_commrdy_handler(pollfd_t *const plfd, sockconn_t *const sc)
         mpi_errno = MPID_nem_newtcp_module_recv_handler(plfd, sc);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
+    if (IS_WRITEABLE(plfd))
+    {
+	mpi_errno = send_queued(sc->vc);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    }
     
  fn_exit:
     return mpi_errno;

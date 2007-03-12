@@ -52,7 +52,6 @@ int MPID_nem_newtcp_module_connpoll (void);
 int MPID_nem_newtcp_module_init_sm (void);
 int MPID_nem_newtcp_module_set_sockopts (int fd);
 MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t MPID_nem_newtcp_module_check_sock_status(const pollfd_t *const plfd);
-int MPID_nem_newtcp_module_send_progress (void);
 int MPID_nem_newtcp_module_poll_finalize (void);
 int MPID_nem_newtcp_module_send_finalize (void);
 int MPID_nem_newtcp_module_bind (int sockfd);
