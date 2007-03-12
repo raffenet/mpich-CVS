@@ -380,7 +380,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 int
 get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_procs_p, int *local_rank_p, int *num_nodes_p, int **node_ids_p)
 {
-#if 1//defined (ENABLED_NO_LOCAL)
+#if defined (ENABLED_NO_LOCAL)
 #warning shared-memory communication disabled
     /* used for debugging only */
     /* return an array as if there are no other processes on this processor */
