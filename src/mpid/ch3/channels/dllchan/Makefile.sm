@@ -5,6 +5,7 @@ SUBDIRS = src .
 # is built by the main configure step
 all-local:
 	for dir in @SUBCHANNELS@ ; do \
+	    CC="@CC@" ; export CC ; CFLAGS="@CFLAGS@" ; export CFLAGS ; \
 	    (cd ../$$dir && ${srcdir}/../$$dir/builddll --prefix=${prefix} \
     					 --libdir=${libdir} \
 					 --exec-prefix=${exec_prefix} \
