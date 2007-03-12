@@ -11,9 +11,6 @@
 
 /* FIXME trace/log all the state transitions */
 
-/* FIXME - remove this. to be defined elsewhere */
-#define MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED 0
-#define MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED 1
 
 typedef struct freenode {
     int index;

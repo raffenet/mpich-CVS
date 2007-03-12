@@ -263,6 +263,7 @@ static int receive_exactly_one_packet (MPIDI_VC_t *vc)
             else
                 MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
         }
+        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "recv %d", bytes_recvd);
 /*         if (bytes_recvd != -1) //DARIUS */
 /*             printf("  read  %d (%u)\n", bytes_recvd, *((char *)VC_FIELD(vc, pending_recv).end));//DARIUS */
 
@@ -298,6 +299,7 @@ static int receive_exactly_one_packet (MPIDI_VC_t *vc)
             else
                 MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
         }
+        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "recv %d", bytes_recvd);
         
         VC_FIELD(vc, pending_recv).len += bytes_recvd;
         VC_FIELD(vc, pending_recv).end += bytes_recvd;
@@ -365,6 +367,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             else
                 MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
         }
+        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "recv %d", bytes_recvd);
 	mpi_errno = MPID_nem_handle_pkt(sc->vc, recv_buf, bytes_recvd);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         
@@ -433,6 +436,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             else
                 MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
         }
+        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "recv %d", bytes_recvd);
         
         /* fast path: single packet case */
         if (bytes_recvd >= MPID_NEM_MIN_PACKET_LEN &&

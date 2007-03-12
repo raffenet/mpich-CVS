@@ -23,6 +23,8 @@ extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
 extern int MPID_nem_newtcp_module_listen_fd;
 
+#define MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED 0
+#define MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED 1
 
 /* The vc provides a generic buffer in which network modules can store
    private fields This removes all dependencies from the VC struction

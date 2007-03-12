@@ -339,7 +339,8 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
 
     /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
-
+    vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED;
+    
     vc->ch.iStartContigMsg  = MPID_nem_newtcp_iStartContigMsg;
     vc->ch.iSendContig      = MPID_nem_newtcp_iSendContig;
     memset (&VC_FIELD(vc, sock_id), 0, sizeof(VC_FIELD(vc, sock_id)));

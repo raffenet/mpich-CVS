@@ -1098,19 +1098,27 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_
  exit_l:    
 
 #ifdef ENABLED_CHECKPOINTING
-    if ((*cell)->pkt.header.type == MPID_NEM_PKT_CKPT)
+    if (*cell)
     {
-	MPID_nem_ckpt_got_marker (cell, in_fbox);
-	goto top_l;
+        if ((*cell)->pkt.header.type == MPID_NEM_PKT_CKPT)
+        {
+            MPID_nem_ckpt_got_marker (cell, in_fbox);
+            goto top_l;
+        }
+        else if (MPID_nem_ckpt_logging_messages)
+            MPID_nem_ckpt_log_message (*cell);
     }
-    else if (MPID_nem_ckpt_logging_messages)
-	MPID_nem_ckpt_log_message (*cell);
 #endif
 
     DO_PAPI (PAPI_accum_var (PAPI_EventSet,PAPI_vvalues8));
     
-    MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Recv %s", (*in_fbox) ? "fbox " : "queue");
-    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (*cell));
+    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
+            if (*cell)
+            {
+                MPIU_DBG_MSG_S (CH3_CHANNEL, VERBOSE, "<-- Recv %s", (*in_fbox) ? "fbox " : "queue");
+                MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell(*cell));
+            }
+        });
 
  fn_fail:
     return mpi_errno;
