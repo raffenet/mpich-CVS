@@ -8,19 +8,27 @@
 #define MPICH_MPIDI_CH3_MPID_H_INCLUDED
 #define HAVE_CH3_PRELOAD
 
+/* The void * argument in iSend and iStartMsg is really a pointer to 
+   a message packet. However, to simplify the definition of "private" 
+   packets, there is no universal packet type (there is the 
+   MPIDI_CH3_Pkt_t, but the "extension" packets are not of this type).
+   Using a void * pointer avoids unnecessary complaints from the
+   compilers */
 typedef struct MPIDI_CH3_Funcs {
     int (*Init)( int, MPIDI_PG_t *, int );
     int (*Finalize)(void);
-    int (*iSend)( MPIDI_VC_t *, MPID_Request *, MPIDI_CH3_Pkt_t *, int );
+    int (*iSend)( MPIDI_VC_t *, MPID_Request *, void *, int );
     int (*iSendv)( MPIDI_VC_t *, MPID_Request *, MPID_IOV *, int );
-    int (*iStartMsg)( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, int, MPID_Request ** );
+    int (*iStartMsg)( MPIDI_VC_t *, void *, int, MPID_Request ** );
     int (*iStartMsgv)( MPIDI_VC_t *, MPID_IOV *, int, MPID_Request ** );
-    int (*Progress_test)( void );
-    int (*Progress_wait)( MPID_Progress_state * );
+    int (*Progress)( int, MPID_Progress_state * );
+    /*    int (*Progress_test)( void );
+	  int (*Progress_wait)( MPID_Progress_state * ); */
 
     int (*VC_Init)( struct MPIDI_VC * );
     int (*PG_Init)( struct MPIDI_PG * );
     int (*Connection_terminate)( MPIDI_VC_t * );
+    int (*RMAFnsInit)( struct MPIDI_RMA_Ops * );
 
     /* These are used in support of dynamic process features */
     int (*PortFnsInit)( MPIDI_PortFns * );

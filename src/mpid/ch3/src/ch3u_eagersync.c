@@ -83,8 +83,6 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **sreq_p,
     }
     else
     {
-	int iov_n;
-	
 	MPIU_DBG_MSG_D(CH3_OTHER,VERBOSE,
 		       "sending non-contiguous sync eager message, data_sz=" MPIDI_MSG_SZ_FMT, 
 		       data_sz);

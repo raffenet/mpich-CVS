@@ -298,6 +298,8 @@ if [ $mode = link ] ; then
     esac
     if [ -n "$altNames" ] ; then
         for alt in $altNames ; do
+	    # Remove any alternate names before executing the ln step
+	    rm -f $alt
             $Show ln -s $realName $alt
         done
     fi
@@ -342,7 +344,7 @@ if [ "$postmode" = install ] ; then
     fi
     if [ -n "$altNames" ] ; then
         for alt in $altNames ; do
-            ( cd $destdir && $Show ln -s $realName $alt )
+            ( cd $destdir && $Show rm -f $alt && $Show ln -s $realName $alt )
         done
     fi
 fi

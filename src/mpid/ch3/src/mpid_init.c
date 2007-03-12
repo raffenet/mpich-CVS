@@ -188,7 +188,7 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
 	   we could allow a few routines to operate with 
 	   predefined parameter choices (e.g., bcast, allreduce)
 	   for the purposes of initialization. */
-	mpi_errno = MPIDI_CH3_Get_parent_port(&parent_port);
+	mpi_errno = MPIDI_CH3_GetParentPort(&parent_port);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, 
 				"**ch3|get_parent_port");

@@ -285,6 +285,7 @@ int MPIDI_CH3I_Connect_to_root_sock(const char * port_name,
         {
 	    MPIU_ERR_POP(mpi_errno);
 	}
+    	vcch = (MPIDI_CH3I_VC *)vc->channel_private;
         vcch->state = MPIDI_CH3I_VC_STATE_FAILED;
         MPIU_Free(conn);
         goto fn_fail;
@@ -762,7 +763,7 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * conn )
 	MPIDI_VC_Init(vc, NULL, 0);
 
 	vcch = (MPIDI_CH3I_VC *)vc->channel_private;
-	MPIU_DBG_VCCHSTATECHANGE(vcch,VC_STATE_CONNECTING);
+	MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
 	vcch->state = MPIDI_CH3I_VC_STATE_CONNECTING;
 	vcch->sock = conn->sock;
 	vcch->conn = conn;
@@ -1285,7 +1286,7 @@ static void connection_destroy(MPIDI_CH3I_Connection_t * conn)
 
 
 #ifdef USE_DBG_LOGGING
-const char * MPIDI_CH3_VC_GetStateString( struct MPIDI_VC *vc )
+const char * MPIDI_CH3_VC_SockGetStateString( struct MPIDI_VC *vc )
 {
     const char *name = "unknown";
     static char asdigits[20];

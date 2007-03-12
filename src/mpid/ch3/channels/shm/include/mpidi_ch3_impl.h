@@ -118,9 +118,62 @@
 #define MPIDI_CH3I_PKT_FILLED           MPIDI_CH3I_PKT_USED
 
 
-/* This structure uses the avail field to signal that the data is available for reading.
+/* This structure requires the iovec structure macros to be defined */
+typedef struct MPIDI_CH3I_SHM_Buffer_t
+{
+    int use_iov;
+    unsigned int num_bytes;
+    void *buffer;
+    unsigned int bufflen;
+#ifdef USE_SHM_IOV_COPY
+    MPID_IOV iov[MPID_IOV_LIMIT];
+#else
+    MPID_IOV *iov;
+#endif
+    int iovlen;
+    int index;
+    int total;
+} MPIDI_CH3I_SHM_Buffer_t;
+
+typedef struct MPIDI_CH3I_SHM_Unex_read_s
+{
+    struct MPIDI_CH3I_SHM_Packet_t *pkt_ptr;
+    unsigned char *buf;
+    unsigned int length;
+    int src;
+    struct MPIDI_CH3I_SHM_Unex_read_s *next;
+} MPIDI_CH3I_SHM_Unex_read_t;
+
+typedef struct MPIDI_CH3I_VC
+{
+    struct MPIDI_CH3I_SHM_Queue_t * shm, * read_shmq, * write_shmq;
+    struct MPID_Request * sendq_head;
+    struct MPID_Request * sendq_tail;
+    struct MPID_Request * send_active;
+    struct MPID_Request * recv_active;
+    struct MPID_Request * req;
+    int shm_reading_pkt;
+    int shm_state;
+    MPIDI_CH3I_SHM_Buffer_t read;
+#ifdef USE_SHM_UNEX
+    MPIDI_CH3I_SHM_Unex_read_t *unex_list;
+    struct MPIDI_VC *unex_finished_next;
+#endif
+#ifdef HAVE_SHARED_PROCESS_READ
+#ifdef HAVE_WINDOWS_H
+    HANDLE hSharedProcessHandle;
+#else
+    int nSharedProcessID;
+    int nSharedProcessFileDescriptor;
+#endif
+#endif
+} MPIDI_CH3I_VC;
+
+/* This structure uses the avail field to signal that the data is available 
+   for reading.
    The code fills the data and then sets the avail field.
-   This assumes that declaring avail to be volatile causes the compiler to insert a
+   This assumes that declaring avail to be volatile causes the compiler to 
+   insert a
    write barrier when the avail location is written to.
    */
 typedef struct MPIDI_CH3I_SHM_Packet_t
@@ -151,6 +204,54 @@ typedef struct MPIDI_CH3I_Process_s
 MPIDI_CH3I_Process_t;
 
 extern MPIDI_CH3I_Process_t MPIDI_CH3I_Process;
+
+#ifdef HAVE_SHARED_PROCESS_READ
+typedef struct MPIDI_CH3I_Shared_process
+{
+    int nRank;
+#ifdef HAVE_WINDOWS_H
+    DWORD nPid;
+#else
+    int nPid;
+#endif
+    BOOL bFinished;
+} MPIDI_CH3I_Shared_process_t;
+#endif
+
+typedef struct MPIDI_Process_group_s
+{
+    volatile int ref_count;
+    int nShmEagerLimit;
+#ifdef HAVE_SHARED_PROCESS_READ
+    int nShmRndvLimit;
+    MPIDI_CH3I_Shared_process_t *pSHP;
+#ifdef HAVE_WINDOWS_H
+    HANDLE *pSharedProcessHandles;
+#else
+    int *pSharedProcessIDs;
+    int *pSharedProcessFileDescriptors;
+#endif
+#endif
+    void *addr;
+#ifdef USE_POSIX_SHM
+    char key[MPIDI_MAX_SHM_NAME_LENGTH];
+    int id;
+#elif defined (USE_SYSV_SHM)
+    int key;
+    int id;
+#elif defined (USE_WINDOWS_SHM)
+    char key[MPIDI_MAX_SHM_NAME_LENGTH];
+    HANDLE id;
+#else
+#error *** No shared memory mapping variables specified ***
+#endif
+    int nShmWaitSpinCount;
+    int nShmWaitYieldCount;
+} MPIDI_CH3I_PG;
+/* MPIDI_CH3I_Process_group_t; */
+
+/* #define MPIDI_CH3_PG_DECL MPIDI_CH3I_Process_group_t ch; */
+
 
 #define MPIDI_CH3I_SendQ_enqueue(vcch, req)				\
 {									\

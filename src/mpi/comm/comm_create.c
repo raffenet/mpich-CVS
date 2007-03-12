@@ -56,7 +56,8 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     static const char FCNAME[] = "MPI_Comm_create";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    int i, j, n, *mapping = 0, *remote_mapping = 0, remote_size, new_context_id;
+    int i, j, n, *mapping = 0, *remote_mapping = 0, remote_size = -1, 
+	new_context_id;
     MPID_Comm *newcomm_ptr;
     MPID_Group *group_ptr;
     MPIU_CHKLMEM_DECL(3);

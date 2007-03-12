@@ -38,7 +38,7 @@
     sreq->dev.iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb); \
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
     sreq->dev.iov_count = count; \
-    sreq->ch.iov_offset = offset; \
+    sreq->dev.iov_offset = offset; \
     sreq->dev.OnDataAvail = 0;\
     MPIDI_FUNC_EXIT(MPID_STATE_CREATE_REQUEST); \
     /*return sreq;*/ \

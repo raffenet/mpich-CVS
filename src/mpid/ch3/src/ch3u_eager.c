@@ -614,7 +614,6 @@ int MPIDI_CH3_PktHandler_ReadySend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     int found;
     int complete;
     char *data_buf;
-    MPIDI_msg_sz_t msg_len;
     MPIDI_msg_sz_t data_len;
     int mpi_errno = MPI_SUCCESS;
     

@@ -35,7 +35,7 @@
     sreq->dev.iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb); \
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
     sreq->dev.iov_count = count; \
-    sreq->ch.iov_offset = offset; \
+    sreq->dev.iov_offset = offset; \
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
 }
 #else
@@ -56,7 +56,7 @@
     sreq->dev.iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[offset].MPID_IOV_BUF + nb); \
     sreq->dev.iov[offset].MPID_IOV_LEN -= nb; \
     sreq->dev.iov_count = count; \
-    sreq->ch.iov_offset = offset; \
+    sreq->dev.iov_offset = offset; \
     MPIDI_FUNC_EXIT(MPID_STATE_UPDATE_REQUEST); \
 }
 #endif
@@ -150,7 +150,7 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov,
 		    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 		    if (!complete)
 		    {
-			sreq->ch.iov_offset = 0;
+			sreq->dev.iov_offset = 0;
 			MPIDI_CH3I_SendQ_enqueue_head(vcch, sreq);
 			vcch->send_active = sreq;
 		    }

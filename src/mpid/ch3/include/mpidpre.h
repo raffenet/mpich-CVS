@@ -179,9 +179,11 @@ typedef struct MPIDI_Request {
     /* Pointer to datatype for reference counting purposes */
     struct MPID_Datatype * datatype_ptr;
 
-    /* iov and iov_count define the data to be transferred/received */
+    /* iov and iov_count define the data to be transferred/received.  
+       iov_offset points to the current head eleemnt in the IOV */
     MPID_IOV iov[MPID_IOV_LIMIT];
     int iov_count;
+    int iov_offset;
 
 #if 0
     /* FIXME: RDMA values are specific to some channels? */

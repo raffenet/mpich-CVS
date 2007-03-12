@@ -198,6 +198,14 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     return 0;
 }
 
+const char * MPIDI_CH3_VC_GetStateString( struct MPIDI_VC *vc )
+{
+    return MPIDI_CH3_VC_SshmGetStateString( vc );
+    /* If the states could be different, we'd need to figure out which
+       routine to call */
+    /*    return MPIDI_CH3_VC_SockGetStateString( vc );*/
+}
+
 /* Select the routine that uses sockets to connect two communicators
    using a socket */
 int MPIDI_CH3_Connect_to_root(const char * port_name, 

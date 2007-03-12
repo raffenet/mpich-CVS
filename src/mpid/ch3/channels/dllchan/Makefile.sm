@@ -1,7 +1,24 @@
 SUBDIRS = src .
 
+# Add the step that builds the dlls.  Do this during the make 
+# step because the build step needs the src/util/createshlib script that
+# is built by the main configure step
+all-local:
+	for dir in @SUBCHANNELS@ ; do \
+	    (cd ../$$dir && ${srcdir}/../$$dir/builddll --prefix=${prefix} \
+    					 --libdir=${libdir} \
+					 --exec-prefix=${exec_prefix} \
+					 --shlibtype=@ENABLE_SHLIB@ ) ;\
+	    rc=$$? ; if [ $$rc != 0 ] ; then exit 1 ; fi ; \
+	 done
+
 distclean-local:
 	-rm -f include/mpidi_ch3i_dllchan_conf.h
 
 maintainer-clean-local:
 	-rm -f include/mpidi_ch3i_dllchan_conf.h.in
+
+install-local:
+	for dir in @SUBCHANNELS@ ; do \
+	    (cd ../$$dir && make install ) ; \
+	done

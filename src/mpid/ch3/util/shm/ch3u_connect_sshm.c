@@ -108,7 +108,7 @@ int MPIDI_CH3I_Connect_to_root_sshm(const char * port_name,
 }
 
 #ifdef USE_DBG_LOGGING
-const char * MPIDI_CH3_VC_GetStateString( struct MPIDI_VC *vc )
+const char * MPIDI_CH3_VC_SshmGetStateString( struct MPIDI_VC *vc )
 {
     const char *name = "unknown";
     MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;

@@ -34,7 +34,7 @@ static int createRequest( void *pkt, MPIDI_msg_sz_t pkt_sz, int nb,
 	(MPID_IOV_BUF_CAST)((char *) &sreq->dev.pending_pkt + nb);
     sreq->dev.iov[0].MPID_IOV_LEN = pkt_sz - nb;
     sreq->dev.iov_count   = 1;
-    sreq->ch.iov_offset   = 0;
+    sreq->dev.iov_offset  = 0;
     sreq->dev.OnDataAvail = 0;
     *sreq_ptr = sreq;
  fn_fail:

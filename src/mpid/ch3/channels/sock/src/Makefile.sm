@@ -10,7 +10,6 @@ socksources = \
 
 lib${MPILIBNAME}_a_SOURCES = ${socksources}
 
-lib${MPILIBNAME}-ch3-sock_a_SOURCES = ${socksources}
+EXTRA_LIBS = libmpich2-ch3-sock.a
+libmpich2-ch3-sock_a_SOURCES = ${socksources}
 
-optinstall_DLLLIB = lib${MPILIBNAME}-ch3-sock.@SHLIB_EXT@
-lib${MPILIBNAME}-ch3-sock_so_LIBS = -L../../util/sock -lmpichsock

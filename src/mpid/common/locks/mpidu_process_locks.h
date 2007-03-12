@@ -6,7 +6,8 @@
 #ifndef MPIDU_PROCESS_LOCKS_H
 #define MPIDU_PROCESS_LOCKS_H
 
-#include "mpiimpl.h"
+/*#include "mpiimpl.h"*/
+#include "mpishared.h"
 #include "mpid_locksconf.h"
 
 /* This is used to quote a name in a definition (see FUNCNAME/FCNAME below) */

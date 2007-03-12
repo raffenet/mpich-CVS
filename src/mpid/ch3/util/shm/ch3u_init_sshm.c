@@ -38,6 +38,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     int pmi_errno;
     int pg_size;
     int p;
+    MPIDI_CH3I_PG *pgch;
 #ifdef USE_PERSISTENT_SHARED_MEMORY
     char * parent_bizcard = NULL;
 #endif
@@ -54,6 +55,8 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     MPIU_CHKLMEM_DECL(2);
 
     srand(getpid()); /* brad : needed by generate_shm_string */
+
+    pgch = (MPIDI_CH3I_PG *)pg_p->channel_private;
 
     MPIDI_CH3I_Process.shm_reading_list = NULL;
     MPIDI_CH3I_Process.shm_writing_list = NULL;
@@ -84,20 +87,20 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     MPIU_CHKLMEM_MALLOC(val,char *,val_max_sz,mpi_errno,"val");
 
 #ifdef MPIDI_CH3_USES_SHM_NAME
-    pg_p->ch.shm_name = NULL;
-    pg_p->ch.shm_name = MPIU_Malloc(sizeof(char) * MPIDI_MAX_SHM_NAME_LENGTH);
-    if (pg_p->ch.shm_name == NULL) {
+    pgch->shm_name = NULL;
+    pgch->shm_name = MPIU_Malloc(sizeof(char) * MPIDI_MAX_SHM_NAME_LENGTH);
+    if (pgch->shm_name == NULL) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
     }
 #endif
 
     /* set the global variable defaults */
-    pg_p->ch.nShmEagerLimit = MPIDI_SHM_EAGER_LIMIT;
+    pgch->nShmEagerLimit = MPIDI_SHM_EAGER_LIMIT;
 #ifdef HAVE_SHARED_PROCESS_READ
-    pg_p->ch.nShmRndvLimit = MPIDI_SHM_RNDV_LIMIT;
+    pgch->nShmRndvLimit = MPIDI_SHM_RNDV_LIMIT;
 #endif
-    pg_p->ch.nShmWaitSpinCount = MPIDI_CH3I_SPIN_COUNT_DEFAULT;
-    pg_p->ch.nShmWaitYieldCount = MPIDI_CH3I_YIELD_COUNT_DEFAULT;
+    pgch->nShmWaitSpinCount = MPIDI_CH3I_SPIN_COUNT_DEFAULT;
+    pgch->nShmWaitYieldCount = MPIDI_CH3I_YIELD_COUNT_DEFAULT;
 
     /* Figure out how many processors are available and set the spin count 
        accordingly */
@@ -108,7 +111,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	/* if you know the number of processors, calculate the spin count 
 	   relative to that number */
         if (ncpus == 1)
-            pg_p->ch.nShmWaitSpinCount = 1;
+            pgch->nShmWaitSpinCount = 1;
 	/* FIXME: Why is this commented out? */
 	/*
         else if (ncpus  < num_procs_per_node)
@@ -121,7 +124,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 /* FIXME: This code probably reflects a bug caused by commenting out the above
    code */
 #ifndef HAVE_WINDOWS_H    /* brad - nShmWaitSpinCount is uninitialized in sshm but probably shouldn't be */
-    pg_p->ch.nShmWaitSpinCount = 1;
+    pgch->nShmWaitSpinCount = 1;
     g_nLockSpinCount = 1;
 #endif
 
@@ -138,25 +141,30 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
        is to define a method initialization routine that is called
        after the pg is created but before the final, channel-specific 
        virtual connection initialization is done. */
-    /* Initialize the VC table associated with this process group (and thus COMM_WORLD) */
+    /* Initialize the VC table associated with this process group (and thus 
+       COMM_WORLD) */
+    /* Note that this is *not* called with MPIU_CALL.  This routine is 
+       not included within the general dllchan channel, and hence this
+       routine may directly call the specific channel's VC_Init routine */
     for (p = 0; p < pg_size; p++)
     {
-	MPIU_CALL(MPIDI_CH3,VC_Init( &pg_p->vct[p] ));
+	MPIDI_CH3_VC_Init( &pg_p->vct[p] );
     }
 
     /* brad : do the shared memory specific setup items so we can later do the
      *         shared memory aspects of the business card
      */
 
-    MPID_Get_processor_name( pg_p->ch.shm_hostname, 
-			     sizeof(pg_p->ch.shm_hostname), 0);
+    MPID_Get_processor_name( pgch->shm_hostname, 
+			     sizeof(pgch->shm_hostname), 0);
 
 #ifdef MPIDI_CH3_USES_SHM_NAME
-    MPIDI_Process.my_pg = pg_p;  /* was later prior but internally Get_parent_port needs this */    
+    MPIDI_Process.my_pg = pg_p;  /* was later prior but internally 
+				    GetParentPort needs this */    
 #ifdef USE_PERSISTENT_SHARED_MEMORY
     if (has_parent) /* set in PMI_Init */
     {
-        mpi_errno = MPIDI_CH3_Get_parent_port(&parent_bizcard);
+        mpi_errno = MPIDI_CH3_GetParentPort(&parent_bizcard);
         if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
 				"**ch3|get_parent_port");
@@ -180,7 +188,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	    if (*tmp_str == ':')
 	    {
 		tmp_str++;
-		mpi_errno = MPIU_Strncpy(pg_p->ch.shm_name, tmp_str, 
+		mpi_errno = MPIU_Strncpy(pgch->shm_name, tmp_str, 
 					 MPIDI_MAX_SHM_NAME_LENGTH);
 		MPIU_Free(orig_str);
 		if (mpi_errno != 0) {
@@ -196,7 +204,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     } /* has_parent */
 #else
     /* NOTE: Do not use shared memory to communicate to parent */
-    pg_p->ch.shm_name[0] = 0;
+    pgch->shm_name[0] = 0;
 #endif
 #endif            
 
@@ -215,7 +223,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	    /* If you have a parent then you must not initialize the queue 
 	       since the parent already did. */
 	    initialize_queue = 0;
-	    MPIU_Strncpy(queue_name, pg_p->ch.shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
+	    MPIU_Strncpy(queue_name, pgch->shm_name, MPIDI_MAX_SHM_NAME_LENGTH);
 	    MPIU_Strncpy(val, queue_name, val_max_sz);
 	}
 	else
@@ -233,10 +241,11 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	    /* If you don't have a parent then you must initialize the queue */
 	    initialize_queue = 1;
 	    MPIU_Strncpy(val, queue_name, val_max_sz);
-	    MPIU_Strncpy(pg_p->ch.shm_name, val, val_max_sz);
+	    MPIU_Strncpy(pgch->shm_name, val, val_max_sz);
 	}
 
-	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg_p->ch.bootstrapQ, queue_name, initialize_queue);
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pgch->bootstrapQ, 
+					       queue_name, initialize_queue);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_create");
 	}
@@ -272,7 +281,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	}
 	MPIU_Strncpy(queue_name, val, MPIDI_MAX_SHM_NAME_LENGTH);
 #ifdef MPIDI_CH3_USES_SHM_NAME
-	MPIU_Strncpy(pg_p->ch.shm_name, val, MPIDI_MAX_SHM_NAME_LENGTH);
+	MPIU_Strncpy(pgch->shm_name, val, MPIDI_MAX_SHM_NAME_LENGTH);
 #endif
 	/*printf("process %d got bootQ name: '%s'\n", pg_rank, queue_name);fflush(stdout);*/
 	mpi_errno = getNodeRootRank(pg_rank, &root_rank);
@@ -296,7 +305,8 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	    /* The root process initialized the queue */
 	    initialize_queue = 0;
 	}
-	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pg_p->ch.bootstrapQ, queue_name, initialize_queue);
+	mpi_errno = MPIDI_CH3I_BootstrapQ_create_named(&pgch->bootstrapQ, 
+					       queue_name, initialize_queue);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_create");
 	}
@@ -321,7 +331,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
      * from attaching to the segment later thus preventing the implementation 
      * of MPI_Comm_connect/accept/spawn/spawn_multiple
      */
-    mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(pg_p->ch.bootstrapQ);
+    mpi_errno = MPIDI_CH3I_BootstrapQ_unlink(pgch->bootstrapQ);
     if (mpi_errno != MPI_SUCCESS) {
         MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_unlink");
     }
@@ -329,7 +339,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 
 #else
 
-    mpi_errno = MPIDI_CH3I_BootstrapQ_create(&pg_p->ch.bootstrapQ);
+    mpi_errno = MPIDI_CH3I_BootstrapQ_create(&pgch->bootstrapQ);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**boot_create");
     }

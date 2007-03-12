@@ -14,6 +14,9 @@
 
 #define SHM_READING_BIT     0x0008
 
+#define MPIDI_CH3_PKT_RELOAD_SEND 1
+#define MPIDI_CH3_PKT_RELOAD_RECV 0
+
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
@@ -347,7 +350,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 	rbuf = recv_iov[0].MPID_IOV_BUF;
 	rbuf_len = recv_iov[0].MPID_IOV_LEN;
 	riov_offset = 0;
-	for (i=sreq->ch.iov_offset; i<send_count; i++)
+	for (i=sreq->dev.iov_offset; i<send_count; i++)
 	{
 	    sbuf = send_iov[i].MPID_IOV_BUF;
 	    sbuf_len = send_iov[i].MPID_IOV_LEN;
@@ -498,7 +501,7 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 				(MPID_IOV_BUF_CAST)sbuf;
 			    sreq->dev.iov[i].MPID_IOV_LEN = sbuf_len;
 			}
-			sreq->ch.iov_offset = i;
+			sreq->dev.iov_offset = i;
 
 			/* send the reload packet to the receiver */
 			MPIDI_Pkt_init(reload_pkt, MPIDI_CH3_PKT_RELOAD);
@@ -658,7 +661,7 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 	*/
 	sbuf = send_iov[siov_offset].MPID_IOV_BUF;
 	sbuf_len = send_iov[siov_offset].MPID_IOV_LEN;
-	for (i=rreq->ch.iov_offset; i<recv_count; i++)
+	for (i=rreq->dev.iov_offset; i<recv_count; i++)
 	{
 	    rbuf = recv_iov[i].MPID_IOV_BUF;
 	    rbuf_len = recv_iov[i].MPID_IOV_LEN;
@@ -745,7 +748,7 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 			    rreq->dev.iov[i].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rbuf;
 			    rreq->dev.iov[i].MPID_IOV_LEN = rbuf_len;
 			}
-			rreq->ch.iov_offset = i;
+			rreq->dev.iov_offset = i;
 
 			/* send the reload packet to the sender */
 			/*printf("sending reload packet to the sender.\n");fflush(stdout);*/
@@ -927,7 +930,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout,
 			rreq->dev.iov[1].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
 			rreq->dev.iov_count = 2;
 			rreq->ch.req = NULL;
-			rreq->ch.iov_offset = 0;
+			rreq->dev.iov_offset = 0;
 			recv_vcch->recv_active = rreq;
 		    }
 		    else if (((MPIDI_CH3_Pkt_t*)mem_ptr)->type == MPIDI_CH3_PKT_CTS_IOV)
@@ -949,7 +952,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout,
 			rreq->dev.iov[0].MPID_IOV_LEN = sreq->dev.rdma_iov_count * sizeof(MPID_IOV);
 			rreq->dev.iov_count = 1;
 			rreq->ch.req = sreq;
-			rreq->ch.iov_offset = 0;
+			rreq->dev.iov_offset = 0;
 			recv_vcch->recv_active = rreq;
 			/*MPIDI_CH3I_SHM_post_read(recv_vc_ptr, &sreq->ch.rdma_iov, sreq->ch.rdma_iov_count * sizeof(MPID_IOV), NULL);*/
 		    }
@@ -973,7 +976,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout,
 			    rreq->dev.iov[0].MPID_IOV_LEN = sreq->dev.rdma_iov_count * sizeof(MPID_IOV);
 			    rreq->dev.iov_count = 1;
 			    rreq->ch.req = sreq;
-			    rreq->ch.iov_offset = 0;
+			    rreq->dev.iov_offset = 0;
 			    recv_vcch->recv_active = rreq;
 			}
 			else if ( ((MPIDI_CH3_Pkt_rdma_iov_t*)mem_ptr)->send_recv == MPIDI_CH3_PKT_RELOAD_RECV )
@@ -994,7 +997,7 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout,
 			    sreq->dev.iov[0].MPID_IOV_LEN = rreq->dev.rdma_iov_count * sizeof(MPID_IOV);
 			    sreq->dev.iov_count = 1;
 			    sreq->ch.req = rreq;
-			    sreq->ch.iov_offset = 0;
+			    sreq->dev.iov_offset = 0;
 			    recv_vcch->recv_active = sreq;
 			}
 			else

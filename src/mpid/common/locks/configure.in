@@ -28,6 +28,15 @@ dnl
 dnl First check that we have a clean build if we are doing a VPATH build
 PAC_VPATH_CHECK()
 
+PAC_PROG_MAKE
+AC_CHECK_PROGS(AR,ar)
+if test -z "$AR" ; then
+    AC_MSG_ERROR([The program ar is required for building MPICH2.  Make sure that your path includes ar])
+fi
+# Note that we set RANLIB to true if we don't find it (some systems neither
+# need it nor provide it)
+AC_CHECK_PROGS(RANLIB,ranlib,true)
+
 AC_CHECK_FUNCS( yield sched_yield usleep sleep select )
 AC_CHECK_FUNCS( mutex_init compare_and_swap )
 AC_CHECK_FUNCS( pthread_mutexattr_init pthread_mutexattr_setpshared )
@@ -50,6 +59,11 @@ AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
 PAC_CC_SUBDIR_SHLIBS
 AC_SUBST(master_top_srcdir)
+dnl Etags
+AC_SUBST(ETAGS)
+AC_SUBST(ETAGSADD)
+export ETAGS
+export ETAGSADD
 dnl
 dnl Dependency handling
 AC_SUBST(MAKE_DEPEND_C)

@@ -141,7 +141,7 @@ int MPIDI_CH3U_VC_SendClose( MPIDI_VC_t *vc, int rank )
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_VC_SENDCLOSE);
 
     /* FIXME: Remove this IFDEF */
-#ifdef MPIDI_CH3_USES_SSHM
+#if defined(MPIDI_CH3_USES_SSHM) && 0
     MPIU_Assert( vc->state == MPIDI_VC_STATE_ACTIVE || 
 		 vc->state == MPIDI_VC_STATE_REMOTE_CLOSE 
 		 /* sshm queues are uni-directional.  A VC that is connected 

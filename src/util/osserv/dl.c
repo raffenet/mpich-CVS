@@ -7,6 +7,7 @@
 /* Support for dynamically loaded libraries */
 
 #include "mpiimpl.h"
+#include "mpidll.h"
 
 #ifdef USE_DYNAMIC_LIBRARIES
 
@@ -17,6 +18,10 @@
 #define RTLD_GLOBAL 0
 #endif
 
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif
+
 #undef FCNAME
 #define FCNAME "MPIU_DLL_Open"
 int MPIU_DLL_Open( const char libname[], void **handle )
@@ -24,6 +29,14 @@ int MPIU_DLL_Open( const char libname[], void **handle )
     int mpi_errno = MPI_SUCCESS;
 
     *handle = dlopen( libname, RTLD_LAZY | RTLD_GLOBAL );
+    if (!*handle) {
+	char fullpath[MAXPATHLEN];
+	/* Try again, but prefixing the libname with LIBDIR */
+	MPIU_Strncpy( fullpath, MPICH2_LIBDIR, sizeof(fullpath) );
+	MPIU_Strnapp( fullpath, "/", sizeof(fullpath));
+	MPIU_Strnapp( fullpath, libname, sizeof(fullpath) );
+	*handle = dlopen( fullpath, RTLD_LAZY | RTLD_GLOBAL );
+    }
     if (!*handle) {
 	MPIU_ERR_SET2(mpi_errno,MPI_ERR_OTHER,"**unableToLoadDLL",
 		      "**unableToLoadDLL %s %s", libname, dlerror() );

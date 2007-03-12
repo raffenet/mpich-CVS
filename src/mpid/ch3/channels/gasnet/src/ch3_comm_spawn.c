@@ -50,8 +50,8 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
     return MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, "MPIDI_Comm_spawn_multiple", __LINE__, MPI_ERR_OTHER,"**notimpl", 0);
 }
 
-int MPIDI_CH3_Get_parent_port(char ** parent_port)
+int MPIDI_CH3_GetParentPort(char ** parent_port)
 {
-    return MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, "MPIDI_CH3_Get_parent_port", __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
+    return MPIR_Err_create_code (MPI_SUCCESS, MPIR_ERR_FATAL, "MPIDI_CH3_GetParentPort", __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
 }
 

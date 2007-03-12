@@ -84,6 +84,7 @@ MPID_Request * MPID_Request_create(void)
 	req->dev.lock_queue_entry  = NULL;
 	req->dev.dtype_info	   = NULL;
 	req->dev.dataloop	   = NULL;
+	req->dev.iov_offset        = 0;
 #if 0
 	req->dev.rdma_iov_count	   = 0;
 	req->dev.rdma_iov_offset   = 0;
@@ -236,7 +237,8 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
 
 	iov_data_copied = 0;
 	for (i = 0; i < *iov_n; i++) {
-	    memcpy((char*) sreq->dev.tmpbuf + iov_data_copied, iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN);
+	    memcpy((char*) sreq->dev.tmpbuf + iov_data_copied, 
+		   iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN);
 	    iov_data_copied += iov[i].MPID_IOV_LEN;
 	}
 	sreq->dev.segment_first = last;

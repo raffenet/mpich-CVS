@@ -175,6 +175,7 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
     int mpi_errno;
     char hostname[256];
     char queue_name[100];
+    MPIDI_CH3I_PG *pgch;
     MPIDI_CH3I_BootstrapQ queue;
     MPIDI_CH3I_Shmem_queue_info shm_info;
     MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
@@ -219,7 +220,8 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 #endif
 
     /* compare this host's name with the business card host name */
-    if (strcmp(MPIDI_Process.my_pg->ch.shm_hostname, hostname) != 0)
+    pgch = (MPIDI_CH3I_PG *)MPIDI_Process.my_pg->channel_private;
+    if (strcmp(pgch->shm_hostname, hostname) != 0)
     {
 	*flag = FALSE;
 	return MPI_SUCCESS;
@@ -236,7 +238,8 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
     }
 
     /* create the write queue */
-    mpi_errno = MPIDI_CH3I_SHM_Get_mem(sizeof(MPIDI_CH3I_SHM_Queue_t), &vcch->shm_write_queue_info);
+    mpi_errno = MPIDI_CH3I_SHM_Get_mem(sizeof(MPIDI_CH3I_SHM_Queue_t), 
+				       &vcch->shm_write_queue_info);
     if (mpi_errno != MPI_SUCCESS)
     {
 	*flag = FALSE;
@@ -374,7 +377,9 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 	}
 	if (count >= MPIDI_CH3I_Process.num_cpus)
 	{
-	    MPIDI_Process.my_pg->ch.nShmWaitSpinCount = 1;
+	    MPIDI_CH3I_PG *pgch;
+	    pgch = (MPIDI_CH3I_PG *)MPIDI_Process.my_pg->channel_private;
+	    pgch->nShmWaitSpinCount = 1;
 	}
 
 	vcch->state = MPIDI_CH3I_VC_STATE_CONNECTED;

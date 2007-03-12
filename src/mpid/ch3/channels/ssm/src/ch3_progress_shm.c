@@ -19,7 +19,7 @@
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz_t nb)
 {
-    int offset = req->ch.iov_offset;
+    int offset = req->dev.iov_offset;
     const int count = req->dev.iov_count;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
 
@@ -36,14 +36,14 @@ static inline int MPIDI_CH3I_Request_adjust_iov(MPID_Request * req, MPIDI_msg_sz
 	{
 	    req->dev.iov[offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) req->dev.iov[offset].MPID_IOV_BUF + nb);
 	    req->dev.iov[offset].MPID_IOV_LEN -= nb;
-	    req->ch.iov_offset = offset;
+	    req->dev.iov_offset = offset;
 	    MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning FALSE"));
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
 	    return FALSE;
 	}
     }
     
-    req->ch.iov_offset = 0;
+    req->dev.iov_offset = 0;
 
     MPIDI_DBG_PRINTF((60, FCNAME, "adjust_iov returning TRUE"));
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV);
@@ -70,20 +70,20 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC_t * vc)
 	MPID_Request * req = vcch->send_active;
 
 #ifdef MPICH_DBG_OUTPUT
-	if (req->ch.iov_offset >= req->dev.iov_count)
+	if (req->dev.iov_offset >= req->dev.iov_count)
 	{
-	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ch.iov_offset, req->dev.iov_count);
+	    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->dev.iov_offset, req->dev.iov_count);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_WRITE_PROGRESS);
 	    return mpi_errno;
 	}
 #endif
 	/* Check here or inside shm_writev?
 	if (vc->ch.write_shmq->packet[vc->ch.write_shmq->tail_index].avail == MPIDI_CH3I_PKT_EMPTY)
-	    mpi_errno = MPIDI_CH3I_SHM_writev(vc, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset, &nb);
+	    mpi_errno = MPIDI_CH3I_SHM_writev(vc, req->dev.iov + req->dev.iov_offset, req->dev.iov_count - req->dev.iov_offset, &nb);
 	else
 	    nb = 0;
 	*/
-	mpi_errno = MPIDI_CH3I_SHM_writev(vc, req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset, &nb);
+	mpi_errno = MPIDI_CH3I_SHM_writev(vc, req->dev.iov + req->dev.iov_offset, req->dev.iov_count - req->dev.iov_offset, &nb);
 	if (mpi_errno != MPI_SUCCESS)
 	{
 	    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
@@ -129,7 +129,7 @@ int MPIDI_CH3I_SHM_write_progress(MPIDI_VC_t * vc)
 	    else
 	    {
 		MPIDI_DBG_PRINTF((65, FCNAME, "iovec updated by %d bytes but not complete", nb));
-		MPIU_Assert(req->ch.iov_offset < req->dev.iov_count);
+		MPIU_Assert(req->dev.iov_offset < req->dev.iov_count);
 		break;
 	    }
 	}
@@ -210,9 +210,9 @@ int MPIDI_CH3I_Handle_shm_read(MPIDI_VC_t *vc, int nb)
 	else
 	{
 #ifdef MPICH_DBG_OUTPUT
-	    if (req->ch.iov_offset >= req->dev.iov_count)
+	    if (req->dev.iov_offset >= req->dev.iov_count)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->ch.iov_offset, req->dev.iov_count);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**iov_offset", "**iov_offset %d %d", req->dev.iov_offset, req->dev.iov_count);
 		goto fn_fail;
 	    }
 #endif
@@ -223,7 +223,7 @@ int MPIDI_CH3I_Handle_shm_read(MPIDI_VC_t *vc, int nb)
     else
     {
 	MPIDI_DBG_PRINTF((65, FCNAME, "Read args were iov=%x, count=%d",
-	    req->dev.iov + req->ch.iov_offset, req->dev.iov_count - req->ch.iov_offset));
+	    req->dev.iov + req->dev.iov_offset, req->dev.iov_count - req->dev.iov_offset));
     }
 
  fn_fail:    

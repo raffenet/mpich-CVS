@@ -163,7 +163,7 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
  maxloc type.  Initialization of those names failed.
 
 **unableToLoadDLL: Unable to load a dynamically loadable library
-**unableToLoadDLL %s %s: Unable to load the dynamically loadable library %s\
+**unableToLoadDLL %s %s: Unable to load the dynamically loadable library %s \
  for reason %s
 **unableToLoadDLLsym: Unable to find or load a symbol from a dynamically \
  loadable library

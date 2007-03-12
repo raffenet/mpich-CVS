@@ -105,6 +105,13 @@ typedef struct MPIDI_PG
     int  (*connInfoFromString)( const char *,  struct MPIDI_PG * );
     int  (*freeConnInfo)( struct MPIDI_PG * );
 
+    /* Rather than have each channel define its own fields for the 
+       channel-specific data, we provide a fixed-sized scratchpad.  Currently,
+       this has a very generous size, though this may shrink later (a channel
+       can always allocate storage and hang it off of the end).  This 
+       is necessary to allow dynamic loading of channels at MPI_Init time. */
+#define MPIDI_CH3_PG_SIZE 48
+    int32_t channel_private[MPIDI_CH3_PG_SIZE];
 #if defined(MPIDI_CH3_PG_DECL)
     MPIDI_CH3_PG_DECL
 #endif    
@@ -303,6 +310,7 @@ extern MPIDI_Process_t MPIDI_Process;
     (rreq_)->dev.state = 0;                                     \
     (rreq_)->dev.cancel_pending = FALSE;                        \
     (rreq_)->dev.datatype_ptr = NULL;                           \
+    (rreq_)->dev.iov_offset   = 0;                              \
      MPIDI_CH3_REQUEST_INIT(rreq_);\
 }
 
@@ -751,6 +759,7 @@ extern MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool;
 #else
 /* FIXME: This duplicates a value in util/sock/ch3usock.h */
 const char *MPIDI_CH3_VC_GetStateString(struct MPIDI_VC *);
+const char *MPIDI_CH3_VC_SockGetStateString(struct MPIDI_VC *);
 #endif
 
 /* These tw routines are in mpidi_pg.c and are used to print the 
@@ -1110,6 +1119,9 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root );
 int MPIDI_CH3I_Connect_to_root_sshm(const char *, MPIDI_VC_t **);
 int MPIDI_VC_InitShm( MPIDI_VC_t *vc );
 
+/* from util/shmbase */
+void MPIDI_Generate_shm_string(char *, int);
+
 /* Channel defintitions */
 /*@
   MPIDI_CH3_iStartMsg - A non-blocking request to send a CH3 packet.  A r
@@ -1374,7 +1386,7 @@ void MPIDI_CH3_Request_add_ref(MPID_Request * req);
 #endif
 
 /*@
-  MPIDI_CH3_Get_parent_port - obtain the port name associated with the parent
+  MPIDI_CH3_GetParentPort - obtain the port name associated with the parent
 
   Output Parameters:
 .  parent_port_name - the port name associated with the parent communicator
@@ -1383,12 +1395,19 @@ void MPIDI_CH3_Request_add_ref(MPID_Request * req);
   A MPI error code.
   
   NOTE:
-  'MPIDI_CH3_Get_parent_port' should only be called if the initialization
+  'MPIDI_CH3_GetParentPort' should only be called if the initialization
   (in the current implementation, done with the static function 
   'InitPGFromPMI' in 'mpid_init.c') has determined that this process
   in fact has a parent.
 @*/
-int MPIDI_CH3_Get_parent_port(char ** parent_port_name);
+int MPIDI_CH3_GetParentPort(char ** parent_port_name);
+
+/*@
+   MPIDI_CH3_FreeParentPort - This routine frees the storage associated with
+   a parent port (allocted with MPIDH_CH3_GetParentPort).
+
+  @*/
+void MPIDI_CH3_FreeParentPort( void );
 
 /*E
   MPIDI_CH3_Abort - Abort this process.
@@ -1532,6 +1551,17 @@ int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size);
   before this routine is called.
 @*/
 int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_ptr, int pg_rank );
+
+/*@
+  MPIDI_CH3_PreLoad - Setup a channel before calling MPIDI_CH3_Init
+
+  Notes:
+  This routine is called only if the channel defines 'HAVE_CH3_PRELOAD' .
+  It may be used to perform any initialization that is required before any
+  of the channel routines may be used.
+
+  @*/
+int MPIDI_CH3_PreLoad( void );
 
 /*@
   MPIDI_CH3_Finalize - Shutdown the channel implementation.

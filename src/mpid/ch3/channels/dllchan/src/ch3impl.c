@@ -5,6 +5,7 @@
  */
 
 #include "mpidi_ch3_impl.h"
+#include "mpidll.h"
 
 /*
  * This file implements the CH3 Channel interface in terms of routines
@@ -19,6 +20,9 @@ static void *dllhandle = 0;
 struct MPIDI_CH3_Funcs MPIU_CALL_MPIDI_CH3 = { 0 };
 int *MPIDI_CH3I_progress_completion_count_ptr = 0;
 
+static const char * MPIDI_CH3I_VC_GetStateString( struct MPIDI_VC * );
+static int MPIDI_CH3I_NotImpl(void);
+
 #undef FUNCNAME
 #define FUNCNAME MPICH_CH3_PreLoad
 #undef FCNAME
@@ -26,7 +30,9 @@ int *MPIDI_CH3I_progress_completion_count_ptr = 0;
 int MPIDI_CH3_PreLoad( void )
 {
     int mpi_errno = MPI_SUCCESS;
-    char *dllname = 0;
+    char *channelName = 0;
+    char dllname[256];
+    char *shlibExt = MPICH_SHLIB_EXT;
     MPIDI_STATE_DECL(MPID_STATE_MPID_CH3_PRELOAD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_CH3_PRELOAD);
@@ -41,10 +47,13 @@ int MPIDI_CH3_PreLoad( void )
        channel's version of this routine 
     */
     
-    dllname = getenv( "MPICH_CH3CHANNEL" );
-    if (!dllname) {
-	dllname = MPICH_DEFAULT_CH3_CHANNEL;
+    channelName = getenv( "MPICH_CH3CHANNEL" );
+    if (!channelName) {
+	channelName = MPICH_DEFAULT_CH3_CHANNEL;
     }
+    /* Form the basic dll name as libmpich2-ch3-<name>.<dllextension> */
+    MPIU_Snprintf( dllname, sizeof(dllname), "libmpich2-ch3-%s.%s", 
+		   channelName, shlibExt );
     
     mpi_errno = MPIU_DLL_Open( dllname, &dllhandle );
     if (mpi_errno) {
@@ -53,53 +62,71 @@ int MPIDI_CH3_PreLoad( void )
     /* We should check the version numbers here for consistency */
 
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Init", 
-				  &MPIU_CALL_MPIDI_CH3.Init );
+				  (void **)&MPIU_CALL_MPIDI_CH3.Init );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Finalize", 
-				  &MPIU_CALL_MPIDI_CH3.Finalize );
+				  (void **)&MPIU_CALL_MPIDI_CH3.Finalize );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_iSend", 
-				  &MPIU_CALL_MPIDI_CH3.iSend );
+				  (void **)&MPIU_CALL_MPIDI_CH3.iSend );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_iSendv", 
-				  &MPIU_CALL_MPIDI_CH3.iSendv );
+				  (void **)&MPIU_CALL_MPIDI_CH3.iSendv );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_iStartMsg", 
-				  &MPIU_CALL_MPIDI_CH3.iStartMsg );
+				  (void **)&MPIU_CALL_MPIDI_CH3.iStartMsg );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_iStartMsgv", 
-				  &MPIU_CALL_MPIDI_CH3.iStartMsgv );
+				  (void **)&MPIU_CALL_MPIDI_CH3.iStartMsgv );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-    mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Progress_test", 
-				  &MPIU_CALL_MPIDI_CH3.Progress_test );
+    mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3I_Progress", 
+				  (void **)&MPIU_CALL_MPIDI_CH3.Progress );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+    /*
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Progress_wait", 
 				  &MPIU_CALL_MPIDI_CH3.Progress_wait );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+    */
+    mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_RMAFnsInit", 
+				  (void **)&MPIU_CALL_MPIDI_CH3.RMAFnsInit );
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Connection_terminate", 
-				  &MPIU_CALL_MPIDI_CH3.Connection_terminate );
+				  (void **)&MPIU_CALL_MPIDI_CH3.Connection_terminate );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_VC_Init", 
-				  &MPIU_CALL_MPIDI_CH3.VC_Init );
+				  (void **)&MPIU_CALL_MPIDI_CH3.VC_Init );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_PG_Init", 
-				  &MPIU_CALL_MPIDI_CH3.PG_Init );
+				  (void **)&MPIU_CALL_MPIDI_CH3.PG_Init );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_VC_GetStateString", 
-				  &MPIU_CALL_MPIDI_CH3.VC_GetStateString );
-    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+				  (void **)&MPIU_CALL_MPIDI_CH3.VC_GetStateString );
+    /* If we don't find GetStateString, we provide a default */
+    if (mpi_errno) {
+	MPIU_CALL_MPIDI_CH3.VC_GetStateString = MPIDI_CH3I_VC_GetStateString;
+    }
+
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_PortFnsInit", 
-				  &MPIU_CALL_MPIDI_CH3.PortFnsInit );
+				  (void **)&MPIU_CALL_MPIDI_CH3.PortFnsInit );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Connect_to_root", 
-				  &MPIU_CALL_MPIDI_CH3.Connect_to_root );
-    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-    mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Get_business_card", 
-				  &MPIU_CALL_MPIDI_CH3.Get_business_card );
-    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+				  (void **)&MPIU_CALL_MPIDI_CH3.Connect_to_root );
+    /* If we don't find Connect_to_root, set the entry to a routine that
+       returns not implemented */
+    if (mpi_errno) { 
+	MPIU_CALL_MPIDI_CH3.Connect_to_root = MPIDI_CH3I_NotImpl;
+    }
 
-    mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_progress_completion_count_ptr", 
-				  &MPIDI_CH3I_progress_completion_count_ptr );
+    mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Get_business_card", 
+				  (void **)&MPIU_CALL_MPIDI_CH3.Get_business_card );
+    /* If we don't find Get_business_card, set the entry to a routine that
+       returns not implemented */
+    if (mpi_errno) { 
+	MPIU_CALL_MPIDI_CH3.Get_business_card = MPIDI_CH3I_NotImpl;
+    }
+
+    mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3I_progress_completion_count", 
+				  (void **)&MPIDI_CH3I_progress_completion_count_ptr );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
  fn_exit:
@@ -120,7 +147,33 @@ int MPIDI_CH3_Finalize( )
    MPID_Progress_wait as this routine.  We may want to change how this
    is done so that the export is used only in the top-level (above ch3) 
    routines */
+#ifdef MPIDI_CH3_Progress_wait
+#undef MPIDI_CH3_Progress_wait
+#endif
 int MPIDI_CH3_Progress_wait(MPID_Progress_state *progress_state)
 {
-    return MPIU_CALL_MPIDI_CH3.Progress_wait( progress_state );
+    return MPIU_CALL_MPIDI_CH3.Progress( 1, progress_state );
+}
+/* This routine must be exported beyond ch3 device because ch3 defines
+   MPID_Progress_test as this routine.  We may want to change how this
+   is done so that the export is used only in the top-level (above ch3) 
+   routines */
+#ifdef MPIDI_CH3_Progress_test
+#undef MPIDI_CH3_Progress_test
+#endif
+int MPIDI_CH3_Progress_test(void)
+{
+    return MPIU_CALL_MPIDI_CH3.Progress( 0, NULL );
+}
+
+static const char * MPIDI_CH3I_VC_GetStateString( struct MPIDI_VC *vc )
+{
+    return "unknown";
+}
+
+static int MPIDI_CH3I_NotImpl(void)
+{
+    return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+				 "Dynanmicallyloadable", __LINE__, 
+				 MPI_ERR_OTHER, "**notimpl", 0);
 }

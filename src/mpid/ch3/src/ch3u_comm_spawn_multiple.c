@@ -238,10 +238,10 @@ static char *parent_port_name = 0;    /* Name of parent port if this
 					 of comm world) or null */
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Get_parent_port
+#define FUNCNAME MPIDI_CH3_GetParentPort
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Get_parent_port(char ** parent_port)
+int MPIDI_CH3_GetParentPort(char ** parent_port)
 {
     int mpi_errno = MPI_SUCCESS;
     char val[MPIDI_MAX_KVS_VALUE_LEN];

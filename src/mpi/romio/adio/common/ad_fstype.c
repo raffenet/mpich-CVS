@@ -90,9 +90,17 @@
 # endif
 #endif
 
+/* ADIO_FileSysType_parentdir is only used if one of these is defined.
+   By including this test, we avoid warnings about unused static functions
+   from the compiler */
+#if defined(ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE) || \
+    defined(HAVE_STRUCT_STATFS) || \
+    defined(ROMIO_HAVE_STRUCT_STAT_WITH_ST_FSTYPE) 
 #ifndef ROMIO_NTFS
+#define ROMIO_NEEDS_ADIOPARENTDIR
 static void ADIO_FileSysType_parentdir(char *filename, char **dirnamep);
 #endif
+#endif 
 static void ADIO_FileSysType_prefix(char *filename, int *fstype, 
 				    int *error_code);
 static void ADIO_FileSysType_fncall(char *filename, int *fstype, 
@@ -111,7 +119,8 @@ Output Parameters:
  Note that the caller should free the memory located at the pointer returned
  after the string is no longer needed.
 */
-#ifndef ROMIO_NTFS
+#ifdef ROMIO_NEEDS_ADIOPARENTDIR
+
 #ifndef PATH_MAX
 #define PATH_MAX 65535
 #endif
@@ -128,7 +137,7 @@ Output Parameters:
      /* no way to check if it is a link, so say false */
 #    define S_ISLNK(mode) 0   
 #    endif
-#endif
+#endif /* !(S_ISLNK) */
 
 /* ADIO_FileSysType_parentdir
  *

@@ -16,6 +16,9 @@ static MPIDI_CH3_PktHandler_Fcn *pktArray[MPIDI_CH3_PKT_END_CH3+1];
 
 static int ReadMoreData( MPIDI_CH3I_Connection_t *, MPID_Request * );
 
+static int MPIDI_CH3i_Progress_wait(MPID_Progress_state * );
+static int MPIDI_CH3i_Progress_test(void);
+
 /* FIXME: Move thread stuff into some set of abstractions in order to remove
    ifdefs */
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
@@ -44,16 +47,16 @@ static int adjust_iov(MPID_IOV ** iovp, int * countp, MPIU_Size_t nb);
 
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Progress_test
+#define FUNCNAME MPIDI_CH3i_Progress_test
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Progress_test(void)
+static int MPIDI_CH3i_Progress_test(void)
 {
     MPIDU_Sock_event_t event;
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_TEST);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_TEST);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_TEST);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_TEST);
 
 #   ifdef MPICH_IS_THREADED
     {
@@ -102,7 +105,7 @@ int MPIDI_CH3_Progress_test(void)
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_TEST);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_TEST);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -111,16 +114,16 @@ int MPIDI_CH3_Progress_test(void)
 
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Progress_wait
+#define FUNCNAME MPIDI_CH3i_Progress_wait
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
+static int MPIDI_CH3i_Progress_wait(MPID_Progress_state * progress_state)
 {
     MPIDU_Sock_event_t event;
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_PROGRESS_WAIT);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_WAIT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_PROGRESS_WAIT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_WAIT);
 
     /*
      * MT: the following code will be needed if progress can occur between 
@@ -238,7 +241,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
      */
     progress_state->ch.completion_count = MPIDI_CH3I_progress_completion_count;
     
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PROGRESS_WAIT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_WAIT);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -1022,5 +1025,18 @@ static int ReadMoreData( MPIDI_CH3I_Connection_t * conn, MPID_Request *rreq )
     }
 
  fn_fail:
+    return mpi_errno;
+}
+
+/*
+ * The dynamic-library interface requires a unified Progress routine.
+ * This is that routine.
+ */
+int MPIDI_CH3I_Progress( int blocking, MPID_Progress_state *state )
+{
+    int mpi_errno;
+    if (blocking) mpi_errno = MPIDI_CH3i_Progress_wait(state);
+    else          mpi_errno = MPIDI_CH3i_Progress_test();
+
     return mpi_errno;
 }

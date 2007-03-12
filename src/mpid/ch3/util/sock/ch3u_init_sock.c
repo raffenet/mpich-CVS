@@ -4,7 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "ch3usockconf.h"
 #include "mpidi_ch3_impl.h"
+
 #include "pmi.h"
 
 #include "mpidu_sock.h"

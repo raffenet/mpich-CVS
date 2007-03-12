@@ -1032,7 +1032,7 @@ int MPIDI_PG_Close_VCs( void )
 
 	    if (vc->state == MPIDI_VC_STATE_ACTIVE || 
 		vc->state == MPIDI_VC_STATE_REMOTE_CLOSE
-#ifdef MPIDI_CH3_USES_SSHM
+#if defined(MPIDI_CH3_USES_SSHM) && 0
 		/* FIXME: Remove this IFDEF */
 		/* sshm queues are uni-directional.  A VC that is connected 
 		 * in the read direction is marked MPIDI_VC_STATE_INACTIVE

@@ -265,6 +265,7 @@ AC_DEFUN(PAC_CC_SUBDIR_SHLIBS,[
         AC_SUBST(C_LINK_SHL)
         AC_SUBST(LIBTOOL)
         AC_SUBST(ENABLE_SHLIB)
+        AC_SUBST(SHLIB_EXT)
 	if test "$ENABLE_SHLIB" = "libtool" ; then
 	    if test -z "$LIBTOOL" ; then
 		AC_MSG_WARN([libtool selected for shared library support but LIBTOOL is not defined])

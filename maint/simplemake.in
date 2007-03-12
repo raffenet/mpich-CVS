@@ -347,6 +347,7 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 %install_methods = ( 'LIB'     => '$(INSTALL_DATA)',
 		     'BIN'     => '$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)',
 		     'SHLIB'   => '$(CREATESHLIB) --mode=install',
+		     'DLLLIB'  => '$(CREATESHLIB) --mode=install',
 		     'INCLUDE' => '$(INSTALL_DATA)',
 		     'MAN'     => '$(INSTALL_DATA)',
 		     'HTML'    => '$(INSTALL_DATA)',
@@ -1351,6 +1352,14 @@ sub DefaultRules {
 		print FD "\t$extrules{$extkey}$newline";
 	    }
 	}
+	if ($maint_targets) {
+	    # Add the target that applies the preprocessor to the source file
+	    $extkey = "$ext:txt";
+	    if (defined($extrules{$extkey})) {
+		print FD ".$ext.txt:$newline";
+		print FD "\t$extrules{$extkey}$newline";
+	    }
+	}
 
 	$extkey = "$ext:";
 	# We may want to make this conditional, only generating it
@@ -2082,29 +2091,49 @@ sub LookForAutoconfDirs {
     $line = $_[0];
     print "Looking at $line\n" if $debug;
     # Look for \$\{\w*\} and \$\(\w*\) 
-    while ($line =~ /^[^\$]*\$[\{\(](\w*)[\}\)](.*)$/) {
-	$varname = $1;
-	$line = $2;
-	print "Found $varname in line\n" if $debug;
-	# Look for varname in the known names; add to dirs_seen
-	if (defined($dirdefs{$varname})) {
-	    print "Adding $varname to dirs_seen\n" if $debug;
-	    $dirs_seen{$varname} = $varname;
+    while ($line =~ /^[^\$]*\$(.*)/) {
+	$line = $1;
+	if ($line =~ /^\$\w+(.*)/) {
+	    # This is a shell variable; skip it
+	    $line = $1;
+	}
+	elsif ($line =~ /^[\{\(](\w+)[\}\)](.*)/) {
+	    $varname = $1;
+	    $line    = $2;
+	    print "Found $varname in line\n" if $debug;
+	    # Look for varname in the known names; add to dirs_seen
+	    if (defined($dirdefs{$varname})) {
+		print "Adding $varname to dirs_seen\n" if $debug;
+		$dirs_seen{$varname} = $varname;
+	    }
+	}
+	else {
+	    last;
 	}
     }
 }
 
 #
-# Look for autoconf directory variables that are used 
+# Look for make variables that are used 
 sub LookForVariables {
     $line = $_[0];
     print "Looking at $line\n" if $debug;
     # Look for \$\{\w*\} and \$\(\w*\) 
-    while ($line =~ /^[^\$]*\$[\{\(](\w*)[\}\)](.*)$/) {
-	$varname = $1;
-	$line = $2;
-	print "Found $varname in line\n" if $debug;
-	$vars_seen{$varname} = 1;
+    while ($line =~ /^[^\$]*\$(.*)/) {
+	$line = $1;
+	if ($line =~ /^\$\w+(.*)/) {
+	    # This is a shell variable; skip it
+	    $line = $1;
+	}
+	elsif ($line =~ /^[\{\(](\w+)[\}\)](.*)/) {
+	    $varname = $1;
+	    $line    = $2;
+	    print "Found $varname in line\n" if $debug;
+	    $vars_seen{$varname} = 1;
+	}
+	else {
+	    last;
+	}
     }
 }
 
@@ -3016,7 +3045,7 @@ library, or new library name)\n" if $debug;
 	    $otherlibs = $shared_libraries_libs{$libbasename};
 	}
 
-	print FD "\t(cd $libdir && \$(CREATESHLIB) --mode=link -version-info \"\@ABIVERSION\@\"-o $libname $exports -rpath \$(libdir) $otherlibs);\\\n";
+	print FD "\t(cd $libdir && \$(CREATESHLIB) --mode=link -version-info \"\@ABIVERSION\@\" -o $libname $exports -rpath \$(libdir) $otherlibs);\\\n";
 
 	print FD "\tfi\n";
     }
@@ -3501,7 +3530,14 @@ sub InstallDocDirs {
 sub TargetInstall {
     %dirschecked = ();
     if (!scalar(%install_files) && !scalar($install_dirs) &&
-	!scalar(%optinstall_files) && !scalar($optinstall_dirs)) { return ; }
+	!scalar(%optinstall_files) && !scalar($optinstall_dirs)) { 
+	if (defined($usertargets{"install-local"}) && !$gIssuedInstallLocal) {
+	    # First add the indirect to the install-local target (when
+	    # there are no local files to install at all)
+	    print FD "install: install-local $newline";
+	}
+	return; 
+    }
     print FD "# Install target$newline";
     &TargetInit( "install" );
     print FD " FORCE_TARGET $newline";

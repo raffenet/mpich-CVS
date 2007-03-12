@@ -50,6 +50,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
     shm_wait_t wait_result;
     MPIDI_VC_t *vc_ptr;
     MPIDI_CH3I_VC *vcch;
+    MPIDI_CH3I_PG *pgch;
     static int spin_count = 1;
     static int msg_queue_count = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
@@ -119,7 +120,8 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	 call sleep to implement a yield.  As no code defined the
 	 use sleep yield macro, that code was removed, exposing this odd
 	 construction. */
-	if (spin_count >= MPIDI_Process.my_pg->ch.nShmWaitSpinCount)
+	pgch = (MPIDI_CH3I_PG *)MPIDI_Process.my_pg->channel_private;
+	if (spin_count >= pgch->nShmWaitSpinCount)
 	{
 	    MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 	    MPIDU_Yield();
@@ -133,7 +135,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	}
 	spin_count++;
 
-	if (spin_count > (MPIDI_Process.my_pg->ch.nShmWaitSpinCount >> 1) )
+	if (spin_count > (pgch->nShmWaitSpinCount >> 1) )
 	{
 	    /* make progress on the sockets */
 
@@ -166,7 +168,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 	{
 	    /* check for new shmem queue connection requests */
 	    rc = MPIDI_CH3I_BootstrapQ_recv_msg(
-                   MPIDI_Process.my_pg->ch.bootstrapQ, &info, 
+                   pgch->bootstrapQ, &info, 
 		   sizeof(info), &num_bytes, FALSE);
 	    if (rc != MPI_SUCCESS)
 	    {
@@ -191,7 +193,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		    vc_ptr->pg_rank, vc_ptr->pg->id, pg->id);
 		fflush(stdout);
 		*/
-		/*vc_ptr = &MPIDI_Process.my_pg->ch.vc_table[info.pg_rank];*/
+		/*vc_ptr = &pgch->vc_table[info.pg_rank];*/
 		vcch = (MPIDI_CH3I_VC *)vc_ptr->channel_private;
 		rc = MPIDI_CH3I_SHM_Attach_to_mem(&info.info, 
 					    &vcch->shm_read_queue_info);

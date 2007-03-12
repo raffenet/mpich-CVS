@@ -38,7 +38,12 @@ AC_CHECK_HEADERS(assert.h)
 
 LIBS=$save_libs
 
-MPICH_DEFAULT_CH3_CHANNEL=\"sock\"
+if test -z "$SHLIB_EXT" ; then
+    AC_MSG_ERROR([The dllchan channel requires shared library support and the symbold SHLIB_EXT (the extension of a shared library) is empty])
+fi
+MPICH_DEFAULT_CH3_CHANNEL='"'sock'"'
+MPICH_SHLIB_EXT='"'$SHLIB_EXT'"'
+AC_DEFINE_UNQUOTED(MPICH_SHLIB_EXT,$MPICH_SHLIB_EXT,[Extension for shared libraries])
 
 AC_DEFINE_UNQUOTED(MPICH_DEFAULT_CH3_CHANNEL,$MPICH_DEFAULT_CH3_CHANNEL,[Define the name of the channel to use if none is selected])
 
@@ -70,46 +75,52 @@ PAC_UPDATE_BASE_CACHE
 # -------------------------------------------------------------------------
 # FIXME: This isn't clean enough yet
 # We need to build the DLL for the selected channels.
-export channel_name
-export channel_args
-AC_SUBST(device_name)
-AC_SUBST(channel_name)
 
-subchannel_name=sock
-
-if test ! -d $srcdir/../${subchannel_name} ; then
-    AC_MSG_ERROR([Channel ${subchannel_name} is unknown])
-elif test ! -x $srcdir/../${subchannel_name}/configure ; then
-    AC_MSG_ERROR([Channel ${subchannel_name} has no configure])
+# Extract the subchannel names from the channel_args.  Set the default to
+# sock
+if test -z "$channel_args" ; then
+     channel_args=sock
 fi
-dnl if test -s $srcdir/../$subchannel_name/setup_$subchannel_name ; then
-dnl     # Typically, this will set ch3subsystems.  For now,
-dnl     # we use this configure to create the configuration file
-dnl     # for those subsystems.  Eventually, they may have their	
-dnl     # own configure
-dnl     . $srcdir/../$subchannel_name/setup_$subchannel_name
-dnl     if test "$needs_sock" = yes ; then
-dnl         AC_DEFINE(HAVE_UTIL_SOCK,1,[Define if the channel needs util/sock])
-dnl 	CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/sock"
-dnl     fi				   	
-dnl     if test "$needs_shm" = yes ; then
-dnl         AC_DEFINE(HAVE_UTIL_SHM,1,[Define if the channel needs util/shm])
-dnl 	#CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/shm"
-dnl     fi				   	
-dnl fi
-dnl AC_SUBST(ch3subsystems)
 
-#
-# Because of the complexity in setting up channels, we invoke a script 
-# for those channels that are prepared to provide dynamically-loaded modules
-for channel in $subchannel_name ; do
-    builddir=`(cd .. && pwd)`
-    if test -s $builddir/$subchannel_name/builddll ; then
-        (cd ../$subchannel_name && $srcdir/../$subchannel_name/builddll)
-    else
-        echo "Channel $subchannel_name does not support dynamic loading"
+channel_args=`echo $channel_args | sed -e 's/,/ /g'`
+builddir=`(cd .. && pwd)`
+SUBCHANNELS=$channel_args
+AC_SUBST(SUBCHANNELS)
+for subchannel_name in $channel_args ; do
+
+    if test ! -d $srcdir/../${subchannel_name} ; then
+        AC_MSG_ERROR([Channel ${subchannel_name} is unknown])
+    elif test ! -x $srcdir/../${subchannel_name}/configure ; then
+        AC_MSG_ERROR([Channel ${subchannel_name} has no configure])
     fi
+
+    #
+    # Because of the complexity in setting up channels, we invoke a script 
+    # for those channels that are prepared to provide dynamically-loaded modules
+    rc=0
+    if test -x $builddir/$subchannel_name/builddll ; then
+        # We're ok
+        :
+    elif test -x $srcdir/../${subchannel_name}/builddll ; then
+        # Create the local directory
+	if test ! -d $builddir/$subchannel_name ; then 
+            mkdir $builddir/$subchannel_name
+        fi
+    else       
+        AC_MSG_ERROR([Channel $subchannel_name does not support dynamic loading])
+    fi
+
+#    (cd ../$subchannel_name && \
+#    $srcdir/../$subchannel_name/builddll --prefix=${prefix} \
+#    					 --libdir=${libdir} \
+#					 --exec-prefix=${exec_prefix} \
+#     )
+#    rc=$?
+#    if test "$rc" != 0 ; then
+dnl #        AC_MSG_ERROR([Failure in building dynamic library for $subchannel_name])
+#    fi
 done
+
 # -------------------------------------------------------------------------
 
 

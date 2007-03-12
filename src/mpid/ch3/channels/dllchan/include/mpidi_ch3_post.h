@@ -31,5 +31,9 @@
 #define MPIDI_CH3_Progress_end(progress_state_)
 #define MPIDI_CH3_Progress_poke() (MPIDI_CH3_Progress_test())
 
+/* The newer channels all define a single progress routine */
+/*#define MPIDI_CH3_Progress_test() MPIU_CALL_MPIDI_CH3.Progress(FALSE, NULL)*/
+/* #define MPIDI_CH3_Progress_wait(state) MPIU_CALL_MPIDI_CH3.Progress(TRUE, state) */
+
 #endif /* !defined(MPICH_MPIDI_CH3_POST_H_INCLUDED) */
 

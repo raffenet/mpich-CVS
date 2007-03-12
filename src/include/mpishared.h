@@ -54,7 +54,63 @@
 				       last valid class */
 
 /* Add support for the states and function enter/exit macros */
-#include "mpitimerimpl.h"
+/* #include "mpitimerimpl.h" */
+#if defined(MPICH_DEBUG_FINE_GRAIN_NESTING)
+#   include "mpidu_func_nesting.h"
+#elif defined(MPICH_DEBUG_MEMARENA)
+#   include "mpifuncmem.h"
+#elif defined(USE_DBG_LOGGING)
+#   include "mpifunclog.h"
+#elif !defined(NEEDS_FUNC_ENTER_EXIT_DEFS)
+    /* If no timing choice is selected, this sets the entry/exit macros 
+       to empty */
+#   include "mpitimerimpl.h"
+#endif
+#ifdef NEEDS_FUNC_ENTER_EXIT_DEFS
+/* mpich layer definitions */
+#define MPID_MPI_FUNC_ENTER(a)			MPIR_FUNC_ENTER(a)
+#define MPID_MPI_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER_FRONT(a)	MPIR_FUNC_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_FRONT(a)	MPIR_FUNC_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER_BACK(a)	MPIR_FUNC_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_ENTER_BOTH(a)	MPIR_FUNC_ENTER(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BACK(a)	MPIR_FUNC_EXIT(a)
+#define MPID_MPI_PT2PT_FUNC_EXIT_BOTH(a)	MPIR_FUNC_EXIT(a)
+#define MPID_MPI_COLL_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPID_MPI_COLL_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+#define MPID_MPI_RMA_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPID_MPI_RMA_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+#define MPID_MPI_INIT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPID_MPI_INIT_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+#define MPID_MPI_FINALIZE_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPID_MPI_FINALIZE_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+
+/* device layer definitions */
+#define MPIDI_FUNC_ENTER(a)			MPIR_FUNC_ENTER(a)
+#define MPIDI_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
+#define MPIDI_PT2PT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_PT2PT_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+#define MPIDI_PT2PT_FUNC_ENTER_FRONT(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_PT2PT_FUNC_EXIT_FRONT(a)		MPIR_FUNC_EXIT(a)
+#define MPIDI_PT2PT_FUNC_ENTER_BACK(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_PT2PT_FUNC_ENTER_BOTH(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_PT2PT_FUNC_EXIT_BACK(a)		MPIR_FUNC_EXIT(a)
+#define MPIDI_PT2PT_FUNC_EXIT_BOTH(a)		MPIR_FUNC_EXIT(a)
+#define MPIDI_COLL_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_COLL_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
+#define MPIDI_RMA_FUNC_ENTER(a)			MPIR_FUNC_ENTER(a)
+#define MPIDI_RMA_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
+#define MPIDI_INIT_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_INIT_FUNC_EXIT(a)			MPIR_FUNC_EXIT(a)
+#define MPIDI_FINALIZE_FUNC_ENTER(a)		MPIR_FUNC_ENTER(a)
+#define MPIDI_FINALIZE_FUNC_EXIT(a)		MPIR_FUNC_EXIT(a)
+
+/* evaporate the timing macros since timing is not selected */
+#define MPIU_Timer_init(rank, size)
+#define MPIU_Timer_finalize()
+#endif /* NEEDS_FUNC_ENTER_EXIT_DEFS */
 
 /* Add support for the memory allocation routines */
 #define MPIU_MEM_NOSTDIO
@@ -65,4 +121,13 @@
 
 /* Add support for the assert and strerror routines */
 #include "mpiutil.h"
+
+/* Use this macro for each parameter to a function that is not referenced in
+   the body of the function */
+#ifdef HAVE_WINDOWS_H
+#define MPIU_UNREFERENCED_ARG(a) a
+#else
+#define MPIU_UNREFERENCED_ARG(a)
+#endif
+
 #endif
