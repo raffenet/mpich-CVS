@@ -92,13 +92,15 @@ static int is_valid_state (sockconn_t *sc);
     }
 */
 
+static int find_free_entry(int *index);
+
 #undef FUNCNAME
 #define FUNCNAME alloc_sc_plfd_tbls
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int alloc_sc_plfd_tbls (void)
 {
-    int i, mpi_errno = MPI_SUCCESS;
+    int i, mpi_errno = MPI_SUCCESS, index = -1;
     MPIU_CHKPMEM_DECL (2);
 
     MPIU_Assert(g_sc_tbl == NULL);
@@ -114,6 +116,14 @@ static int alloc_sc_plfd_tbls (void)
         INIT_POLLFD_ENTRY(((pollfd_t *)&g_plfd_tbl[i]));
     }
     MPIU_CHKPMEM_COMMIT();
+
+    mpi_errno = find_free_entry(&index);
+    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
+
+    g_sc_tbl[index]->fd = g_plfd_tbl[index]->fd = g_lstn_plfd.fd;
+    g_plfd_tbl[index]->events = POLLIN;
+    g_sc_tbl[index]->handler = g_lstn_sc.handler;
+
  fn_exit:
     return mpi_errno;
  fn_fail:
@@ -1102,22 +1112,6 @@ Evaluate the need for it by testing and then do it, if needed.
 int MPID_nem_newtcp_module_connpoll()
 {
     int mpi_errno = MPI_SUCCESS, n, i;
-    
-    CHECK_EINTR(n, poll(&g_lstn_plfd, 1, 0));
-    MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, 
-                          "**poll", "**poll %s", strerror (errno));
-    if (n == 1)
-    {
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "listen fd poll event"));
-        if (g_lstn_plfd.revents & POLLERR) /* FIXME (N1) */
-            MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail"); 
-        /* FIXME-Danger Add error string. actual string "**poll error on listener fd" */
-        else if (g_lstn_plfd.revents & POLLIN)
-        {
-            mpi_errno = g_lstn_sc.handler(&g_lstn_plfd, &g_lstn_sc);
-            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-        }
-    }
 
     CHECK_EINTR(n, poll(g_plfd_tbl, g_tbl_size, 0));
     MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, 
