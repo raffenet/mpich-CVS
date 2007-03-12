@@ -248,7 +248,9 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 				      (const int*) periods, reorder, 
 				      comm_cart );
     }
+#ifdef HAVE_ERROR_CHECKING
     if (mpi_errno) goto fn_fail;
+#endif
     /* ... end of body of routine ... */
 
 #ifdef HAVE_ERROR_CHECKING

@@ -504,7 +504,7 @@ static int do_cts(MPIDI_VC_t *vc, MPID_Request *rreq, int *complete)
     MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
     if (rreq->ch.lmt_data_sz > data_sz)
     {
-        rreq->status.MPI_ERROR = MPIU_ERR_SET2(mpi_errno, MPI_ERR_TRUNCATE, "**truncate", "**truncate %d %d", rreq->ch.lmt_data_sz, data_sz);
+        MPIU_ERR_SET2(rreq->status.MPI_ERROR, MPI_ERR_TRUNCATE, "**truncate", "**truncate %d %d", rreq->ch.lmt_data_sz, data_sz);
         rreq->ch.lmt_data_sz = data_sz;
     }
     
