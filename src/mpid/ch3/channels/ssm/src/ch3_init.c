@@ -200,10 +200,14 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
 
 const char * MPIDI_CH3_VC_GetStateString( struct MPIDI_VC *vc )
 {
+#ifdef USE_DBG_LOGGING
     return MPIDI_CH3_VC_SshmGetStateString( vc );
     /* If the states could be different, we'd need to figure out which
        routine to call */
     /*    return MPIDI_CH3_VC_SockGetStateString( vc );*/
+#else
+    return "unknown";
+#endif
 }
 
 /* Select the routine that uses sockets to connect two communicators
