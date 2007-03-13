@@ -98,7 +98,7 @@ extern const char *const CONN_STATE_STR[];
 #undef M_
 
 
-#define change_state(_sc, _state) do { \
+#define CHANGE_STATE(_sc, _state) do { \
     (_sc)->state.cstate = _state; \
     (_sc)->handler = sc_state_info[_state].sc_state_handler; \
     g_plfd_tbl[(_sc)->index].events = sc_state_info[_state].sc_state_plfd_events; \
