@@ -24,7 +24,6 @@ typedef struct MPID_nem_newtcp_module_send_q_element
     /*     char buf[MPID_NEM_MAX_PACKET_LEN];*/ /* data to be sent */
 } MPID_nem_newtcp_module_send_q_element_t;
 
-struct {MPIDI_VC_t *head;} send_list = {0};
 struct {MPID_nem_newtcp_module_send_q_element_t *top;} free_buffers = {0};
 
 #define ALLOC_Q_ELEMENT(e) do {                                                                                                         \
@@ -170,7 +169,7 @@ int send_queued (MPIDI_VC_t *vc)
     }
 
     if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
-        VC_L_REMOVE(&send_list, vc);
+        UNSET_PLFD(vc);
     
  fn_exit:
     return mpi_errno;
@@ -185,9 +184,6 @@ int send_queued (MPIDI_VC_t *vc)
 int MPID_nem_newtcp_module_send_finalize()
 {
     int mpi_errno = MPI_SUCCESS;
-
-    while (!VC_L_EMPTY (send_list))
-	MPID_nem_newtcp_module_connpoll();
 
     while (!S_EMPTY (free_buffers))
     {
@@ -210,11 +206,11 @@ int MPID_nem_newtcp_module_conn_est (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
 
-/*     printf ("*** connected *** %d\n", VC_FIELD(vc, sc)->fd); //DARIUS     */
+/*     printf ("*** connected *** %d\n", VC_FIELD(vc, sc)->fd); //DARIUS */
 
     if (!SENDQ_EMPTY (VC_FIELD(vc, send_queue)))
     {
-        VC_L_ADD (&send_list, vc);
+        SET_PLFD(vc);
         mpi_errno = send_queued (vc);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
@@ -321,7 +317,7 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
 /*     printf("&sreq->dev.iov[0].MPID_IOV_LEN = %p\n", &sreq->dev.iov[0].MPID_IOV_LEN);//DARIUS */
 
     if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)) && MPID_nem_newtcp_module_vc_is_connected(vc))
-        VC_L_ADD(&send_list, vc);
+        SET_PLFD(vc);
     SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
 
     *sreq_ptr = sreq;
@@ -448,7 +444,7 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
 /*     printf("&sreq->dev.iov[0].MPID_IOV_LEN = %p\n", &sreq->dev.iov[0].MPID_IOV_LEN);//DARIUS */
 
     if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)) && MPID_nem_newtcp_module_vc_is_connected(vc))
-        VC_L_ADD(&send_list, vc);
+        SET_PLFD(vc);
     SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
 
  fn_exit:

@@ -103,9 +103,8 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
 /* VC list macros */
 #define VC_L_EMPTY(q) GENERIC_L_EMPTY (q)
 #define VC_L_HEAD(q) GENERIC_L_HEAD (q)
-#define VC_L_ADD_EMPTY(qp, ep) GENERIC_L_ADD_EMPTY (qp, ep, ch.next, ch.prev)
-#define VC_L_ADD(qp, ep) GENERIC_L_ADD (qp, ep, ch.next, ch.prev)
-#define VC_L_REMOVE(qp, ep) GENERIC_L_REMOVE (qp, ep, ch.next, ch.prev)
+#define SET_PLFD(ep) VC_FIELD(ep, sc)->g_plfd_tbl[VC_FIELD(ep, sc)->index].events |= POLLOUT
+#define UNSET_PLFD(ep) VC_FIELD(ep, sc)->g_plfd_tbl[VC_FIELD(ep, sc)->index].events &= ~POLLOUT
 
 /* stack macros */
 #define S_EMPTY(s) GENERIC_S_EMPTY (s)

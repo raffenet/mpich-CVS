@@ -98,6 +98,13 @@ extern const char *const CONN_STATE_STR[];
 #undef M_
 
 
+#define change_state(_sc, _state) do { \
+    (_sc)->state.cstate = _state; \
+    (_sc)->handler = sc_state_info[_state].sc_state_handler; \
+    g_plfd_tbl[(_sc)->index].events = sc_state_info[_state].sc_state_plfd_events; \
+} while(0);
+
+
 struct MPID_nem_new_tcp_module_sockconn;
 typedef struct MPID_nem_new_tcp_module_sockconn sockconn_t;
 typedef struct pollfd pollfd_t;
@@ -122,6 +129,9 @@ struct MPID_nem_new_tcp_module_sockconn{
     /* Conn_type_t conn_type;  Probably useful for debugging/analyzing purposes. */
     handler_func_t handler;
     sockconn_event_t pending_event;
+
+    sockconn_t *g_sc_tbl;
+    pollfd_t *g_plfd_tbl;
 };
 
 typedef enum MPIDI_nem_newtcp_module_pkt_type {
