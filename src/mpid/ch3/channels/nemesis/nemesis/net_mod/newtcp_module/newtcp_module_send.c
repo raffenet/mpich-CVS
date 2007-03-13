@@ -137,34 +137,28 @@ int send_queued (MPIDI_VC_t *vc)
             /* sent whole message */
             int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 
-            SENDQ_DEQUEUE(&VC_FIELD(vc, send_queue), &sreq);
-
             reqFn = sreq->dev.OnDataAvail;
             if (!reqFn)
             {
                 MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
                 MPIDI_CH3U_Request_complete(sreq);
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+                SENDQ_DEQUEUE(&VC_FIELD(vc, send_queue), &sreq);
                 break;
             }
-            else
+
+            complete = 0;
+            mpi_errno = reqFn(vc, sreq, &complete);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            
+            if (complete)
             {
-                int complete = 0;
-                
-                mpi_errno = reqFn(vc, sreq, &complete);
-                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-
-                if (complete)
-                {
-                    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
-                    break;
-                }
-
-                MPIU_Assert(0); /* FIXME:  I don't think we should get here with contig messages */
-                
-                sreq->ch.vc = vc;
+                MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+                SENDQ_DEQUEUE(&VC_FIELD(vc, send_queue), &sreq);
                 break;
             }
+            
+            sreq->ch.vc = vc;
         }
     }
 
@@ -395,10 +389,7 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
                         goto fn_exit;
                     }
 
-                    MPIU_Assert(0); /* FIXME:  I don't think we should get here with contig messages */
-                
                     sreq->ch.vc = vc;
-                    goto fn_exit;
                 }
             }
         }
