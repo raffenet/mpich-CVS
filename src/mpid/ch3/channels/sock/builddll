@@ -62,7 +62,7 @@ if [ -z "$CC_SHL" ] ; then
     case $shlibtype in
 	gcc-osx|osx-gcc)
         CC_SHL="gcc -fPIC"
-        C_LINK_SHL='${CC} -dynamiclib -undefined suppress -single_module -flat_namespace'
+        C_LINK_SHL='gcc -dynamiclib -undefined suppress -single_module -flat_namespace'
         SHLIB_EXT=dylib
 	;;
 	*gcc*)

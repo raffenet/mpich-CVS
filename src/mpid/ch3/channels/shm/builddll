@@ -89,7 +89,8 @@ export MPICH2_INCLUDE_FLAGS
 if [ ! -d $mybuild/src/mpid/common/locks ] ; then 
     mkdir $mybuild/src/mpid/common/locks
 fi
-(cd $mybuild/src/mpid/common/locks && \
+( CPPFLAGS="$CPPFLAGS -DUSE_PROCESS_LOCKS" ; export CPPFLAGS ; \
+cd $mybuild/src/mpid/common/locks && \
     $mympich2/src/mpid/common/locks/configure --enable-sharedlibs=$shlibtype \
     --prefix=$prefix --libdir=$libdir --exec-prefix=$exec_prefix )
 if [ $? != 0 ] ; then
