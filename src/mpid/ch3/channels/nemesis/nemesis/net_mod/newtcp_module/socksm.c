@@ -183,6 +183,15 @@ static int expand_sc_plfd_tbls (void)
         INIT_POLLFD_ENTRY(((pollfd_t *)&g_plfd_tbl[i]));
     }
     g_tbl_capacity = new_capacity;
+
+    /* FIXME: VCs have pointers to entries in the sc table.  These
+       need to be updated after the expand. */
+    for (i = 0; i < g_tbl_capacity; ++i)
+    {
+        MPIU_Assert(g_sc_tbl[i].state.cstate != CONN_STATE_TS_COMMRDY || VC_FIELD(g_sc_tbl[i].vc, sc) == &g_sc_tbl[i])
+    }
+    
+    
     MPIU_CHKPMEM_COMMIT();    
  fn_exit:
     return mpi_errno;

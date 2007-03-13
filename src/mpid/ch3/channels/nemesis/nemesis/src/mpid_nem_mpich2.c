@@ -138,7 +138,7 @@ int MPID_nem_send_iov(MPIDI_VC_t *vc, MPID_Request **sreq_ptr, MPID_IOV *iov, in
     }
 
     data_sz = 0;
-    for (i = 1; i < data_n_iov; ++i)
+    for (i = 0; i < data_n_iov; ++i)
         data_sz += data_iov[i].MPID_IOV_LEN;
     
 
