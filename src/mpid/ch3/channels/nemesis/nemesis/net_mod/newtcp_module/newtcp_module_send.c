@@ -101,7 +101,6 @@ int send_queued (MPIDI_VC_t *vc)
     while (!SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
     {
         sreq = SENDQ_HEAD(VC_FIELD(vc, send_queue));
-        MPIU_Assert(sreq->dev.iov_count <= 2);
         
         iov = &sreq->dev.iov[sreq->ch.iov_offset];
 
@@ -157,8 +156,7 @@ int send_queued (MPIDI_VC_t *vc)
                 SENDQ_DEQUEUE(&VC_FIELD(vc, send_queue), &sreq);
                 break;
             }
-            
-            sreq->ch.vc = vc;
+            sreq->ch.iov_offset = 0;
         }
     }
 
@@ -304,6 +302,8 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
         sreq->dev.iov[0].MPID_IOV_LEN = data_sz - (offset - sizeof(MPIDI_CH3_PktGeneric_t));
         sreq->dev.iov_count = 1;
     }
+    
+    MPIU_Assert(sreq->dev.iov_count >= 1 && sreq->dev.iov[0].MPID_IOV_LEN > 0);
 
 /*     printf("sreq = %p sreq->dev.iov = %p\n", sreq, sreq->dev.iov); */
 /*     printf("sreq->dev.iov[0].MPID_IOV_BUF = %p\n", sreq->dev.iov[0].MPID_IOV_BUF);//DARIUS */
@@ -389,7 +389,8 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
                         goto fn_exit;
                     }
 
-                    sreq->ch.vc = vc;
+                    /* not completed: more to send */
+                    goto enqueue_request;
                 }
             }
         }
@@ -400,14 +401,8 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 
-    /* create and enqueue request */
-    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "enqueuing");
 
-/*     printf("&sreq->dev.pending_pkt = %p sizeof(MPIDI_CH3_PktGeneric_t) = %d\n", &sreq->dev.pending_pkt, sizeof(MPIDI_CH3_PktGeneric_t));//DARIUS */
-
-    sreq->ch.vc = vc;
-    sreq->ch.iov_offset = 0;
-
+    /* save iov */
     if (offset < sizeof(MPIDI_CH3_PktGeneric_t))
     {
         sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *)hdr;
@@ -429,10 +424,13 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
         sreq->dev.iov_count = 1;
     }
 
-/*     printf("sreq = %p sreq->dev.iov = %p\n", sreq, sreq->dev.iov); */
-/*     printf("sreq->dev.iov[0].MPID_IOV_BUF = %p\n", sreq->dev.iov[0].MPID_IOV_BUF);//DARIUS */
-/*     printf("sreq->dev.iov[0].MPID_IOV_LEN = %d\n", sreq->dev.iov[0].MPID_IOV_LEN);//DARIUS */
-/*     printf("&sreq->dev.iov[0].MPID_IOV_LEN = %p\n", &sreq->dev.iov[0].MPID_IOV_LEN);//DARIUS */
+ enqueue_request:
+    /* enqueue request */
+    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "enqueuing");
+    MPIU_Assert(sreq->dev.iov_count >= 1 && sreq->dev.iov[0].MPID_IOV_LEN > 0);
+
+    sreq->ch.vc = vc;
+    sreq->ch.iov_offset = 0;
 
     if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)) && MPID_nem_newtcp_module_vc_is_connected(vc))
         SET_PLFD(vc);
