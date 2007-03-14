@@ -98,6 +98,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             {
                 iov->MPID_IOV_BUF = (char *)iov->MPID_IOV_BUF + bytes_recvd;
                 iov->MPID_IOV_LEN -= bytes_recvd;
+                rreq->dev.iov_count = &rreq->dev.iov[rreq->dev.iov_count] - iov;
                 rreq->ch.iov_offset = iov - rreq->dev.iov;
                 MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "bytes_recvd = %d", bytes_recvd);
                 MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov len = %d", iov->MPID_IOV_LEN);
