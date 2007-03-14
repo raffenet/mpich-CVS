@@ -5,7 +5,7 @@
  */
 
 #include "elan_module_impl.h"
-#include "elan.h"
+#include <elan/elan.h>
 
 /*
 static void

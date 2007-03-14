@@ -5,7 +5,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include <elan.h>
+#include <elan/elan.h>
 #include <elan/capability.h>
 #include <elanctrl.h>
 #include "mpidimpl.h"
@@ -79,78 +79,80 @@ int init_elan( MPIDI_PG_t *pg_p )
    ELAN_BASE      *base = NULL;
    ELAN_FLAGS      flags;
    
-   /* Get My Node Id from relevant file */
-   myfile = fopen("/proc/qsnet/elan3/device0/position","r");
-   if (myfile == NULL) 
-     {
-	myfile = fopen("/proc/qsnet/elan4/device0/position","r");
-     }
+   if ( !getenv("ELAN_AUTO") && !getenv("RMS_NPROCS") ) {
+       /* Get My Node Id from relevant file */
+       myfile = fopen("/proc/qsnet/elan3/device0/position","r");
+       if (myfile == NULL) 
+       {
+	   myfile = fopen("/proc/qsnet/elan4/device0/position","r");
+       }
    
-   if (myfile != NULL)
-     {	
-	ret = fscanf(myfile,"%s%i",&line,&my_node_id);
-     }
-   else
-     {
-	/* Error */
-     }
-
-   mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);      
-
-   /* Put My Node Id */
-   for (index = 0 ; index < numprocs ; index++)
-     {	
-	grank = MPID_nem_mem_region.ext_ranks[index];
-	MPIU_Snprintf (val, MPID_NEM_MAX_KEY_VAL_LEN, "%i",my_node_id);
-	MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "QsNetkey[%d:%d]", MPID_nem_mem_region.rank, grank);
-	
-	pmi_errno = PMI_KVS_Put (kvs_name, key, val);
-	MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
-	
-	pmi_errno = PMI_KVS_Commit (kvs_name);
-	MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
-     }   
-   pmi_errno = PMI_Barrier();
-   MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
-
-   /* Get Node Ids from others */
-   node_ids = (int *)MPIU_Malloc(numprocs * sizeof(int));
-   for (index = 0 ; index < numprocs ; index++)
-     {
-	grank = MPID_nem_mem_region.ext_ranks[index];
-	memset(val, 0, MPID_NEM_MAX_KEY_VAL_LEN);
-	MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN,"QsNetkey[%d:%d]", grank, MPID_nem_mem_region.rank);
-	
-	pmi_errno = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
-	MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
-	
-	ret = sscanf (val, "%i", &(node_ids[index]));
-	MPIU_ERR_CHKANDJUMP1 (ret != 1, mpi_errno, MPI_ERR_OTHER, "**business_card", "**business_card %s", val);	
-     }
-   pmi_errno = PMI_Barrier();
-   MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
-
-   /* Compute Min and Max  Ids*/
-   qsort(node_ids, numprocs, sizeof(int), my_compar);   
-   
-   if (node_ids[0] < my_node_id)
-     min_node_id = node_ids[0] ;
-   else
-     min_node_id = my_node_id ;
-   
-   if (node_ids[numprocs - 1] > my_node_id)
-     max_node_id = node_ids[numprocs - 1] ;
-   else
-     max_node_id = my_node_id;
-
-   /* Generate capability string */
-   MPIU_Snprintf(capability_str, MPID_NEM_ELAN_ALLOC_SIZE, "N%dC%d-%d-%dN%d-%dR1b",
-		 my_node_id,
-		 MPID_NEM_ELAN_CONTEXT_ID_OFFSET,
-		 MPID_NEM_ELAN_CONTEXT_ID_OFFSET+MPID_nem_mem_region.local_rank,
-		 MPID_NEM_ELAN_CONTEXT_ID_OFFSET+(MPID_nem_mem_region.num_local - 1),
-		 min_node_id,max_node_id);      
-   elan_generateCapability (capability_str);    
+       if (myfile != NULL)
+       {	
+	   ret = fscanf(myfile,"%s%i",&line,&my_node_id);
+       }
+       else
+       {
+	   /* Error */
+       }
+       
+       mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);      
+       
+       /* Put My Node Id */
+       for (index = 0 ; index < numprocs ; index++)
+       {	
+	   grank = MPID_nem_mem_region.ext_ranks[index];
+	   MPIU_Snprintf (val, MPID_NEM_MAX_KEY_VAL_LEN, "%i",my_node_id);
+	   MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "QsNetkey[%d:%d]", MPID_nem_mem_region.rank, grank);
+	   
+	   pmi_errno = PMI_KVS_Put (kvs_name, key, val);
+	   MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
+	   
+	   pmi_errno = PMI_KVS_Commit (kvs_name);
+	   MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
+       }   
+       pmi_errno = PMI_Barrier();
+       MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
+       
+       /* Get Node Ids from others */
+       node_ids = (int *)MPIU_Malloc(numprocs * sizeof(int));
+       for (index = 0 ; index < numprocs ; index++)
+       {
+	   grank = MPID_nem_mem_region.ext_ranks[index];
+	   memset(val, 0, MPID_NEM_MAX_KEY_VAL_LEN);
+	   MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN,"QsNetkey[%d:%d]", grank, MPID_nem_mem_region.rank);
+	   
+	   pmi_errno = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
+	   MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
+	   
+	   ret = sscanf (val, "%i", &(node_ids[index]));
+	   MPIU_ERR_CHKANDJUMP1 (ret != 1, mpi_errno, MPI_ERR_OTHER, "**business_card", "**business_card %s", val);	
+       }
+       pmi_errno = PMI_Barrier();
+       MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
+       
+       /* Compute Min and Max  Ids*/
+       qsort(node_ids, numprocs, sizeof(int), my_compar);   
+       
+       if (node_ids[0] < my_node_id)
+	   min_node_id = node_ids[0] ;
+       else
+	   min_node_id = my_node_id ;
+       
+       if (node_ids[numprocs - 1] > my_node_id)
+	   max_node_id = node_ids[numprocs - 1] ;
+       else
+	   max_node_id = my_node_id;
+       
+       /* Generate capability string */
+       MPIU_Snprintf(capability_str, MPID_NEM_ELAN_ALLOC_SIZE, "N%dC%d-%d-%dN%d-%dR1b",
+		     my_node_id,
+		     MPID_NEM_ELAN_CONTEXT_ID_OFFSET,
+		     MPID_NEM_ELAN_CONTEXT_ID_OFFSET+MPID_nem_mem_region.local_rank,
+		     MPID_NEM_ELAN_CONTEXT_ID_OFFSET+(MPID_nem_mem_region.num_local - 1),
+		     min_node_id,max_node_id);      
+       elan_generateCapability (capability_str);    
+   }
    
    /* Init Elan */
    base = elan_baseInit(0);

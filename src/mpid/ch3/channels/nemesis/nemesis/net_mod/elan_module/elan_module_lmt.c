@@ -5,7 +5,7 @@
  */
 
 
-#include "elan.h"
+#include <elan/elan.h>
 #include "mpid_nem_impl.h"
 #include "elan_module_impl.h"
 #include "elan_module.h"
