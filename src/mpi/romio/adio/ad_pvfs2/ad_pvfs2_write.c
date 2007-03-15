@@ -330,11 +330,11 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	    n_filetypes++;
 	    for (i=0; i<flat_file->count; i++) {
 	        if (disp + flat_file->indices[i] + 
-		    (ADIO_Offset) n_filetypes*filetype_extent +
+		    ((ADIO_Offset) n_filetypes)*filetype_extent +
 		      flat_file->blocklens[i] >= offset) {
 		  st_index = i;
 		  fwr_size = disp + flat_file->indices[i] + 
-		    (ADIO_Offset) n_filetypes*filetype_extent
+		    ((ADIO_Offset) n_filetypes)*filetype_extent
 		    + flat_file->blocklens[i] - offset;
 		  flag = 1;
 		  break;
@@ -361,7 +361,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	}
 
 	/* abs. offset in bytes in the file */
-	offset = disp + (ADIO_Offset) n_filetypes*filetype_extent +
+	offset = disp + ((ADIO_Offset) n_filetypes)*filetype_extent +
 	    abs_off_in_filetype;
     } /* else [file_ptr_type != ADIO_INDIVIDUAL] */
 
@@ -434,8 +434,9 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
             }
             for (k=0; k<MAX_ARRAY_SIZE; k++) {
                 if (i || k) {
-                    file_offsets[k] = disp + n_filetypes*filetype_extent
-                      + flat_file->indices[j];
+                    file_offsets[k] = disp + 
+			((ADIO_Offset)n_filetypes)*filetype_extent
+			+ flat_file->indices[j];
                     file_lengths[k] = flat_file->blocklens[j];
                     mem_lengths += file_lengths[k];
                 }
@@ -507,8 +508,9 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
             }
             for (k=0; k<extra_blks; k++) {
                 if(i || k) {
-                    file_offsets[k] = disp + n_filetypes*filetype_extent +
-                      flat_file->indices[j];
+                    file_offsets[k] = disp + 
+			((ADIO_Offset)n_filetypes)*filetype_extent +
+			flat_file->indices[j];
                     if (k == (extra_blks - 1)) {
                         file_lengths[k] = bufsize - (int32_t) mem_lengths
                           - (int32_t) mem_offsets + (int32_t)  buf;
@@ -908,8 +910,8 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 		k = (k + 1)%flat_buf->count;
 	    } /* for (i=0; i<mem_list_count; i++) */
 	    for (i=0; i<file_list_count; i++) {
-	        file_offsets[i] = disp + flat_file->indices[j] + n_filetypes *
-		    filetype_extent;
+	        file_offsets[i] = disp + flat_file->indices[j] + 
+		    ((ADIO_Offset)n_filetypes) * filetype_extent;
 	        if (!i) {
 		    file_lengths[0] = fwr_size;
 		    file_offsets[0] += flat_file->blocklens[j] - fwr_size;
@@ -998,7 +1000,7 @@ void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
 	/* this is closer, but still incorrect for the cases where a small
 	 * amount of a file type is "leftover" after a write */
 	fd->fp_ind = disp + flat_file->indices[j] + 
-	    (ADIO_Offset)n_filetypes*filetype_extent;
+	    ((ADIO_Offset)n_filetypes)*filetype_extent;
     }
     *error_code = MPI_SUCCESS;
 
