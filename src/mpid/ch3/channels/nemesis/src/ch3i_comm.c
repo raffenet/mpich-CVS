@@ -74,14 +74,14 @@ static int find_local_and_external (MPID_Comm *comm, int *local_size_p, int *loc
         nodes[i] = 0;
     
     external_size = 0;
-    my_node_id = comm->vcr[comm->rank]->ch.node_id;
+    my_node_id = ((MPIDI_CH3I_VC *)comm->vcr[comm->rank]->channel_private)->node_id;
     local_size = 0;
     local_rank = -1;
     external_rank = -1;
     
     for (i = 0; i < comm->remote_size; ++i)
     {
-        node_id = comm->vcr[i]->ch.node_id;
+        node_id = ((MPIDI_CH3I_VC *)comm->vcr[i]->channel_private)->node_id;
 
         /* build list of external processes */
         if (node_id == -1 || nodes[node_id] == 0)

@@ -46,7 +46,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
     int mpi_errno = MPI_SUCCESS;
     ssize_t bytes_recvd;
 
-    if (sc->vc->ch.recv_active == NULL)
+    if (((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active == NULL)
     {
         /* receive a new message */
         CHECK_EINTR(bytes_recvd, recv(sc->fd, recv_buf, RECV_MAX_PKT_LEN, 0));
@@ -71,7 +71,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
     else
     {
         /* there is a pending receive, receive it directly into the user buffer */
-        MPID_Request *rreq = sc->vc->ch.recv_active;
+        MPID_Request *rreq = ((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active;
         MPID_IOV *iov = &rreq->dev.iov[rreq->ch.iov_offset];
         int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 
@@ -116,7 +116,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             MPIU_Assert(MPIDI_Request_get_type(rreq) != MPIDI_REQUEST_TYPE_GET_RESP);
             MPIDI_CH3U_Request_complete(rreq);
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...complete");
-            sc->vc->ch.recv_active = NULL;
+            ((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active = NULL;
         }
         else
         {
@@ -128,7 +128,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             if (complete)
             {
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...complete");
-                sc->vc->ch.recv_active = NULL;
+                ((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active = NULL;
             }
             else
             {

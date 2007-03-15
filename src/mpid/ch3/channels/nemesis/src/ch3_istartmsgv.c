@@ -40,16 +40,16 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
-    if (vc->ch.iStartContigMsg)
+    if (((MPIDI_CH3I_VC *)vc->channel_private)->iStartContigMsg)
     {
         MPIU_Assert (n_iov > 0);
         switch (n_iov)
         {
         case 1:
-            mpi_errno = vc->ch.iStartContigMsg(vc, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN, NULL, 0, sreq_ptr);
+            mpi_errno = ((MPIDI_CH3I_VC *)vc->channel_private)->iStartContigMsg(vc, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN, NULL, 0, sreq_ptr);
             break;
         case 2:
-            mpi_errno = vc->ch.iStartContigMsg(vc, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN,
+            mpi_errno = ((MPIDI_CH3I_VC *)vc->channel_private)->iStartContigMsg(vc, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN,
                                                iov[1].MPID_IOV_BUF, iov[1].MPID_IOV_LEN, sreq_ptr);
             break;
         default:
@@ -61,7 +61,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
     }
 
 #if 0
-    //MPIU_Assert(vc->ch.is_local);
+    //MPIU_Assert(((MPIDI_CH3I_VC *)vc->channel_private)->is_local);
     //    MPIU_Assert(n_iov <= 2); /* now used only for contiguous data possibly with header */ DARIUS
 #endif
     MPIU_Assert (n_iov <= MPID_IOV_LIMIT);

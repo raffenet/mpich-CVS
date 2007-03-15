@@ -175,6 +175,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
             
                 if (in_fbox)
                 {
+                    MPIDI_CH3I_VC *vc_ch;
                     MPIDI_msg_sz_t buflen = payload_len;
                     
                     /* This packet must be the first packet of a new message */
@@ -182,8 +183,10 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                     MPIU_Assert(payload_len >= sizeof (MPIDI_CH3_Pkt_t));
 
                     MPIDI_PG_Get_vc(MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE(cell), &vc);
-                    MPIU_Assert(vc->ch.recv_active == NULL && vc->ch.pending_pkt_len == 0);
-
+                    MPIU_Assert(((MPIDI_CH3I_VC *)vc->channel_private)->recv_active == NULL &&
+                                ((MPIDI_CH3I_VC *)vc->channel_private)->pending_pkt_len == 0);
+                    vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
+                    
                     mpi_errno = pktArray[pkt->type](vc, pkt, &buflen, &rreq);
                     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
@@ -194,7 +197,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                     }
 
                     /* we received a truncated packet, handle it with handle_pkt */
-                    vc->ch.recv_active = rreq;
+                    vc_ch->recv_active = rreq;
                     cell_buf    += buflen;
                     payload_len -= buflen;
                     
@@ -203,7 +206,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                     MPID_nem_mpich2_release_fbox(cell);
 
                     /* the whole message should have been handled */
-                    MPIU_Assert(!vc->ch.recv_active);
+                    MPIU_Assert(!vc_ch->recv_active);
 
                     break; /* break out of recv progress block */                    
                 }
@@ -468,13 +471,14 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *rreq;
     int complete;
+    MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_HANDLE_PKT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_HANDLE_PKT);    
 
     do
     {
-        if (!vc->ch.recv_active && vc->ch.pending_pkt_len == 0 && buflen >= sizeof(MPIDI_CH3_Pkt_t))
+        if (!vc_ch->recv_active && vc_ch->pending_pkt_len == 0 && buflen >= sizeof(MPIDI_CH3_Pkt_t))
         {
             /* handle fast-path first: received a new whole message */
             do
@@ -499,32 +503,32 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
             if (rreq)
                 rreq->ch.iov_offset = 0;
         }
-        else if (vc->ch.recv_active)
+        else if (vc_ch->recv_active)
         {
-            MPIU_Assert(vc->ch.pending_pkt_len == 0);
+            MPIU_Assert(vc_ch->pending_pkt_len == 0);
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "continuing recv");
-            rreq = vc->ch.recv_active;
+            rreq = vc_ch->recv_active;
         }
         else
         {
             /* collect header fragments in vc's pending_pkt */
             MPIDI_msg_sz_t copylen;
             MPIDI_msg_sz_t pktlen;
-            MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)vc->ch.pending_pkt;
+            MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *)vc_ch->pending_pkt;
 
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "received header fragment");
             
-            copylen = ((vc->ch.pending_pkt_len + buflen <= sizeof(MPIDI_CH3_Pkt_t))
+            copylen = ((vc_ch->pending_pkt_len + buflen <= sizeof(MPIDI_CH3_Pkt_t))
                        ? buflen
-                       : sizeof(MPIDI_CH3_Pkt_t) - vc->ch.pending_pkt_len);            
-            MPID_NEM_MEMCPY((char *)vc->ch.pending_pkt + vc->ch.pending_pkt_len, buf, copylen);
-            vc->ch.pending_pkt_len += copylen;
-            if (vc->ch.pending_pkt_len < sizeof(MPIDI_CH3_Pkt_t))
+                       : sizeof(MPIDI_CH3_Pkt_t) - vc_ch->pending_pkt_len);            
+            MPID_NEM_MEMCPY((char *)vc_ch->pending_pkt + vc_ch->pending_pkt_len, buf, copylen);
+            vc_ch->pending_pkt_len += copylen;
+            if (vc_ch->pending_pkt_len < sizeof(MPIDI_CH3_Pkt_t))
                 goto fn_exit;
             
             /* we have a whole header */
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "    completed header");
-            MPIU_Assert(vc->ch.pending_pkt_len == sizeof(MPIDI_CH3_Pkt_t));
+            MPIU_Assert(vc_ch->pending_pkt_len == sizeof(MPIDI_CH3_Pkt_t));
             
             buflen -= copylen;
             buf    += copylen;
@@ -534,7 +538,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
             MPIU_Assert(pktlen == sizeof(MPIDI_CH3_Pkt_t));
 
-            vc->ch.pending_pkt_len = 0;
+            vc_ch->pending_pkt_len = 0;
 
             if (!rreq)
             {
@@ -553,7 +557,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
 
         if (buflen == 0)
         {
-            vc->ch.recv_active = rreq;
+            vc_ch->recv_active = rreq;
             goto fn_exit;
         }
 
@@ -589,7 +593,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
 		    
                 rreq->ch.iov_offset = iov - rreq->dev.iov;
                 rreq->dev.iov_count = n_iov;
-                vc->ch.recv_active = rreq;
+                vc_ch->recv_active = rreq;
             }
             else
             {				       
@@ -612,13 +616,13 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
                 {
                     rreq->ch.iov_offset = 0;
                     MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN > 0);
-                    vc->ch.recv_active = rreq;
+                    vc_ch->recv_active = rreq;
                     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...not complete");
                 }
                 else
                 {
                     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...complete");
-                    vc->ch.recv_active = NULL;    
+                    vc_ch->recv_active = NULL;    
                 }
             }
         }
@@ -1808,7 +1812,7 @@ int MPIDI_CH3_Connection_terminate (MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    if (vc->ch.is_local)
+    if (((MPIDI_CH3I_VC *)vc->channel_private)->is_local)
         mpi_errno = MPID_nem_vc_terminate(vc);
     else
         mpi_errno = MPID_nem_net_module_vc_terminate(vc);

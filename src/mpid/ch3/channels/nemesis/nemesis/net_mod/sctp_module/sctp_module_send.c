@@ -163,7 +163,7 @@ MPID_nem_sctp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 {
     int mpi_errno = MPI_SUCCESS;
     int sent;
-    MPIDI_CH3I_VC *vc_ch = &vc->ch;        
+    MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     int stream = 0; /* single stream implementation! need MPID_NEM_CELL_xxx
                      *  to get stream (and maybe context and maybe tag)
                      */
@@ -291,7 +291,7 @@ MPID_nem_sctp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen
 int MPID_nem_sctp_module_send_queue (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_CH3I_VC *vc_ch = &vc->ch;
+    MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     int sent;
     MPID_nem_pkt_t *pkt;
     int count;
@@ -352,7 +352,7 @@ int MPID_nem_sctp_module_send_progress()
     int mpi_errno = MPI_SUCCESS;
     MPIDI_VC_t *vc;
     
-    for (vc = send_list.head; vc; vc = vc->ch.next)
+    for (vc = send_list.head; vc; vc = ((MPIDI_CH3I_VC *)vc->channel_private)->next)
     {
         mpi_errno = MPID_nem_sctp_module_send_queue (vc);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);

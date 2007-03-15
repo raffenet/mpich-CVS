@@ -310,16 +310,17 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     int mpi_errno = MPI_SUCCESS;
     struct in_addr addr;
+    MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
 
     /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
-    vc->ch.state = MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED;
+    vc_ch->state = MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED;
     
     vc->sendEagerNoncontig_fn = MPID_nem_newtcp_SendEagerNoncontig;
-    vc->ch.iStartContigMsg    = MPID_nem_newtcp_iStartContigMsg;
-    vc->ch.iSendContig        = MPID_nem_newtcp_iSendContig;
+    vc_ch->iStartContigMsg    = MPID_nem_newtcp_iStartContigMsg;
+    vc_ch->iSendContig        = MPID_nem_newtcp_iSendContig;
     memset(&VC_FIELD(vc, sock_id), 0, sizeof(VC_FIELD(vc, sock_id)));
     VC_FIELD(vc, sock_id).sin_family = AF_INET;
     
@@ -328,8 +329,8 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     VC_FIELD(vc, sock_id).sin_addr.s_addr = addr.s_addr;
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    vc->ch.next = NULL;
-    vc->ch.prev = NULL;
+    vc_ch->next = NULL;
+    vc_ch->prev = NULL;
     VC_FIELD(vc, sc) = NULL;
     VC_FIELD(vc, send_queue).head = VC_FIELD(vc, send_queue).tail = NULL;
     

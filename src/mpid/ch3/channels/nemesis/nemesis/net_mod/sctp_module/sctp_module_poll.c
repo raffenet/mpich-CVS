@@ -169,7 +169,7 @@ static inline int recv_progress()
 		
                     MPIDI_PG_Get_vc(pg, MPID_NEM_CELL_SOURCE(cell), &vc);
                     result->vc = vc;
-                    vc->ch.state = MPID_NEM_VC_STATE_CONNECTED;
+                    ((MPIDI_CH3I_VC *)vc->channel_private)->state = MPID_NEM_VC_STATE_CONNECTED;
                     
                     /* Record that connection pkt has arrived.  */
                     VC_FIELD(vc, stream_table)[sri.sinfo_stream].have_recv_pg_id = HAVE_RECV_PG_ID;

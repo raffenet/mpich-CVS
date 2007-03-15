@@ -583,14 +583,15 @@ int
 MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL (MPID_STATE_MPID_NEM_VC_INIT);
 
     MPIDI_FUNC_ENTER (MPID_STATE_MPID_NEM_VC_INIT);
-    vc->ch.send_seqno = 0;
+    vc_ch->send_seqno = 0;
 
-    vc->ch.pending_pkt_len = 0;
-    MPIU_CHKPMEM_MALLOC (vc->ch.pending_pkt, MPIDI_CH3_PktGeneric_t *, sizeof (MPIDI_CH3_PktGeneric_t), mpi_errno, "pending_pkt");
+    vc_ch->pending_pkt_len = 0;
+    MPIU_CHKPMEM_MALLOC (vc_ch->pending_pkt, MPIDI_CH3_PktGeneric_t *, sizeof (MPIDI_CH3_PktGeneric_t), mpi_errno, "pending_pkt");
 
     /* We do different things for vcs in the COMM_WORLD pg vs other pgs
        COMM_WORLD vcs may use shared memory, and already have queues allocated
@@ -598,61 +599,61 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
     if (vc->lpid < MPID_nem_mem_region.num_procs) 
     {
 	/* This vc is in COMM_WORLD */
-	vc->ch.is_local = MPID_NEM_IS_LOCAL (vc->lpid);
-	vc->ch.free_queue = MPID_nem_mem_region.FreeQ[vc->lpid]; /* networks and local procs have free queues */    
-        vc->ch.node_id = MPID_nem_mem_region.node_ids[vc->lpid];
+	vc_ch->is_local = MPID_NEM_IS_LOCAL (vc->lpid);
+	vc_ch->free_queue = MPID_nem_mem_region.FreeQ[vc->lpid]; /* networks and local procs have free queues */    
+        vc_ch->node_id = MPID_nem_mem_region.node_ids[vc->lpid];
     }
     else
     {
 	/* this vc is the result of a connect */
-	vc->ch.is_local = 0;
-	vc->ch.free_queue = net_free_queue;
-        vc->ch.node_id = -1; /* we're not using shared memory, so assume we're on our own node */
+	vc_ch->is_local = 0;
+	vc_ch->free_queue = net_free_queue;
+        vc_ch->node_id = -1; /* we're not using shared memory, so assume we're on our own node */
     }
     
-    if (vc->ch.is_local)
+    if (vc_ch->is_local)
     {
-	vc->ch.fbox_out = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
-	vc->ch.fbox_in = &MPID_nem_mem_region.mailboxes.in[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
-	vc->ch.recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
+	vc_ch->fbox_out = &MPID_nem_mem_region.mailboxes.out[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
+	vc_ch->fbox_in = &MPID_nem_mem_region.mailboxes.in[MPID_nem_mem_region.local_ranks[vc->lpid]]->mpich2;
+	vc_ch->recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
 
         /* override nocontig send function */
         vc->sendEagerNoncontig_fn = MPIDI_CH3I_SendEagerNoncontig;
 
         /* local processes use the default method */
-        vc->ch.iStartContigMsg = NULL;
-        vc->ch.iSendContig     = NULL;
+        vc_ch->iStartContigMsg = NULL;
+        vc_ch->iSendContig     = NULL;
         
-        vc->ch.lmt_initiate_lmt  = MPID_nem_lmt_shm_initiate_lmt;
-        vc->ch.lmt_start_recv    = MPID_nem_lmt_shm_start_recv;
-        vc->ch.lmt_start_send    = MPID_nem_lmt_shm_start_send;
-        vc->ch.lmt_handle_cookie = MPID_nem_lmt_shm_handle_cookie;
-        vc->ch.lmt_done_send     = MPID_nem_lmt_shm_done_send;
-        vc->ch.lmt_done_recv     = MPID_nem_lmt_shm_done_recv;
+        vc_ch->lmt_initiate_lmt  = MPID_nem_lmt_shm_initiate_lmt;
+        vc_ch->lmt_start_recv    = MPID_nem_lmt_shm_start_recv;
+        vc_ch->lmt_start_send    = MPID_nem_lmt_shm_start_send;
+        vc_ch->lmt_handle_cookie = MPID_nem_lmt_shm_handle_cookie;
+        vc_ch->lmt_done_send     = MPID_nem_lmt_shm_done_send;
+        vc_ch->lmt_done_recv     = MPID_nem_lmt_shm_done_recv;
 
-        vc->ch.lmt_copy_buf        = NULL;
-        vc->ch.lmt_copy_buf_handle = NULL;
-        vc->ch.lmt_queue.head      = NULL;
-        vc->ch.lmt_queue.tail      = NULL;        
-        vc->ch.lmt_active_lmt      = NULL;
-        vc->ch.lmt_enqueued        = FALSE;
+        vc_ch->lmt_copy_buf        = NULL;
+        vc_ch->lmt_copy_buf_handle = NULL;
+        vc_ch->lmt_queue.head      = NULL;
+        vc_ch->lmt_queue.tail      = NULL;        
+        vc_ch->lmt_active_lmt      = NULL;
+        vc_ch->lmt_enqueued        = FALSE;
     }
     else
     {
-	vc->ch.fbox_out   = NULL;
-	vc->ch.fbox_in    = NULL;
-	vc->ch.recv_queue = NULL;
+	vc_ch->fbox_out   = NULL;
+	vc_ch->fbox_in    = NULL;
+	vc_ch->recv_queue = NULL;
 
-        vc->ch.lmt_initiate_lmt  = NULL;
-        vc->ch.lmt_start_recv    = NULL;
-        vc->ch.lmt_start_send    = NULL;
-        vc->ch.lmt_handle_cookie = NULL;
-        vc->ch.lmt_done_send     = NULL;
-        vc->ch.lmt_done_recv     = NULL;
+        vc_ch->lmt_initiate_lmt  = NULL;
+        vc_ch->lmt_start_recv    = NULL;
+        vc_ch->lmt_start_send    = NULL;
+        vc_ch->lmt_handle_cookie = NULL;
+        vc_ch->lmt_done_send     = NULL;
+        vc_ch->lmt_done_recv     = NULL;
 
         /* FIXME: DARIUS set these to default for now */
-        vc->ch.iStartContigMsg = NULL;
-        vc->ch.iSendContig     = NULL;
+        vc_ch->iStartContigMsg = NULL;
+        vc_ch->iSendContig     = NULL;
         
         mpi_errno = MPID_nem_net_module_vc_init (vc, business_card);
 	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -661,7 +662,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 /*         /\* iStartContigMsg iSendContig and sendEagerNoncontig_fn must */
 /*            be set for nonlocal processes.  Default functions only */
 /*            support shared-memory communication. *\/ */
-/*         MPIU_Assert(vc->ch.iStartContigMsg && vc->ch.iSendContig ** vc->sendEagerNoncontig_fn); */
+/*         MPIU_Assert(vc_ch->iStartContigMsg && vc_ch->iSendContig ** vc->sendEagerNoncontig_fn); */
 
     }
 
@@ -672,7 +673,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
     /* FIXME: ch3 assumes there is a field called sendq_head in the ch
        portion of the vc.  This is unused in nemesis and should be set
        to NULL */
-    vc->ch.sendq_head = NULL;
+    vc_ch->sendq_head = NULL;
     
      MPIU_CHKPMEM_COMMIT();
 fn_exit:

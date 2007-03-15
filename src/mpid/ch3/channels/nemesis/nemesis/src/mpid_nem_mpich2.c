@@ -165,7 +165,7 @@ int MPID_nem_send_iov(MPIDI_VC_t *vc, MPID_Request **sreq_ptr, MPID_IOV *iov, in
         iov_data_copied += data_iov[i].MPID_IOV_LEN;
     }
 
-    mpi_errno = vc->ch.iSendContig(vc, sreq, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN, sreq->dev.tmpbuf, data_sz);
+    mpi_errno = ((MPIDI_CH3I_VC *)vc->channel_private)->iSendContig(vc, sreq, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN, sreq->dev.tmpbuf, data_sz);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     *sreq_ptr = sreq;
@@ -214,7 +214,7 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_
     el->pkt.ckpt.source  = my_rank;
     el->pkt.ckpt.dest    = vc->lpid;
     el->pkt.ckpt.datalen = sizeof(el->pkt.ckpt.wave); /* FIXME: we need a way to handle packet types w/ different sizes */
-    el->pkt.ckpt.seqno   = vc->ch.send_seqno++;
+    el->pkt.ckpt.seqno   = ((MPIDI_CH3I_VC *)vc->channel_private)->send_seqno++;
     el->pkt.ckpt.type    = MPID_NEM_PKT_CKPT;
     el->pkt.ckpt.wave    = wave;
 

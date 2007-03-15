@@ -499,7 +499,7 @@ MPID_nem_sctp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
      *  received on any stream (NOT sent because you don't get the assocID
      *  until you receive).
      */
-    vc->ch.state = MPID_NEM_VC_STATE_DISCONNECTED;
+    ((MPIDI_CH3I_VC *)vc->channel_private)->state = MPID_NEM_VC_STATE_DISCONNECTED;
     
     /* set all streams to initial stage (i.e. before the connection
      *  packet containing the PG has arrived)

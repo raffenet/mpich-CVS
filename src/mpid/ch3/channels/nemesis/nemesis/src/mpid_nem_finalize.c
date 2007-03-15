@@ -58,7 +58,7 @@ int MPID_nem_vc_terminate(MPIDI_VC_t *vc)
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_VC_TERMINATE);
 
-    MPIU_Free(vc->ch.lmt_copy_buf_handle);
+    MPIU_Free(((MPIDI_CH3I_VC *)vc->channel_private)->lmt_copy_buf_handle);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_VC_TERMINATE);

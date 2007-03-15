@@ -29,6 +29,8 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
     int mpi_errno = MPI_SUCCESS;
     int i;
 
+    MPIU_Assert(sizeof(MPIDI_CH3I_VC) <= sizeof(((MPIDI_VC_t*)0)->channel_private));
+    
     /* There are hard-coded copy routines that depend on the size of the mpich2 header
        We only handle the 32- and 40-byte cases.
     */
@@ -114,7 +116,7 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
     if (vc->pg == MPIDI_CH3I_my_pg && vc->pg_rank == MPIDI_CH3I_my_rank)
         goto fn_exit;
     
-    vc->ch.recv_active = NULL;
+    ((MPIDI_CH3I_VC *)vc->channel_private)->recv_active = NULL;
     vc->state = MPIDI_VC_STATE_ACTIVE;
 
     mpi_errno = vc->pg->getConnInfo (vc->pg_rank, bc, MPID_NEM_MAX_KEY_VAL_LEN, vc->pg);
@@ -150,7 +152,7 @@ int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)
     /* init channel portion of vc */
     MPIU_ERR_CHKANDJUMP (!nemesis_initialized, mpi_errno, MPI_ERR_OTHER, "**intern");
     
-    vc->ch.recv_active = NULL;
+    ((MPIDI_CH3I_VC *)vc->channel_private)->recv_active = NULL;
     vc->state = MPIDI_VC_STATE_ACTIVE;
 
     mpi_errno = MPID_nem_vc_init (vc, port_name);
