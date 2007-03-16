@@ -67,8 +67,10 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
     }
     else
     {
+	sreq->dev.segment_ptr = MPID_Segment_alloc( );
+	/* if (!sreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
 	MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count,
-			  sreq->dev.datatype, &sreq->dev.segment, 0);
+			  sreq->dev.datatype, sreq->dev.segment_ptr, 0);
 	sreq->dev.iov_count = MPID_IOV_LIMIT;
 	sreq->dev.segment_first = 0;
 	sreq->dev.segment_size = data_sz;
@@ -287,7 +289,10 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     }
     else
     {
-	MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count, sreq->dev.datatype, &sreq->dev.segment, 0);
+	sreq->dev.segment_ptr = MPID_Segment_alloc( );
+	/* if (!sreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
+	MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count, 
+			  sreq->dev.datatype, sreq->dev.segment_ptr, 0);
 	iov_n = MPID_IOV_LIMIT - 1;
 	sreq->dev.segment_first = 0;
 	sreq->dev.segment_size = data_sz;

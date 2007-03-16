@@ -71,6 +71,8 @@ int MPIDI_CH3_SendEagerNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq,
     goto fn_exit;
 }
 
+/* This function will allocate a segment.  That segment must be freed when
+   it is no longer needed */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_EagerNoncontigSend
 #undef FCNAME
@@ -109,11 +111,14 @@ int MPIDI_CH3_EagerNoncontigSend( MPID_Request **sreq_p,
     MPIU_DBG_MSGPKT(vc,tag,eager_pkt->match.context_id,rank,data_sz,
                     "Eager");
 	    
-    MPID_Segment_init(buf, count, datatype, &sreq->dev.segment, 0);
+    sreq->dev.segment_ptr = MPID_Segment_alloc( );
+    /* if (!sreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
+    MPID_Segment_init(buf, count, datatype, sreq->dev.segment_ptr, 0);
     sreq->dev.segment_first = 0;
     sreq->dev.segment_size = data_sz;
 	    
-    mpi_errno = vc->sendEagerNoncontig_fn(vc, sreq, eager_pkt, sizeof(MPIDI_CH3_Pkt_eager_send_t));
+    mpi_errno = vc->sendEagerNoncontig_fn(vc, sreq, eager_pkt, 
+					  sizeof(MPIDI_CH3_Pkt_eager_send_t));
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
  fn_exit:
@@ -371,12 +376,14 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		   exceptional cases */
 		/* FIXME: The MPICH2 tests do not exercise this branch */
 		/* printf( "Surprise!\n" ); fflush(stdout);*/
+		rreq->dev.segment_ptr = MPID_Segment_alloc( );
+		/* if (!rreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
 		MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, 
-				  rreq->dev.datatype, &rreq->dev.segment, 0);
+				  rreq->dev.datatype, rreq->dev.segment_ptr, 0);
 
 		data_sz = rreq->dev.recv_data_sz;
 		last    = data_sz;
-		MPID_Segment_unpack( &rreq->dev.segment, 0, 
+		MPID_Segment_unpack( rreq->dev.segment_ptr, 0, 
 				     &last, eagershort_pkt->data );
 		if (last != data_sz) {
 		    /* --BEGIN ERROR HANDLING-- */
@@ -390,6 +397,7 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		    }
 		    /* --END ERROR HANDLING-- */
 		}
+		MPID_Segment_free( rreq->dev.segment_ptr );
 		rreq->dev.OnDataAvail = 0;
 	    }
 	}

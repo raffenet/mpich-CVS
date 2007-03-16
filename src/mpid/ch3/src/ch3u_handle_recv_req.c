@@ -161,10 +161,12 @@ int MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete( MPIDI_VC_t *vc,
        request is freed. free dtype_info here. */
     MPIU_Free(rreq->dev.dtype_info);
     
+    rreq->dev.segment_ptr = MPID_Segment_alloc( );
+    /* if (!rreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
     MPID_Segment_init(rreq->dev.user_buf,
 		      rreq->dev.user_count,
 		      rreq->dev.datatype,
-		      &rreq->dev.segment, 0);
+		      rreq->dev.segment_ptr, 0);
     rreq->dev.segment_first = 0;
     rreq->dev.segment_size = rreq->dev.recv_data_sz;
     
@@ -237,10 +239,12 @@ int MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete( MPIDI_VC_t *vc,
        request is freed. free dtype_info here. */
     MPIU_Free(rreq->dev.dtype_info);
     
+    rreq->dev.segment_ptr = MPID_Segment_alloc( );
+    /* if (!rreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
     MPID_Segment_init(rreq->dev.user_buf,
 		      rreq->dev.user_count,
 		      rreq->dev.datatype,
-		      &rreq->dev.segment, 0);
+		      rreq->dev.segment_ptr, 0);
     rreq->dev.segment_first = 0;
     rreq->dev.segment_size = rreq->dev.recv_data_sz;
     
@@ -303,10 +307,12 @@ int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *vc,
     iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) get_resp_pkt;
     iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
     
+    sreq->dev.segment_ptr = MPID_Segment_alloc( );
+    /* if (!sreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
     MPID_Segment_init(sreq->dev.user_buf,
 		      sreq->dev.user_count,
 		      sreq->dev.datatype,
-		      &sreq->dev.segment, 0);
+		      sreq->dev.segment_ptr, 0);
     sreq->dev.segment_first = 0;
     sreq->dev.segment_size = new_dtp->size * sreq->dev.user_count;
     

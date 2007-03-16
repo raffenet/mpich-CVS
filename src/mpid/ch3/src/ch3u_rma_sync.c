@@ -517,9 +517,11 @@ static int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         /* this will cause the datatype to be freed when the request
            is freed. */ 
 
+	(*request)->dev.segment_ptr = MPID_Segment_alloc( );
+	/* if (!*request)->dev.segment_ptr) { MPIU_ERR_POP(); } */
         MPID_Segment_init(rma_op->origin_addr, rma_op->origin_count,
                           rma_op->origin_datatype,
-                          &((*request)->dev.segment), 0);
+                          (*request)->dev.segment_ptr, 0);
         (*request)->dev.segment_first = 0;
         (*request)->dev.segment_size = rma_op->origin_count * origin_type_size;
 	    
@@ -539,6 +541,7 @@ static int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
             if (mpi_errno != MPI_SUCCESS)
             {
                 MPID_Datatype_release((*request)->dev.datatype_ptr);
+		MPID_Segment_free( (*request)->dev.segment_ptr );
                 MPIU_Object_set_ref(*request, 0);
                 MPIDI_CH3_Request_destroy(*request);
                 *request = NULL;
@@ -552,6 +555,7 @@ static int MPIDI_CH3I_Send_rma_msg(MPIDI_RMA_ops *rma_op, MPID_Win *win_ptr,
         {
 	    /* --BEGIN ERROR HANDLING-- */
             MPID_Datatype_release((*request)->dev.datatype_ptr);
+	    MPID_Segment_free( (*request)->dev.segment_ptr );
             MPIU_Object_set_ref(*request, 0);
             MPIDI_CH3_Request_destroy(*request);
             *request = NULL;
@@ -1847,9 +1851,11 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
         /* this will cause the datatype to be freed when the request
            is freed. */ 
 
+	request->dev.segment_ptr = MPID_Segment_alloc( );
+	/* if (!request->dev.segment_ptr) { MPIU_ERR_POP(); } */
         MPID_Segment_init(rma_op->origin_addr, rma_op->origin_count,
                           rma_op->origin_datatype,
-                          &(request->dev.segment), 0);
+                          request->dev.segment_ptr, 0);
         request->dev.segment_first = 0;
         request->dev.segment_size = rma_op->origin_count * origin_type_size;
 	    
@@ -1869,6 +1875,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
             if (mpi_errno != MPI_SUCCESS)
             {
                 MPID_Datatype_release(request->dev.datatype_ptr);
+		MPID_Segment_free( request->dev.segment_ptr );
                 MPIU_Object_set_ref(request, 0);
                 MPIDI_CH3_Request_destroy(request);
                 mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|rmamsg", 0);
@@ -1880,6 +1887,7 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
         else
         {
             MPID_Datatype_release(request->dev.datatype_ptr);
+	    MPID_Segment_free( request->dev.segment_ptr );
             MPIU_Object_set_ref(request, 0);
             MPIDI_CH3_Request_destroy(request);
             mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**ch3|loadsendiov", 0);
@@ -1920,7 +1928,11 @@ static int MPIDI_CH3I_Send_lock_put_or_acc(MPID_Win *win_ptr)
         /* --END ERROR HANDLING-- */
                 
         /* if origin datatype was a derived datatype, it will get 
-           freed when the request gets freed. */ 
+           freed when the request gets freed. But we need to free the
+	   segment ourselves. */ 
+	if (origin_dt_derived) {
+	    MPID_Segment_free( request->dev.segment_ptr );
+	}
         MPID_Request_release(request);
     }
 

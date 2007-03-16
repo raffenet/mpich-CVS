@@ -194,7 +194,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
     MPIU_Assert(sreq->dev.segment_first < last);
     MPIU_Assert(last > 0);
     MPIU_Assert(*iov_n > 0 && *iov_n <= MPID_IOV_LIMIT);
-    MPID_Segment_pack_vector(&sreq->dev.segment, sreq->dev.segment_first, 
+    MPID_Segment_pack_vector(sreq->dev.segment_ptr, sreq->dev.segment_first, 
 			     &last, iov, iov_n);
     MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
     "post-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
@@ -205,6 +205,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
     {
 	MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"remaining data loaded into IOV");
 	sreq->dev.OnDataAvail = sreq->dev.OnFinal;
+	MPID_Segment_free( sreq->dev.segment_ptr );
     }
     else if ((last - sreq->dev.segment_first) / *iov_n >= MPIDI_IOV_DENSITY_MIN)
     {
@@ -249,8 +250,8 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
                "pre-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			  sreq->dev.segment_first, last));
-	MPID_Segment_pack(&sreq->dev.segment, sreq->dev.segment_first, &last, 
-			  (char*) sreq->dev.tmpbuf + iov_data_copied);
+	MPID_Segment_pack(sreq->dev.segment_ptr, sreq->dev.segment_first, 
+			  &last, (char*) sreq->dev.tmpbuf + iov_data_copied);
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
               "post-pack: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT,
 			   sreq->dev.segment_first, last));
@@ -260,6 +261,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
 	if (last == sreq->dev.segment_size)
 	{
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"remaining data packed into SRBuf");
+	    MPID_Segment_free( sreq->dev.segment_ptr );
 	    sreq->dev.OnDataAvail = sreq->dev.OnFinal;
 	}
 	else 
@@ -348,7 +350,8 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 			  rreq->dev.segment_first, last, rreq->dev.iov_count));
 	MPIU_Assert(rreq->dev.segment_first < last);
 	MPIU_Assert(last > 0);
-	MPID_Segment_unpack_vector(&rreq->dev.segment, rreq->dev.segment_first,
+	MPID_Segment_unpack_vector(rreq->dev.segment_ptr, 
+				   rreq->dev.segment_first,
 				   &last, rreq->dev.iov, &rreq->dev.iov_count);
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
    "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
@@ -379,6 +382,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
      "updating rreq to read the remaining data directly into the user buffer");
 	    /* Eventually, use OnFinal for this instead */
 	    rreq->dev.OnDataAvail = 0;
+	    MPID_Segment_free( rreq->dev.segment_ptr );
 	}
 	else if (last == rreq->dev.segment_size || 
 		 (last - rreq->dev.segment_first) / rreq->dev.iov_count >= MPIDI_IOV_DENSITY_MIN)
@@ -489,7 +493,7 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	tmpbuf_last = (int)rreq->dev.segment_size;
     }
     last = tmpbuf_last;
-    MPID_Segment_unpack(&rreq->dev.segment, rreq->dev.segment_first, 
+    MPID_Segment_unpack(rreq->dev.segment_ptr, rreq->dev.segment_first, 
 			&last, rreq->dev.tmpbuf);
     if (last == 0 || last == rreq->dev.segment_first)
     {

@@ -87,11 +87,14 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **sreq_p,
 		       "sending non-contiguous sync eager message, data_sz=" MPIDI_MSG_SZ_FMT, 
 		       data_sz);
 	
-	MPID_Segment_init(buf, count, datatype, &sreq->dev.segment, 0);
+	sreq->dev.segment_ptr = MPID_Segment_alloc( );
+	/* if (!sreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
+	MPID_Segment_init(buf, count, datatype, sreq->dev.segment_ptr, 0);
 	sreq->dev.segment_first = 0;
 	sreq->dev.segment_size = data_sz;
 	
-        mpi_errno = vc->sendEagerNoncontig_fn(vc, sreq, es_pkt, sizeof(MPIDI_CH3_Pkt_eager_sync_send_t));
+        mpi_errno = vc->sendEagerNoncontig_fn(vc, sreq, es_pkt, 
+				      sizeof(MPIDI_CH3_Pkt_eager_sync_send_t));
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 

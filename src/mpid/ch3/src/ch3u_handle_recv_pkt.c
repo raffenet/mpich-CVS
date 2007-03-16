@@ -214,8 +214,10 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
 	/* user buffer is not contiguous or is too small to hold
 	   the entire message */
         
+	rreq->dev.segment_ptr = MPID_Segment_alloc( );
+	/* if (!rreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
  	MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, 
-			  rreq->dev.datatype, &rreq->dev.segment, 0);
+			  rreq->dev.datatype, rreq->dev.segment_ptr, 0);
 	rreq->dev.segment_first = 0;
 	rreq->dev.segment_size = data_sz;
 
@@ -227,7 +229,8 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
             MPIDI_msg_sz_t last;
             MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"Copying noncontiguous data to user buffer");
             last = data_sz;
-            MPID_Segment_unpack(&rreq->dev.segment, rreq->dev.segment_first, &last, buf);
+            MPID_Segment_unpack(rreq->dev.segment_ptr, rreq->dev.segment_first, 
+				&last, buf);
             /* --BEGIN ERROR HANDLING-- */
             if (last != data_sz)
             {
@@ -238,9 +241,11 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
                 rreq->status.count = (int)rreq->dev.segment_first;
                 *buflen = data_sz;
                 *complete = TRUE;
+		/* FIXME: Set OnDataAvail to 0?  If not, why not? */
                 goto fn_exit;
             }
             /* --END ERROR HANDLING-- */
+	    MPID_Segment_free( rreq->dev.segment_ptr );
             *buflen = data_sz;
             rreq->dev.OnDataAvail = 0;
             *complete = TRUE;
@@ -379,8 +384,10 @@ int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreq)
 	int mpi_errno;
 	
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"IOV loaded for non-contiguous read");
+	rreq->dev.segment_ptr = MPID_Segment_alloc( );
+	/* if (!rreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
 	MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, 
-			  rreq->dev.datatype, &rreq->dev.segment, 0);
+			  rreq->dev.datatype, rreq->dev.segment_ptr, 0);
 	rreq->dev.segment_first = 0;
 	rreq->dev.segment_size = data_sz;
 	mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
