@@ -46,9 +46,9 @@ int MPIDI_CH3I_SendEagerNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq, void *hea
     }
 
     /* send as many cells of data as you can */
-    MPID_nem_mpich2_send_seg_header(&sreq->dev.segment, &sreq->dev.segment_first, sreq->dev.segment_size, header, hdr_sz, vc, &again);
+    MPID_nem_mpich2_send_seg_header(sreq->dev.segment_ptr, &sreq->dev.segment_first, sreq->dev.segment_size, header, hdr_sz, vc, &again);
     while(!again && sreq->dev.segment_first < sreq->dev.segment_size)
-        MPID_nem_mpich2_send_seg(&sreq->dev.segment, &sreq->dev.segment_first, sreq->dev.segment_size, vc, &again);
+        MPID_nem_mpich2_send_seg(sreq->dev.segment_ptr, &sreq->dev.segment_first, sreq->dev.segment_size, vc, &again);
 
     if (again)
     {

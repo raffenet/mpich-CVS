@@ -287,7 +287,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 {
                     do
                     {
-                        MPID_nem_mpich2_send_seg(&sreq->dev.segment, &sreq->dev.segment_first, sreq->dev.segment_size,
+                        MPID_nem_mpich2_send_seg(sreq->dev.segment_ptr, &sreq->dev.segment_first, sreq->dev.segment_size,
                                                  sreq->ch.vc, &again);
                     }
                     while (!again && sreq->dev.segment_first < sreq->dev.segment_size);
@@ -331,14 +331,14 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 }
                 else
                 {
-                    MPID_nem_mpich2_send_seg_header(&sreq->dev.segment, &sreq->dev.segment_first, sreq->dev.segment_size,
+                    MPID_nem_mpich2_send_seg_header(sreq->dev.segment_ptr, &sreq->dev.segment_first, sreq->dev.segment_size,
                                                     &sreq->dev.pending_pkt, sreq->ch.header_sz, sreq->ch.vc, &again);
                     if (!again)
                     {
                         MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
                         while (!again && sreq->dev.segment_first < sreq->dev.segment_size)
                         {
-                            MPID_nem_mpich2_send_seg(&sreq->dev.segment, &sreq->dev.segment_first, sreq->dev.segment_size,
+                            MPID_nem_mpich2_send_seg(sreq->dev.segment_ptr, &sreq->dev.segment_first, sreq->dev.segment_size,
                                                      sreq->ch.vc, &again);
                         }
                     }

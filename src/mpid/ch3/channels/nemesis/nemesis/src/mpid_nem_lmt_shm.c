@@ -334,7 +334,10 @@ static int get_next_req(MPIDI_VC_t *vc)
     }
 
     req = vc_ch->lmt_active_lmt->req;
-    MPID_Segment_init(req->dev.user_buf, req->dev.user_count, req->dev.datatype, &req->dev.segment, 0);
+    req->dev.segment_ptr = MPID_Segment_alloc();
+    /* if (!req->dev.segment_ptr) { MPIU_ERR_POP(); } */
+
+    MPID_Segment_init(req->dev.user_buf, req->dev.user_count, req->dev.datatype, req->dev.segment_ptr, 0);
     req->dev.segment_first = 0;
     vc_ch->lmt_buf_num = 0;
 
@@ -416,7 +419,7 @@ static int lmt_shm_send_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
 
         /* we have a free buffer, fill it */
         last = (data_sz - first <= MPID_NEM_COPY_BUF_LEN) ? data_sz : first + MPID_NEM_COPY_BUF_LEN;
-	MPID_Segment_pack(&req->dev.segment, first, &last, (void *)copy_buf->buf[buf_num]); /* cast away volatile */
+	MPID_Segment_pack(req->dev.segment_ptr, first, &last, (void *)copy_buf->buf[buf_num]); /* cast away volatile */
         MPID_NEM_WRITE_BARRIER();
         copy_buf->flag[buf_num].val = BUF_FULL;
         MPID_NEM_WRITE_BARRIER();
@@ -427,6 +430,7 @@ static int lmt_shm_send_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
     while (last < data_sz);
 
     *done = TRUE;
+    MPID_Segment_free(req->dev.segment_ptr);
     MPIDI_CH3U_Request_complete(req);   
        
  fn_exit:
@@ -497,7 +501,7 @@ static int lmt_shm_recv_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
         MPIU_Assert(copy_buf->flag[buf_num].val != BUF_DONE);
 
         last = (data_sz - first <= MPID_NEM_COPY_BUF_LEN) ? data_sz : first + MPID_NEM_COPY_BUF_LEN;
-	MPID_Segment_unpack(&req->dev.segment, first, &last, (void *)copy_buf->buf[buf_num]); /* cast away volatile */
+	MPID_Segment_unpack(req->dev.segment_ptr, first, &last, (void *)copy_buf->buf[buf_num]); /* cast away volatile */
         MPID_NEM_READ_BARRIER();
         if (last < data_sz)
             copy_buf->flag[buf_num].val = BUF_EMPTY;
@@ -517,6 +521,7 @@ static int lmt_shm_recv_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
     copy_buf->owner_info.val.rank          = NO_OWNER;
 
     *done = TRUE;
+    MPID_Segment_free(req->dev.segment_ptr);
     MPIDI_CH3U_Request_complete(req);
     
  fn_exit:
