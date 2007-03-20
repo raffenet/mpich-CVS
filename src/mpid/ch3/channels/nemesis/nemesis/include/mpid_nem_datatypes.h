@@ -19,6 +19,7 @@
 #include <string.h>
 #include <limits.h>
 #include <sched.h>
+#include <semaphore.h>
 
 #define MPID_NEM_OFFSETOF(struc, field) ((int)(&((struc *)0)->field))
 #define MPID_NEM_CACHE_LINE_LEN 64
@@ -160,7 +161,10 @@ typedef struct MPID_nem_queue
 {
     volatile MPID_nem_cell_rel_ptr_t head;
     volatile MPID_nem_cell_rel_ptr_t tail;
-    char padding1[MPID_NEM_CACHE_LINE_LEN - 2 * sizeof(MPID_nem_cell_rel_ptr_t)];
+    volatile int wait_status; /* 0 = nothing to receive, receiver may be waiting on sem,
+                                 1 = something to receive, sender has posted to sem */
+    sem_t semaphore;
+    char padding1[MPID_NEM_CACHE_LINE_LEN - 2 * sizeof(MPID_nem_cell_rel_ptr_t) - sizeof(int) - sizeof(sem_t)];
     MPID_nem_cell_rel_ptr_t my_head;
     char padding2[MPID_NEM_CACHE_LINE_LEN - sizeof(MPID_nem_cell_rel_ptr_t)];
 } MPID_nem_queue_t, *MPID_nem_queue_ptr_t;

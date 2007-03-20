@@ -87,20 +87,21 @@ extern unsigned short        *MPID_nem_recv_seqno;
 } while (0)
 #endif
      
-#define poll_all_fboxes(_cell, do_found) do {										\
-    MPID_nem_fbox_mpich2_t *fbox;													\
-															\
-    fbox = MPID_nem_curr_fbox_all_poll->fbox;											\
-    if (fbox && fbox->flag.value == 1 && fbox->cell.pkt.mpich2.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank])	\
-    {															\
-	++MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank];									\
-	*(_cell) = &fbox->cell;												\
-	do_found;													\
-    }															\
-    ++MPID_nem_curr_fbox_all_poll;												\
-    if (MPID_nem_curr_fbox_all_poll > MPID_nem_fboxq_elem_list_last)									\
-	MPID_nem_curr_fbox_all_poll = MPID_nem_fboxq_elem_list;										\
-} while(0)
+#define poll_all_fboxes(_cell, do_found) do {                                                                                   \
+        MPID_nem_fboxq_elem_t *_fbox_el;                                                                                        \
+        MPID_nem_fbox_mpich2_t *_fbox;                                                                                          \
+                                                                                                                                \
+        for (_fbox_el = MPID_nem_fboxq_elem_list; _fbox_el <= MPID_nem_fboxq_elem_list_last; ++_fbox_el)                        \
+        {                                                                                                                       \
+            _fbox = _fbox_el->fbox;                                                                                             \
+            if (_fbox && _fbox->flag.value == 1 && _fbox->cell.pkt.mpich2.seqno == MPID_nem_recv_seqno[_fbox_el->grank])        \
+            {                                                                                                                   \
+                ++MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank];                                                      \
+                *(_cell) = &_fbox->cell;                                                                                        \
+                do_found;                                                                                                       \
+            }                                                                                                                   \
+        }                                                                                                                       \
+    } while(0)
 
 #endif /* MPID_NEM_FBOX_H */
 

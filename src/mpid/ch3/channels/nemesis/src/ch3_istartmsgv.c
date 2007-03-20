@@ -37,6 +37,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
     int again = 0;
     int j;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
+    printf ("%d MPIDI_CH3_iStartMsgv %d\n", MPIDI_Process.my_pg_rank, vc->pg_rank);//DARIUS
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 

@@ -30,6 +30,7 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
     int again = 0;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+    printf ("%d MPIDI_CH3_iStartMsg %d\n", MPIDI_Process.my_pg_rank, vc->pg_rank);//DARIUS
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 

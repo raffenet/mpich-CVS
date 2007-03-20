@@ -21,6 +21,7 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_s
     int again = 0;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
+    printf ("%d MPIDI_CH3_iSend %d\n", MPIDI_Process.my_pg_rank, vc->pg_rank);//DARIUS
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);
 

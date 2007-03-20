@@ -21,6 +21,18 @@
 
 #include "my_papi_defs.h"
 
+#define MAYBE_SIGNAL(recvQ) do {                                                                                                \
+        int old = MPID_NEM_SWAP_INT(&(recvQ)->wait_status, 1);                                                                  \
+        {                                                                                                                       \
+            int v, ret;                                                                                                         \
+            ret = sem_getvalue(&(recvQ)->semaphore, &v);                                                                        \
+            MPIU_Assert(ret != -1);                                                                                             \
+            printf("%d POST sem = %p old = %d sem_value = %d\n", MPIDI_Process.my_pg_rank, &(recvQ)->semaphore, old, v);        \
+        }                                                                                                                       \
+        if (old == 0)                                                                                                           \
+            sem_post(&(recvQ)->semaphore);                                                                                      \
+    } while (0)
+
 extern MPID_nem_cell_ptr_t MPID_nem_prefetched_cell;
 
 MPID_NEM_INLINE_DECL int MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again);
@@ -109,7 +121,8 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again)
 	    
 	    MPID_NEM_WRITE_BARRIER();
 	    pbox->flag.value = 1;
-
+            MAYBE_SIGNAL(vc_ch->recv_queue);
+            
 	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent fbox ");
 	    MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (&pbox->cell));
 
@@ -180,6 +193,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again)
     if (vc_ch->is_local)
     {
 	MPID_nem_queue_enqueue (vc_ch->recv_queue, el);
+        MAYBE_SIGNAL(vc_ch->recv_queue);
 	/*MPID_nem_rel_dump_queue( vc_ch->recv_queue ); */
     }
     else
@@ -310,6 +324,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *agai
     if(vc_ch->is_local)
     {
 	MPID_nem_queue_enqueue (vc_ch->recv_queue, el);
+        MAYBE_SIGNAL(vc_ch->recv_queue);
 	/*MPID_nem_rel_dump_queue( vc_ch->recv_queue ); */
     }
     else
@@ -407,6 +422,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, in
 	    MPID_NEM_MEMCPY ((char *)pbox->cell.pkt.mpich2.payload +sizeof(MPIDI_CH3_Pkt_t), (*iov)[1].iov_base, (*iov)[1].iov_len);
 	    MPID_NEM_WRITE_BARRIER();
 	    pbox->flag.value = 1;
+            MAYBE_SIGNAL(vc_ch->recv_queue);
 	    *n_iov = 0;
 
 	    MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent fbox ");
@@ -494,6 +510,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, in
     if (vc_ch->is_local)
     {    
 	MPID_nem_queue_enqueue (vc_ch->recv_queue, el);	
+        MAYBE_SIGNAL(vc_ch->recv_queue);
 	/*MPID_nem_rel_dump_queue( vc_ch->recv_queue ); */
     }
     else
@@ -597,6 +614,7 @@ MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_
             
 	    MPID_NEM_WRITE_BARRIER();
 	    pbox->flag.value = 1;
+            MAYBE_SIGNAL(vc_ch->recv_queue);
 
             *segment_first = last;
 
@@ -659,6 +677,7 @@ MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
 
     MPID_nem_queue_enqueue (vc_ch->recv_queue, el);	
+    MAYBE_SIGNAL(vc_ch->recv_queue);
 
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
@@ -753,6 +772,7 @@ MPID_nem_mpich2_send_seg (MPID_Segment *segment, MPIDI_msg_sz_t *segment_first, 
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
 
     MPID_nem_queue_enqueue (vc_ch->recv_queue, el);	
+    MAYBE_SIGNAL(vc_ch->recv_queue);
 
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
@@ -913,7 +933,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 #endif
     
 #ifdef USE_FASTBOX
-    poll_fboxes (cell, goto fbox_l);
+    poll_all_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
@@ -980,7 +1000,7 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
     int mpi_errno = MPI_SUCCESS;
     
 #ifdef USE_FASTBOX
-    poll_fboxes (cell, goto fbox_l);
+    poll_all_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
@@ -1058,7 +1078,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_
     
     
 #ifdef USE_FASTBOX
-    poll_fboxes (cell, goto fbox_l);
+    poll_all_fboxes (cell, goto fbox_l);
 #endif /*USE_FASTBOX */
    
     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
@@ -1077,7 +1097,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_
     
 #ifdef USE_FASTBOX	
 	poll_all_fboxes (cell, goto fbox_l);
-	poll_fboxes (cell, goto fbox_l);
+        /*poll_fboxes (cell, goto fbox_l); */
 #endif /*USE_FASTBOX */
 
 	if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)

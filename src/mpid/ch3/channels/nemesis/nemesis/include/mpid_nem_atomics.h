@@ -32,6 +32,43 @@ static inline void *MPID_NEM_SWAP (volatile void *ptr, void *val)
 #error No swap function defined for this architecture
 #endif
 }
+static inline int MPID_NEM_SWAP_INT (volatile int *ptr, int val)
+{
+#ifdef HAVE_GCC_AND_PENTIUM_ASM
+    __asm__ __volatile__ ("xchg %0,%1"
+		  :"=r" (val)
+		  :"m" (*ptr), "0" (val)
+		  :"memory");
+    return val;
+#elif defined(HAVE_GCC_AND_X86_64_ASM)
+    __asm__ __volatile__ ("xchg %0,%1"
+		  :"=r" (val)
+		  :"m" (*ptr), "0" (val)
+		  :"memory");
+    return val;
+#elif defined(HAVE_GCC_AND_IA64_ASM)
+    switch (sizeof(int)) /* this case statement should be optimized out */
+    {
+    case 8:
+        __asm__ __volatile__ ("xchg8 %0=[%1],%2"
+                              : "=r" (val)
+                              : "r" (ptr), "0" (val)
+                              : "memory");
+    case 4:
+        __asm__ __volatile__ ("xchg4 %0=[%1],%2"
+                              : "=r" (val)
+                              : "r" (ptr), "0" (val)
+                              : "memory");
+        break;
+    default:
+        MPIU_Assertp (0);
+    }
+    
+    return val;
+#else
+#error No swap function defined for this architecture
+#endif
+}
 
 
 static inline void *MPID_NEM_CAS (volatile void *ptr, void *oldv, void *newv)

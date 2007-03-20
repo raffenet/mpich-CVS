@@ -105,8 +105,16 @@ void MPID_nem_dump_cell_mpich2__ ( MPID_nem_cell_ptr_t cell, int master, char *f
 
 inline void MPID_nem_queue_init (MPID_nem_queue_ptr_t qhead )
 {
-  MPID_NEM_SET_REL_NULL (qhead->head);
-  MPID_NEM_SET_REL_NULL (qhead->my_head);
-  MPID_NEM_SET_REL_NULL (qhead->tail);
+    MPID_NEM_SET_REL_NULL(qhead->head);
+    MPID_NEM_SET_REL_NULL(qhead->my_head);
+    MPID_NEM_SET_REL_NULL(qhead->tail);
+    qhead->wait_status = 0;
+    sem_init(&qhead->semaphore, 1, 0);
+    {
+        int v, ret;
+        ret = sem_getvalue(&qhead->semaphore, &v);
+        MPIU_Assert(ret != -1);
+        printf("%d INIT sem = %p sem_value = %d\n", MPIDI_Process.my_pg_rank, &qhead->semaphore, v);
+    }
 }
 
