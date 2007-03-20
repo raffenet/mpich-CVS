@@ -786,7 +786,8 @@ def handle_local_argset(argset,machineFileInfo,msgToMPD):
                 sys.exit(-1)
             host = machineFileInfo[loRange]['host']
             ifhn = machineFileInfo[loRange]['ifhn']
-            msgToMPD['ifhns'][loRange] = ifhn
+            if ifhn:
+                msgToMPD['ifhns'][loRange] = ifhn
             for i in range(loRange+1,hiRange+1):
                 if machineFileInfo[i]['host'] != host  or  machineFileInfo[i]['ifhn'] != ifhn:
                     hiRange = i - 1
