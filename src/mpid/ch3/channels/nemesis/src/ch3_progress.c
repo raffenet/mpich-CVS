@@ -13,20 +13,21 @@
 #endif
 #include "pmi.h"
 
-#define WAIT_FOR_SIGNAL() do {                                                                                                              \
-        int old = MPID_NEM_SWAP_INT(&MPID_nem_mem_region.my_recvQ->wait_status, 0);                                                         \
-        {                                                                                                                                   \
-            int v, ret;                                                                                                                     \
-            ret = sem_getvalue(&MPID_nem_mem_region.my_recvQ->semaphore, &v);                                                               \
-            MPIU_Assert(ret != -1);                                                                                                         \
-            printf("%d WAIT sem = %p old = %d sem_value = %d\n", MPIDI_Process.my_pg_rank, &MPID_nem_mem_region.my_recvQ->semaphore, old, v); \
-        }                                                                                                                                   \
-        if (old == 0)                                                                                                                       \
-        {                                                                                                                                   \
-            MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);                                                                        \
-            sem_wait(&MPID_nem_mem_region.my_recvQ->semaphore);                                                                             \
-            MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);                                                                          \
-        }                                                                                                                                   \
+#define WAIT_FOR_SIGNAL() do {                                                                  \
+        int old = MPID_NEM_SWAP_INT(&MPID_nem_mem_region.my_recvQ->wait_status, 0);             \
+        if (0){                                                                                 \
+            int v, ret;                                                                         \
+            ret = sem_getvalue(&MPID_nem_mem_region.my_recvQ->semaphore, &v);                   \
+            MPIU_Assert(ret != -1);                                                             \
+            printf("%d WAIT sem = %p old = %d sem_value = %d\n", MPIDI_Process.my_pg_rank,      \
+                   &MPID_nem_mem_region.my_recvQ->semaphore, old, v);                           \
+        }                                                                                       \
+        if (old == 0)                                                                           \
+        {                                                                                       \
+            MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);                            \
+            sem_wait(&MPID_nem_mem_region.my_recvQ->semaphore);                                 \
+            MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);                              \
+        }                                                                                       \
     } while(0)
 
 extern int MPID_nem_lmt_shm_pending; /* defined in mpid_nem_lmt_shm.c */
@@ -1810,8 +1811,6 @@ int MPIDI_CH3I_Posted_recv_enqueued (MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
     
-    printf("%d ENQUEUE %d\n", MPIDI_Process.my_pg_rank, (rreq)->dev.match.rank); //DARIUS
-        
     /* don't enqueue for anysource */
     if (rreq->dev.match.rank < 0)
 	goto fn_exit;
@@ -1839,8 +1838,6 @@ int MPIDI_CH3I_Posted_recv_dequeued (MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
     
-    printf("%d DEQUEUE %d\n", MPIDI_Process.my_pg_rank, (rreq)->dev.match.rank); //DARIUS
-         
     if (rreq->dev.match.rank < 0)
 	goto fn_exit;
     if (rreq->dev.match.rank == MPIDI_CH3I_my_rank)

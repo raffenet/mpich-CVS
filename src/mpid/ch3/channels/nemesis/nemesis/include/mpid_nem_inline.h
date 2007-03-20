@@ -23,7 +23,7 @@
 
 #define MAYBE_SIGNAL(recvQ) do {                                                                                                \
         int old = MPID_NEM_SWAP_INT(&(recvQ)->wait_status, 1);                                                                  \
-        {                                                                                                                       \
+        if (0) {                                                                                                                \
             int v, ret;                                                                                                         \
             ret = sem_getvalue(&(recvQ)->semaphore, &v);                                                                        \
             MPIU_Assert(ret != -1);                                                                                             \

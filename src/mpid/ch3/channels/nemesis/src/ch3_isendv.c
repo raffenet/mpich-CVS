@@ -27,7 +27,6 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
 
-    printf ("%d MPIDI_CH3_iSendv %d\n", MPIDI_Process.my_pg_rank, vc->pg_rank);//DARIUS
     if (vc_ch->iSendContig)
     {
         MPIU_Assert(n_iov > 0);

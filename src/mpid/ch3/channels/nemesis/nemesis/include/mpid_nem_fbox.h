@@ -87,20 +87,22 @@ extern unsigned short        *MPID_nem_recv_seqno;
 } while (0)
 #endif
      
-#define poll_all_fboxes(_cell, do_found) do {                                                                                   \
-        MPID_nem_fboxq_elem_t *_fbox_el;                                                                                        \
-        MPID_nem_fbox_mpich2_t *_fbox;                                                                                          \
-                                                                                                                                \
-        for (_fbox_el = MPID_nem_fboxq_elem_list; _fbox_el <= MPID_nem_fboxq_elem_list_last; ++_fbox_el)                        \
-        {                                                                                                                       \
-            _fbox = _fbox_el->fbox;                                                                                             \
-            if (_fbox && _fbox->flag.value == 1 && _fbox->cell.pkt.mpich2.seqno == MPID_nem_recv_seqno[_fbox_el->grank])        \
-            {                                                                                                                   \
-                ++MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank];                                                      \
-                *(_cell) = &_fbox->cell;                                                                                        \
-                do_found;                                                                                                       \
-            }                                                                                                                   \
-        }                                                                                                                       \
+#define poll_all_fboxes(_cell, do_found) do {                                                                                           \
+        MPID_nem_fboxq_elem_t *_fbox_el;                                                                                                \
+        MPID_nem_fbox_mpich2_t *_fbox;                                                                                                  \
+                                                                                                                                        \
+        for (_fbox_el = MPID_nem_fboxq_elem_list; _fbox_el <= MPID_nem_fboxq_elem_list_last; ++_fbox_el)                                \
+        {                                                                                                                               \
+            _fbox = _fbox_el->fbox;                                                                                                     \
+            if (_fbox == NULL)                                                                                                          \
+                continue;                                                                                                               \
+            if (_fbox->flag.value == 1 && _fbox->cell.pkt.mpich2.seqno == MPID_nem_recv_seqno[_fbox_el->grank])                         \
+            {                                                                                                                           \
+                ++MPID_nem_recv_seqno[_fbox_el->grank];                                                                                 \
+                *(_cell) = &_fbox->cell;                                                                                                \
+                do_found;                                                                                                               \
+            }                                                                                                                           \
+        }                                                                                                                               \
     } while(0)
 
 #endif /* MPID_NEM_FBOX_H */
