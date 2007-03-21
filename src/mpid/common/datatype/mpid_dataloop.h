@@ -8,7 +8,7 @@
 #ifndef MPID_DATALOOP_H
 #define MPID_DATALOOP_H
 
-#include "mpi.h"
+#include <mpi.h>
 
 /* Note: this is where you define the prefix that will be prepended on
  * all externally visible generic dataloop and segment functions.
@@ -82,11 +82,11 @@
 /* assert function */
 #define DLOOP_Assert MPIU_Assert
 
-/* Include gen_dataloop.h at the end to get the rest of the prototypes
+/* Include dataloop_parts.h at the end to get the rest of the prototypes
  * and defines, in terms of the prefixes and types above.
  */
-#include <gen_dataloop.h>
-#include <gen_dataloop_create.h>
+#include "dataloop/dataloop_parts.h"
+#include "dataloop/dataloop_create.h"
 
 /* These values are defined by DLOOP code.
  *
