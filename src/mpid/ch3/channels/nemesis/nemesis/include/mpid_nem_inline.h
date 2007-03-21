@@ -1155,7 +1155,7 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
-    DO_PAPI (PAPI_reset (PAPI_EventSet));
+    DO_PAPI(PAPI_reset(PAPI_EventSet));
 #ifdef ENABLED_CHECKPOINTING
     if (cell->pkt.header.type == MPID_NEM_PKT_CKPT_REPLAY)
     {
@@ -1165,8 +1165,8 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc)
 	return mpi_errno;
     }
 #endif
-    MPID_nem_queue_enqueue (vc_ch->free_queue, cell);
-    DO_PAPI (PAPI_accum_var (PAPI_EventSet,PAPI_vvalues9));
+    MPID_nem_queue_enqueue_signal(vc_ch->free_queue, cell);
+    DO_PAPI(PAPI_accum_var(PAPI_EventSet,PAPI_vvalues9));
     return mpi_errno;
 }
 
