@@ -57,6 +57,7 @@
 .N MPI_ERR_COMM
 .N MPI_ERR_ARG
 .N MPI_ERR_INFO
+.N MPI_ERR_SPAWN
 @*/
 int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], 
 			    char* *array_of_argv[], int array_of_maxprocs[], 
