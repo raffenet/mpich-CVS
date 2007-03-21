@@ -219,7 +219,7 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
  	MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, 
 			  rreq->dev.datatype, rreq->dev.segment_ptr, 0);
 	rreq->dev.segment_first = 0;
-	rreq->dev.segment_size = data_sz;
+	rreq->dev.segment_size  = data_sz;
 
         /* if all of the data has already been received, and the
            message is not truncated, unpack it now, otherwise build an
@@ -239,6 +239,7 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
                    data received.  Throw away received data. */
                 MPIU_ERR_SET(rreq->status.MPI_ERROR, MPI_ERR_TYPE, "**dtypemismatch");
                 rreq->status.count = (int)rreq->dev.segment_first;
+		MPID_Segment_free( rreq->dev.segment_ptr );
                 *buflen = data_sz;
                 *complete = TRUE;
 		/* FIXME: Set OnDataAvail to 0?  If not, why not? */
