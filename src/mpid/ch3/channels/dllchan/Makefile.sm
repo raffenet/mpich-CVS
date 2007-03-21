@@ -15,11 +15,19 @@ all-local:
 
 distclean-local:
 	-rm -f include/mpidi_ch3i_dllchan_conf.h
+	for dir in @SUBCHANNELS@ ; do \
+	    (cd ../$$dir && $(MAKE) distclean ) ; \
+	done
 
 maintainer-clean-local:
 	-rm -f include/mpidi_ch3i_dllchan_conf.h.in
 
 install-local:
 	for dir in @SUBCHANNELS@ ; do \
-	    (cd ../$$dir && make install ) ; \
+	    (cd ../$$dir && $(MAKE) install ) ; \
+	done
+
+clean-local:
+	for dir in @SUBCHANNELS@ ; do \
+	    (cd ../$$dir && $(MAKE) clean ) ; \
 	done
