@@ -77,7 +77,7 @@ int MPIDI_CH3I_Progress(MPID_Progress_state *progress_state, int is_blocking)
     mpi_errno = shm_progress(progress_state, is_blocking);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    while (progress_state->ch.completion_count == MPIDI_CH3I_progress_completion_count && is_blocking)
+    while (progress_state && progress_state->ch.completion_count == MPIDI_CH3I_progress_completion_count && is_blocking)
     {
         WAIT_FOR_SIGNAL();
         mpi_errno = shm_progress(progress_state, TRUE);
@@ -198,7 +198,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
             break;
         }
     }
-    while (progress_state->ch.completion_count == MPIDI_CH3I_progress_completion_count && is_blocking);
+    while (progress_state && progress_state->ch.completion_count == MPIDI_CH3I_progress_completion_count && is_blocking);
 
     /* make progress sending */
     do
@@ -352,7 +352,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
             }
         }
     }
-    while (progress_state->ch.completion_count == MPIDI_CH3I_progress_completion_count && is_blocking);
+    while (progress_state && progress_state->ch.completion_count == MPIDI_CH3I_progress_completion_count && is_blocking);
         
     /* make progress on LMTs */
     if (MPID_nem_lmt_shm_pending)
