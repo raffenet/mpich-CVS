@@ -49,6 +49,44 @@ static inline MPID_nem_cell_rel_ptr_t MPID_NEM_CAS_REL_NULL (volatile MPID_nem_c
 
 #ifndef MPID_NEM_USE_MACROS
 static inline void
+MPID_nem_queue_enqueue_signal(MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t element)
+{
+    MPID_nem_cell_rel_ptr_t r_prev;
+    MPID_nem_cell_rel_ptr_t r_element = MPID_NEM_ABS_TO_REL (element);
+
+    r_prev = MPID_NEM_SWAP_REL (&(qhead->tail), r_element);
+
+    if (MPID_NEM_IS_REL_NULL (r_prev))
+    {
+	qhead->head = r_element;
+        MAYBE_SIGNAL(qhead);
+    }
+    else
+    {
+	MPID_NEM_REL_TO_ABS (r_prev)->next = r_element;
+    }
+}
+#else /*MPID_NEM_USE_MACROS */
+#define MPID_nem_queue_enqueue_signal(qhead, element) do {              \
+    MPID_nem_cell_rel_ptr_t r_prev;					\
+    MPID_nem_cell_rel_ptr_t r_element = MPID_NEM_ABS_TO_REL (element);	\
+									\
+    r_prev = MPID_NEM_SWAP_REL (&((qhead)->tail), r_element);		\
+									\
+    if (MPID_NEM_IS_REL_NULL (r_prev))					\
+    {									\
+	(qhead)->head = r_element;                                      \
+        MAYBE_SIGNAL(qhead);                                            \
+    }									\
+    else								\
+    {									\
+	MPID_NEM_REL_TO_ABS (r_prev)->next = r_element;			\
+    }									\
+} while (0)
+#endif /*MPID_NEM_USE_MACROS */
+
+#ifndef MPID_NEM_USE_MACROS
+static inline void
 MPID_nem_queue_enqueue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t element)
 {
     MPID_nem_cell_rel_ptr_t r_prev;

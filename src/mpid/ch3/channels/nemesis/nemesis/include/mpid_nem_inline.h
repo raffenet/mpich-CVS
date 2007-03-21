@@ -21,18 +21,6 @@
 
 #include "my_papi_defs.h"
 
-#define MAYBE_SIGNAL(recvQ) do {                                                                                                \
-        int old = MPID_NEM_SWAP_INT(&(recvQ)->wait_status, 1);                                                                  \
-        if (0) {                                                                                                                \
-            int v, ret;                                                                                                         \
-            ret = sem_getvalue(&(recvQ)->semaphore, &v);                                                                        \
-            MPIU_Assert(ret != -1);                                                                                             \
-            printf("%d POST sem = %p old = %d sem_value = %d\n", MPIDI_Process.my_pg_rank, &(recvQ)->semaphore, old, v);        \
-        }                                                                                                                       \
-        if (old == 0)                                                                                                           \
-            sem_post(&(recvQ)->semaphore);                                                                                      \
-    } while (0)
-
 extern MPID_nem_cell_ptr_t MPID_nem_prefetched_cell;
 
 MPID_NEM_INLINE_DECL int MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again);
