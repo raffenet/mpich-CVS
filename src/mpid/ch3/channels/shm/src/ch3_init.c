@@ -12,6 +12,10 @@
 
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
 
+/* Define the ABI version of this channel.  Change this if the channel
+   interface (not just the implementation of that interface) changes */
+char MPIDI_CH3_ABIVersion[] = "1.1";
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Init
 #undef FCNAME

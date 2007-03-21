@@ -31,6 +31,7 @@ int MPIDI_CH3_PreLoad( void )
 {
     int mpi_errno = MPI_SUCCESS;
     char *channelName = 0;
+    char *libraryVersion = 0;
     char dllname[256];
     char *shlibExt = MPICH_SHLIB_EXT;
     MPIDI_STATE_DECL(MPID_STATE_MPID_CH3_PRELOAD);
@@ -47,6 +48,7 @@ int MPIDI_CH3_PreLoad( void )
        channel's version of this routine 
     */
     
+    /* This must be getenv because we haven't initialized *any* state yet. */
     channelName = getenv( "MPICH_CH3CHANNEL" );
     if (!channelName) {
 	channelName = MPICH_DEFAULT_CH3_CHANNEL;
@@ -59,7 +61,22 @@ int MPIDI_CH3_PreLoad( void )
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
+
     /* We should check the version numbers here for consistency */
+    mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_ABIVersion", 
+				  (void **)&libraryVersion );
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+    if (libraryVersion == 0 || *libraryVersion == 0) {
+	mpi_errno = MPIU_ERR_SETSIMPLE(mpi_errno,MPI_ERR_OTHER,
+				       "**nodllversion");
+	MPIU_ERR_POP(mpi_errno);
+    }
+    if (strcmp( libraryVersion, MPICH_CH3ABIVERSION ) != 0) {
+	mpi_errno = MPIU_ERR_SET2(mpi_errno,MPI_ERR_OTHER,
+			  "**dllversionmismatch","**dllversionmismatch %s %s",
+			  libraryVersion, MPICH_CH3ABIVERSION );
+	MPIU_ERR_POP(mpi_errno);
+    }
 
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Init", 
 				  (void **)&MPIU_CALL_MPIDI_CH3.Init );
@@ -166,6 +183,12 @@ int MPIDI_CH3_Progress_test(void)
     return MPIU_CALL_MPIDI_CH3.Progress( 0, NULL );
 }
 
+/*
+int MPIDI_CH3_CompareABIVersion( const char expected[] )
+{
+    return strcmp( expected, CH3ABIVERSION );
+}
+*/
 static const char * MPIDI_CH3I_VC_GetStateString( struct MPIDI_VC *vc )
 {
     return "unknown";
@@ -177,3 +200,4 @@ static int MPIDI_CH3I_NotImpl(void)
 				 "Dynanmicallyloadable", __LINE__, 
 				 MPI_ERR_OTHER, "**notimpl", 0);
 }
+

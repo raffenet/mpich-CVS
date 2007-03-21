@@ -7,6 +7,10 @@
 #include "mpidi_ch3_impl.h"
 MPIDI_CH3I_Process_t MPIDI_CH3I_Process = {NULL};
 
+/* Define the ABI version of this channel.  Change this if the channel
+   interface (not just the implementation of that interface) changes */
+char MPIDI_CH3_ABIVersion[] = "1.1";
+
 /* FIXME: These VC debug print routines belong in mpid_vc.c, with 
    channel-specific code in an appropriate file.  Much of that 
    channel-specific code might belong in ch3/util/sock or ch3/util/shm */

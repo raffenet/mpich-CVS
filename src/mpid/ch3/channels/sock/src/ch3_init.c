@@ -6,6 +6,10 @@
 
 #include "mpidi_ch3_impl.h"
 
+/* Define the ABI version of this channel.  Change this if the channel
+   interface (not just the implementation of that interface) changes */
+char MPIDI_CH3_ABIVersion[] = "1.1";
+
 /*
  *  MPIDI_CH3_Init  - makes socket specific initializations.  Most of this 
  *                    functionality is in the MPIDI_CH3U_Init_sock upcall 

@@ -8,6 +8,10 @@
 #define MPICH_MPIDI_CH3_MPID_H_INCLUDED
 #define HAVE_CH3_PRELOAD
 
+/* Define the ABI version for the channel interface.  This will
+   be checked with the version in the dynamically loaded library */
+#define MPICH_CH3ABIVERSION "1.1"
+
 /* The void * argument in iSend and iStartMsg is really a pointer to 
    a message packet. However, to simplify the definition of "private" 
    packets, there is no universal packet type (there is the 
