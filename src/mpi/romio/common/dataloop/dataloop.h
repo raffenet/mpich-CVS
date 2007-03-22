@@ -13,7 +13,7 @@
 #define DATALOOP_H
 
 /* This is specific to MPICH2 */
-#include "mpid_dataloop.h"
+#include "romio_dataloop.h"
 
 #endif
 

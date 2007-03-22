@@ -226,7 +226,7 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
   from the count passed in at the MPI layer due to optimizations.
 @*/
 void PREPEND_PREFIX(Dataloop_alloc)(int kind,
-				    int count,
+				    DLOOP_Count count,
 				    DLOOP_Dataloop **new_loop_p,
 				    int *new_loop_sz_p)
 {
@@ -257,7 +257,7 @@ void PREPEND_PREFIX(Dataloop_alloc)(int kind,
   from the count passed in at the MPI layer.
 @*/
 void PREPEND_PREFIX(Dataloop_alloc_and_copy)(int kind,
-					     int count,
+					     DLOOP_Count count,
 					     DLOOP_Dataloop *old_loop,
 					     int old_loop_sz,
 					     DLOOP_Dataloop **new_loop_p,

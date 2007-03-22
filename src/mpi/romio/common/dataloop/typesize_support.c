@@ -607,6 +607,9 @@ static int DLOOP_Structalign_integer_max()
     int is_two     = 1;
     int is_four    = 1;
     int is_eight   = 1;
+
+    int size, extent;
+
     struct { char a; int b; } char_int;
     struct { char a; short b; } char_short;
     struct { char a; long b; } char_long;
@@ -615,8 +618,8 @@ static int DLOOP_Structalign_integer_max()
 #ifdef HAVE_LONG_LONG_INT
     struct { long long int a; char b; } lli_c;
     struct { char a; long long int b; } c_lli;
+    int extent2;
 #endif
-    int size, extent, extent2;
 
     /* assume max integer alignment isn't 8 if we don't have
      * an eight-byte value.

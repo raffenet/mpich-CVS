@@ -5,7 +5,10 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "dataloop.h"
+/* NOTE: THIS IMPLEMENTATION IS MPICH2-SPECIFIC. */
+
+#include <mpi.h>
+#include <mpid_datatype.h>
 
 void PREPEND_PREFIX(Type_access_contents)(MPI_Datatype type,
 					  int **ints_p,

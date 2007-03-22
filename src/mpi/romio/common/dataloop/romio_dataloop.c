@@ -163,7 +163,7 @@ void MPIO_Datatype_get_size(MPI_Datatype type, MPI_Offset *size_p)
 	dtp = MPIO_Datatype_allocate(type);
     }
 
-    if (!(dtp->valid & MPIO_DATATYPE_VALID_SZEXT)) {
+    if (!(dtp->valid & MPIO_DATATYPE_VALID_TYPESZEXT)) {
 	MPIO_Datatype_set_szext(type, dtp);
     }
 
@@ -185,7 +185,7 @@ void MPIO_Datatype_get_extent(MPI_Datatype type, MPI_Offset *extent_p)
 	dtp = MPIO_Datatype_allocate(type);
     }
 
-    if (!(dtp->valid & MPIO_DATATYPE_VALID_SZEXT)) {
+    if (!(dtp->valid & MPIO_DATATYPE_VALID_TYPESZEXT)) {
 	MPIO_Datatype_set_szext(type, dtp);
     }
 
@@ -193,7 +193,9 @@ void MPIO_Datatype_get_extent(MPI_Datatype type, MPI_Offset *extent_p)
     return;
 }
 
-void MPIO_Datatype_get_loopptr(MPI_Datatype type, void **ptr_p, int flag)
+void MPIO_Datatype_get_loopptr(MPI_Datatype type,
+			       MPIO_Dataloop **ptr_p,
+			       int flag)
 {
     int mpi_errno, attrflag;
     MPIO_Datatype *dtp;
@@ -238,7 +240,7 @@ void MPIO_Datatype_get_loopdepth(MPI_Datatype type, int *depth_p, int flag)
     return;
 }
 
-void MPIO_Datatype_set_loopptr(MPI_Datatype type, void *ptr, int flag)
+void MPIO_Datatype_set_loopptr(MPI_Datatype type, MPIO_Dataloop *ptr, int flag)
 {
     int mpi_errno, attrflag;
     MPIO_Datatype *dtp;
@@ -279,7 +281,7 @@ void MPIO_Datatype_set_loopsize(MPI_Datatype type, int size, int flag)
 void MPIO_Datatype_set_loopdepth(MPI_Datatype type, int depth, int flag)
 {
     int mpi_errno, attrflag;
-    foo_datatype *dtp;
+    MPIO_Datatype *dtp;
 
     assert(MPIO_Datatype_keyval != MPI_KEYVAL_INVALID);
 
@@ -292,6 +294,20 @@ void MPIO_Datatype_set_loopdepth(MPI_Datatype type, int depth, int flag)
     dtp->dloop_depth  = depth;
     dtp->valid       |= MPIO_DATATYPE_VALID_DEPTH;
     return;
+}
+
+int MPIO_Datatype_is_nontrivial(MPI_Datatype type)
+{
+    int nr_ints, nr_aints, nr_types, combiner;
+
+    PMPI_Type_get_envelope(type, &nr_ints, &nr_aints, &nr_types, &combiner);
+    if (combiner != MPI_COMBINER_NAMED ||
+	type == MPI_FLOAT_INT ||
+	type == MPI_DOUBLE_INT ||
+	type == MPI_LONG_INT ||
+	type == MPI_SHORT_INT ||
+	type == MPI_LONG_DOUBLE_INT) return 1;
+    else return 0;
 }
 
 /* internal functions */
@@ -354,6 +370,6 @@ static void MPIO_Datatype_set_szext(MPI_Datatype type, MPIO_Datatype *dtp)
 	dtp->extent = tfp.extent;
     }
 
-    dtp->valid |= MPIO_DATATYPE_VALID_SZEXT;
+    dtp->valid |= MPIO_DATATYPE_VALID_TYPESZEXT;
     return;
 }
