@@ -184,14 +184,14 @@ typedef struct MPID_nem_queue
 #define MAYBE_SIGNAL(recvQ) do {                                                                \
         int ret, old = MPID_NEM_SWAP_INT(&(recvQ)->wait_status, 1);                             \
         if (0) {                                                                                \
-            int v, ret;                                                                         \
+            int v;                                                                              \
             ret = sem_getvalue(&(recvQ)->semaphore, &v);                                        \
             MPIU_Assert(ret != -1);                                                             \
             printf("%d POST sem = %p old = %d sem_value = %d\n", MPIDI_Process.my_pg_rank,      \
                    &(recvQ)->semaphore, old, v);                                                \
         }                                                                                       \
         if (old == 0) {                                                                         \
-            sem_post(&(recvQ)->semaphore);                                                      \
+            ret = sem_post(&(recvQ)->semaphore);                                                \
             MPIU_Assert(ret != -1);                                                             \
         }                                                                                       \
     } while (0)
@@ -199,7 +199,7 @@ typedef struct MPID_nem_queue
 #define WAIT_FOR_SIGNAL() do {                                                                                          \
         int ret, old = MPID_NEM_SWAP_INT(&MPID_nem_mem_region.my_recvQ->wait_status, 0);                                \
         if (0){                                                                                                         \
-            int v, ret;                                                                                                 \
+            int v;                                                                                                      \
             ret = sem_getvalue(&MPID_nem_mem_region.my_recvQ->semaphore, &v);                                           \
             MPIU_Assert(ret != -1);                                                                                     \
             printf("%d WAIT sem = %p old = %d sem_value = %d\n", MPIDI_Process.my_pg_rank,                              \
