@@ -27,15 +27,6 @@ static void MPIO_Datatype_set_szext(MPI_Datatype type, MPIO_Datatype *dtp);
 int MPIO_Datatype_initialize(void);
 void MPIO_Datatype_finalize(void);
 
-void MPIO_Datatype_get_loopptr(MPI_Datatype type, void **ptr_p, int flag);
-void MPIO_Datatype_get_loopsize(MPI_Datatype type, int *size_p, int flag);
-void MPIO_Datatype_get_loopdepth(MPI_Datatype type, int *depth_p, int flag);
-void MPIO_Datatype_set_loopptr(MPI_Datatype type, void *ptr, int flag);
-void MPIO_Datatype_set_loopsize(MPI_Datatype type, int size, int flag);
-void MPIO_Datatype_set_loopdepth(MPI_Datatype type, int depth, int flag);
-void MPIO_Datatype_get_size(MPI_Datatype type, MPI_Offset *size_p);
-void MPIO_Datatype_get_extent(MPI_Datatype type, MPI_Offset *extent_p);
-
 int MPIO_Datatype_copy_attr_function(MPI_Datatype type, int type_keyval,
 				     void *extra_state, void *attribute_val_in,
 				     void *attribute_val_out, int *flag);

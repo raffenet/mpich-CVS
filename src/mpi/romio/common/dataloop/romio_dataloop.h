@@ -103,12 +103,6 @@ void MPIO_Datatype_get_size(MPI_Datatype type, MPI_Offset *size_p);
 void MPIO_Datatype_get_extent(MPI_Datatype type, MPI_Offset *extent_p);
 int MPIO_Datatype_is_nontrivial(MPI_Datatype type);
 
-int MPIO_Datatype_copy_attr_function(MPI_Datatype type, int type_keyval,
-				     void *extra_state, void *attribute_val_in,
-				     void *attribute_val_out, int *flag);
-int MPIO_Datatype_delete_attr_function(MPI_Datatype type, int type_keyval,
-				       void *attribute_val, void *extra_state);
-
 /* These values are defined by DLOOP code.
  *
  * Note: DLOOP_DATALOOP_ALL_BYTES not currently used in MPICH2.
