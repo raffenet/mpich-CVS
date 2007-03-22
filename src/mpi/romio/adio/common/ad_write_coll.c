@@ -13,7 +13,8 @@
 
 /* prototypes of functions used for collective writes only. */
 static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
-                         datatype, int nprocs, int myrank, ADIOI_Access
+                         datatype, int nprocs, int myrank,
+			 int interleave_count, ADIOI_Access
                          *others_req, ADIO_Offset *offset_list,
                          int *len_list, int contig_access_count, ADIO_Offset
                          min_st_offset, ADIO_Offset fd_size,
@@ -197,6 +198,7 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 
 /* exchange data and write in sizes of no more than coll_bufsize. */
     ADIOI_Exch_and_write(fd, buf, datatype, nprocs, myrank,
+		        interleave_count,
                         others_req, offset_list,
 			len_list, contig_access_count, min_st_offset,
 			fd_size, fd_start, fd_end, buf_idx, error_code);
@@ -272,7 +274,9 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
  * code is created and returned in error_code.
  */
 static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
-				 datatype, int nprocs, int myrank,
+				 datatype, int nprocs, 
+				 int myrank,
+				 int interleave_count,
 				 ADIOI_Access
 				 *others_req, ADIO_Offset *offset_list,
 				 int *len_list, int contig_access_count,
@@ -290,7 +294,6 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
    array to a file, where each local array is 8Mbytes, requiring
    at least another 8Mbytes of temp space is unacceptable. */
 
-    /* TODO: 'hole' not used outside of ADIOI_W_Exchange_data */
     int hole, i, j, m, size=0, ntimes, max_ntimes, buftype_is_contig;
     ADIO_Offset st_loc=-1, end_loc=-1, off, done, req_off;
     char *write_buf=NULL;
@@ -507,12 +510,21 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 	    if (count[i]) flag = 1;
 
 	if (flag) {
+	    /* no interleaving means we might have to recompute size in the
+	     * case where hints have steered us into this path even though we
+	     * are non-overlapped.  However, if there is a "hole" inbetween
+	     * regions, we'll do a read-modify-write and W_Exchange_data will
+	     * have read in excess data */
+	    if(!interleave_count && !hole) {
+	        for (size=0, i=0; i<contig_access_count; i++)
+		    size += len_list[i];
+	    }
 	    ADIO_WriteContig(fd, write_buf, size, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
                         off, &status, error_code);
 	    if (*error_code != MPI_SUCCESS) return;
 	}
 
-	off += size;
+	off += (int) (ADIOI_MIN(coll_bufsize, end_loc-st_loc+1-done)); 
 	done += size;
     }
 
