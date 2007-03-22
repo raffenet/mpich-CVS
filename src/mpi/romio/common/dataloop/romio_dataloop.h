@@ -88,8 +88,8 @@
 /* Include dataloop_parts.h at the end to get the rest of the prototypes
  * and defines, in terms of the prefixes and types above.
  */
-#include "dataloop/dataloop_parts.h"
-#include "dataloop/dataloop_create.h"
+#include "./dataloop_parts.h"
+#include "./dataloop_create.h"
 
 /* accessor functions */
 void MPIO_Datatype_get_loopptr(MPI_Datatype type, MPIO_Dataloop **ptr_p,

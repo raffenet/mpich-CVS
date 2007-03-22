@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "dataloop.h"
+#include "./dataloop.h"
 
 #undef DEBUG_DLOOP_SIZE
 #undef DLOOP_DEBUG_MEMORY
@@ -57,7 +57,7 @@
   Input Parameters:
 . dataloop - pointer to dataloop structure
 @*/
-void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop **dataloop)
+void PREPEND_PREFIX(Dataloop_free)(DLOOP_Dataloop **dataloop)
 {
 
     if (*dataloop == NULL) return;
@@ -133,12 +133,12 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
   This function is used to recursively update all the pointers in a
   dataloop tree.
 @*/
-void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
+void PREPEND_PREFIX(Dataloop_update)(DLOOP_Dataloop *dataloop,
 				     DLOOP_Offset ptrdiff)
 {
     /* OPT: only declare these variables down in the Struct case */
     int i;
-    struct DLOOP_Dataloop **looparray;
+    DLOOP_Dataloop **looparray;
 
     switch(dataloop->kind & DLOOP_KIND_MASK) {
 	case DLOOP_KIND_CONTIG:
@@ -152,7 +152,7 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	     * LHS, so we get this much nastier form instead (using common
 	     * struct for contig and vector): 
 	     */
-	    dataloop->loop_params.cm_t.dataloop = (struct DLOOP_Dataloop *) 
+	    dataloop->loop_params.cm_t.dataloop = (DLOOP_Dataloop *) 
 		((char *) dataloop->loop_params.cm_t.dataloop + ptrdiff);
 
 	    if (!(dataloop->kind & DLOOP_FINAL_MASK))
@@ -162,7 +162,7 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	case DLOOP_KIND_BLOCKINDEXED:
 	    dataloop->loop_params.bi_t.offset_array = (DLOOP_Offset *)
 		((char *) dataloop->loop_params.bi_t.offset_array + ptrdiff);
-	    dataloop->loop_params.bi_t.dataloop = (struct DLOOP_Dataloop *)
+	    dataloop->loop_params.bi_t.dataloop = (DLOOP_Dataloop *)
 		((char *) dataloop->loop_params.bi_t.dataloop + ptrdiff);
 
 	    if (!(dataloop->kind & DLOOP_FINAL_MASK))
@@ -170,11 +170,11 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	    break;
 
 	case DLOOP_KIND_INDEXED:
-	    dataloop->loop_params.i_t.blocksize_array = (int *)
+	    dataloop->loop_params.i_t.blocksize_array = (DLOOP_Count *)
 		((char *) dataloop->loop_params.i_t.blocksize_array + ptrdiff);
 	    dataloop->loop_params.i_t.offset_array = (DLOOP_Offset *)
 		((char *) dataloop->loop_params.i_t.offset_array + ptrdiff);
-	    dataloop->loop_params.i_t.dataloop = (struct DLOOP_Dataloop *)
+	    dataloop->loop_params.i_t.dataloop = (DLOOP_Dataloop *)
 		((char *) dataloop->loop_params.i_t.dataloop + ptrdiff);
 
 	    if (!(dataloop->kind & DLOOP_FINAL_MASK))
@@ -182,17 +182,17 @@ void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
 	    break;
 
 	case DLOOP_KIND_STRUCT:
-	    dataloop->loop_params.s_t.blocksize_array = (int *)
+	    dataloop->loop_params.s_t.blocksize_array = (DLOOP_Count *)
 		((char *) dataloop->loop_params.s_t.blocksize_array + ptrdiff);
 	    dataloop->loop_params.s_t.offset_array = (DLOOP_Offset *)
 		((char *) dataloop->loop_params.s_t.offset_array + ptrdiff);
-	    dataloop->loop_params.s_t.dataloop_array = (struct DLOOP_Dataloop **)
+	    dataloop->loop_params.s_t.dataloop_array = (DLOOP_Dataloop **)
 		((char *) dataloop->loop_params.s_t.dataloop_array + ptrdiff);
 
 	    /* fix the N dataloop pointers too */
 	    looparray = dataloop->loop_params.s_t.dataloop_array;
 	    for (i=0; i < dataloop->loop_params.s_t.count; i++) {
-		looparray[i] = (struct DLOOP_Dataloop *)
+		looparray[i] = (DLOOP_Dataloop *)
 		    ((char *) looparray[i] + ptrdiff);
 	    }
 
@@ -446,7 +446,7 @@ void PREPEND_PREFIX(Dataloop_alloc_and_copy)(int kind,
   The caller is responsible for filling in the region pointed to by
   old_loop_p (count elements).
 @*/
-void PREPEND_PREFIX(Dataloop_struct_alloc)(int count,
+void PREPEND_PREFIX(Dataloop_struct_alloc)(DLOOP_Count count,
 					   int old_loop_sz,
 					   int basic_ct,
 					   DLOOP_Dataloop **old_loop_p,

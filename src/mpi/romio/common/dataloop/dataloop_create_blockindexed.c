@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 
-#include "dataloop.h"
+#include "./dataloop.h"
 
 static DLOOP_Count DLOOP_Type_blockindexed_count_contig(DLOOP_Count count,
 							DLOOP_Count blklen,

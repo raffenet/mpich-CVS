@@ -16,7 +16,7 @@
  *   HAVE_LONG_DOUBLE
  */
 
-#include "dataloop.h"
+#include "./dataloop.h"
 #include "typesize_support.h"
 
 static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,

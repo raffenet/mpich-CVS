@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "dataloop.h"
+#include "./dataloop.h"
 
 #undef DLOOP_DEBUG_MANIPULATE
 
