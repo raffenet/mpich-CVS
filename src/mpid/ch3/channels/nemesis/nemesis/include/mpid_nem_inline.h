@@ -128,7 +128,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again)
     {
 	if (MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
 	    goto return_again;
-	
+/* 	printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
@@ -141,6 +141,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again)
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues14));
 
     DO_PAPI (PAPI_reset (PAPI_EventSet));
+/*     printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ , &el);
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
 #endif /* PREFETCH_CELL */
@@ -180,6 +181,7 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again)
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (vc_ch->is_local)
     {
+/*         printf("%d CELL --> %d\n", MPIDI_Process.my_pg_rank, vc->pg_rank);//DARIUS */
 	MPID_nem_queue_enqueue (vc_ch->recv_queue, el);
         MAYBE_SIGNAL(vc_ch->recv_queue);
 	/*MPID_nem_rel_dump_queue( vc_ch->recv_queue ); */
@@ -195,7 +197,10 @@ MPID_nem_mpich2_send_header (void* buf, int size, MPIDI_VC_t *vc, int *again)
 #ifdef PREFETCH_CELL
     DO_PAPI (PAPI_reset (PAPI_EventSet));
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
+    {
+/* 	printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &MPID_nem_prefetched_cell);
+    }
     else
 	MPID_nem_prefetched_cell = 0;
     DO_PAPI (PAPI_accum_var (PAPI_EventSet, PAPI_vvalues10));
@@ -264,6 +269,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *agai
             goto return_again;
 	}
 	
+/* 	printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
 #else /*PREFETCH_CELL     */
@@ -273,6 +279,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *agai
         goto return_again;
     }
 
+/*     printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ , &el);
 #endif /*PREFETCH_CELL     */
 
@@ -311,6 +318,7 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *agai
 
     if(vc_ch->is_local)
     {
+/*         printf("%d CELL --> %d\n", MPIDI_Process.my_pg_rank, vc->pg_rank);//DARIUS */
 	MPID_nem_queue_enqueue (vc_ch->recv_queue, el);
         MAYBE_SIGNAL(vc_ch->recv_queue);
 	/*MPID_nem_rel_dump_queue( vc_ch->recv_queue ); */
@@ -323,7 +331,10 @@ MPID_nem_mpich2_sendv (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, int *agai
 
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
+    {
+/* 	printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &MPID_nem_prefetched_cell);
+    }
     else
 	MPID_nem_prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
@@ -434,6 +445,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, in
             goto return_again;
 	}
 	
+/* 	printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
 #else /*PREFETCH_CELL    */
@@ -443,6 +455,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, in
         goto return_again;
     }
 
+/*     printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
 #endif /*PREFETCH_CELL */
 
@@ -497,6 +510,7 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, in
 
     if (vc_ch->is_local)
     {    
+/*         printf("%d CELL --> %d\n", MPIDI_Process.my_pg_rank, vc->pg_rank);//DARIUS */
 	MPID_nem_queue_enqueue (vc_ch->recv_queue, el);	
         MAYBE_SIGNAL(vc_ch->recv_queue);
 	/*MPID_nem_rel_dump_queue( vc_ch->recv_queue ); */
@@ -509,7 +523,10 @@ MPID_nem_mpich2_sendv_header (struct iovec **iov, int *n_iov, MPIDI_VC_t *vc, in
 
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
+    {
+/* 	printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &MPID_nem_prefetched_cell);
+    }
     else
 	MPID_nem_prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
@@ -627,6 +644,7 @@ MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_
             goto return_again;
 	}
 	
+/* 	printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
 #else /*PREFETCH_CELL    */
@@ -636,6 +654,7 @@ MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_
         goto return_again;
     }
 
+/*     printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
 #endif /*PREFETCH_CELL */
 
@@ -664,12 +683,16 @@ MPID_nem_mpich2_send_seg_header (MPID_Segment *segment, MPIDI_msg_sz_t *segment_
     MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent queue");
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
 
+/*     printf("%d CELL --> %d\n", MPIDI_Process.my_pg_rank, vc->pg_rank);//DARIUS */
     MPID_nem_queue_enqueue (vc_ch->recv_queue, el);	
     MAYBE_SIGNAL(vc_ch->recv_queue);
 
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
+    {
+/*         printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &MPID_nem_prefetched_cell);
+    }
     else
 	MPID_nem_prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
@@ -725,6 +748,7 @@ MPID_nem_mpich2_send_seg (MPID_Segment *segment, MPIDI_msg_sz_t *segment_first, 
             goto return_again;
 	}
 	
+/* 	printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
     }
 #else /*PREFETCH_CELL    */
@@ -734,6 +758,7 @@ MPID_nem_mpich2_send_seg (MPID_Segment *segment, MPIDI_msg_sz_t *segment_first, 
         goto return_again;
     }
 
+/*     printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &el);
 #endif /*PREFETCH_CELL */
 
@@ -759,12 +784,16 @@ MPID_nem_mpich2_send_seg (MPID_Segment *segment, MPIDI_msg_sz_t *segment_first, 
     MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "--> Sent queue");
     MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, MPID_nem_dbg_dump_cell (el));
 
+/*     printf("%d CELL --> %d\n", MPIDI_Process.my_pg_rank, vc->pg_rank);//DARIUS */
     MPID_nem_queue_enqueue (vc_ch->recv_queue, el);	
     MAYBE_SIGNAL(vc_ch->recv_queue);
 
 #ifdef PREFETCH_CELL
     if (!MPID_nem_queue_empty (MPID_nem_mem_region.my_freeQ))
+    {
+/* 	printf("%d FREE <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
 	MPID_nem_queue_dequeue (MPID_nem_mem_region.my_freeQ, &MPID_nem_prefetched_cell);
+    }
     else
 	MPID_nem_prefetched_cell = 0;
 #endif /*PREFETCH_CELL */
@@ -939,6 +968,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
 	goto fn_exit;
     }
     
+/*     printf("%d CELL <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_recvQ, cell);
 
     ++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
@@ -1006,6 +1036,7 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
 	goto exit_l;
     }
     
+/*     printf("%d CELL <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_recvQ, cell);
 
     ++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
@@ -1103,6 +1134,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_
 #endif
     }
 
+/*     printf("%d CELL <--\n", MPIDI_Process.my_pg_rank);//DARIUS */
     MPID_nem_queue_dequeue (MPID_nem_mem_region.my_recvQ, cell);
 
     ++MPID_nem_recv_seqno[(*cell)->pkt.mpich2.source];
@@ -1165,7 +1197,8 @@ MPID_nem_mpich2_release_cell (MPID_nem_cell_ptr_t cell, MPIDI_VC_t *vc)
 	return mpi_errno;
     }
 #endif
-    MPID_nem_queue_enqueue_signal(vc_ch->free_queue, cell);
+/*     printf("%d FREE --> %d\n", MPIDI_Process.my_pg_rank, vc->pg_rank);//DARIUS */
+    MPID_nem_queue_enqueue_signal(vc_ch->free_queue, cell, vc);
     DO_PAPI(PAPI_accum_var(PAPI_EventSet,PAPI_vvalues9));
     return mpi_errno;
 }

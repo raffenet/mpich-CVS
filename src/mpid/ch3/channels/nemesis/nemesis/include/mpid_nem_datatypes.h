@@ -182,21 +182,23 @@ typedef struct MPID_nem_queue
 
 /* macros to signal and wait for semaphore */
 #define MAYBE_SIGNAL(recvQ) do {                                                                \
-        int old = MPID_NEM_SWAP_INT(&(recvQ)->wait_status, 1);                                  \
-        if (1) {                                                                                \
+        int ret, old = MPID_NEM_SWAP_INT(&(recvQ)->wait_status, 1);                             \
+        if (0) {                                                                                \
             int v, ret;                                                                         \
             ret = sem_getvalue(&(recvQ)->semaphore, &v);                                        \
             MPIU_Assert(ret != -1);                                                             \
             printf("%d POST sem = %p old = %d sem_value = %d\n", MPIDI_Process.my_pg_rank,      \
                    &(recvQ)->semaphore, old, v);                                                \
         }                                                                                       \
-        if (old == 0)                                                                           \
+        if (old == 0) {                                                                         \
             sem_post(&(recvQ)->semaphore);                                                      \
+            MPIU_Assert(ret != -1);                                                             \
+        }                                                                                       \
     } while (0)
 
 #define WAIT_FOR_SIGNAL() do {                                                                                          \
-        int old = MPID_NEM_SWAP_INT(&MPID_nem_mem_region.my_recvQ->wait_status, 0);                                     \
-        if (1){                                                                                                         \
+        int ret, old = MPID_NEM_SWAP_INT(&MPID_nem_mem_region.my_recvQ->wait_status, 0);                                \
+        if (0){                                                                                                         \
             int v, ret;                                                                                                 \
             ret = sem_getvalue(&MPID_nem_mem_region.my_recvQ->semaphore, &v);                                           \
             MPIU_Assert(ret != -1);                                                                                     \
@@ -205,7 +207,7 @@ typedef struct MPID_nem_queue
         }                                                                                                               \
         if (old == 0)                                                                                                   \
         {                                                                                                               \
-            if (1){                                                                                                     \
+            if (0){                                                                                                     \
                 int i, f=0;                                                                                             \
                 for (i = 0; i < MPID_nem_mem_region.num_local; ++i)                                                     \
                     if (i != MPID_nem_mem_region.local_rank)                                                            \
@@ -216,8 +218,19 @@ typedef struct MPID_nem_queue
                        !MPID_nem_queue_empty(MPID_nem_mem_region.my_freeQ), !MPIDI_CH3I_SendQ_empty(CH3_NORMAL_QUEUE)); \
             }                                                                                                           \
             MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);                                                    \
-            sem_wait(&MPID_nem_mem_region.my_recvQ->semaphore);                                                         \
+            ret = sem_wait(&MPID_nem_mem_region.my_recvQ->semaphore);                                                   \
+            MPIU_Assert(ret != -1);                                                                                     \
             MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);                                                      \
+            if (0){                                                                                                     \
+                int i, f=0;                                                                                             \
+                for (i = 0; i < MPID_nem_mem_region.num_local; ++i)                                                     \
+                    if (i != MPID_nem_mem_region.local_rank)                                                            \
+                        f += MPID_nem_mem_region.mailboxes.in[i]->common.flag.value;                                    \
+                                                                                                                        \
+                printf("  %d WAKE recvq=%d fboxes=%d freeq=%d sendq=%d\n", MPIDI_Process.my_pg_rank,                    \
+                       !MPID_nem_queue_empty(MPID_nem_mem_region.my_recvQ), f,                                          \
+                       !MPID_nem_queue_empty(MPID_nem_mem_region.my_freeQ), !MPIDI_CH3I_SendQ_empty(CH3_NORMAL_QUEUE)); \
+            }                                                                                                           \
         }                                                                                                               \
     } while(0)
 

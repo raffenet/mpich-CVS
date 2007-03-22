@@ -177,7 +177,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
         }
         else
         {
-            printf("%d nothing to recv\n", MPIDI_Process.my_pg_rank);
+/*             printf("%d nothing to recv\n", MPIDI_Process.my_pg_rank);//DARIUS */
             /* nothing left to receive */
             break;
         }
@@ -234,7 +234,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
                 {
                     sreq->ch.iov_offset = iov - sreq->dev.iov;
                     sreq->dev.iov_count = n_iov;
-                    printf("%d out of free cells\n", MPIDI_Process.my_pg_rank);
+/*                     printf("%d out of free cells\n", MPIDI_Process.my_pg_rank);//DARIUS */
                     break; /* break out of send progress */
                 }
                 else
@@ -251,7 +251,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
 
                 if (again)
                 {
-                    printf("%d out of free cells\n", MPIDI_Process.my_pg_rank);
+/*                     printf("%d out of free cells\n", MPIDI_Process.my_pg_rank);//DARIUS */
                     /* not finished sending */
                     break; /* break out of send progress */
                 }
@@ -285,7 +285,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
                 {
                     sreq->ch.iov_offset = iov - sreq->dev.iov;
                     sreq->dev.iov_count = n_iov;
-                    printf("%d out of free cells\n", MPIDI_Process.my_pg_rank);
+/*                     printf("%d out of free cells\n", MPIDI_Process.my_pg_rank);//DARIUS */
                     break; /* break out of send progress */
                 }
                 else
@@ -308,7 +308,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
                 if (again)
                 {
                     /* not finished sending */
-                    printf("%d out of free cells\n", MPIDI_Process.my_pg_rank);
+/*                     printf("%d out of free cells\n", MPIDI_Process.my_pg_rank);//DARIUS */
                     break; /* break out of send progress */
                 }
             }
@@ -1799,7 +1799,7 @@ int MPIDI_CH3I_Posted_recv_enqueued (MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    printf("%d ENQUEUE %d\n", MPIDI_Process.my_pg_rank, rreq->dev.match.rank);
+/*     printf("%d ENQUEUE %d\n", MPIDI_Process.my_pg_rank, rreq->dev.match.rank);//DARIUS */
     
     /* don't enqueue for anysource */
     if (rreq->dev.match.rank < 0)
@@ -1828,7 +1828,7 @@ int MPIDI_CH3I_Posted_recv_dequeued (MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
     
-    printf("%d DEQUEUE %d\n", MPIDI_Process.my_pg_rank, rreq->dev.match.rank);
+/*     printf("%d DEQUEUE %d\n", MPIDI_Process.my_pg_rank, rreq->dev.match.rank);//DARIUS */
 
     if (rreq->dev.match.rank < 0)
 	goto fn_exit;

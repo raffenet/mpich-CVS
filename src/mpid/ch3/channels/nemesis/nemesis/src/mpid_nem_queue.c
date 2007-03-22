@@ -103,13 +103,13 @@ void MPID_nem_dump_cell_mpich2__ ( MPID_nem_cell_ptr_t cell, int master, char *f
 /*     qhead->tail    = MPID_NEM_REL_NULL; */
 /* } */
 
-inline void MPID_nem_queue_init (MPID_nem_queue_ptr_t qhead )
+inline void MPID_nem_queue_init (MPID_nem_queue_ptr_t qhead)
 {
     MPID_NEM_SET_REL_NULL(qhead->head);
     MPID_NEM_SET_REL_NULL(qhead->my_head);
     MPID_NEM_SET_REL_NULL(qhead->tail);
-    qhead->wait_status = 0;
-    sem_init(&qhead->semaphore, 1, 1);
+    qhead->wait_status = 1;
+    sem_init(&qhead->semaphore, 1, 0);
     if (0){
         int v, ret;
         ret = sem_getvalue(&qhead->semaphore, &v);
