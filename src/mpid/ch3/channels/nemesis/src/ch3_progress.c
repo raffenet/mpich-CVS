@@ -13,6 +13,8 @@
 #endif
 #include "pmi.h"
 
+#define POLL_ITERS_BEFORE_WAIT 100
+
 extern int MPID_nem_lmt_shm_pending; /* defined in mpid_nem_lmt_shm.c */
 
 static MPIDI_CH3_PktHandler_Fcn *pktArray[MPIDI_CH3_PKT_END_ALL+1];
@@ -54,6 +56,7 @@ struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES] = {0};
 int MPIDI_CH3I_Progress(MPID_Progress_state *progress_state, int is_blocking)
 {
     int mpi_errno = MPI_SUCCESS;
+    int i;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
@@ -74,32 +77,33 @@ int MPIDI_CH3I_Progress(MPID_Progress_state *progress_state, int is_blocking)
     mpi_errno = shm_progress(progress_state, is_blocking);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
+    i = 0;
+    while (progress_state && progress_state->ch.completion_count == MPIDI_CH3I_progress_completion_count && is_blocking
+           && i < POLL_ITERS_BEFORE_WAIT)
+    {
+        mpi_errno = shm_progress(progress_state, is_blocking);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        ++i;
+    }
+
     while (progress_state && progress_state->ch.completion_count == MPIDI_CH3I_progress_completion_count && is_blocking)
     {
-#       ifdef MPICH_IS_THREADED
-
-	/* The logic for this case is just complicated enough that
-	   we write separate code for each possibility */
-#       ifdef HAVE_RUNTIME_THREADCHECK
-	if (MPIR_ThreadInfo.isThreaded) {
-	    MPIDI_CH3I_progress_blocked = TRUE;
-            WAIT_FOR_SIGNAL();
-	    MPIDI_CH3I_progress_blocked = FALSE;
-	    MPIDI_CH3I_progress_wakeup_signalled = FALSE;
-	}
-	else {
-            WAIT_FOR_SIGNAL();
-	}
-#       else
-	MPIDI_CH3I_progress_blocked = TRUE;
+#ifdef MPICH_IS_THREADED
+        MPIU_THREAD_CHECK_BEGIN;
+        {
+            MPIDI_CH3I_progress_blocked = TRUE;
+        }
+        MPIU_THREAD_CHECK_END;
+#endif
         WAIT_FOR_SIGNAL();
-	MPIDI_CH3I_progress_blocked = FALSE;
-	MPIDI_CH3I_progress_wakeup_signalled = FALSE;
-#       endif /* HAVE_RUNTIME_THREADCHECK */
-
-#       else
-        WAIT_FOR_SIGNAL();
-#	endif
+#ifdef MPICH_IS_THREADED
+        MPIU_THREAD_CHECK_BEGIN;
+        {
+            MPIDI_CH3I_progress_blocked = FALSE;
+            MPIDI_CH3I_progress_wakeup_signalled = FALSE;
+        }
+        MPIU_THREAD_CHECK_END;
+#endif        
         mpi_errno = shm_progress(progress_state, TRUE);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
