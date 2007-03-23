@@ -28,6 +28,8 @@ static int g_tbl_grow_size = CONN_PLFD_TBL_GROW_SIZE;
 static sockconn_t *g_sc_tbl = NULL;
 static pollfd_t *g_plfd_tbl = NULL;
 
+static int refresh_table_info = 0;
+
 sockconn_t g_lstn_sc;
 pollfd_t g_lstn_plfd;
 
@@ -174,6 +176,7 @@ static int expand_sc_plfd_tbls (void)
 
     MPID_NEM_MEMCPY (new_sc_tbl, g_sc_tbl, g_tbl_capacity * sizeof(sockconn_t));
     MPID_NEM_MEMCPY (new_plfd_tbl, g_plfd_tbl, g_tbl_capacity * sizeof(pollfd_t));
+
     MPIU_Free(g_sc_tbl);
     MPIU_Free(g_plfd_tbl);
     g_sc_tbl = new_sc_tbl;
@@ -1124,7 +1127,13 @@ int MPID_nem_newtcp_module_connpoll()
 {
     int mpi_errno = MPI_SUCCESS, n, i;
 
+#if 1
+/* #ifdef BLOCKING */
+    CHECK_EINTR(n, poll(g_plfd_tbl, g_tbl_size, -1));
+#else
     CHECK_EINTR(n, poll(g_plfd_tbl, g_tbl_size, 0));
+#endif
+
     MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, 
                           "**poll", "**poll %s", strerror (errno));
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "some sc fd poll event"));
@@ -1142,6 +1151,9 @@ int MPID_nem_newtcp_module_connpoll()
             mpi_errno = it_sc->handler(it_plfd, it_sc);
             if (mpi_errno) MPIU_ERR_POP (mpi_errno);
         }
+
+	if (finalize_called) { /* Poll through all sc's and flush data */
+	}
     }
     
  fn_exit:
@@ -1216,6 +1228,34 @@ int MPID_nem_newtcp_module_state_listening_handler(pollfd_t *const l_plfd, sockc
 
 	    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "accept success, added to table, connfd=%d", connfd));        
         }
+    }
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    goto fn_exit;
+}
+
+
+#define TMP_BUF_SIZE 1024
+
+#undef FUNCNAME
+#define FUNCNAME state_listening_handler
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_state_poke_handler(pollfd_t *const plfd, sockconn_t *const sc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int nread = 1;
+    char msg[TMP_BUF_SIZE];
+
+    while (nread) {
+	CHECK_EINTR (nread, read(sc->fd, &msg, TMP_BUF_SIZE));
+	MPIU_ERR_CHKANDJUMP1 (nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER,
+			      "**read", "**read %s", strerror (errno));
+	MPIU_ERR_CHKANDJUMP1 (nread != POKE_MSG, mpi_errno, MPI_ERR_OTHER,
+			      "**read", "**read %s", strerror (errno)); /* FIXME-Z1 */
     }
 
  fn_exit:

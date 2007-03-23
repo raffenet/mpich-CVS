@@ -35,6 +35,14 @@ static int dbg_ifname = 0;
 static int get_addr_port_from_bc (const char *business_card, struct in_addr *addr, in_port_t *port);
 static int GetIPInterface( MPIDU_Sock_ifaddr_t *, int * );
 
+static pthread_t comm_thread_handle;
+static pthread_attr_t comm_thread_attr;
+void* comm_thread(void*);
+
+extern sockconn_t g_local_sc;
+extern pollfd_t g_local_plfd;
+extern int finalize_called;
+
 #define MPIDI_CH3I_PORT_KEY "port"
 #define MPIDI_CH3I_ADDR_KEY "addr"
 #define MPIDI_CH3I_IFNAME_KEY "ifname"
@@ -51,6 +59,7 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     int mpi_errno = MPI_SUCCESS;
     int ret;
     int i;
+    int fd[2];
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
@@ -95,10 +104,28 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
 
     *module_free_queue = MPID_nem_newtcp_module_free_queue;
 
-
     MPID_nem_newtcp_module_init_sm();
     MPID_nem_newtcp_module_send_init();
     MPID_nem_newtcp_module_poll_init();
+
+    mpi_errno = pipe(fd);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+    g_local_plfd.fd = g_local_sc.fd = fd[0];
+    MPIU_ERR_CHKANDJUMP2 (g_local_sc.fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", strerror (errno), errno);
+
+    mpi_errno = MPID_nem_newtcp_module_set_sockopts (g_local_sc.fd);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+    g_local_plfd.events = POLLIN;
+    g_local_sc.state.lstate = CONN_STATE_TS_COMMRDY;
+    g_local_sc.handler = MPID_nem_newtcp_module_state_poke_handler;
+
+    finalize_called = 0;
+
+    pthread_attr_init(&comm_thread_attr);
+    pthread_attr_setscope(&comm_thread_attr, PTHREAD_SCOPE_SYSTEM);
+    pthread_create(&comm_thread_handle, &comm_thread_attr, comm_thread, NULL);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
@@ -108,6 +135,22 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
 /*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
     goto fn_exit;
 }
+
+
+void* comm_thread(void*)
+{
+    int mpi_errno;
+
+    mpi_errno = MPID_nem_newtcp_module_connpoll();
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    goto fn_exit;
+}
+
 
 /*
  * Get a description of the network interface to use for socket communication
