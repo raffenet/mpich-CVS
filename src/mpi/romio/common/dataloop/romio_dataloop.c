@@ -184,6 +184,43 @@ void MPIO_Datatype_get_extent(MPI_Datatype type, MPI_Offset *extent_p)
     return;
 }
 
+void MPIO_Datatype_get_el_type(MPI_Datatype type,
+			       MPI_Datatype *eltype_p,
+			       int flag)
+{
+    int mpi_errno;
+    int nr_ints, nr_aints, nr_types, combiner;
+
+    mpi_errno = PMPI_Type_get_envelope(type, &nr_ints, &nr_aints,
+				       &nr_types, &combiner);
+    assert(mpi_errno == MPI_SUCCESS);
+
+    if (combiner == MPI_COMBINER_NAMED) {
+	if (type == MPI_FLOAT_INT ||
+	    type == MPI_DOUBLE_INT ||
+	    type == MPI_LONG_INT ||
+	    type == MPI_SHORT_INT ||
+	    type == MPI_LONG_DOUBLE_INT)
+	{
+	    *eltype_p = MPI_DATATYPE_NULL;
+	}
+	else if (type == MPI_2INT) {
+	    *eltype_p = MPI_INT;
+	}
+	else {
+	    /* all the other named types are their own element type */
+	    *eltype_p = type;
+	}
+    }
+    else {
+	MPIO_Dataloop *dlp;
+	MPIO_Datatype_get_loopptr(type, &dlp, flag);
+
+	*eltype_p = dlp->el_type;
+    }
+    return;
+}
+
 void MPIO_Datatype_get_loopptr(MPI_Datatype type,
 			       MPIO_Dataloop **ptr_p,
 			       int flag)

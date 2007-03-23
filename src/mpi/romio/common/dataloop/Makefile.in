@@ -1,0 +1,60 @@
+CC          = @CC@
+AR          = @AR@
+LIBNAME     = @LIBNAME@
+RANLIB      = @RANLIB@
+srcdir      = @srcdir@
+CC_SHL      = @CC_SHL@
+SHLIBNAME   = @SHLIBNAME@
+
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../include -I${srcdir}/../../mpi-io \
+		-I${srcdir}/../../adio/include -I../../adio/include \
+		-I${srcdir}/../../../../../src/include  \
+		-I../../../../../src/include 
+
+CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(MPIOPROFILE) $(INCLUDE_DIR)
+
+LIBTOOL       = @LIBTOOL@
+C_COMPILE_SHL = $(CC_SHL)
+
+@VPATH@
+
+DLOOP_OBJECTS = contents_support.o darray_support.o dataloop.o \
+		dataloop_create.o dataloop_create_blockindexed.o \
+		dataloop_create_contig.o dataloop_create_indexed.o \
+		dataloop_create_pairtype.o dataloop_create_struct.o \
+		dataloop_create_vector.o romio_dataloop.o segment.o \
+		subarray_support.o typesize_support.o
+
+all: $(LIBNAME)
+	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
+	    $(MAKE) $(SHLIBNAME).la ;\
+	fi
+
+.SUFFIXES: $(SUFFIXES) .p .lo
+
+.c.o:
+	$(CC) $(CFLAGS) -c $<
+.c.lo:
+	$(C_COMPILE_SHL) $(CFLAGS) -c $< -o _s$*.o
+	@mv -f _s$*.o $*.lo
+
+.c.p:
+	@cp $(srcdir)/$*.c _$*.c
+	$(CC) $(CFLAGS) -c _$*.c
+	@rm -f _$*.c
+
+profile: 
+	sleep 1
+
+$(LIBNAME): $(DLOOP_OBJECTS)
+	$(AR) $(LIBNAME) $(DLOOP_OBJECTS)
+	$(RANLIB) $(LIBNAME)  
+
+DLOOP_LOOBJECTS = $(DLOOP_OBJECTS:.o=.lo)
+$(SHLIBNAME).la: $(DLOOP_LOOBJECTS)
+	$(AR) $(SHLIBNAME).la $(DLOOP_LOOBJECTS)
+
+clean:
+	@rm -f *.o *.lo *.gcno *.gcda *.bb *.bbg
+	@rm -f ${srcdir}/*.gcno ${srcdir}/*.gcda 
+	@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg

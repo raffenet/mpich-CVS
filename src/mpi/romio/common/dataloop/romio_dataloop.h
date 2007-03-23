@@ -18,6 +18,11 @@
  */
 #define PREPEND_PREFIX(fn) MPIO_ ## fn
 
+struct MPIO_iovec {
+    MPI_Offset base;
+    MPI_Offset len;
+};
+
 /* These following dataloop-specific types will be used throughout the DLOOP
  * instance:
  */
@@ -26,9 +31,9 @@
 #define DLOOP_Handle     MPI_Datatype
 #define DLOOP_Type       MPI_Datatype
 #define DLOOP_Buffer     void *
-#define DLOOP_VECTOR     MPID_IOV
-#define DLOOP_VECTOR_LEN MPID_IOV_LEN
-#define DLOOP_VECTOR_BUF MPID_IOV_BUF
+#define DLOOP_VECTOR     struct MPIO_iovec
+#define DLOOP_VECTOR_LEN len
+#define DLOOP_VECTOR_BUF base
 
 /* The following accessor functions must also be defined:
  *
@@ -67,7 +72,7 @@
     MPIO_Datatype_get_size(handle_,&(size_))
 
 #define DLOOP_Handle_get_basic_type_macro(handle_,eltype_) \
-    MPID_Datatype_get_basic_type(handle_, &(eltype_))
+    MPIO_Datatype_get_el_type(handle_, &(eltype_), 0)
 
 #define DLOOP_Handle_get_extent_macro(handle_,extent_) \
     MPIO_Datatype_get_extent(handle_,&(extent_))
@@ -102,7 +107,8 @@ void MPIO_Datatype_set_loopdepth(MPI_Datatype type, int depth, int flag);
 void MPIO_Datatype_get_size(MPI_Datatype type, MPI_Offset *size_p);
 void MPIO_Datatype_get_extent(MPI_Datatype type, MPI_Offset *extent_p);
 int MPIO_Datatype_is_nontrivial(MPI_Datatype type);
-
+void MPIO_Datatype_get_el_type(MPI_Datatype type, MPI_Datatype *eltype_p,
+			       int flag);
 /* These values are defined by DLOOP code.
  *
  * Note: DLOOP_DATALOOP_ALL_BYTES not currently used in MPICH2.

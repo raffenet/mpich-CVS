@@ -141,6 +141,7 @@ static int DLOOP_Structalign_llint_position(void);
 void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 					 DLOOP_Type_footprint *tfp)
 {
+    int mpi_errno;
     int nr_ints, nr_aints, nr_types, combiner;
     int *ints;
     MPI_Aint *aints;
@@ -163,7 +164,9 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
     int ndims;
     MPI_Datatype tmptype;
 
-    PMPI_Type_get_envelope(type, &nr_ints, &nr_aints, &nr_types, &combiner);
+    mpi_errno = PMPI_Type_get_envelope(type, &nr_ints, &nr_aints,
+				       &nr_types, &combiner);
+    assert(mpi_errno == MPI_SUCCESS);
 
     if (combiner == MPI_COMBINER_NAMED) {
 	int mpisize;
