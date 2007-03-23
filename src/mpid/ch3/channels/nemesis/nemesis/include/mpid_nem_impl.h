@@ -75,6 +75,62 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
     return (pbox->flag.value != value);
 }
 
+/* Nemesis packets */
+
+typedef enum MPID_nem_pkt_type
+{
+    MPIDI_NEM_PKT_LMT_RTS = MPIDI_CH3_PKT_END_ALL+1,
+    MPIDI_NEM_PKT_LMT_CTS,
+    MPIDI_NEM_PKT_LMT_DONE,
+    MPIDI_NEM_PKT_LMT_COOKIE,
+    MPIDI_NEM_PKT_END    
+} MPID_nem_pkt_type_t;
+
+typedef struct MPID_nem_pkt_lmt_rts
+{
+    MPID_nem_pkt_type_t type;
+    MPIDI_Message_match match;
+    MPI_Request sender_req_id;
+    MPIDI_msg_sz_t data_sz;
+    MPIDI_msg_sz_t cookie_len;
+}
+MPID_nem_pkt_lmt_rts_t;
+
+typedef struct MPID_nem_pkt_lmt_cts
+{
+    MPID_nem_pkt_type_t type;
+    MPI_Request sender_req_id;
+    MPI_Request receiver_req_id;
+    MPIDI_msg_sz_t data_sz;
+    MPIDI_msg_sz_t cookie_len;
+}
+MPID_nem_pkt_lmt_cts_t;
+
+typedef struct MPID_nem_pkt_lmt_done
+{
+    MPID_nem_pkt_type_t type;
+    MPI_Request req_id;
+}
+MPID_nem_pkt_lmt_done_t;
+
+typedef struct MPID_nem_pkt_lmt_cookie
+{
+    MPID_nem_pkt_type_t type;
+    MPI_Request req_id;
+    MPIDI_msg_sz_t cookie_len;
+}
+MPID_nem_pkt_lmt_cookie_t;
+
+typedef union MPIDI_CH3_nem_pkt
+{
+    MPID_nem_pkt_lmt_rts_t lmt_rts;
+    MPID_nem_pkt_lmt_cts_t lmt_cts;
+    MPID_nem_pkt_lmt_done_t lmt_done;
+    MPID_nem_pkt_lmt_cookie_t lmt_cookie;
+} MPIDI_CH3_nem_pkt_t;
+
+    
+
 /*  Macros for sending lmt messages from inside network modules.
     These assume mpi_errno is declared and the fn_exit and fn_fail
     labels are defined.
@@ -121,7 +177,7 @@ MPID_nem_islocked (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
 
 #define MPID_nem_lmt_send_CTS(vc, rreq, r_cookie_buf, r_cookie_len) do {                                \
         MPIDI_CH3_Pkt_t _upkt;                                                                          \
-        MPID_nem_pkt_lmt_cts_t * const _cts_pkt = &_upkt.lmt_cts;                                       \
+        MPID_nem_pkt_lmt_cts_t * const _cts_pkt = (MPID_nem_pkt_lmt_cts_t *)&_upkt;                     \
         MPID_Request *_cts_req;                                                                         \
         MPID_IOV _iov[2];                                                                               \
                                                                                                         \

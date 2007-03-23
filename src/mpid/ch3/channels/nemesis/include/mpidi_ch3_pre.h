@@ -28,56 +28,6 @@ MPIDI_CH3I_VC_state_t;
 /* size of private data area in vc for network modules */
 #define MPID_NEM_VC_NETMOD_AREA_LEN 128
 
-#define MPIDI_CH3_PKT_ENUM                      \
-        MPIDI_NEM_PKT_LMT_RTS,                  \
-        MPIDI_NEM_PKT_LMT_CTS,                  \
-        MPIDI_NEM_PKT_LMT_DONE,                 \
-        MPIDI_NEM_PKT_LMT_COOKIE
-
-#define MPIDI_CH3_PKT_DEFS                      \
-typedef struct MPID_nem_pkt_lmt_rts             \
-{                                               \
-    MPIDI_CH3_Pkt_type_t type;                  \
-    MPIDI_Message_match match;                  \
-    MPI_Request sender_req_id;                  \
-    MPIDI_msg_sz_t data_sz;                     \
-    MPIDI_msg_sz_t cookie_len;                  \
-}                                               \
-MPID_nem_pkt_lmt_rts_t;                         \
-                                                \
-typedef struct MPID_nem_pkt_lmt_cts             \
-{                                               \
-    MPIDI_CH3_Pkt_type_t type;                  \
-    MPI_Request sender_req_id;                  \
-    MPI_Request receiver_req_id;                \
-    MPIDI_msg_sz_t data_sz;                     \
-    MPIDI_msg_sz_t cookie_len;                  \
-}                                               \
-MPID_nem_pkt_lmt_cts_t;                         \
-                                                \
-typedef struct MPID_nem_pkt_lmt_done            \
-{                                               \
-    MPIDI_CH3_Pkt_type_t type;                  \
-    MPI_Request req_id;                         \
-}                                               \
-MPID_nem_pkt_lmt_done_t;                        \
-                                                \
-typedef struct MPID_nem_pkt_lmt_cookie          \
-{                                               \
-    MPIDI_CH3_Pkt_type_t type;                  \
-    MPI_Request req_id;                         \
-    MPIDI_msg_sz_t cookie_len;                  \
-}                                               \
-MPID_nem_pkt_lmt_cookie_t;
-
-
-#define MPIDI_CH3_PKT_DECL                      \
-MPID_nem_pkt_lmt_rts_t lmt_rts;                 \
-MPID_nem_pkt_lmt_cts_t lmt_cts;                 \
-MPID_nem_pkt_lmt_done_t lmt_done;               \
-MPID_nem_pkt_lmt_cookie_t lmt_cookie;
-
-
 
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)

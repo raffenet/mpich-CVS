@@ -58,6 +58,8 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     int    num_nodes;
     int   *node_ids = 0;    
     MPIU_CHKPMEM_DECL(4);
+
+    MPIU_Assert(sizeof(MPIDI_CH3_nem_pkt_t) <= sizeof(MPIDI_CH3_PktGeneric_t));
     
     /* Initialize the business card */
     mpi_errno = MPIDI_CH3I_BCInit( &bc_val, &val_max_remaining );

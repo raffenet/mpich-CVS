@@ -15,7 +15,8 @@
 
 extern int MPID_nem_lmt_shm_pending; /* defined in mpid_nem_lmt_shm.c */
 
-static MPIDI_CH3_PktHandler_Fcn *pktArray[MPIDI_CH3_PKT_END_ALL+1];
+#define PKTARRAY_SIZE (MPIDI_NEM_PKT_END+1)
+static MPIDI_CH3_PktHandler_Fcn *pktArray[PKTARRAY_SIZE];
 
 #ifndef MPIDI_POSTED_RECV_ENQUEUE_HOOK
 #define MPIDI_POSTED_RECV_ENQUEUE_HOOK(x) do {} while (0)
@@ -1777,9 +1778,9 @@ int MPIDI_CH3I_Progress_init(void)
     }
 
     /* Initialize the code to handle incoming packets */
-    mpi_errno = MPIDI_CH3_PktHandler_Init(pktArray, MPIDI_CH3_PKT_END_ALL+1);
+    mpi_errno = MPIDI_CH3_PktHandler_Init(pktArray, PKTARRAY_SIZE);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-    mpi_errno = MPID_nem_lmt_pkthandler_init(pktArray, MPIDI_CH3_PKT_END_ALL+1);
+    mpi_errno = MPID_nem_lmt_pkthandler_init(pktArray, PKTARRAY_SIZE);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
  fn_exit:

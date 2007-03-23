@@ -108,7 +108,7 @@ int MPID_nem_lmt_shm_initiate_lmt(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPID_Req
     int dt_contig;
     MPI_Aint dt_true_lb;
     MPID_Datatype * dt_ptr;
-    MPID_nem_pkt_lmt_rts_t * const rts_pkt = &pkt->lmt_rts;
+    MPID_nem_pkt_lmt_rts_t * const rts_pkt = (MPID_nem_pkt_lmt_rts_t *)pkt;
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LMT_SHM_INITIATE_LMT);
 
