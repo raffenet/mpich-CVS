@@ -21,10 +21,10 @@ typedef struct MPIDU_Sock_ifaddr_t {
     unsigned char ifaddr[16];
 } MPIDU_Sock_ifaddr_t;
 
-
 typedef enum {
     REFRESH_STATE,
     CONNECT,
+    FINALIZE,
     DISCONNECT
 } poke_msg_type_t;
 
@@ -36,22 +36,17 @@ typedef struct {
 MPID_nem_queue_ptr_t MPID_nem_newtcp_module_free_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;
-extern sockconn_t g_lstn_sc;
-extern pollfd_t g_lstn_plfd;
 
 static MPID_nem_queue_t _free_queue;
-
 static int dbg_ifname = 0;
+extern int MPID_nem_newtcp_module_main_to_comm_fd;
 
-static int GetIPInterface( MPIDU_Sock_ifaddr_t *, int * );
+extern int called_finalize = 0;
 
 static pthread_t comm_thread_handle;
 static pthread_attr_t comm_thread_attr;
 void* comm_thread(void*);
-
-extern sockconn_t g_local_sc;
-extern pollfd_t g_local_plfd;
-extern int finalize_called;
+static int GetIPInterface( MPIDU_Sock_ifaddr_t *, int *);
 
 #define MPIDI_CH3I_PORT_KEY "port"
 #define MPIDI_CH3I_ADDR_KEY "addr"
@@ -104,20 +99,21 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     ret = pipe(fd);
     MPIU_ERR_CHKANDJUMP2(ret == -1, mpi_errno, MPI_ERR_OTHER, "**pipe", "**pipe %s %d", strerror (errno), errno);
 
-    g_local_plfd.fd = g_local_sc.fd = fd[0];
+    MPID_nem_newtcp_module_main_to_comm_fd = fd[1];
+    mpi_errno = MPID_nem_newtcp_module_set_sockopts (MPID_nem_newtcp_module_main_to_comm_fd);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-    mpi_errno = MPID_nem_newtcp_module_set_sockopts(g_local_sc.fd);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    mpi_errno = find_free_entry(&index);
+    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
 
-    g_local_plfd.events = POLLIN;
-    g_local_sc.state.lstate = CONN_STATE_TS_COMMRDY;
-    g_local_sc.handler = MPID_nem_newtcp_module_state_poke_handler;
+    socksm_tbl_vars.sc_tbl[index].fd = socksm_tbl_vars.plfd_tbl[index].fd = fd[0];
+    socksm_tbl_vars.plfd_tbl[index].events = POLLIN;
+    socksm_tbl_vars.sc_tbl[index].handler = MPID_nem_newtcp_module_state_poke_handler;
 
-    finalize_called = 0;
-
-    pthread_attr_init(&comm_thread_attr);
-    pthread_attr_setscope(&comm_thread_attr, PTHREAD_SCOPE_SYSTEM);
-    pthread_create(&comm_thread_handle, &comm_thread_attr, comm_thread, NULL);
+    /* FIXME: Check for return values */
+    MPIU_Assert(pthread_attr_init(&comm_thread_attr) == 0);
+    MPIU_Assert(pthread_attr_setscope(&comm_thread_attr, PTHREAD_SCOPE_SYSTEM) == 0);
+    MPIU_Assert(pthread_create(&comm_thread_handle, &comm_thread_attr, comm_thread, NULL) == 0);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
@@ -133,11 +129,18 @@ void* comm_thread(void*)
 {
     int mpi_errno;
 
-    mpi_errno = MPID_nem_newtcp_module_connpoll();
-    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    while (1) {
+	mpi_errno = MPID_nem_newtcp_module_connpoll();
+	if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+	if (called_finalize) break;
+    }
+
+    /* FIXME: Check for return values */
+    MPIU_Assert(pthread_join(comm_thread_attr) == 0);
 
  fn_exit:
-    return mpi_errno;
+    return NULL;
  fn_fail:
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;

@@ -649,6 +649,10 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
     msg.type = DISCONNECT;
     msg.vc = vc;
 
+    count = send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(poke_msg_t), 0);
+    /* FIXME: Return a proper error code, instead of asserting */
+    MPI_Assert(count == sizeof(poke_msg_t));
+
     return MPI_SUCCESS;
 }
 
@@ -1113,7 +1117,7 @@ int MPID_nem_newtcp_module_init_sm()
 
     MPIU_Assert(!index);
 
-    socksm_tbl_vars.sc_tbl[index].fd = socksm_tbl_vars.plfd_tbl[index].fd = lstn_plfd.fd;
+    socksm_tbl_vars.sc_tbl[index].fd = socksm_tbl_vars.plfd_tbl[index].fd = fd;
     socksm_tbl_vars.plfd_tbl[index].events = POLLIN;
     socksm_tbl_vars.sc_tbl[index].handler = MPID_nem_newtcp_module_state_listening_handler;
 
@@ -1197,9 +1201,6 @@ int MPID_nem_newtcp_module_connpoll()
             mpi_errno = it_sc->handler(it_plfd, it_sc);
             if (mpi_errno) MPIU_ERR_POP (mpi_errno);
         }
-
-	if (finalize_called) { /* Poll through all sc's and flush data */
-	}
     }
     
  fn_exit:
@@ -1307,6 +1308,9 @@ int MPID_nem_newtcp_module_state_poke_handler(pollfd_t *const plfd, sockconn_t *
     else if (msg.type == DISCONNECT) {
 	mpi_errno = socksm_disconnect(msg.vc);
 	if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    }
+    else if (msg.type == FINALIZE) {
+	called_finalize = 1;
     }
 
  fn_exit:
