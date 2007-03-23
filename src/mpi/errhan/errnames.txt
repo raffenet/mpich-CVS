@@ -867,7 +867,8 @@ with MPI_Alloc_mem.
 **ctspkt:failure occurred while attempting to send CTS packet
 **cookiepkt:failure occurred while attempting to send COOKIE packet
 **donepkt:failure occurred while attempting to send DONE packet
-
+**pipe:failure creating pipe
+**pipe %s %d:failure creating pipe, %s (errno %d)
 
 #
 # mpi functions

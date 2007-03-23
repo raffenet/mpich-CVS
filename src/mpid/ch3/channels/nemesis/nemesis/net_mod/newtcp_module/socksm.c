@@ -17,7 +17,7 @@ typedef struct freenode {
     struct freenode* next;
 } freenode_t;
 
-struct {
+static struct {
     freenode_t *head, *tail;
 } freeq = {NULL, NULL};
 

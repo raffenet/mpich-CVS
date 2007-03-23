@@ -101,14 +101,13 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
 
     *module_free_queue = MPID_nem_newtcp_module_free_queue;
 
-    mpi_errno = pipe(fd);
-    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    ret = pipe(fd);
+    MPIU_ERR_CHKANDJUMP2(ret == -1, mpi_errno, MPI_ERR_OTHER, "**pipe", "**pipe %s %d", strerror (errno), errno);
 
     g_local_plfd.fd = g_local_sc.fd = fd[0];
-    MPIU_ERR_CHKANDJUMP2 (g_local_sc.fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", strerror (errno), errno);
 
-    mpi_errno = MPID_nem_newtcp_module_set_sockopts (g_local_sc.fd);
-    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    mpi_errno = MPID_nem_newtcp_module_set_sockopts(g_local_sc.fd);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     g_local_plfd.events = POLLIN;
     g_local_sc.state.lstate = CONN_STATE_TS_COMMRDY;
