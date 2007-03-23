@@ -234,6 +234,10 @@ typedef struct MPID_nem_queue
         }                                                                                                               \
     } while(0)
 
+/* #undef MAYBE_SIGNAL */
+/* #undef WAIT_FOR_SIGNAL */
+/* #define MAYBE_SIGNAL(recvQ) do {  } while(0) */
+/* #define WAIT_FOR_SIGNAL() do {  } while(0) */
 
 /* Fast Boxes*/ 
 typedef union
