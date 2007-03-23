@@ -15,8 +15,8 @@ extern sockconn_t g_lstn_sc;
 int MPID_nem_newtcp_module_finalize()
 {
     int mpi_errno = MPI_SUCCESS;
-    int ret;
-    poke_msg_t msg;
+    int count;
+    MPID_nem_newtcp_module_poke_msg_t msg;
     
     MPID_nem_newtcp_module_send_finalize();
     MPID_nem_newtcp_module_poll_finalize();
@@ -29,10 +29,10 @@ int MPID_nem_newtcp_module_finalize()
     }
 #endif
 
-    msg.type = FINALIZE;
-    count = send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(poke_msg_t), 0);
+    msg.type = MPID_NEM_NEWTCP_MODULE_FINALIZE;
+    count = send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(MPID_nem_newtcp_module_poke_msg_t), 0);
     /* FIXME: Return a proper error code, instead of asserting */
-    MPI_Assert(count == sizeof(poke_msg_t));
+    MPI_Assert(count == sizeof(MPID_nem_newtcp_module_poke_msg_t));
 
  fn_exit:
     return mpi_errno;

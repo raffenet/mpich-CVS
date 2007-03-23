@@ -22,6 +22,8 @@ extern MPID_nem_queue_ptr_t MPID_nem_newtcp_module_free_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_recv_queue;
 extern MPID_nem_queue_ptr_t MPID_nem_process_free_queue;
 extern int MPID_nem_newtcp_module_listen_fd;
+extern int MPID_nem_newtcp_module_main_to_comm_fd;
+extern int MPID_nem_newtcp_module_called_finalize;
 
 #define MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED 0
 #define MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED 1
@@ -29,8 +31,7 @@ extern int MPID_nem_newtcp_module_listen_fd;
 /* The vc provides a generic buffer in which network modules can store
    private fields This removes all dependencies from the VC struction
    on the network module, facilitating dynamic module loading. */
-typedef struct 
-{
+typedef struct {
     struct sockaddr_in sock_id;
     struct MPID_nem_new_tcp_module_sockconn *sc;
     struct
@@ -39,6 +40,18 @@ typedef struct
         struct MPID_Request *tail;
     } send_queue;
 } MPID_nem_newtcp_module_vc_area;
+
+typedef enum {
+    MPID_NEM_NEWTCP_MODULE_REFRESH_STATE,
+    MPID_NEM_NEWTCP_MODULE_CONNECT,
+    MPID_NEM_NEWTCP_MODULE_FINALIZE,
+    MPID_NEM_NEWTCP_MODULE_DISCONNECT
+} MPID_nem_newtcp_module_poke_msg_type_t;
+
+typedef struct {
+    MPID_nem_newtcp_module_poke_msg_type_t type;
+    MPIDI_VC_t *vc;
+} MPID_nem_newtcp_module_poke_msg_t;
 
 /* accessor macro to private fields in VC */
 #define VC_FIELD(vc, field) (((MPID_nem_newtcp_module_vc_area *)((MPIDI_CH3I_VC *)(vc)->channel_private)->netmod_area.padding)->field)
@@ -63,6 +76,7 @@ int MPID_nem_newtcp_module_get_vc_from_conninfo (char *pg_id, int pg_rank, struc
 int MPID_nem_newtcp_module_is_sock_connected(int fd);
 int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc);
 int MPID_nem_newtcp_module_state_listening_handler(pollfd_t *const l_plfd, sockconn_t *const l_sc);
+int MPID_nem_newtcp_module_state_poke_handler(pollfd_t *const l_plfd, sockconn_t *const l_sc);
 
 int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, MPIDI_msg_sz_t hdr_sz, void *data, MPIDI_msg_sz_t data_sz);
 int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, void *data, MPIDI_msg_sz_t data_sz,

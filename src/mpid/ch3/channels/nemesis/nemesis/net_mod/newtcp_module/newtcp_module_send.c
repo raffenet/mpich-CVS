@@ -586,15 +586,15 @@ int MPID_nem_newtcp_SendEagerNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void 
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int signal_comm_thread_to_connect(MPIDI_VC_t *vc)
 {
-    poke_msg_t msg;
+    MPID_nem_newtcp_module_poke_msg_t msg;
     ssize_t count;
 
-    msg.type = CONNECT;
+    msg.type = MPID_NEM_NEWTCP_MODULE_CONNECT;
     msg.vc = vc;
 
-    count = send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(poke_msg_t), 0);
+    count = send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(MPID_nem_newtcp_module_poke_msg_t), 0);
     /* FIXME: Return a proper error code, instead of asserting */
-    MPI_Assert(count == sizeof(poke_msg_t));
+    MPI_Assert(count == sizeof(MPID_nem_newtcp_module_poke_msg_t));
 
     return MPI_SUCCESS;
 }
