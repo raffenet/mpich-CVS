@@ -17,6 +17,7 @@ int MPID_nem_newtcp_module_finalize()
     int mpi_errno = MPI_SUCCESS;
     int count;
     MPID_nem_newtcp_module_poke_msg_t msg;
+    int ret;
     
     MPID_nem_newtcp_module_send_finalize();
     MPID_nem_newtcp_module_poll_finalize();
@@ -33,7 +34,10 @@ int MPID_nem_newtcp_module_finalize()
     count = send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(MPID_nem_newtcp_module_poke_msg_t), 0);
     /* FIXME: Return a proper error code, instead of asserting */
     MPIU_Assert(count == sizeof(MPID_nem_newtcp_module_poke_msg_t));
-
+    ret = pthread_join(MPID_nem_newtcp_module_comm_thread_handle, (void *)&mpi_errno);
+    MPIU_Assert(ret == 0);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
  fn_exit:
     return mpi_errno;
  fn_fail:

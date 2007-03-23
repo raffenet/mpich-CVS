@@ -25,6 +25,8 @@ extern int MPID_nem_newtcp_module_listen_fd;
 extern int MPID_nem_newtcp_module_main_to_comm_fd;
 extern int MPID_nem_newtcp_module_called_finalize;
 
+extern pthread_t MPID_nem_newtcp_module_comm_thread_handle;
+
 #define MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED 0
 #define MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED 1
 

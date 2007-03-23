@@ -1349,22 +1349,6 @@ int MPID_nem_newtcp_module_state_poke_handler(pollfd_t *const plfd, sockconn_t *
     goto fn_exit;
 }
 
-/* FIXME-Danger Delete later. */
-#undef FUNCNAME
-#define FUNCNAME f
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int f (void)
-{
-    int mpi_errno = MPI_SUCCESS;
-
- fn_exit:
-    return mpi_errno;
- fn_fail:    
-    goto fn_exit;
-}
-
-
 /*** General FIXME and "ThinkAboutIt" Questions 
 
 1. To check whether a socket connection is connected or not in rank_rcvd_handler

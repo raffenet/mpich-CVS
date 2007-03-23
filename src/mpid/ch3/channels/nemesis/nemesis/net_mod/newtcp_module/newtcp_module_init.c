@@ -18,10 +18,93 @@ int MPID_nem_newtcp_module_main_to_comm_fd;
 int MPID_nem_newtcp_module_called_finalize = 0;
 static int dbg_ifname = 0;
 
-static pthread_t comm_thread_handle;
+pthread_t MPID_nem_newtcp_module_comm_thread_handle;
 static pthread_attr_t comm_thread_attr;
-void* comm_thread(void*);
+static void* comm_thread(void*);
 static int GetIPInterface( MPIDU_Sock_ifaddr_t *, int *);
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue,
+                                 MPID_nem_cell_ptr_t proc_elements, int num_proc_elements, MPID_nem_cell_ptr_t module_elements,
+                                 int num_module_elements, MPID_nem_queue_ptr_t *module_free_queue,
+                                 int ckpt_restart, MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int ret;
+    int i;
+    int fd[2];
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
+
+    /* first make sure that our private fields in the vc fit into the area provided  */
+    MPIU_Assert(sizeof(MPID_nem_newtcp_module_vc_area) <= MPID_NEM_VC_NETMOD_AREA_LEN);
+    
+    MPID_nem_newtcp_module_init_sm();
+    MPID_nem_newtcp_module_send_init();
+    MPID_nem_newtcp_module_poll_init();
+
+    /* create business card */
+    mpi_errno = MPID_nem_newtcp_module_get_business_card(pg_rank, bc_val_p, val_max_sz_p);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    /* save references to queues */
+    MPID_nem_process_recv_queue = proc_recv_queue;
+    MPID_nem_process_free_queue = proc_free_queue;
+
+    MPID_nem_newtcp_module_free_queue = &_free_queue;
+
+    /* set up network module queues */
+    MPID_nem_queue_init(MPID_nem_newtcp_module_free_queue);
+
+    for (i = 0; i < num_module_elements; ++i)
+    {
+        MPID_nem_queue_enqueue(MPID_nem_newtcp_module_free_queue, &module_elements[i]);
+    }
+
+    *module_free_queue = MPID_nem_newtcp_module_free_queue;
+
+    /* FIXME: Check for return values */
+    ret = pthread_attr_init(&comm_thread_attr);
+    MPIU_Assert(ret == 0);
+    ret = pthread_attr_setscope(&comm_thread_attr, PTHREAD_SCOPE_SYSTEM);
+    MPIU_Assert(ret == 0);
+    ret = pthread_create(&MPID_nem_newtcp_module_comm_thread_handle, &comm_thread_attr, comm_thread, NULL);
+    MPIU_Assert(ret == 0);
+
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
+/*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
+    return mpi_errno;
+ fn_fail:
+/*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
+    goto fn_exit;
+}
+
+
+#undef FUNCNAME
+#define FUNCNAME comm_thread
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static void* comm_thread(void* dummy)
+{
+    int mpi_errno;
+
+    while (!MPID_nem_newtcp_module_called_finalize)
+    {
+	mpi_errno = MPID_nem_newtcp_module_connpoll();
+	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+
+ fn_exit:
+    return (void *)mpi_errno;
+ fn_fail:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    goto fn_exit;
+}
 
 /*
  * Get a description of the network interface to use for socket communication
@@ -236,87 +319,6 @@ int MPID_nem_newtcp_module_get_addr_port_from_bc (const char *business_card, str
     return mpi_errno;
  fn_fail:
 /*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
-    goto fn_exit;
-}
-
-
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_newtcp_module_init
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue,
-                                 MPID_nem_cell_ptr_t proc_elements, int num_proc_elements, MPID_nem_cell_ptr_t module_elements,
-                                 int num_module_elements, MPID_nem_queue_ptr_t *module_free_queue,
-                                 int ckpt_restart, MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int ret;
-    int i;
-    int fd[2];
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
-
-    /* first make sure that our private fields in the vc fit into the area provided  */
-    MPIU_Assert(sizeof(MPID_nem_newtcp_module_vc_area) <= MPID_NEM_VC_NETMOD_AREA_LEN);
-    
-    MPID_nem_newtcp_module_init_sm();
-    MPID_nem_newtcp_module_send_init();
-    MPID_nem_newtcp_module_poll_init();
-
-    /* create business card */
-    mpi_errno = MPID_nem_newtcp_module_get_business_card (pg_rank, bc_val_p, val_max_sz_p);
-    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-
-    /* save references to queues */
-    MPID_nem_process_recv_queue = proc_recv_queue;
-    MPID_nem_process_free_queue = proc_free_queue;
-
-    MPID_nem_newtcp_module_free_queue = &_free_queue;
-
-    /* set up network module queues */
-    MPID_nem_queue_init (MPID_nem_newtcp_module_free_queue);
-
-    for (i = 0; i < num_module_elements; ++i)
-    {
-        MPID_nem_queue_enqueue (MPID_nem_newtcp_module_free_queue, &module_elements[i]);
-    }
-
-    *module_free_queue = MPID_nem_newtcp_module_free_queue;
-
-    /* FIXME: Check for return values */
-    MPIU_Assert(pthread_attr_init(&comm_thread_attr) == 0);
-    MPIU_Assert(pthread_attr_setscope(&comm_thread_attr, PTHREAD_SCOPE_SYSTEM) == 0);
-    MPIU_Assert(pthread_create(&comm_thread_handle, &comm_thread_attr, comm_thread, NULL) == 0);
-
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
-/*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
-    return mpi_errno;
- fn_fail:
-/*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
-    goto fn_exit;
-}
-
-
-void* comm_thread(void* dummy)
-{
-    int mpi_errno;
-
-    while (1) {
-	mpi_errno = MPID_nem_newtcp_module_connpoll();
-	if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-
-	if (MPID_nem_newtcp_module_called_finalize) break;
-    }
-
-    /* FIXME: Check for return values */
-    MPIU_Assert(pthread_join(comm_thread_handle, NULL) == 0);
-
- fn_exit:
-    return NULL;
- fn_fail:
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
