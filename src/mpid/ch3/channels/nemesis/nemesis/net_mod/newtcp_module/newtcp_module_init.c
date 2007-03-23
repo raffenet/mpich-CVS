@@ -22,6 +22,17 @@ typedef struct MPIDU_Sock_ifaddr_t {
 } MPIDU_Sock_ifaddr_t;
 
 
+typedef enum {
+    REFRESH_STATE,
+    CONNECT,
+    DISCONNECT
+} poke_msg_type_t;
+
+typedef struct {
+    poke_msg_type_t type;
+    MPIDI_VC_t *vc;
+} poke_msg_t;
+
 MPID_nem_queue_ptr_t MPID_nem_newtcp_module_free_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;

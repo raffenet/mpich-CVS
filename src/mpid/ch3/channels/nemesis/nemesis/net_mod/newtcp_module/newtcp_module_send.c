@@ -330,15 +330,6 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
 
 
 #undef FUNCNAME
-#define FUNCNAME signal_comm_thread_to_connect
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int signal_comm_thread_to_connect(MPIDI_VC_t *vc)
-{
-}
-
-
-#undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_iSendContig
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
@@ -412,8 +403,13 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
     }
     else
     {
+	mpi_errno = signal_comm_thread_to_connect(vc);
+	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+#if 0
         mpi_errno = MPID_nem_newtcp_module_connect(vc);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+#endif
     }
 
 
@@ -506,8 +502,13 @@ int MPID_nem_newtcp_SendEagerNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void 
     }
     else
     {
+	mpi_errno = signal_comm_thread_to_connect(vc);
+	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+#if 0
         mpi_errno = MPID_nem_newtcp_module_connect(vc);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+#endif
     }
 
     if (offset < iov[0].MPID_IOV_LEN)
@@ -576,4 +577,17 @@ int MPID_nem_newtcp_SendEagerNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void 
     MPIU_Object_set_ref(sreq, 0);
     MPIDI_CH3_Request_destroy(sreq);
     goto fn_exit;
+}
+
+
+#undef FUNCNAME
+#define FUNCNAME signal_comm_thread_to_connect
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int signal_comm_thread_to_connect(MPIDI_VC_t *vc)
+{
+    poke_msg_t msg;
+
+    msg.type = CONNECT;
+    msg.vc = vc;
 }
