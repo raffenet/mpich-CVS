@@ -9,35 +9,237 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-/*S
-  MPIDU_Sock_ifaddr_t - Structure to hold an Internet address.
-
-+ len - Length of the address.  4 for IPv4, 16 for IPv6.
-- ifaddr - Address bytes (as bytes, not characters)
-
-S*/
-typedef struct MPIDU_Sock_ifaddr_t {
-    int len, type;
-    unsigned char ifaddr[16];
-} MPIDU_Sock_ifaddr_t;
-
 MPID_nem_queue_ptr_t MPID_nem_newtcp_module_free_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_recv_queue = 0;
 MPID_nem_queue_ptr_t MPID_nem_process_free_queue = 0;
 
 static MPID_nem_queue_t _free_queue;
-static int dbg_ifname = 0;
 int MPID_nem_newtcp_module_main_to_comm_fd;
 int MPID_nem_newtcp_module_called_finalize = 0;
+static int dbg_ifname = 0;
 
 static pthread_t comm_thread_handle;
 static pthread_attr_t comm_thread_attr;
 void* comm_thread(void*);
 static int GetIPInterface( MPIDU_Sock_ifaddr_t *, int *);
 
-#define MPIDI_CH3I_PORT_KEY "port"
-#define MPIDI_CH3I_ADDR_KEY "addr"
-#define MPIDI_CH3I_IFNAME_KEY "ifname"
+/*
+ * Get a description of the network interface to use for socket communication
+ *
+ * Here are the steps.  This order of checks is used to provide the 
+ * user control over the choice of interface and to avoid, where possible,
+ * the use of non-scalable services, such as centeralized name servers.
+ *
+ * MPICH_INTERFACE_HOSTNAME
+ * MPICH_INTERFACE_HOSTNAME_R%d
+ * a single (non-localhost) available IP address, if possible
+ * gethostbyname(gethostname())
+ *
+ * We return the following items:
+ *
+ *    ifname - name of the interface.  This may or may not be the same
+ *             as the name returned by gethostname  (in Unix)
+ *    ifaddr - This structure includes the interface IP address (as bytes),
+ *             and the type (e.g., AF_INET or AF_INET6).  Only 
+ *             ipv4 (AF_INET) is used so far.
+ */
+static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
+				MPIDU_Sock_ifaddr_t *ifaddr)
+{
+    char *ifname_string;
+    int mpi_errno = MPI_SUCCESS;
+    int ifaddrFound = 0;
+
+    /* Set "not found" for ifaddr */
+    ifaddr->len = 0;
+
+    /* Check for the name supplied through an environment variable */
+    ifname_string = getenv("MPICH_INTERFACE_HOSTNAME");
+    if (!ifname_string) {
+	/* See if there is a per-process name for the interfaces (e.g.,
+	   the process manager only delievers the same values for the 
+	   environment to each process */
+	char namebuf[1024];
+	MPIU_Snprintf( namebuf, sizeof(namebuf), 
+		       "MPICH_INTERFACE_HOSTNAME_R%d", myRank );
+	ifname_string = getenv( namebuf );
+	if (dbg_ifname && ifname_string) {
+	    fprintf( stdout, "Found interface name %s from %s\n", 
+		    ifname_string, namebuf );
+	    fflush( stdout );
+	}
+    }
+    else if (dbg_ifname) {
+	fprintf( stdout, 
+		 "Found interface name %s from MPICH_INTERFACE_HOSTNAME\n", 
+		 ifname_string );
+	fflush( stdout );
+    }
+	 
+    if (!ifname_string) {
+	int len;
+
+	/* If we have nothing, then use the host name */
+	mpi_errno = MPID_Get_processor_name(ifname, maxIfname, &len );
+	ifname_string = ifname;
+
+	/* If we didn't find a specific name, then try to get an IP address
+	   directly from the available interfaces, if that is supported on
+	   this platform.  Otherwise, we'll drop into the next step that uses 
+	   the ifname */
+	mpi_errno = GetIPInterface( ifaddr, &ifaddrFound );
+    }
+    else {
+	/* Copy this name into the output name */
+	MPIU_Strncpy( ifname, ifname_string, maxIfname );
+    }
+
+    /* If we don't have an IP address, try to get it from the name */
+    if (!ifaddrFound) {
+	struct hostent *info;
+	info = gethostbyname( ifname_string );
+	if (info && info->h_addr_list) {
+	    /* Use the primary address */
+	    ifaddr->len  = info->h_length;
+	    ifaddr->type = info->h_addrtype;
+	    if (ifaddr->len > sizeof(ifaddr->ifaddr)) {
+		/* If the address won't fit in the field, reset to
+		   no address */
+		ifaddr->len = 0;
+		ifaddr->type = -1;
+	    }
+	    else
+		memcpy( ifaddr->ifaddr, info->h_addr_list[0], ifaddr->len );
+	}
+    }
+
+    return 0;
+}
+
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_get_business_card
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_get_business_card (int my_rank, char **bc_val_p, int *val_max_sz_p)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDU_Sock_ifaddr_t ifaddr;
+    char ifname[MAX_HOST_DESCRIPTION_LEN];
+    int ret;
+    struct sockaddr_in sock_id;
+    socklen_t len;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
+    
+    mpi_errno = GetSockInterfaceAddr(my_rank, ifname, sizeof(ifname), &ifaddr);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
+    
+    mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_ADDR_KEY, ifname);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+        if (mpi_errno == MPIU_STR_NOMEM)
+        {
+            MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        }
+        else
+        {
+            MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+        }
+    }
+
+    len = sizeof(sock_id);
+    ret = getsockname (MPID_nem_newtcp_module_get_listen_fd(), (struct sockaddr *)&sock_id, &len);
+    MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**getsockname", "**getsockname %s", strerror (errno));
+
+    mpi_errno = MPIU_Str_add_int_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_PORT_KEY, sock_id.sin_port);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+        if (mpi_errno == MPIU_STR_NOMEM)
+        {
+            MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        }
+        else
+        {
+            MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+        }
+    }
+
+    {
+	char ifname[256];
+	unsigned char *p;
+	if (ifaddr.len > 0 && ifaddr.type == AF_INET)
+        {
+	    p = (unsigned char *)(ifaddr.ifaddr);
+	    MPIU_Snprintf( ifname, sizeof(ifname), "%u.%u.%u.%u", p[0], p[1], p[2], p[3] );
+	    MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"ifname = %s",ifname );
+	    mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_IFNAME_KEY, ifname);
+	    if (mpi_errno != MPIU_STR_SUCCESS)
+            {
+		if (mpi_errno == MPIU_STR_NOMEM)
+                {
+		    MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+		}
+		else
+                {
+		    MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+		}
+	    }
+	}
+    }
+
+    /*     printf("MPID_nem_newtcp_module_get_business_card. port=%d\n", sock_id.sin_port); */
+
+ fn_exit:
+/*     fprintf(stdout, "MPID_nem_newtcp_module_get_business_card Exit, mpi_errno=%d\n", mpi_errno); fflush(stdout); */
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_get_addr_port_from_bc
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_get_addr_port_from_bc (const char *business_card, struct in_addr *addr, in_port_t *port)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int ret;
+    char ipaddr_str[INET_ADDRSTRLEN];
+    char ifname[256];
+    MPIDI_STATE_DECL(MPID_STATE_GET_ADDR_PORT_FROM_BC);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_GET_ADDR_PORT_FROM_BC);
+    
+    /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
+    ret = MPIU_Str_get_string_arg (business_card, MPIDI_CH3I_ADDR_KEY, ipaddr_str, INET_ADDRSTRLEN);
+    MPIU_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missinghost");
+
+    mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_PORT_KEY, (int *)port);
+    MPIU_ERR_CHKANDJUMP (mpi_errno != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingport");
+    /*     fprintf(stdout, "get_addr_port_from_bc buscard=%s  addr=%s port=%d\n",business_card, ipaddr_str, *port); fflush(stdout); */
+
+    ret = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_IFNAME_KEY, ifname, sizeof(ifname));
+    MPIU_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingifname");
+	
+    ret = inet_pton (AF_INET, (const char *)ifname, addr);
+    MPIU_ERR_CHKANDJUMP(ret == 0, mpi_errno,MPI_ERR_OTHER,"**ifnameinvalid");
+    MPIU_ERR_CHKANDJUMP(ret < 0, mpi_errno, MPI_ERR_OTHER, "**afinetinvalid");
+    
+ fn_exit:
+/*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
+    MPIDI_FUNC_EXIT(MPID_STATE_GET_ADDR_PORT_FROM_BC);
+    return mpi_errno;
+ fn_fail:
+/*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    goto fn_exit;
+}
+
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_init
@@ -120,101 +322,6 @@ void* comm_thread(void* dummy)
 }
 
 
-/*
- * Get a description of the network interface to use for socket communication
- *
- * Here are the steps.  This order of checks is used to provide the 
- * user control over the choice of interface and to avoid, where possible,
- * the use of non-scalable services, such as centeralized name servers.
- *
- * MPICH_INTERFACE_HOSTNAME
- * MPICH_INTERFACE_HOSTNAME_R%d
- * a single (non-localhost) available IP address, if possible
- * gethostbyname(gethostname())
- *
- * We return the following items:
- *
- *    ifname - name of the interface.  This may or may not be the same
- *             as the name returned by gethostname  (in Unix)
- *    ifaddr - This structure includes the interface IP address (as bytes),
- *             and the type (e.g., AF_INET or AF_INET6).  Only 
- *             ipv4 (AF_INET) is used so far.
- */
-
-static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
-                                MPIDU_Sock_ifaddr_t *ifaddr)
-{
-    char *ifname_string;
-    int mpi_errno = MPI_SUCCESS;
-    int ifaddrFound = 0;
-
-    /* Set "not found" for ifaddr */
-    ifaddr->len = 0;
-
-    /* Check for the name supplied through an environment variable */
-    ifname_string = getenv("MPICH_INTERFACE_HOSTNAME");
-    if (!ifname_string) {
-	/* See if there is a per-process name for the interfaces (e.g.,
-	   the process manager only delievers the same values for the 
-	   environment to each process */
-	char namebuf[1024];
-	MPIU_Snprintf( namebuf, sizeof(namebuf), 
-		       "MPICH_INTERFACE_HOSTNAME_R%d", myRank );
-	ifname_string = getenv( namebuf );
-	if (dbg_ifname && ifname_string) {
-	    fprintf( stdout, "Found interface name %s from %s\n", 
-		    ifname_string, namebuf );
-	    fflush( stdout );
-	}
-    }
-    else if (dbg_ifname) {
-	fprintf( stdout, 
-		 "Found interface name %s from MPICH_INTERFACE_HOSTNAME\n", 
-		 ifname_string );
-	fflush( stdout );
-    }
-	 
-    if (!ifname_string) {
-	int len;
-
-	/* If we have nothing, then use the host name */
-	mpi_errno = MPID_Get_processor_name(ifname, maxIfname, &len );
-	ifname_string = ifname;
-
-	/* If we didn't find a specific name, then try to get an IP address
-	   directly from the available interfaces, if that is supported on
-	   this platform.  Otherwise, we'll drop into the next step that uses 
-	   the ifname */
-	mpi_errno = GetIPInterface( ifaddr, &ifaddrFound );
-    }
-    else {
-	/* Copy this name into the output name */
-	MPIU_Strncpy( ifname, ifname_string, maxIfname );
-    }
-
-    /* If we don't have an IP address, try to get it from the name */
-    if (!ifaddrFound) {
-	struct hostent *info;
-	info = gethostbyname( ifname_string );
-	if (info && info->h_addr_list) {
-	    /* Use the primary address */
-	    ifaddr->len  = info->h_length;
-	    ifaddr->type = info->h_addrtype;
-	    if (ifaddr->len > sizeof(ifaddr->ifaddr)) {
-		/* If the address won't fit in the field, reset to
-		   no address */
-		ifaddr->len = 0;
-		ifaddr->type = -1;
-	    }
-	    else
-		memcpy( ifaddr->ifaddr, info->h_addr_list[0], ifaddr->len );
-	}
-    }
-
-    return 0;
-}
-
-
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_connect_to_root
 #undef FCNAME
@@ -253,7 +360,7 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     VC_FIELD(vc, sock_id).sin_family = AF_INET;
     
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);    
-    mpi_errno = get_addr_port_from_bc (business_card, &addr, &(VC_FIELD(vc, sock_id).sin_port));
+    mpi_errno = MPID_nem_newtcp_module_get_addr_port_from_bc (business_card, &addr, &(VC_FIELD(vc, sock_id).sin_port));
     VC_FIELD(vc, sock_id).sin_addr.s_addr = addr.s_addr;
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 

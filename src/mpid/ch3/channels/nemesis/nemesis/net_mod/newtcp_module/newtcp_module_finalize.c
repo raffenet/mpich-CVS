@@ -32,7 +32,7 @@ int MPID_nem_newtcp_module_finalize()
     msg.type = MPID_NEM_NEWTCP_MODULE_FINALIZE;
     count = send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(MPID_nem_newtcp_module_poke_msg_t), 0);
     /* FIXME: Return a proper error code, instead of asserting */
-    MPI_Assert(count == sizeof(MPID_nem_newtcp_module_poke_msg_t));
+    MPIU_Assert(count == sizeof(MPID_nem_newtcp_module_poke_msg_t));
 
  fn_exit:
     return mpi_errno;

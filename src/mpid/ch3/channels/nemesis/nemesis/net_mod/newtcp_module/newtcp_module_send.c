@@ -594,7 +594,7 @@ int signal_comm_thread_to_connect(MPIDI_VC_t *vc)
 
     count = send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(MPID_nem_newtcp_module_poke_msg_t), 0);
     /* FIXME: Return a proper error code, instead of asserting */
-    MPI_Assert(count == sizeof(MPID_nem_newtcp_module_poke_msg_t));
+    MPIU_Assert(count == sizeof(MPID_nem_newtcp_module_poke_msg_t));
 
     return MPI_SUCCESS;
 }
