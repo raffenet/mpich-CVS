@@ -262,8 +262,13 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
     }
     else
     {
+	mpi_errno = signal_comm_thread_to_connect(vc);
+	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+#if 0
         mpi_errno = MPID_nem_newtcp_module_connect(vc);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+#endif
     }
 
     /* create and enqueue request */
@@ -322,6 +327,16 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
  fn_fail:
     goto fn_exit;
 }
+
+
+#undef FUNCNAME
+#define FUNCNAME signal_comm_thread_to_connect
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int signal_comm_thread_to_connect(MPIDI_VC_t *vc)
+{
+}
+
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_iSendContig

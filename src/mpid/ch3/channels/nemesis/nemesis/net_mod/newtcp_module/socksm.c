@@ -21,14 +21,12 @@ struct {
     freenode_t *head, *tail;
 } freeq = {NULL, NULL};
 
-static int g_tbl_size = 0;
 static int g_tbl_capacity = CONN_PLFD_TBL_INIT_SIZE;
 static int g_tbl_grow_size = CONN_PLFD_TBL_GROW_SIZE;
 
+static int g_tbl_size = 0;
 static sockconn_t *g_sc_tbl = NULL;
 static pollfd_t *g_plfd_tbl = NULL;
-
-static int refresh_table_info = 0;
 
 sockconn_t g_lstn_sc;
 pollfd_t g_lstn_plfd;
@@ -39,6 +37,7 @@ static struct {
 } sc_state_info[CONN_STATE_SIZE];
 
 static int is_valid_state (sockconn_t *sc);
+static int get_addr_port_from_bc (const char *business_card, struct in_addr *addr, in_port_t *port);
 
 #define IS_WRITEABLE(plfd)                      \
     (plfd->revents & POLLOUT) ? 1 : 0
@@ -116,18 +115,10 @@ static int alloc_sc_plfd_tbls (void)
     MPIU_CHKPMEM_MALLOC (g_plfd_tbl, pollfd_t *, g_tbl_capacity * sizeof(pollfd_t), 
                          mpi_errno, "pollfd table");
     for (i = 0; i < g_tbl_capacity; i++) {
-        
-        INIT_SC_ENTRY(((sockconn_t *)&g_sc_tbl[i]), i);
+	INIT_SC_ENTRY(((sockconn_t *)&g_sc_tbl[i]), i);
         INIT_POLLFD_ENTRY(((pollfd_t *)&g_plfd_tbl[i]));
     }
     MPIU_CHKPMEM_COMMIT();
-
-    mpi_errno = find_free_entry(&index);
-    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
-
-    g_sc_tbl[index].fd = g_plfd_tbl[index].fd = g_lstn_plfd.fd;
-    g_plfd_tbl[index].events = POLLIN;
-    g_sc_tbl[index].handler = g_lstn_sc.handler;
 
  fn_exit:
     return mpi_errno;
@@ -150,6 +141,7 @@ static int free_sc_plfd_tbls (void)
     return mpi_errno;
 }
 
+#if 0
 /*
   Reason for not doing realloc for both sc and plfd tables :
   Either both the tables have to be expanded or both should remain the same size, if
@@ -203,6 +195,7 @@ static int expand_sc_plfd_tbls (void)
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
+#endif
 
 /*
   Finds the first free entry in the connection table/pollfd table. Note that both the
@@ -231,11 +224,14 @@ static int find_free_entry(int *index)
         goto fn_exit;
     }
 
+    MPIU_Assert(g_tbl_size != g_tbl_capacity);
+#if 0
     if (g_tbl_size == g_tbl_capacity) {
         mpi_errno = expand_sc_plfd_tbls();
         if (mpi_errno != MPI_SUCCESS)
             goto fn_fail;
     }
+#endif
     *index = g_tbl_size;
     ++g_tbl_size;
 
@@ -1075,6 +1071,30 @@ int MPID_nem_newtcp_module_init_sm()
 
     /* Allocate the PLFD table */
     alloc_sc_plfd_tbls();
+
+    /* set up listener socket */
+    g_lstn_plfd.fd = g_lstn_sc.fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    MPIU_ERR_CHKANDJUMP2 (g_lstn_sc.fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", strerror (errno), errno);
+
+    mpi_errno = MPID_nem_newtcp_module_set_sockopts (g_lstn_sc.fd);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+    g_lstn_plfd.events = POLLIN;
+    mpi_errno = MPID_nem_newtcp_module_bind (g_lstn_sc.fd);
+    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+    ret = listen (g_lstn_sc.fd, SOMAXCONN);	      
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**listen", "**listen %s %d", errno, strerror (errno));  
+    g_lstn_sc.state.lstate = LISTEN_STATE_LISTENING;
+    g_lstn_sc.handler = MPID_nem_newtcp_module_state_listening_handler;
+
+    g_sc_tbl[index].fd = g_plfd_tbl[index].fd = g_lstn_plfd.fd;
+    g_plfd_tbl[index].events = POLLIN;
+    g_sc_tbl[index].handler = g_lstn_sc.handler;
+
+    mpi_errno = find_free_entry(&index);
+    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
+
     return 0;
 }
 
@@ -1308,3 +1328,126 @@ events properly. This may be helpful in optimizing the code.
             }
         }
 */
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_get_business_card
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_get_business_card (int my_rank, char **bc_val_p, int *val_max_sz_p)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDU_Sock_ifaddr_t ifaddr;
+    char ifname[MAX_HOST_DESCRIPTION_LEN];
+    int ret;
+    struct sockaddr_in sock_id;
+    socklen_t len;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
+    
+    mpi_errno = GetSockInterfaceAddr(my_rank, ifname, sizeof(ifname), &ifaddr);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
+    
+    mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_ADDR_KEY, ifname);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+        if (mpi_errno == MPIU_STR_NOMEM)
+        {
+            MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        }
+        else
+        {
+            MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+        }
+    }
+
+    len = sizeof(sock_id);
+    ret = getsockname (g_lstn_sc.fd, (struct sockaddr *)&sock_id, &len);
+    MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**getsockname", "**getsockname %s", strerror (errno));
+
+    mpi_errno = MPIU_Str_add_int_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_PORT_KEY, sock_id.sin_port);
+    if (mpi_errno != MPIU_STR_SUCCESS)
+    {
+        if (mpi_errno == MPIU_STR_NOMEM)
+        {
+            MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        }
+        else
+        {
+            MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+        }
+    }
+
+    {
+	char ifname[256];
+	unsigned char *p;
+	if (ifaddr.len > 0 && ifaddr.type == AF_INET)
+        {
+	    p = (unsigned char *)(ifaddr.ifaddr);
+	    MPIU_Snprintf( ifname, sizeof(ifname), "%u.%u.%u.%u", p[0], p[1], p[2], p[3] );
+	    MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"ifname = %s",ifname );
+	    mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_IFNAME_KEY, ifname);
+	    if (mpi_errno != MPIU_STR_SUCCESS)
+            {
+		if (mpi_errno == MPIU_STR_NOMEM)
+                {
+		    MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+		}
+		else
+                {
+		    MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+		}
+	    }
+	}
+    }
+
+    /*     printf("MPID_nem_newtcp_module_get_business_card. port=%d\n", sock_id.sin_port); */
+
+ fn_exit:
+/*     fprintf(stdout, "MPID_nem_newtcp_module_get_business_card Exit, mpi_errno=%d\n", mpi_errno); fflush(stdout); */
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_GET_BUSINESS_CARD);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+
+#undef FUNCNAME
+#define FUNCNAME get_addr_port_from_bc
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int get_addr_port_from_bc (const char *business_card, struct in_addr *addr, in_port_t *port)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int ret;
+    char ipaddr_str[INET_ADDRSTRLEN];
+    char ifname[256];
+    MPIDI_STATE_DECL(MPID_STATE_GET_ADDR_PORT_FROM_BC);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_GET_ADDR_PORT_FROM_BC);
+    
+    /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
+    ret = MPIU_Str_get_string_arg (business_card, MPIDI_CH3I_ADDR_KEY, ipaddr_str, INET_ADDRSTRLEN);
+    MPIU_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missinghost");
+
+    mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_PORT_KEY, (int *)port);
+    MPIU_ERR_CHKANDJUMP (mpi_errno != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingport");
+    /*     fprintf(stdout, "get_addr_port_from_bc buscard=%s  addr=%s port=%d\n",business_card, ipaddr_str, *port); fflush(stdout); */
+
+    ret = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_IFNAME_KEY, ifname, sizeof(ifname));
+    MPIU_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingifname");
+	
+    ret = inet_pton (AF_INET, (const char *)ifname, addr);
+    MPIU_ERR_CHKANDJUMP(ret == 0, mpi_errno,MPI_ERR_OTHER,"**ifnameinvalid");
+    MPIU_ERR_CHKANDJUMP(ret < 0, mpi_errno, MPI_ERR_OTHER, "**afinetinvalid");
+    
+ fn_exit:
+/*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
+    MPIDI_FUNC_EXIT(MPID_STATE_GET_ADDR_PORT_FROM_BC);
+    return mpi_errno;
+ fn_fail:
+/*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    goto fn_exit;
+}

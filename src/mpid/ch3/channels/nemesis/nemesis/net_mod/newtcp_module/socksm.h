@@ -19,7 +19,7 @@ typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 
 enum CONSTS {
-    CONN_PLFD_TBL_INIT_SIZE = 20,
+    CONN_PLFD_TBL_INIT_SIZE = 1000, /* FIXME: Table growth is buggy; make sure this is large */
     CONN_PLFD_TBL_GROW_SIZE = 10,
     CONN_INVALID_FD = -1,
     CONN_INVALID_RANK = -1,
