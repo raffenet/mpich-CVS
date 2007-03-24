@@ -86,7 +86,7 @@ $(LIBNAME): $(DLOOP_OBJECTS)
 	@cp typesize_support.o ROMIO_typesize_support.o
 	@cp segment_ops.o ROMIO_segment_ops.o
 	$(Q) "  AR		$@"
-	$(E)$(AR) $(LIBNAME) $(DLOOP_OBJECTS)
+	$(E)$(AR) $(LIBNAME) $(DLOOP_RENAMED_OBJECTS)
 	$(Q) "  RANLIB	$@"
 	$(E)$(RANLIB) $(LIBNAME)  
 
