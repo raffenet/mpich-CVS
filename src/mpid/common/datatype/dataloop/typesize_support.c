@@ -163,7 +163,7 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 
     mpi_errno = PMPI_Type_get_envelope(type, &nr_ints, &nr_aints,
 				       &nr_types, &combiner);
-    assert(mpi_errno == MPI_SUCCESS);
+    DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
     if (combiner == MPI_COMBINER_NAMED) {
 	int mpisize;
@@ -662,7 +662,7 @@ static int DLOOP_Structalign_integer_max()
     if (is_eight) { is_four = 0; is_two = 0; }
     if (is_four) is_two = 0;
 
-    assert(is_packed + is_two + is_four + is_eight == 1);
+    DLOOP_Assert(is_packed + is_two + is_four + is_eight == 1);
 
     if (is_packed) return 1;
     if (is_two)    return 2;
@@ -702,7 +702,7 @@ static int DLOOP_Structalign_float_max()
     if (is_eight) { is_four = 0; is_two = 0; }
     if (is_four) is_two = 0;
 
-    assert(is_packed + is_two + is_four + is_eight + is_sixteen == 1);
+    DLOOP_Assert(is_packed + is_two + is_four + is_eight + is_sixteen == 1);
 
     if (is_packed)  return 1;
     if (is_two)     return 2;
@@ -739,7 +739,7 @@ static int DLOOP_Structalign_double_max()
     if (is_eight) { is_four = 0; is_two = 0; }
     if (is_four) is_two = 0;
 
-    assert(is_packed + is_two + is_four + is_eight == 1);
+    DLOOP_Assert(is_packed + is_two + is_four + is_eight == 1);
 
     if (is_packed) return 1;
     if (is_two)    return 2;
@@ -786,7 +786,7 @@ static int DLOOP_Structalign_long_double_max()
     if (is_eight) { is_four = 0; is_two = 0; }
     if (is_four) is_two = 0;
 
-    assert(is_packed + is_two + is_four + is_eight + is_sixteen == 1);
+    DLOOP_Assert(is_packed + is_two + is_four + is_eight + is_sixteen == 1);
 
     if (is_packed)  return 1;
     if (is_two)     return 2;
