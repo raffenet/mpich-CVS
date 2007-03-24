@@ -7,8 +7,6 @@
  * Note: This code originally appeared in ROMIO.
  */
 
-#include <mpi.h>
-
 #include "dataloop.h"
 
 int PREPEND_PREFIX(Type_convert_subarray)(int ndims,

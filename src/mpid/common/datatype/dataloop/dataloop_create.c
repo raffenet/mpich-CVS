@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "dataloop.h"
+#include "./dataloop.h"
 
 static void DLOOP_Dataloop_create_named(MPI_Datatype type,
 					DLOOP_Dataloop **dlp_p,
@@ -251,7 +251,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 		}
 	    }
 	    if (combiner == MPI_COMBINER_STRUCT_INTEGER) {
-		disps = (MPI_Aint *) MPIU_Malloc(ints[0] * sizeof(MPI_Aint));
+		disps = (MPI_Aint *) DLOOP_Malloc(ints[0] * sizeof(MPI_Aint));
 
 		for (i=0; i < ints[0]; i++) {
 		    disps[i] = (MPI_Aint) ints[ints[0] + 1 + i];
@@ -269,7 +269,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 						   flag);
 
 	    if (combiner == MPI_COMBINER_STRUCT_INTEGER) {
-		MPIU_Free(disps);
+		DLOOP_Free(disps);
 	    }
 	    break;
 	case MPI_COMBINER_SUBARRAY:
