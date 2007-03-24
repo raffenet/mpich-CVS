@@ -319,29 +319,29 @@ typedef struct DLOOP_Segment {
     /* other, device-specific information */
 } DLOOP_Segment;
 
-/* Dataloop functions */
+/* Dataloop functions (dataloop.c) */
 void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 				   void *src,
 				   int size);
-void PREPEND_PREFIX(Dataloop_update)(struct DLOOP_Dataloop *dataloop,
+void PREPEND_PREFIX(Dataloop_update)(DLOOP_Dataloop *dataloop,
 				     DLOOP_Offset ptrdiff);
 DLOOP_Offset
-PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
+PREPEND_PREFIX(Dataloop_stream_size)(DLOOP_Dataloop *dl_p,
 				     DLOOP_Offset (*sizefn)(DLOOP_Type el_type));
-void PREPEND_PREFIX(Dataloop_print)(struct DLOOP_Dataloop *dataloop,
+void PREPEND_PREFIX(Dataloop_print)(DLOOP_Dataloop *dataloop,
 				    int depth);
 
 void PREPEND_PREFIX(Dataloop_alloc)(int kind,
-				    int count,
+				    DLOOP_Count count,
 				    DLOOP_Dataloop **new_loop_p,
 				    int *new_loop_sz_p);
 void PREPEND_PREFIX(Dataloop_alloc_and_copy)(int kind,
-					     int count,
-					     struct DLOOP_Dataloop *old_loop,
+					     DLOOP_Count count,
+					     DLOOP_Dataloop *old_loop,
 					     int old_loop_sz,
-					     struct DLOOP_Dataloop **new_loop_p,
+					     DLOOP_Dataloop **new_loop_p,
 					     int *new_loop_sz_p);
-void PREPEND_PREFIX(Dataloop_struct_alloc)(int count,
+void PREPEND_PREFIX(Dataloop_struct_alloc)(DLOOP_Count count,
 					   int old_loop_sz,
 					   int basic_ct,
 					   DLOOP_Dataloop **old_loop_p,
@@ -351,55 +351,66 @@ void PREPEND_PREFIX(Dataloop_dup)(DLOOP_Dataloop *old_loop,
 				  int old_loop_sz,
 				  DLOOP_Dataloop **new_loop_p);
 
-void PREPEND_PREFIX(Dataloop_free)(struct DLOOP_Dataloop **dataloop);
+void PREPEND_PREFIX(Dataloop_free)(DLOOP_Dataloop **dataloop);
 
-/* Segment functions */
-struct DLOOP_Segment * PREPEND_PREFIX(Segment_alloc)(void);
+/* Segment functions (segment.c) */
+DLOOP_Segment * PREPEND_PREFIX(Segment_alloc)(void);
 
-void PREPEND_PREFIX(Segment_free)(struct DLOOP_Segment *segp);
+void PREPEND_PREFIX(Segment_free)(DLOOP_Segment *segp);
 
 int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 				 DLOOP_Count count,
 				 DLOOP_Handle handle,
-				 struct DLOOP_Segment *segp,
+				 DLOOP_Segment *segp,
 				 int hetero);
 
 void
-PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
+PREPEND_PREFIX(Segment_manipulate)(DLOOP_Segment *segp,
 				   DLOOP_Offset first, 
 				   DLOOP_Offset *lastp, 
 				   int (*piecefn) (DLOOP_Offset *blocks_p,
 						   DLOOP_Type el_type,
 						   DLOOP_Offset rel_off,
-						   void *bufp,
+						   DLOOP_Buffer bufp,
 						   void *v_paramp),
 				   int (*vectorfn) (DLOOP_Offset *blocks_p,
-						    int count,
-						    int blklen,
+						    DLOOP_Count count,
+						    DLOOP_Count blklen,
 						    DLOOP_Offset stride,
 						    DLOOP_Type el_type,
 						    DLOOP_Offset rel_off,
-						    void *bufp,
+						    DLOOP_Buffer bufp,
 						    void *v_paramp),
 				   int (*blkidxfn) (DLOOP_Offset *blocks_p,
-						    int count,
-						    int blklen,
+						    DLOOP_Count count,
+						    DLOOP_Count blklen,
 						    DLOOP_Offset *offsetarray,
 						    DLOOP_Type el_type,
 						    DLOOP_Offset rel_off,
-						    void *bufp,
+						    DLOOP_Buffer bufp,
 						    void *v_paramp),
 				   int (*indexfn) (DLOOP_Offset *blocks_p,
-						   int count,
-						   int *blockarray,
+						   DLOOP_Count count,
+						   DLOOP_Count *blockarray,
 						   DLOOP_Offset *offsetarray,
 						   DLOOP_Type el_type,
 						   DLOOP_Offset rel_off,
-						   void *bufp,
+						   DLOOP_Buffer bufp,
 						   void *v_paramp),
 				   DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
 				   void *pieceparams);
 
+/* Common segment operations (segment_ops.c) */
+void PREPEND_PREFIX(Segment_count_contig_blocks)(DLOOP_Segment *segp,
+						 DLOOP_Offset first,
+						 DLOOP_Offset *lastp,
+						 int *countp);
+void PREPEND_PREFIX(Segment_mpi_flatten)(DLOOP_Segment *segp,
+					 DLOOP_Offset first,
+					 DLOOP_Offset *lastp,
+					 int *blklens,
+					 MPI_Aint *disps,
+					 int *lengthp);
 #endif
 
 
