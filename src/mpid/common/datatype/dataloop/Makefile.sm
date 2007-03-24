@@ -1,6 +1,7 @@
 lib${MPILIBNAME}_a_SOURCES = \
 	dataloop.c \
 	segment.c \
+	segment_ops.c \
 	dataloop_create.c \
 	dataloop_create_contig.c \
 	dataloop_create_vector.c \

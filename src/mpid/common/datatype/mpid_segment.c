@@ -429,41 +429,6 @@ void MPID_Segment_flatten(struct DLOOP_Segment *segp,
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Segment_count_contig_blocks
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-/* MPID_Segment_count_contig_blocks()
- *
- * Count number of contiguous regions in segment between first and last.
- */
-void MPID_Segment_count_contig_blocks(struct DLOOP_Segment *segp,
-				      DLOOP_Offset first,
-				      DLOOP_Offset *lastp,
-				      int *countp)
-{
-    struct MPID_Segment_piece_params packvec_params;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_COUNT_CONTIG_BLOCKS);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_COUNT_CONTIG_BLOCKS);
-
-    packvec_params.u.contig_blocks.last_loc = NULL;
-    packvec_params.u.contig_blocks.count    = 0;
-
-    MPID_Segment_manipulate(segp,
-			    first,
-			    lastp,
-			    MPID_Segment_contig_count_block,
-			    NULL, /* vector fn */
-			    NULL, /* blkidx fn */
-			    NULL, /* index fn */
-                            NULL, /* size fn */
-			    &packvec_params);
-
-    *countp = packvec_params.u.contig_blocks.count;
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_COUNT_CONTIG_BLOCKS);
-}
-
 /*
  * EVERYTHING BELOW HERE IS USED ONLY WITHIN THIS FILE
  */
@@ -779,54 +744,6 @@ static int MPID_Segment_vector_flatten(DLOOP_Offset *blocks_p,
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_VECTOR_FLATTEN);
     return 0;
 }
-
-/********** FUNCTIONS FOR COUNTING THE # OF CONTIGUOUS REGIONS IN A TYPE **********/
-
-#undef FUNCNAME
-#define FUNCNAME MPID_Segment_contig_count_block
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-/* MPID_Segment_contig_count_block
- */
-static int MPID_Segment_contig_count_block(DLOOP_Offset *blocks_p,
-                                           DLOOP_Type el_type,
-					   DLOOP_Offset rel_off,
-					   void *bufp,
-					   void *v_paramp)
-{
-    int el_size;
-    DLOOP_Offset size;
-    struct MPID_Segment_piece_params *paramp = v_paramp;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_CONTIG_COUNT_BLOCK);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_SEGMENT_CONTIG_COUNT_BLOCK);
-
-    el_size = MPID_Datatype_get_basic_size(el_type);
-    size = *blocks_p * (DLOOP_Offset) el_size;
-
-#ifdef MPID_SP_VERBOSE
-#if 0
-    MPIU_dbg_printf("contig count block: count = %d, buf+off = %d, lastloc = %d\n",
-		    (int) paramp->u.contig_blocks.count,
-		    (int) ((char *) bufp + rel_off),
-		    (int) paramp->u.contig_blocks.last_loc);
-#endif
-#endif
-
-    if (paramp->u.contig_blocks.count > 0 && ((char *) bufp + rel_off) == paramp->u.contig_blocks.last_loc)
-    {
-	/* this region is adjacent to the last */
-	paramp->u.contig_blocks.last_loc += size;
-    }
-    else {
-	/* new region */
-	paramp->u.contig_blocks.last_loc = (char *) bufp + rel_off + size;
-	paramp->u.contig_blocks.count++;
-    }
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_COUNT_BLOCK);
-    return 0;
-}
-
 
 /********** FUNCTIONS FOR UNPACKING INTO A BUFFER **********/
 
