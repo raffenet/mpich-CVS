@@ -6,6 +6,21 @@ srcdir      = @srcdir@
 CC_SHL      = @CC_SHL@
 SHLIBNAME   = @SHLIBNAME@
 
+QUIET_COMPILE = 1
+ifdef V
+	QUIET_COMPILE = 0
+endif
+
+ifeq ($(QUIET_COMPILE),1)
+	# say a one-line description of the action, do not echo the command
+	Q=@echo
+	E=@	
+else
+	# do not say the short Q lines, but do echo the entire command
+	Q=@echo >/dev/null
+	E=
+endif
+
 INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../include -I${srcdir}/../../mpi-io \
 		-I${srcdir}/../../adio/include -I../../adio/include \
 		-I${srcdir}/../../../../../src/include  \
@@ -23,7 +38,7 @@ DLOOP_OBJECTS = contents_support.o darray_support.o dataloop.o \
 		dataloop_create_contig.o dataloop_create_indexed.o \
 		dataloop_create_pairtype.o dataloop_create_struct.o \
 		dataloop_create_vector.o romio_dataloop.o segment.o \
-		subarray_support.o typesize_support.o
+		subarray_support.o typesize_support.o segment_ops.o
 
 all: $(LIBNAME)
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
@@ -33,7 +48,8 @@ all: $(LIBNAME)
 .SUFFIXES: $(SUFFIXES) .p .lo
 
 .c.o:
-	$(CC) $(CFLAGS) -c $<
+	$(Q) "  CC		$@"
+	$(E)$(CC) $(CFLAGS) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) $(CFLAGS) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
@@ -47,8 +63,10 @@ profile:
 	sleep 1
 
 $(LIBNAME): $(DLOOP_OBJECTS)
-	$(AR) $(LIBNAME) $(DLOOP_OBJECTS)
-	$(RANLIB) $(LIBNAME)  
+	$(Q) "  AR		$@"
+	$(E)$(AR) $(LIBNAME) $(DLOOP_OBJECTS)
+	$(Q) "  RANLIB	$@"
+	$(E)$(RANLIB) $(LIBNAME)  
 
 DLOOP_LOOBJECTS = $(DLOOP_OBJECTS:.o=.lo)
 $(SHLIBNAME).la: $(DLOOP_LOOBJECTS)

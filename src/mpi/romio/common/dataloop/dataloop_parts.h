@@ -319,7 +319,7 @@ typedef struct DLOOP_Segment {
     /* other, device-specific information */
 } DLOOP_Segment;
 
-/* Dataloop functions */
+/* Dataloop functions (dataloop.c) */
 void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 				   void *src,
 				   int size);
@@ -353,7 +353,7 @@ void PREPEND_PREFIX(Dataloop_dup)(DLOOP_Dataloop *old_loop,
 
 void PREPEND_PREFIX(Dataloop_free)(DLOOP_Dataloop **dataloop);
 
-/* Segment functions */
+/* Segment functions (segment.c) */
 DLOOP_Segment * PREPEND_PREFIX(Segment_alloc)(void);
 
 void PREPEND_PREFIX(Segment_free)(DLOOP_Segment *segp);
@@ -371,7 +371,7 @@ PREPEND_PREFIX(Segment_manipulate)(DLOOP_Segment *segp,
 				   int (*piecefn) (DLOOP_Offset *blocks_p,
 						   DLOOP_Type el_type,
 						   DLOOP_Offset rel_off,
-						   void *bufp,
+						   DLOOP_Buffer bufp,
 						   void *v_paramp),
 				   int (*vectorfn) (DLOOP_Offset *blocks_p,
 						    DLOOP_Count count,
@@ -379,7 +379,7 @@ PREPEND_PREFIX(Segment_manipulate)(DLOOP_Segment *segp,
 						    DLOOP_Offset stride,
 						    DLOOP_Type el_type,
 						    DLOOP_Offset rel_off,
-						    void *bufp,
+						    DLOOP_Buffer bufp,
 						    void *v_paramp),
 				   int (*blkidxfn) (DLOOP_Offset *blocks_p,
 						    DLOOP_Count count,
@@ -387,7 +387,7 @@ PREPEND_PREFIX(Segment_manipulate)(DLOOP_Segment *segp,
 						    DLOOP_Offset *offsetarray,
 						    DLOOP_Type el_type,
 						    DLOOP_Offset rel_off,
-						    void *bufp,
+						    DLOOP_Buffer bufp,
 						    void *v_paramp),
 				   int (*indexfn) (DLOOP_Offset *blocks_p,
 						   DLOOP_Count count,
@@ -395,11 +395,22 @@ PREPEND_PREFIX(Segment_manipulate)(DLOOP_Segment *segp,
 						   DLOOP_Offset *offsetarray,
 						   DLOOP_Type el_type,
 						   DLOOP_Offset rel_off,
-						   void *bufp,
+						   DLOOP_Buffer bufp,
 						   void *v_paramp),
 				   DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
 				   void *pieceparams);
 
+/* Common segment operations (segment_ops.c) */
+void PREPEND_PREFIX(Segment_count_contig_blocks)(DLOOP_Segment *segp,
+						 DLOOP_Offset first,
+						 DLOOP_Offset *lastp,
+						 int *countp);
+void PREPEND_PREFIX(Segment_mpi_flatten)(DLOOP_Segment *segp,
+					 DLOOP_Offset first,
+					 DLOOP_Offset *lastp,
+					 int *blklens,
+					 MPI_Aint *disps,
+					 int *lengthp);
 #endif
 
 

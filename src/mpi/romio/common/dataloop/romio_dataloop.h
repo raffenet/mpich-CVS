@@ -11,6 +11,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
+/* romioconf.h must be included *before* mpi.h to avoid some redeclarations */
+#include "romioconf.h"
+
 #include <mpi.h>
 
 /* Note: this is where you define the prefix that will be prepended on

@@ -25,10 +25,7 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
 					     MPI_Aint *aints,
 					     MPI_Datatype *types,
 					     DLOOP_Type_footprint *tfp);
-static DLOOP_Offset DLOOP_Type_struct_alignsize(int count,
-						int *blklen_array,
-						MPI_Aint *displacement_array,
-						MPI_Datatype *oldtype_array);
+static int DLOOP_Named_type_alignsize(MPI_Datatype type, MPI_Aint disp);
 static int DLOOP_Structalign_integer_max(void);
 static int DLOOP_Structalign_float_max(void);
 static int DLOOP_Structalign_double_max(void);
@@ -178,7 +175,7 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 	tfp->lb      = 0;
 	tfp->ub      = (DLOOP_Offset) mpiextent;
 	tfp->extent  = (DLOOP_Offset) mpiextent;
-	tfp->alignsz = (DLOOP_Offset) mpiextent; /* think MPI_SHORT_INT */
+	tfp->alignsz = DLOOP_Named_type_alignsize(type, (MPI_Aint) 0);
 	tfp->has_sticky_lb = (type == MPI_LB) ? 1 : 0;
 	tfp->has_sticky_ub = (type == MPI_UB) ? 1 : 0;
 
@@ -398,7 +395,7 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
 					     DLOOP_Type_footprint *tfp)
 {
     int i, found_sticky_lb = 0, found_sticky_ub = 0, first_iter = 1;
-    DLOOP_Offset tmp_extent, tmp_alignsz, tmp_lb, tmp_ub;
+    DLOOP_Offset tmp_extent, max_alignsz = 0, tmp_lb, tmp_ub;
     DLOOP_Offset tmp_size = 0, min_lb = 0, max_ub = 0;
 
     int nr_ints, nr_aints, nr_types, combiner;
@@ -441,6 +438,19 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
 
 	tmp_size += size * ints[i+1];
 
+	if (combiner == MPI_COMBINER_NAMED) {
+	    /* NOTE: This is a special case. If a user creates a struct
+	     *       with a named type at a non-zero displacement, the
+	     *       alignment may be different than expected due to 
+	     *       special compiler rules for this case. Thus we must
+	     *       over-ride the value that we obtained from
+	     *       Type_calc_footprint() above.
+	     */
+	    alignsz = DLOOP_Named_type_alignsize(types[i], aints[i]);
+	}
+
+	if (max_alignsz < alignsz) max_alignsz = alignsz;
+  
 	/* We save this LB if:
 	 * (1) this is our first iteration where we saw a nonzero blklen,
 	 * (2) we haven't found a sticky LB and this LB is lower than
@@ -472,18 +482,14 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
     /* calculate extent, not including potential padding */
     tmp_extent = max_ub - min_lb;
 
-    /* alignsz calculated in separate function */
-    tmp_alignsz = DLOOP_Type_struct_alignsize(ints[0], &ints[1], aints,
-					      types);
-
     /* account for padding if no sticky LB/UB is found */
     if ((!found_sticky_lb) && (!found_sticky_ub)) {
 	DLOOP_Offset epsilon;
 
-	epsilon = (tmp_alignsz > 0) ? tmp_extent % tmp_alignsz : 0;
+	epsilon = (max_alignsz > 0) ? tmp_extent % max_alignsz : 0;
 
 	if (epsilon) {
-	    max_ub += (tmp_alignsz - epsilon);
+	    max_ub += (max_alignsz - epsilon);
 	    tmp_extent = max_ub - min_lb;
 	}
     }
@@ -496,34 +502,26 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
     tfp->lb      = min_lb;
     tfp->ub      = max_ub;
     tfp->extent  = tmp_extent;
-    tfp->alignsz = tmp_alignsz;
+    tfp->alignsz = max_alignsz;
     tfp->has_sticky_lb = found_sticky_lb;
     tfp->has_sticky_ub = found_sticky_ub;
     return;
 }
 
 /*
- DLOOP_Type_struct_alignsize - calculate alignment in bytes for a struct
-                               based on constituent elements.
-
- Correctly handles presence of LBs, UBs, and zero-length blocks.
+ DLOOP_Named_type_alignsize - calculate alignment in bytes for a struct
+                              based on constituent elements.
 
  Returns alignment in bytes.
 */
-static DLOOP_Offset DLOOP_Type_struct_alignsize(int count,
-						int *blklen_array,
-						MPI_Aint *disp_array,
-						MPI_Datatype *oldtype_array)
+static int DLOOP_Named_type_alignsize(MPI_Datatype type, MPI_Aint disp)
 {
-    int i, max_alignsize = 0, tmp_alignsize, derived_alignsize = 0;
-    int nr_ints, nr_aints, nr_types, combiner;
+    int alignsize = 0;
 
     static int havent_tested_align_rules = 1;
     static int max_intalign = 0, max_fpalign = 0;
     static int have_double_pos_align = 0, have_llint_pos_align = 0;
     static int max_doublealign = 0, max_longdoublealign = 0;
-
-    DLOOP_Assert(count > 0);
 
     if (havent_tested_align_rules) {
 	max_intalign          = DLOOP_Structalign_integer_max();
@@ -536,62 +534,43 @@ static DLOOP_Offset DLOOP_Type_struct_alignsize(int count,
 	havent_tested_align_rules = 0;
     }
 
-    for (i=0; i < count; i++)
+    /* skip LBs, UBs, and elements with zero block length */
+    if (type == MPI_LB || type == MPI_UB)
+	return 0;
+
+    PMPI_Type_size(type, &alignsize);
+
+    switch(type)
     {
-	/* skip LBs, UBs, and elements with zero block length */
-	if (oldtype_array[i] == MPI_LB || oldtype_array[i] == MPI_UB ||
-	    blklen_array[i] == 0) continue;
-
-	PMPI_Type_get_envelope(oldtype_array[i],
-			       &nr_ints, &nr_aints, &nr_types, &combiner);
-
-	if (combiner == MPI_COMBINER_NAMED)
-	{
-	    PMPI_Type_size(oldtype_array[i], &tmp_alignsize);
-
-	    switch(oldtype_array[i])
+	case MPI_FLOAT:
+	    if (alignsize > max_fpalign)
+		alignsize = max_fpalign;
+	    break;
+	case MPI_DOUBLE:
+	    if (alignsize > max_doublealign)
+		alignsize = max_doublealign;
+	    
+	    if (have_double_pos_align && disp != (MPI_Aint) 0)
+		alignsize = 4; /* would be better to test */
+	    break;
+	case MPI_LONG_DOUBLE:
+	    if (alignsize > max_longdoublealign)
+		alignsize = max_longdoublealign;
+	    break;
+	default:
+	    if (alignsize > max_intalign) 
+		alignsize = max_intalign;
+	    
+	    if (have_llint_pos_align &&
+		type == MPI_LONG_LONG_INT &&
+		disp != (MPI_Aint) 0)
 	    {
-		case MPI_FLOAT:
-		    if (tmp_alignsize > max_fpalign)
-			tmp_alignsize = max_fpalign;
-		    break;
-		case MPI_DOUBLE:
-		    if (tmp_alignsize > max_doublealign)
-			tmp_alignsize = max_doublealign;
-		    if (have_double_pos_align && disp_array[i] != (MPI_Aint) 0)
-			tmp_alignsize = 4; /* would be better to test */
-		    break;
-		case MPI_LONG_DOUBLE:
-		    if (tmp_alignsize > max_longdoublealign)
-			tmp_alignsize = max_longdoublealign;
-		    break;
-		default:
-		    if (tmp_alignsize > max_intalign) 
-			tmp_alignsize = max_intalign;
-
-		    if (have_llint_pos_align &&
-			oldtype_array[i] == MPI_LONG_LONG_INT &&
-			disp_array[i] != (MPI_Aint) 0)
-		    {
-			tmp_alignsize = 4; /* would be better to test */
-		    }
-		    break;
+		alignsize = 4; /* would be better to test */
 	    }
-	}
-	else
-	{
-	    MPID_Datatype *dtp;	    
-
-	    MPID_Datatype_get_ptr(oldtype_array[i], dtp);
-	    tmp_alignsize = dtp->alignsize;
-	    if (derived_alignsize < tmp_alignsize)
-		derived_alignsize = tmp_alignsize;
-	}
-	if (max_alignsize < tmp_alignsize) max_alignsize = tmp_alignsize;
-
+	    break;
     }
 
-    return max_alignsize;
+    return alignsize;
 }
 
 

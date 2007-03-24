@@ -2061,7 +2061,7 @@ AC_OUTPUT(Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile \
                    test/fcoll_test.f test/pfcoll_test.f test/fperf.f \
 		   mpi-io/glue/mpich2/Makefile \
 		   mpi-io/glue/mpich1/Makefile \
-		   mpi-io/glue/default/Makefile )
+		   mpi-io/glue/default/Makefile common/dataloop/Makefile )
 #
 rm -f *.o
 

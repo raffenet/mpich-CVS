@@ -12,7 +12,7 @@
 #endif
 
 static int DLOOP_Dataloop_create_struct_memory_error(void);
-static int DLOOP_Dataloop_create_unique_type_struct(DLOOP_Count count,
+static int DLOOP_Dataloop_create_unique_type_struct(int count,
 						    int *blklens,
 						    MPI_Aint *disps,
 						    DLOOP_Type *oldtypes,
@@ -22,7 +22,7 @@ static int DLOOP_Dataloop_create_unique_type_struct(DLOOP_Count count,
 						    int *dldepth_p,
 						    int flag);
 static int DLOOP_Dataloop_create_basic_all_bytes_struct(
-	       DLOOP_Count count,
+	       int count,
 	       int *blklens,
 	       MPI_Aint *disps,
 	       DLOOP_Type *oldtypes,
@@ -30,7 +30,7 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
 	       int *dlsz_p,
 	       int *dldepth_p,
 	       int flag);
-static int DLOOP_Dataloop_create_flattened_struct(DLOOP_Count count,
+static int DLOOP_Dataloop_create_flattened_struct(int count,
 						  int *blklens,
 						  MPI_Aint *disps,
 						  DLOOP_Type *oldtypes,
@@ -64,7 +64,7 @@ static int DLOOP_Dataloop_create_flattened_struct(DLOOP_Count count,
   or corrected in this code at this time.
 
 @*/
-int PREPEND_PREFIX(Dataloop_create_struct)(int icount,
+int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 					   int *blklens,
 					   MPI_Aint *disps,
 					   DLOOP_Type *oldtypes,
@@ -82,10 +82,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int icount,
     int loop_idx, new_loop_sz, new_loop_depth;
     int old_loop_sz = 0, old_loop_depth = 0;
 
-    DLOOP_Count count;
     DLOOP_Dataloop *new_dlp, *curpos;
-
-    count = (DLOOP_Count) icount; /* avoid subsequent casting */
 
     /* if count is zero, handle with contig code, call it a int */
     if (count == 0)
@@ -244,7 +241,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int icount,
     if ((flag == DLOOP_DATALOOP_HOMOGENEOUS) ||
 	     (flag == DLOOP_DATALOOP_ALL_BYTES))
     {
-	return DLOOP_Dataloop_create_flattened_struct(icount,
+	return DLOOP_Dataloop_create_flattened_struct(count,
 						      blklens,
 						      disps,
 						      oldtypes,
@@ -411,7 +408,7 @@ static int DLOOP_Dataloop_create_struct_memory_error(void)
 
 static int DLOOP_Dataloop_create_unique_type_struct(int count,
 						    int *blklens,
-						    DLOOP_Offset *disps,
+						    MPI_Aint *disps,
 						    DLOOP_Type *oldtypes,
 						    int type_pos,
 						    DLOOP_Dataloop **dlp_p,
@@ -464,8 +461,8 @@ static int DLOOP_Dataloop_create_unique_type_struct(int count,
 						  dldepth_p,
 						  flag);
 
-    MPIU_Free(tmp_blklens);
-    MPIU_Free(tmp_disps);
+    DLOOP_Free(tmp_blklens);
+    DLOOP_Free(tmp_disps);
 
     return err;
 
@@ -500,7 +497,7 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_disps)
     {
-	MPIU_Free(tmp_blklens);
+	DLOOP_Free(tmp_blklens);
 	return DLOOP_Dataloop_create_struct_memory_error();
     }
     /* --END ERROR HANDLING-- */
@@ -509,10 +506,10 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
     {
 	if (oldtypes[i] != MPI_LB && oldtypes[i] != MPI_UB && blklens[i] != 0)
 	{
-	    int sz;
+	    DLOOP_Offset sz;
 
 	    DLOOP_Handle_get_size_macro(oldtypes[i], sz);
-	    tmp_blklens[cur_pos] = sz * blklens[i];
+	    tmp_blklens[cur_pos] = (int) sz * blklens[i];
 	    tmp_disps[cur_pos]   = disps[i];
 	    cur_pos++;
 	}
@@ -527,8 +524,8 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
 						  dldepth_p,
 						  flag);
     
-    MPIU_Free(tmp_blklens);
-    MPIU_Free(tmp_disps);
+    DLOOP_Free(tmp_blklens);
+    DLOOP_Free(tmp_disps);
 
     return err;
 }
@@ -544,7 +541,9 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 {
     /* arbitrary types, convert to bytes and use indexed */
     int i, err, *tmp_blklens, nr_blks = 0;
-    DLOOP_Offset *tmp_disps, bytes;
+    MPI_Aint *tmp_disps; /* since we're calling another fn that takes
+			    this type as an input parameter */
+    DLOOP_Offset bytes;
     DLOOP_VECTOR *iov_array;
     DLOOP_Segment *segp;
 
@@ -642,10 +641,11 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 	    
 	    last_ind = nr_blks - first_ind;
 	    bytes = SEGMENT_IGNORE_LAST;
-	    PREPEND_PREFIX(Segment_pack_vector)(segp,
+	    PREPEND_PREFIX(Segment_mpi_flatten)(segp,
 						0,
 						&bytes,
-						&iov_array[first_ind],
+						&tmp_blklens[first_ind],
+						&tmp_disps[first_ind],
 						&last_ind);
 	    first_ind += last_ind;
 	}
@@ -658,21 +658,13 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
         for (i=0; i < nr_blks; i++) {
 	MPIU_DBG_OUT_FMT(DATATYPE,(MPIU_DBG_FDEST,
 				   "a[%d] = (%d, %d)\n", i,
-				   iov_array[i].DLOOP_VECTOR_BUF,
-				   iov_array[i].DLOOP_VECTOR_LEN));
+				   tmp_blklens[i], tmp_disps[i]));
 	}
 	MPIU_DBG_OUT(DATATYPE,"--- end of flattened type ---");
     }
 #endif
 
-    for (i=0; i < nr_blks; i++)
-    {
-	tmp_blklens[i]  = (int) iov_array[i].DLOOP_VECTOR_LEN;
-	tmp_disps[i] = (MPI_Aint) iov_array[i].DLOOP_VECTOR_BUF;
-    }
-
     PREPEND_PREFIX(Segment_free)(segp);
-    MPIU_Free(iov_array);
 
     err = PREPEND_PREFIX(Dataloop_create_indexed)(nr_blks,
 						  tmp_blklens,
@@ -684,8 +676,8 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 						  dldepth_p,
 						  flag);
     
-    MPIU_Free(tmp_blklens);
-    MPIU_Free(tmp_disps);
+    DLOOP_Free(tmp_blklens);
+    DLOOP_Free(tmp_disps);
 
     return err;
 }
