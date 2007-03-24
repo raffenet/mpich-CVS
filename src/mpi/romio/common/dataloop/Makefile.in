@@ -40,6 +40,14 @@ DLOOP_OBJECTS = contents_support.o darray_support.o dataloop.o \
 		dataloop_create_vector.o romio_dataloop.o segment.o \
 		subarray_support.o typesize_support.o segment_ops.o
 
+DLOOP_RENAMED_OBJECTS = ROMIO_contents_support.o ROMIO_darray_support.o \
+	ROMIO_dataloop.o ROMIO_dataloop_create.o \
+	ROMIO_dataloop_create_blockindexed.o \
+	ROMIO_dataloop_create_contig.o ROMIO_dataloop_create_indexed.o \
+	ROMIO_dataloop_create_pairtype.o ROMIO_dataloop_create_struct.o \
+	ROMIO_dataloop_create_vector.o romio_dataloop.o ROMIO_segment.o \
+	ROMIO_subarray_support.o ROMIO_typesize_support.o ROMIO_segment_ops.o
+
 all: $(LIBNAME)
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    $(MAKE) $(SHLIBNAME).la ;\
@@ -63,6 +71,20 @@ profile:
 	sleep 1
 
 $(LIBNAME): $(DLOOP_OBJECTS)
+	@cp contents_support.o ROMIO_contents_support.o
+	@cp darray_support.o ROMIO_darray_support.o
+	@cp dataloop.o ROMIO_dataloop.o
+	@cp dataloop_create.o ROMIO_dataloop_create.o
+	@cp dataloop_create_blockindexed.o ROMIO_dataloop_create_blockindexed.o
+	@cp dataloop_create_contig.o ROMIO_dataloop_create_contig.o
+	@cp dataloop_create_indexed.o ROMIO_dataloop_create_indexed.o
+	@cp dataloop_create_pairtype.o ROMIO_dataloop_create_pairtype.o
+	@cp dataloop_create_struct.o ROMIO_dataloop_create_struct.o
+	@cp dataloop_create_vector.o ROMIO_dataloop_create_vector.o
+	@cp segment.o ROMIO_segment.o
+	@cp subarray_support.o ROMIO_subarray_support.o
+	@cp typesize_support.o ROMIO_typesize_support.o
+	@cp segment_ops.o ROMIO_segment_ops.o
 	$(Q) "  AR		$@"
 	$(E)$(AR) $(LIBNAME) $(DLOOP_OBJECTS)
 	$(Q) "  RANLIB	$@"
