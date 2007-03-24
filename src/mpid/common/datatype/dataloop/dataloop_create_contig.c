@@ -5,14 +5,14 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "dataloop.h"
+#include "./dataloop.h"
 
 /*@
    Dataloop_contiguous - create the dataloop representation for a
    contiguous datatype
 
    Arguments:
-+  int count,
++  int icount,
 .  MPI_Datatype oldtype,
 .  DLOOP_Dataloop **dlp_p,
 .  int *dlsz_p,
@@ -22,17 +22,20 @@
 .N Errors
 .N Returns 0 on success, -1 on failure.
 @*/
-int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
+int PREPEND_PREFIX(Dataloop_create_contiguous)(int icount,
 					       DLOOP_Type oldtype,
 					       DLOOP_Dataloop **dlp_p,
 					       int *dlsz_p,
 					       int *dldepth_p,
 					       int flag)
 {
+    DLOOP_Count count;
     int is_builtin, apply_contig_coalescing = 0;
     int new_loop_sz, new_loop_depth;
 
     DLOOP_Dataloop *new_dlp;
+
+    count = (DLOOP_Count) icount; /* avoid subsequent casting */
 
     is_builtin = (DLOOP_Handle_hasloop_macro(oldtype)) ? 0 : 1;
 
@@ -42,8 +45,8 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
     }
     else
     {
-	int old_loop_sz = 0, old_loop_depth = 0, old_size = 0;
-	DLOOP_Offset old_extent = 0;
+	int old_loop_sz = 0, old_loop_depth = 0;
+	DLOOP_Offset old_size = 0, old_extent = 0;
 	DLOOP_Dataloop *old_loop_ptr;
 
 	DLOOP_Handle_get_loopsize_macro(oldtype, old_loop_sz, flag);
@@ -68,7 +71,7 @@ int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
 
     if (is_builtin)
     {
-	int basic_sz = 0;
+	DLOOP_Offset basic_sz = 0;
 
 	PREPEND_PREFIX(Dataloop_alloc)(DLOOP_KIND_CONTIG,
 				       count,

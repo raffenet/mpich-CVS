@@ -5,15 +5,15 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "dataloop.h"
+#include "./dataloop.h"
 
 /*@
    Dataloop_create_vector
 
    Arguments:
-+  int count
-.  int blocklength
-.  MPI_Aint stride
++  int icount
+.  int iblocklength
+.  MPI_Aint astride
 .  int strideinbytes
 .  MPI_Datatype oldtype
 .  DLOOP_Dataloop **dlp_p
@@ -24,9 +24,9 @@
    Returns 0 on success, -1 on failure.
 
 @*/
-int PREPEND_PREFIX(Dataloop_create_vector)(int count,
-					   int blocklength,
-					   MPI_Aint stride,
+int PREPEND_PREFIX(Dataloop_create_vector)(int icount,
+					   int iblocklength,
+					   MPI_Aint astride,
 					   int strideinbytes,
 					   DLOOP_Type oldtype,
 					   DLOOP_Dataloop **dlp_p,
@@ -37,7 +37,13 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
     int err, is_builtin;
     int new_loop_sz, new_loop_depth;
 
+    DLOOP_Count count, blocklength;
+    DLOOP_Offset stride;
     DLOOP_Dataloop *new_dlp;
+
+    count       = (DLOOP_Count) icount; /* avoid subsequent casting */
+    blocklength = (DLOOP_Count) iblocklength;
+    stride      = (DLOOP_Offset) astride;
 
     /* if count or blocklength are zero, handle with contig code,
      * call it a int
@@ -59,7 +65,7 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
      * if count == 1, store as a contiguous rather than a vector dataloop.
      */
     if (count == 1) {
-	err = PREPEND_PREFIX(Dataloop_create_contiguous)(blocklength,
+	err = PREPEND_PREFIX(Dataloop_create_contiguous)(iblocklength,
 							 oldtype,
 							 dlp_p,
 							 dlsz_p,
@@ -87,7 +93,7 @@ int PREPEND_PREFIX(Dataloop_create_vector)(int count,
 
 
     if (is_builtin) {
-	int basic_sz = 0;
+	DLOOP_Offset basic_sz = 0;
 
 	PREPEND_PREFIX(Dataloop_alloc)(DLOOP_KIND_VECTOR,
 				       count,
