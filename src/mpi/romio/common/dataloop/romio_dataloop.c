@@ -12,11 +12,6 @@
  * isn't a factor (as it would be on BG* for example if we used ints or
  * MPI_Aints).
  *
- * The code is written such that if a value hasn't already been calculated,
- * then the value will be calculated and returned. This means that it is
- * always ok to just call the associated "get" function without ever calling
- * the "set" function.
- *
  * Additionally this code puts an attribute on MPI_COMM_WORLD with a delete
  * callback to clean up keyvals and any allocated memory (although currently
  * memory cleanup relies on the delete functions on the types being called
@@ -194,17 +189,11 @@ void MPIO_Datatype_get_loopptr(MPI_Datatype type,
     mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
-    if (!(dtp->valid & MPIO_DATATYPE_VALID_DLOOP_PTR)) {
-	MPIO_Dataloop_create(type,
-			     &dtp->dloop,
-			     &dtp->dloop_size,
-			     &dtp->dloop_depth, flag);
-	DLOOP_Assert(dtp->dloop != NULL);
+    if (!(dtp->valid & MPIO_DATATYPE_VALID_DLOOP_PTR))
+	*ptr_p = NULL;
+    else 
+	*ptr_p = dtp->dloop;
 
-	dtp->valid |= MPIO_DATATYPE_VALID_DATALOOP;
-    }
-
-    *ptr_p = dtp->dloop;
     return;
 }
 
@@ -220,17 +209,11 @@ void MPIO_Datatype_get_loopsize(MPI_Datatype type, int *size_p, int flag)
     mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
-    if (!(dtp->valid & MPIO_DATATYPE_VALID_DLOOP_SIZE)) {
-	MPIO_Dataloop_create(type,
-			     &dtp->dloop,
-			     &dtp->dloop_size,
-			     &dtp->dloop_depth, flag);
-	DLOOP_Assert(dtp->dloop != NULL);
+    if (!(dtp->valid & MPIO_DATATYPE_VALID_DLOOP_SIZE))
+	*size_p = -1;
+    else
+	*size_p = dtp->dloop_size;
 
-	dtp->valid |= MPIO_DATATYPE_VALID_DATALOOP;
-    }
-
-    *size_p = dtp->dloop_size;
     return;
 }
 
@@ -246,17 +229,11 @@ void MPIO_Datatype_get_loopdepth(MPI_Datatype type, int *depth_p, int flag)
     mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
-    if (!(dtp->valid & MPIO_DATATYPE_VALID_DLOOP_DEPTH)) {
-	MPIO_Dataloop_create(type,
-			     &dtp->dloop,
-			     &dtp->dloop_size,
-			     &dtp->dloop_depth, flag);
-	DLOOP_Assert(dtp->dloop != NULL);
+    if (!(dtp->valid & MPIO_DATATYPE_VALID_DLOOP_DEPTH))
+	*depth_p = -1;
+    else
+	*depth_p = dtp->dloop_depth;
 
-	dtp->valid |= MPIO_DATATYPE_VALID_DATALOOP;
-    }
-
-    *depth_p = dtp->dloop_depth;
     return;
 }
 
