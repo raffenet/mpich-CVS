@@ -35,7 +35,7 @@ while [ $nstarted -lt $nconn ] ; do
     if [ -n "$2" ] ; then
          sleep $2
     elif [ $blockcount -ge $blockstart ] ; then
-        $blockcount=0
+        blockcount=0
         sleep 1
     fi
 done
