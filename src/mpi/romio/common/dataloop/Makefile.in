@@ -71,28 +71,46 @@ profile:
 	sleep 1
 
 $(LIBNAME): $(DLOOP_OBJECTS)
-	@cp contents_support.o ROMIO_contents_support.o
-	@cp darray_support.o ROMIO_darray_support.o
-	@cp dataloop.o ROMIO_dataloop.o
-	@cp dataloop_create.o ROMIO_dataloop_create.o
+	# we must rename the objects prior to insertion into library
+	# in order to avoid name clashes with copies already in the
+	# MPICH2 library.
+	@cp contents_support.o 		ROMIO_contents_support.o
+	@cp darray_support.o 		ROMIO_darray_support.o
+	@cp dataloop.o 			ROMIO_dataloop.o
+	@cp dataloop_create.o 		ROMIO_dataloop_create.o
 	@cp dataloop_create_blockindexed.o ROMIO_dataloop_create_blockindexed.o
-	@cp dataloop_create_contig.o ROMIO_dataloop_create_contig.o
-	@cp dataloop_create_indexed.o ROMIO_dataloop_create_indexed.o
-	@cp dataloop_create_pairtype.o ROMIO_dataloop_create_pairtype.o
-	@cp dataloop_create_struct.o ROMIO_dataloop_create_struct.o
-	@cp dataloop_create_vector.o ROMIO_dataloop_create_vector.o
-	@cp segment.o ROMIO_segment.o
-	@cp subarray_support.o ROMIO_subarray_support.o
-	@cp typesize_support.o ROMIO_typesize_support.o
-	@cp segment_ops.o ROMIO_segment_ops.o
+	@cp dataloop_create_contig.o 	ROMIO_dataloop_create_contig.o
+	@cp dataloop_create_indexed.o 	ROMIO_dataloop_create_indexed.o
+	@cp dataloop_create_pairtype.o 	ROMIO_dataloop_create_pairtype.o
+	@cp dataloop_create_struct.o 	ROMIO_dataloop_create_struct.o
+	@cp dataloop_create_vector.o 	ROMIO_dataloop_create_vector.o
+	@cp segment.o 			ROMIO_segment.o
+	@cp subarray_support.o 		ROMIO_subarray_support.o
+	@cp typesize_support.o 		ROMIO_typesize_support.o
+	@cp segment_ops.o 		ROMIO_segment_ops.o
 	$(Q) "  AR		$@"
 	$(E)$(AR) $(LIBNAME) $(DLOOP_RENAMED_OBJECTS)
 	$(Q) "  RANLIB	$@"
 	$(E)$(RANLIB) $(LIBNAME)  
 
 DLOOP_LOOBJECTS = $(DLOOP_OBJECTS:.o=.lo)
+DLOOP_RENAMED_LOOBJECTS = $(DLOOP_RENAMED_OBJECTS:.o=.lo)
 $(SHLIBNAME).la: $(DLOOP_LOOBJECTS)
-	$(AR) $(SHLIBNAME).la $(DLOOP_LOOBJECTS)
+	@cp contents_support.lo 	ROMIO_contents_support.lo
+	@cp darray_support.lo 		ROMIO_darray_support.lo
+	@cp dataloop.lo 		ROMIO_dataloop.lo
+	@cp dataloop_create.lo 		ROMIO_dataloop_create.lo
+	@cp dataloop_create_blockindexed.lo ROMIO_dataloop_create_blockindexed.lo
+	@cp dataloop_create_contig.lo 	ROMIO_dataloop_create_contig.lo
+	@cp dataloop_create_indexed.lo 	ROMIO_dataloop_create_indexed.lo
+	@cp dataloop_create_pairtype.lo ROMIO_dataloop_create_pairtype.lo
+	@cp dataloop_create_struct.lo 	ROMIO_dataloop_create_struct.lo
+	@cp dataloop_create_vector.lo 	ROMIO_dataloop_create_vector.lo
+	@cp segment.lo 			ROMIO_segment.lo
+	@cp subarray_support.lo 	ROMIO_subarray_support.lo
+	@cp typesize_support.lo 	ROMIO_typesize_support.lo
+	@cp segment_ops.lo 		ROMIO_segment_ops.lo
+	$(AR) $(SHLIBNAME).la $(DLOOP_RENAMED_LOOBJECTS)
 
 clean:
 	@rm -f *.o *.lo *.gcno *.gcda *.bb *.bbg
