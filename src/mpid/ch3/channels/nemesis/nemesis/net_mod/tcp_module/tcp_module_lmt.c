@@ -175,7 +175,7 @@ int MPID_nem_tcp_module_lmt_start_send (MPIDI_VC_t *vc, MPID_Request *req, MPID_
     req->dev.segment_first = 0;
     req->dev.segment_size = data_sz;
     req->dev.iov_count = MPID_IOV_LIMIT;
-    req->ch.iov_offset = 0;        
+    req->dev.iov_offset = 0;        
     last = data_sz;
 
     do
@@ -305,7 +305,7 @@ int MPID_nem_tcp_module_lmt_start_recv (MPIDI_VC_t *vc, MPID_Request *req)
     req->dev.segment_first = 0;
     req->dev.segment_size = data_sz;
     req->dev.iov_count = MPID_IOV_LIMIT;
-    req->ch.iov_offset = 0;        
+    req->dev.iov_offset = 0;        
     last = data_sz;
 
     do

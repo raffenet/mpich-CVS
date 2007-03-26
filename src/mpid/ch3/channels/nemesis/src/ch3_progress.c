@@ -263,9 +263,9 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
             {
                 if (!sreq->ch.noncontig)
                 {
-                    MPIU_Assert(sreq->dev.iov_count > 0 && sreq->dev.iov[sreq->ch.iov_offset].MPID_IOV_LEN > 0);
+                    MPIU_Assert(sreq->dev.iov_count > 0 && sreq->dev.iov[sreq->dev.iov_offset].MPID_IOV_LEN > 0);
             
-                    iov = &sreq->dev.iov[sreq->ch.iov_offset];
+                    iov = &sreq->dev.iov[sreq->dev.iov_offset];
                     n_iov = sreq->dev.iov_count;
 
                     do 
@@ -277,12 +277,12 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
                     if (again) /* not finished sending */
                     {
-                        sreq->ch.iov_offset = iov - sreq->dev.iov;
+                        sreq->dev.iov_offset = iov - sreq->dev.iov;
                         sreq->dev.iov_count = n_iov;
                         break; /* break out of send progress */
                     }
                     else
-                        sreq->ch.iov_offset = 0;
+                        sreq->dev.iov_offset = 0;
                 }
                 else
                 {
@@ -304,9 +304,9 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
                 if (!sreq->ch.noncontig)
                 {
-                    MPIU_Assert(sreq->dev.iov_count > 0 && sreq->dev.iov[sreq->ch.iov_offset].MPID_IOV_LEN > 0);
+                    MPIU_Assert(sreq->dev.iov_count > 0 && sreq->dev.iov[sreq->dev.iov_offset].MPID_IOV_LEN > 0);
             
-                    iov = &sreq->dev.iov[sreq->ch.iov_offset];
+                    iov = &sreq->dev.iov[sreq->dev.iov_offset];
                     n_iov = sreq->dev.iov_count;
 
                     mpi_errno = MPID_nem_mpich2_sendv_header(&iov, &n_iov, sreq->ch.vc, &again);
@@ -323,12 +323,12 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
                     if (again) /* not finished sending */
                     {
-                        sreq->ch.iov_offset = iov - sreq->dev.iov;
+                        sreq->dev.iov_offset = iov - sreq->dev.iov;
                         sreq->dev.iov_count = n_iov;
                         break; /* break out of send progress */
                     }
                     else
-                        sreq->ch.iov_offset = 0;
+                        sreq->dev.iov_offset = 0;
                 }
                 else
                 {
@@ -502,7 +502,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
 
             /* Channel fields don't get initialized on request creation, init them here */
             if (rreq)
-                rreq->ch.iov_offset = 0;
+                rreq->dev.iov_offset = 0;
         }
         else if (vc_ch->recv_active)
         {
@@ -547,12 +547,12 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
                 continue;
             }
             /* Channel fields don't get initialized on request creation, init them here */
-            rreq->ch.iov_offset = 0;
+            rreq->dev.iov_offset = 0;
         }
         
         /* copy data into user buffer described by iov in rreq */
         MPIU_Assert(rreq);
-        MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN > 0);
+        MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->dev.iov_offset].MPID_IOV_LEN > 0);
 
         MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "    copying into user buffer from IOV");
 
@@ -569,7 +569,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
             MPID_IOV *iov;
             int n_iov;
                 
-            iov = &rreq->dev.iov[rreq->ch.iov_offset];
+            iov = &rreq->dev.iov[rreq->dev.iov_offset];
             n_iov = rreq->dev.iov_count;
 		
             while (n_iov && buflen >= iov->MPID_IOV_LEN)
@@ -592,7 +592,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
                     buflen = 0;
                 }
 		    
-                rreq->ch.iov_offset = iov - rreq->dev.iov;
+                rreq->dev.iov_offset = iov - rreq->dev.iov;
                 rreq->dev.iov_count = n_iov;
                 vc_ch->recv_active = rreq;
             }
@@ -615,8 +615,8 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
                         
                 if (!complete)
                 {
-                    rreq->ch.iov_offset = 0;
-                    MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN > 0);
+                    rreq->dev.iov_offset = 0;
+                    MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->dev.iov_offset].MPID_IOV_LEN > 0);
                     vc_ch->recv_active = rreq;
                     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...not complete");
                 }

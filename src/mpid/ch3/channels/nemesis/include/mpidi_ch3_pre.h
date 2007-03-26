@@ -36,10 +36,8 @@ MPIDI_CH3I_VC_state_t;
     struct MPIDI_CH3I_Request                                                                                                   \
     {                                                                                                                           \
         struct MPIDI_VC     *vc;                                                                                                \
-        int                  iov_offset;                                                                                        \
         int                  noncontig;                                                                                         \
         MPIDI_msg_sz_t       header_sz;                                                                                         \
-	/*        MPIDI_CH3_Pkt_t      pkt;	*/                                                                              \
                                                                                                                                 \
         MPI_Request          lmt_req_id;     /* request id of remote side */                                                    \
         struct MPID_Request *lmt_req;        /* pointer to original send/recv request */                                        \

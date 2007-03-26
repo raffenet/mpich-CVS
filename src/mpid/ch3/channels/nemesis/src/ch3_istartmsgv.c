@@ -122,7 +122,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
 	    {
 		sreq->dev.iov[j] = remaining_iov[j];
 	    }
-	    sreq->ch.iov_offset = 0;
+	    sreq->dev.iov_offset = 0;
 	    sreq->dev.iov_count = remaining_n_iov;
 	    sreq->dev.OnDataAvail = 0;
             sreq->ch.noncontig = FALSE;
@@ -160,7 +160,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
 	    sreq->dev.iov[i] = iov[i];
 	}
 
-	sreq->ch.iov_offset = 0;
+	sreq->dev.iov_offset = 0;
 	sreq->dev.iov_count = n_iov;
 	sreq->dev.OnDataAvail = 0;
         sreq->ch.noncontig = FALSE;

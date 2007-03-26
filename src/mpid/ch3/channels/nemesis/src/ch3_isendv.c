@@ -88,7 +88,7 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 	    {
 		sreq->dev.iov[j] = remaining_iov[j];
 	    }
-	    sreq->ch.iov_offset = 0;
+	    sreq->dev.iov_offset = 0;
 	    sreq->dev.iov_count = remaining_n_iov;
             sreq->ch.noncontig = FALSE;
 	    sreq->ch.vc = vc;
@@ -116,7 +116,7 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 
                 if (!complete)
                 {
-                    sreq->ch.iov_offset = 0;
+                    sreq->dev.iov_offset = 0;
                     sreq->ch.noncontig = FALSE;
                     sreq->ch.vc = vc;
                     MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);
@@ -146,7 +146,7 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 	}
 
 	sreq->dev.iov_count = n_iov;
-	sreq->ch.iov_offset = 0;
+	sreq->dev.iov_offset = 0;
         sreq->ch.noncontig = FALSE;
 	sreq->ch.vc = vc;
 	MPIDI_CH3I_SendQ_enqueue (sreq, CH3_NORMAL_QUEUE);

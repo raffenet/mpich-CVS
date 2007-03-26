@@ -89,7 +89,7 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 	sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->dev.pending_pkt;
 	sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz;
 	sreq->dev.iov_count = 1;
-	sreq->ch.iov_offset = 0;
+	sreq->dev.iov_offset = 0;
         sreq->ch.noncontig = FALSE;
 	sreq->ch.vc = vc;
 	sreq->dev.OnDataAvail = 0;

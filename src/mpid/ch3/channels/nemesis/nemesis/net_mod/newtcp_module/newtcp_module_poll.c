@@ -72,7 +72,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
     {
         /* there is a pending receive, receive it directly into the user buffer */
         MPID_Request *rreq = ((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active;
-        MPID_IOV *iov = &rreq->dev.iov[rreq->ch.iov_offset];
+        MPID_IOV *iov = &rreq->dev.iov[rreq->dev.iov_offset];
         int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
 
         CHECK_EINTR(bytes_recvd, readv(sc->fd, iov, rreq->dev.iov_count));
@@ -92,17 +92,17 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
         MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "Cont recv %d", bytes_recvd);
 
         /* update the iov */
-        for (iov = &rreq->dev.iov[rreq->ch.iov_offset]; iov < &rreq->dev.iov[rreq->ch.iov_offset + rreq->dev.iov_count]; ++iov)
+        for (iov = &rreq->dev.iov[rreq->dev.iov_offset]; iov < &rreq->dev.iov[rreq->dev.iov_offset + rreq->dev.iov_count]; ++iov)
         {
             if (bytes_recvd < iov->MPID_IOV_LEN)
             {
                 iov->MPID_IOV_BUF = (char *)iov->MPID_IOV_BUF + bytes_recvd;
                 iov->MPID_IOV_LEN -= bytes_recvd;
-                rreq->dev.iov_count = &rreq->dev.iov[rreq->ch.iov_offset + rreq->dev.iov_count] - iov;
-                rreq->ch.iov_offset = iov - rreq->dev.iov;
+                rreq->dev.iov_count = &rreq->dev.iov[rreq->dev.iov_offset + rreq->dev.iov_count] - iov;
+                rreq->dev.iov_offset = iov - rreq->dev.iov;
                 MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "bytes_recvd = %d", bytes_recvd);
                 MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov len = %d", iov->MPID_IOV_LEN);
-                MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov_offset = %d", rreq->ch.iov_offset);
+                MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov_offset = %d", rreq->dev.iov_offset);
                 goto fn_exit;
             }
             bytes_recvd -= iov->MPID_IOV_LEN;
