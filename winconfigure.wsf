@@ -3221,8 +3221,8 @@ End Sub
 Sub WriteHeader( fout, str )
 	fout.WriteLine( "/* -*- Mode: C; c-basic-offset:4 ; -*- */" & vbNewLine & "/*" & vbNewLine & " *  (C) 2001 by Argonne National Laboratory." & vbNewLine & " *      See COPYRIGHT in top-level directory." & vbNewLine & " */" )
 	fout.WriteLine("")
-	fout.WriteLine("#ifndef " & UCase(str) & "CONF_H")
-	fout.WriteLine("#define " & UCase(str) & "CONF_H")
+	fout.WriteLine("#ifndef " & UCase(str) & "CONF_H_INCLUDED")
+	fout.WriteLine("#define " & UCase(str) & "CONF_H_INCLUDED")
 	fout.WriteLine("")
 	fout.WriteLine("/* " & str & "conf.h.  Generated automatically by winconfigure.  */")
 	fout.WriteLine("")
@@ -3406,6 +3406,22 @@ cEcho "Creating src\include\win64\mpidu_sock_conf.h"
 Set fout = f.CreateTextFile("src\include\win64\mpidu_sock_conf.h")
 Call WriteHeader(fout, "mpidu_sock_")
 Call AddDefinitions(fout, "src\mpid\common\sock\mpidu_sock_conf.h.in", true)
+Call WriteFooter(fout)
+fout.Close()
+
+'
+' ch3u_sock_conf.h
+'
+cEcho "Creating src\include\win32\ch3usockconf.h"
+Set fout = f.CreateTextFile("src\include\win32\ch3usockconf.h")
+Call WriteHeader(fout, "mpidi_ch3usock")
+Call AddDefinitions(fout, "src\mpid\ch3\util\sock\ch3usockconf.h.in", false)
+Call WriteFooter(fout)
+fout.Close()
+cEcho "Creating src\include\win64\ch3usockconf.h"
+Set fout = f.CreateTextFile("src\include\win64\ch3usockconf.h")
+Call WriteHeader(fout, "mpidi_ch3usock")
+Call AddDefinitions(fout, "src\mpid\ch3\util\sock\ch3usockconf.h.in", true)
 Call WriteFooter(fout)
 fout.Close()
 
