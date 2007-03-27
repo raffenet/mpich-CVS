@@ -11,15 +11,13 @@
 #define DLOOP_Type_footprint PREPEND_PREFIX(Type_footprint)
 
 typedef struct PREPEND_PREFIX(Type_footprint_s) {
-    DLOOP_Offset size;
-    DLOOP_Offset extent;
+    DLOOP_Offset size, extent;
 
     /* these are only needed for calculating footprint of types
      * built using this type. no reason to expose these.
      */
-    DLOOP_Offset lb;
-    DLOOP_Offset ub;
-    DLOOP_Offset alignsz;
+    DLOOP_Offset lb, ub, alignsz;
+    DLOOP_Offset true_lb, true_ub;
     int has_sticky_lb;
     int has_sticky_ub;
 } DLOOP_Type_footprint;

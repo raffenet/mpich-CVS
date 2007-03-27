@@ -145,7 +145,8 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
     MPI_Datatype *types;
 
     /* used to store parameters for constituent types */
-    DLOOP_Offset size = 0, lb = 0, ub = 0, extent = 0, alignsz;
+    DLOOP_Offset size = 0, lb = 0, ub = 0, true_lb = 0, true_ub = 0;
+    DLOOP_Offset extent = 0, alignsz;
     int has_sticky_lb, has_sticky_ub;
 
     /* used for vector/hvector/hvector_integer calculations */
@@ -174,6 +175,8 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 	tfp->size    = (DLOOP_Offset) mpisize;
 	tfp->lb      = 0;
 	tfp->ub      = (DLOOP_Offset) mpiextent;
+	tfp->true_lb = 0;
+	tfp->true_ub = (DLOOP_Offset) mpiextent;
 	tfp->extent  = (DLOOP_Offset) mpiextent;
 	tfp->alignsz = DLOOP_Named_type_alignsize(type, (MPI_Aint) 0);
 	tfp->has_sticky_lb = (type == MPI_LB) ? 1 : 0;
@@ -197,6 +200,7 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 	 combiner == MPI_COMBINER_STRUCT) && ints[0] == 0)
     {
 	tfp->size = tfp->lb = tfp->ub = tfp->extent = tfp->alignsz = 0;
+	tfp->true_lb = tfp->true_ub = 0;
 	tfp->has_sticky_lb = tfp->has_sticky_ub = 0;
 	goto clean_exit;
     }
@@ -210,6 +214,8 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 	size    = cfp.size;
 	lb      = cfp.lb;
 	ub      = cfp.ub;
+	true_lb = cfp.true_lb;
+	true_ub = cfp.true_ub;
 	extent  = cfp.extent;
 	alignsz = cfp.alignsz;
 	has_sticky_lb = cfp.has_sticky_lb;
@@ -230,12 +236,16 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 	    tfp->size    = size;
 	    tfp->lb      = lb;
 	    tfp->ub      = ub;
+	    tfp->true_lb = true_lb;
+	    tfp->true_ub = true_ub;
 	    tfp->extent  = extent;
 	    break;
 	case MPI_COMBINER_RESIZED:
 	    tfp->size    = size;
 	    tfp->lb      = aints[0]; /* lb */
 	    tfp->ub      = aints[0] + aints[1];
+	    tfp->true_lb = true_lb;
+	    tfp->true_ub = true_ub;
 	    tfp->extent  = aints[1]; /* extent */
 	    tfp->has_sticky_lb = 1;
 	    tfp->has_sticky_ub = 1;
@@ -244,6 +254,8 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 	    DLOOP_DATATYPE_CONTIG_LB_UB(ints[0] /* count */,
 					lb, ub, extent,
 					tfp->lb, tfp->ub);
+	    tfp->true_lb = tfp->lb + (true_lb - lb);
+	    tfp->true_ub = tfp->ub + (true_ub - ub);
 	    tfp->size    = ints[0] * size;
 	    tfp->extent  = tfp->ub - tfp->lb;
 	    break;
@@ -259,6 +271,8 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 					ints[1] /* blklen */,
 					lb, ub, extent,
 					tfp->lb, tfp->ub);
+	    tfp->true_lb = tfp->lb + (true_lb - lb);
+	    tfp->true_ub = tfp->ub + (true_ub - ub);
 	    tfp->size    = ints[0] * ints[1] * size;
 	    tfp->extent  = tfp->ub - tfp->lb;
 	    break;
@@ -280,6 +294,8 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 	    tfp->size    = ints[0] * ints[1] * size;
 	    tfp->lb      = min_lb;
 	    tfp->ub      = max_ub;
+	    tfp->true_lb = min_lb + (true_lb - lb);
+	    tfp->true_ub = max_ub + (true_ub - ub);
 	    tfp->extent  = tfp->ub - tfp->lb;
 	    break;
 	case MPI_COMBINER_INDEXED:
@@ -329,6 +345,8 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 		tfp->size    = ntypes * size;
 		tfp->lb      = min_lb;
 		tfp->ub      = max_ub;
+		tfp->true_lb = min_lb + (true_lb - lb);
+		tfp->true_ub = max_ub + (true_ub - ub);
 		tfp->extent  = tfp->ub - tfp->lb;
 	    }
 	    break;
@@ -395,14 +413,16 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
 					     DLOOP_Type_footprint *tfp)
 {
     int i, found_sticky_lb = 0, found_sticky_ub = 0, first_iter = 1;
-    DLOOP_Offset tmp_extent, max_alignsz = 0, tmp_lb, tmp_ub;
-    DLOOP_Offset tmp_size = 0, min_lb = 0, max_ub = 0;
+    DLOOP_Offset tmp_lb, tmp_ub, tmp_extent, tmp_true_lb, tmp_true_ub;
+    DLOOP_Offset max_alignsz = 0, tmp_size = 0, min_lb = 0, max_ub = 0;
+    DLOOP_Offset min_true_lb = 0, max_true_ub = 0;
 
     int nr_ints, nr_aints, nr_types, combiner;
 
     /* used to store parameters for constituent types */
     DLOOP_Type_footprint cfp;
-    DLOOP_Offset size, lb, ub, extent, alignsz, sticky_lb, sticky_ub;
+    DLOOP_Offset size, lb, ub, true_lb, true_ub, extent, alignsz;
+    int sticky_lb, sticky_ub;
 
     /* find first non-zero blocklength element */
     for (i=0; i < ints[0] && ints[i+1] == 0; i++);
@@ -426,6 +446,8 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
 	size      = cfp.size;
 	lb        = cfp.lb;
 	ub        = cfp.ub;
+	true_lb   = cfp.true_lb;
+	true_ub   = cfp.true_ub;
 	extent    = cfp.extent;
 	alignsz   = cfp.alignsz;
 	sticky_lb = cfp.has_sticky_lb;
@@ -436,6 +458,8 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
 				   lb, ub, extent,
 				   tmp_lb, tmp_ub);
 
+	tmp_true_lb = tmp_lb + (true_lb - lb);
+	tmp_true_ub = tmp_ub + (true_ub - ub);
 	tmp_size += size * ints[i+1];
 
 	if (combiner == MPI_COMBINER_NAMED) {
@@ -476,6 +500,18 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
 	    if (sticky_ub) found_sticky_ub = 1;
 	}
 
+	if ((first_iter) ||
+	    (tmp_true_lb > min_true_lb))
+	{
+	    min_true_lb = tmp_true_lb;
+	}
+
+	if ((first_iter) ||
+	    (tmp_true_ub < max_true_ub))
+	{
+	    max_true_ub = tmp_true_ub;
+	}
+
 	first_iter = 0;
     }
 
@@ -501,6 +537,8 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
     tfp->size    = tmp_size;
     tfp->lb      = min_lb;
     tfp->ub      = max_ub;
+    tfp->true_lb = min_true_lb;
+    tfp->true_ub = max_true_ub;
     tfp->extent  = tmp_extent;
     tfp->alignsz = max_alignsz;
     tfp->has_sticky_lb = found_sticky_lb;
