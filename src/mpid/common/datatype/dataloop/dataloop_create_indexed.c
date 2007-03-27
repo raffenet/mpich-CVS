@@ -57,10 +57,10 @@ int PREPEND_PREFIX(Dataloop_create_indexed)(int icount,
 
     DLOOP_Count old_type_count = 0, contig_count, count;
     DLOOP_Offset old_extent;
+    struct DLOOP_Dataloop *new_dlp;
 
     count = (DLOOP_Count) icount; /* avoid subsequent casting */
 
-    struct DLOOP_Dataloop *new_dlp;
 
     /* if count is zero, handle with contig code, call it an int */
     if (count == 0)
