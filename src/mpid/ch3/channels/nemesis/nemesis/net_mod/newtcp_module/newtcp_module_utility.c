@@ -100,6 +100,27 @@ int MPID_nem_newtcp_module_set_sockopts (int fd)
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME set_sockopts
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_set_pipeopts(int fd)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int flags;
+    int ret;
+
+    flags = fcntl(fd, F_GETFL, 0);
+    MPIU_ERR_CHKANDJUMP2 (flags == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);    
+    ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);    
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
 /*
   MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF : connection failed
   MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED : socket connected (connection success)

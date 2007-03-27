@@ -45,6 +45,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
 {
     int mpi_errno = MPI_SUCCESS;
     ssize_t bytes_recvd;
+    int complete;
 
     if (((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active == NULL)
     {
@@ -65,8 +66,12 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
     
         MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "New recv %d", bytes_recvd);
 
-        mpi_errno = MPID_nem_handle_pkt(sc->vc, recv_buf, bytes_recvd);
+        mpi_errno = MPID_nem_handle_pkt(sc->vc, recv_buf, bytes_recvd, &complete);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (complete)
+        {
+            MAYBE_SIGNAL(((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_queue);
+        }
     }
     else
     {

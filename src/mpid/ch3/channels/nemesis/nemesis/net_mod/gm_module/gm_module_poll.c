@@ -96,6 +96,7 @@ inline int MPID_nem_gm_module_recv()
     {
         packet_t *pkt;
         int msg_len;
+        int complete = 0;
         
 	switch (gm_ntoh_u8 (e->recv.type))
 	{
@@ -116,7 +117,7 @@ inline int MPID_nem_gm_module_recv()
             msg_len = gm_ntoh_u32(e->recv.length) - PKT_HEADER_LEN;
             MPIDI_PG_Get_vc (MPIDI_Process.my_pg, pkt->source_id, &vc);
 
-            mpi_errno = MPID_nem_handle_pkt(vc, (char *)pkt->buf, msg_len);
+            mpi_errno = MPID_nem_handle_pkt(vc, (char *)pkt->buf, msg_len, &complete);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
             
             RECVBUF_S_PUSH(PKT_TO_RECVBUF((packet_t *)gm_ntohp(e->recv.buffer)));
@@ -130,7 +131,7 @@ inline int MPID_nem_gm_module_recv()
             msg_len = gm_ntoh_u32(e->recv.length) - PKT_HEADER_LEN;
             MPIDI_PG_Get_vc (MPIDI_Process.my_pg, pkt->source_id, &vc);
             
-            mpi_errno = MPID_nem_handle_pkt(vc, (char *)pkt->buf, msg_len);
+            mpi_errno = MPID_nem_handle_pkt(vc, (char *)pkt->buf, msg_len, &complete);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
             
             RECVBUF_S_PUSH(PKT_TO_RECVBUF(pkt));

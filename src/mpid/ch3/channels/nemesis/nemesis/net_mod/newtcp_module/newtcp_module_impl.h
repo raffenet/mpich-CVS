@@ -125,6 +125,10 @@ int MPID_nem_newtcp_module_get_listen_fd(void);
         (var) = (func);                         \
     } while ((var) == -1 && errno == EINTR)
 
+/* set or unset the writeable bit in a plfd */
+#define SET_PLFD(vc) VC_FIELD(vc, sc)->g_plfd_tbl[VC_FIELD(vc, sc)->index].events |= POLLOUT
+#define UNSET_PLFD(vc) VC_FIELD(vc, sc)->g_plfd_tbl[VC_FIELD(vc, sc)->index].events &= ~POLLOUT
+
 /* Send queue macros */
 #define Q_EMPTY(q) GENERIC_Q_EMPTY (q)
 #define Q_HEAD(q) GENERIC_Q_HEAD (q)
@@ -138,8 +142,6 @@ int MPID_nem_newtcp_module_get_listen_fd(void);
 /* VC list macros */
 #define VC_L_EMPTY(q) GENERIC_L_EMPTY (q)
 #define VC_L_HEAD(q) GENERIC_L_HEAD (q)
-#define SET_PLFD(ep) VC_FIELD(ep, sc)->g_plfd_tbl[VC_FIELD(ep, sc)->index].events |= POLLOUT
-#define UNSET_PLFD(ep) VC_FIELD(ep, sc)->g_plfd_tbl[VC_FIELD(ep, sc)->index].events &= ~POLLOUT
 
 /* stack macros */
 #define S_EMPTY(s) GENERIC_S_EMPTY (s)

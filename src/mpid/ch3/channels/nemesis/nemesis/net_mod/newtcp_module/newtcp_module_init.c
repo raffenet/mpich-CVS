@@ -43,9 +43,12 @@ int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_
     /* first make sure that our private fields in the vc fit into the area provided  */
     MPIU_Assert(sizeof(MPID_nem_newtcp_module_vc_area) <= MPID_NEM_VC_NETMOD_AREA_LEN);
     
-    MPID_nem_newtcp_module_init_sm();
-    MPID_nem_newtcp_module_send_init();
-    MPID_nem_newtcp_module_poll_init();
+    mpi_errno = MPID_nem_newtcp_module_init_sm();
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    mpi_errno = MPID_nem_newtcp_module_send_init();
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    mpi_errno = MPID_nem_newtcp_module_poll_init();
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     /* create business card */
     mpi_errno = MPID_nem_newtcp_module_get_business_card(pg_rank, bc_val_p, val_max_sz_p);

@@ -137,7 +137,6 @@ int MPIDI_CH3I_Progress(MPID_Progress_state *progress_state, int is_blocking)
 int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
 {
     int                  mpi_errno = MPI_SUCCESS;
-    int                  complete;
     MPID_Request        *sreq;
     MPID_Request        *rreq;
     MPID_nem_cell_ptr_t  cell;
@@ -162,6 +161,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
             char            *cell_buf    = (char *)cell->pkt.mpich2.payload;
             MPIDI_msg_sz_t   payload_len = cell->pkt.mpich2.datalen;
             MPIDI_CH3_Pkt_t *pkt         = (MPIDI_CH3_Pkt_t *)cell_buf;
+            int              complete    = 0;
 
             /* Empty packets are not allowed */
             MPIU_Assert(payload_len >= 0);
@@ -170,7 +170,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
             {
                 MPIDI_CH3I_VC *vc_ch;
                 MPIDI_msg_sz_t buflen = payload_len;
-                    
+  
                 /* This packet must be the first packet of a new message */
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Recv pkt from fbox");
                 MPIU_Assert(payload_len >= sizeof (MPIDI_CH3_Pkt_t));
@@ -194,7 +194,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
                 cell_buf    += buflen;
                 payload_len -= buflen;
                     
-                mpi_errno = MPID_nem_handle_pkt(vc, cell_buf, payload_len);
+                mpi_errno = MPID_nem_handle_pkt(vc, cell_buf, payload_len, &complete);
                 if (mpi_errno) MPIU_ERR_POP(mpi_errno);
                 MPID_nem_mpich2_release_fbox(cell);
 
@@ -209,7 +209,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
                 
             MPIDI_PG_Get_vc(MPIDI_Process.my_pg, MPID_NEM_CELL_SOURCE(cell), &vc);
 
-            mpi_errno = MPID_nem_handle_pkt(vc, cell_buf, payload_len);
+            mpi_errno = MPID_nem_handle_pkt(vc, cell_buf, payload_len, &complete);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
             MPID_nem_mpich2_release_cell(cell, vc);
                 
@@ -354,7 +354,7 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
         }
         else
         {
-            complete = 0;
+            int complete = 0;
             mpi_errno = sreq->dev.OnDataAvail(sreq->ch.vc, sreq, &complete);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
@@ -442,11 +442,10 @@ void MPIDI_CH3I_Progress_wakeup(void)
 #define FUNCNAME MPID_nem_handle_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
+int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen, int *complete)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *rreq;
-    int complete;
     MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_HANDLE_PKT);
 
@@ -537,9 +536,9 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
             goto fn_exit;
         }
 
-        complete = 0;
+        *complete = FALSE;
 
-        while (buflen && !complete)
+        while (buflen && !*complete)
         {
             MPID_IOV *iov;
             int n_iov;
@@ -580,15 +579,15 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
                 {
                     MPIU_Assert(MPIDI_Request_get_type(rreq) != MPIDI_REQUEST_TYPE_GET_RESP);
                     MPIDI_CH3U_Request_complete(rreq);
-                    complete = TRUE;
+                    *complete = TRUE;
                 }
                 else
                 {   
-                    mpi_errno = reqFn(vc, rreq, &complete);
+                    mpi_errno = reqFn(vc, rreq, complete);
                     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
                 }
                         
-                if (!complete)
+                if (!*complete)
                 {
                     rreq->ch.iov_offset = 0;
                     MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN > 0);
