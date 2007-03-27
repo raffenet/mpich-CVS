@@ -606,9 +606,9 @@ int signal_comm_thread_to_connect(MPIDI_VC_t *vc)
     msg.type = MPID_NEM_NEWTCP_MODULE_CONNECT;
     msg.vc = vc;
 
-    CHECK_EINTR(count, send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(MPID_nem_newtcp_module_poke_msg_t), 0));
-    /* FIXME: Return a proper error code, instead of asserting */
-    MPIU_Assert(count == sizeof(MPID_nem_newtcp_module_poke_msg_t));
+    CHECK_EINTR(count, write(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(msg)));
+    MPIU_ERR_CHKANDJUMP1(count == -1, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(count != sizeof(msg), mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "couldn't send whole message");
 
  fn_exit:
     return mpi_errno;
@@ -631,9 +631,9 @@ static int set_plfd_and_poke(MPIDI_VC_t *vc)
     msg.type = MPID_NEM_NEWTCP_MODULE_REFRESH_STATE;
     msg.vc = vc;
 
-    CHECK_EINTR(count, send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(MPID_nem_newtcp_module_poke_msg_t), 0));
-    /* FIXME: Return a proper error code, instead of asserting */
-    MPIU_Assert(count == sizeof(MPID_nem_newtcp_module_poke_msg_t));
+    CHECK_EINTR(count, write(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(msg)));
+    MPIU_ERR_CHKANDJUMP1(count == -1, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(count != sizeof(msg), mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "couldn't send whole message");
     
  fn_exit:
     return mpi_errno;

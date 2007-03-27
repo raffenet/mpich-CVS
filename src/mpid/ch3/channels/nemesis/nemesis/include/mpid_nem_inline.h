@@ -953,11 +953,11 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     poll_all_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 
-    if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
-    {
-	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-    }
+/*     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE) */
+/*     { */
+/* 	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN); */
+/*         if (mpi_errno) MPIU_ERR_POP (mpi_errno); */
+/*     } */
 
     if (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !MPID_nem_recv_seqno_matches (MPID_nem_mem_region.my_recvQ))
     {
@@ -1021,11 +1021,11 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
     poll_all_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 
-    if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
-    {
-	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-    }
+/*     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE) */
+/*     { */
+/* 	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN); */
+/*         if (mpi_errno) MPIU_ERR_POP (mpi_errno); */
+/*     } */
 
     while ((--timeout > 0) && (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !MPID_nem_recv_seqno_matches (MPID_nem_mem_region.my_recvQ)))
     {
@@ -1100,11 +1100,11 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_
     poll_all_fboxes (cell, goto fbox_l);
 #endif /*USE_FASTBOX */
    
-    if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
-    {
-	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-    }
+/*     if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE) */
+/*     { */
+/* 	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN); */
+/*         if (mpi_errno) MPIU_ERR_POP (mpi_errno); */
+/*     } */
 
     while (MPID_nem_queue_empty (MPID_nem_mem_region.my_recvQ) || !MPID_nem_recv_seqno_matches (MPID_nem_mem_region.my_recvQ))
     {
@@ -1119,11 +1119,11 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_
         /*poll_fboxes (cell, goto fbox_l); */
 #endif /*USE_FASTBOX */
 
-	if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
-	{
-	    mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
-            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-	}
+/* 	if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE) */
+/* 	{ */
+/* 	    mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN); */
+/*             if (mpi_errno) MPIU_ERR_POP (mpi_errno); */
+/* 	} */
 #ifndef ENABLE_NO_SCHED_YIELD
 	if (pollcount >= MPID_NEM_POLLS_BEFORE_YIELD)
 	{

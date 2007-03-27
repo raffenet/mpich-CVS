@@ -11,7 +11,7 @@
 
 /* FIXME trace/log all the state transitions */
 
-static int main_to_comm_index; /* index of pipe between main thread and comm thread */
+static int comm_to_main_index; /* index of pipe between main thread and comm thread */
 static int listener_index; /* index of listener socket */
 
 typedef struct freenode {
@@ -657,17 +657,21 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPID_nem_newtcp_module_poke_msg_t msg;
     ssize_t count;
 
     msg.type = MPID_NEM_NEWTCP_MODULE_DISCONNECT;
     msg.vc = vc;
 
-    count = send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(MPID_nem_newtcp_module_poke_msg_t), 0);
-    /* FIXME: Return a proper error code, instead of asserting */
-    MPIU_Assert(count == sizeof(MPID_nem_newtcp_module_poke_msg_t));
+    count = write(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(msg));
+    MPIU_ERR_CHKANDJUMP1(count == -1, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(count != sizeof(msg), mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "couldn't send whole message");
 
+ fn_exit:
     return MPI_SUCCESS;
+ fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1092,16 +1096,19 @@ int MPID_nem_newtcp_module_init_sm()
     ret = pipe(pipe_fd);
     MPIU_ERR_CHKANDJUMP2(ret == -1, mpi_errno, MPI_ERR_OTHER, "**pipe", "**pipe %s %d", strerror(errno), errno);
 
-    MPID_nem_newtcp_module_main_to_comm_fd = pipe_fd[1];
-    mpi_errno = MPID_nem_newtcp_module_set_pipeopts(MPID_nem_newtcp_module_main_to_comm_fd);
+    mpi_errno = MPID_nem_newtcp_module_set_pipeopts(pipe_fd[0]);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    mpi_errno = MPID_nem_newtcp_module_set_pipeopts(pipe_fd[1]);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    mpi_errno = find_free_entry(&main_to_comm_index);
+    MPID_nem_newtcp_module_main_to_comm_fd = pipe_fd[1];
+
+    mpi_errno = find_free_entry(&comm_to_main_index);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     
-    socksm_tbl_vars.sc_tbl[main_to_comm_index].fd = socksm_tbl_vars.plfd_tbl[main_to_comm_index].fd = pipe_fd[0];
-    socksm_tbl_vars.plfd_tbl[main_to_comm_index].events = POLLIN;
-    socksm_tbl_vars.sc_tbl[main_to_comm_index].handler = MPID_nem_newtcp_module_state_poke_handler;
+    socksm_tbl_vars.sc_tbl[comm_to_main_index].fd = socksm_tbl_vars.plfd_tbl[comm_to_main_index].fd = pipe_fd[0];
+    socksm_tbl_vars.plfd_tbl[comm_to_main_index].events = POLLIN;
+    socksm_tbl_vars.sc_tbl[comm_to_main_index].handler = MPID_nem_newtcp_module_state_poke_handler;
 
     /* set up listener socket */
     listen_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -1324,6 +1331,8 @@ int MPID_nem_newtcp_module_state_poke_handler(pollfd_t *const plfd, sockconn_t *
     int mpi_errno = MPI_SUCCESS;
     MPIDI_msg_sz_t nread;
     MPID_nem_newtcp_module_poke_msg_t msg;
+
+    MPIU_Assert(sc->index == comm_to_main_index);
 
     CHECK_EINTR(nread, read(sc->fd, &msg, sizeof(msg)));
     MPIU_ERR_CHKANDJUMP1(nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror(errno));

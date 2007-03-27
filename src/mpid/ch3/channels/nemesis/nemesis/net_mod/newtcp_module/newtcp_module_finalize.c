@@ -31,11 +31,11 @@ int MPID_nem_newtcp_module_finalize()
 #endif
 
     msg.type = MPID_NEM_NEWTCP_MODULE_FINALIZE;
-    count = send(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(MPID_nem_newtcp_module_poke_msg_t), 0);
-    /* FIXME: Return a proper error code, instead of asserting */
-    MPIU_Assert(count == sizeof(MPID_nem_newtcp_module_poke_msg_t));
+    count = write(MPID_nem_newtcp_module_main_to_comm_fd, &msg, sizeof(msg));
+    MPIU_ERR_CHKANDJUMP1(count == -1, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(count != sizeof(msg), mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "couldn't send whole message");
     ret = pthread_join(MPID_nem_newtcp_module_comm_thread_handle, (void *)&mpi_errno);
-    MPIU_Assert(ret == 0);
+    MPIU_ERR_CHKANDJUMP1(ret == -1, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", strerror(errno));
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     
  fn_exit:
