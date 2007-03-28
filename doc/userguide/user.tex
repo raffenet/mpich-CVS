@@ -42,7 +42,7 @@
     Office of Advanced Scientific Computing Research, SciDAC Program,
     Office of Science, U.S. Department of Energy, under Contract
     DE-AC02-06CH11357.}\\
-Version 1.0.5\\
+Version 1.0.5p4\\
 Mathematics and Computer Science Division\\
 Argonne National Laboratory}
 
@@ -1077,11 +1077,12 @@ where \texttt{<jobid>} comes from \texttt{mpdlistjobs}.
 \subsection{TotalView}
 \label{sec:totalview}
 
-MPICH2 supports use of the TotalView debugger from Etnus.  If
-\texttt{mpich} has been configured to enable debugging with TotalView
+MPICH2 supports use of the TotalView debugger from Etnus, through the
+MPD process manager only.  If 
+MPICH2 has been configured to enable debugging with TotalView
 (See the section on configuration of the MPD process manager in the
 \emph{Installer's Guide}) then one can debug an MPI program started
-with \texttt{mpd} by adding \texttt{-tv} to the global \texttt{mpiexec}
+with MPD by adding \texttt{-tv} to the global \texttt{mpiexec}
 arguments, as in
 \begin{verbatim}
     mpiexec -tv -n 3 cpi
@@ -1093,6 +1094,44 @@ source window.  Click on \texttt{main} in the stack window (upper left)
 to see the source of the \texttt{main} function.  TotalView will show
 that the program (all processes) are stopped in the call to
 \texttt{MPI\_Init}. 
+
+When debugging with TotalView using the above startup sequence, MPICH2
+jobs cannot be restarted without exiting TotalView. In MPICH2 version
+1.0.5p4 or later, TotalView can be invoked on an MPICH2 job as follows: 
+\begin{verbatim}
+    totalview python -a `which mpiexec` -tvsu \
+                 <mpiexec args> <program> <program args>
+\end{verbatim}
+and the MPICH2 job will be fully restartable within TotalView.
+
+If you have MPICH2 version 1.0.5p4 or later and TotalView 8.1.0 or later,
+you can use a TotalView feature called indirect launch with
+MPICH2. Invoke TotalView as: 
+\begin{verbatim}
+    totalview <program> -a <program args>
+\end{verbatim}
+Then select the Process/Startup Parameters command. Choose the
+Parallel tab in the resulting dialog box and choose MPICH2 as the
+parallel system. Then set the number of tasks using the Tasks field 
+and enter other needed mpiexec arguments into the Additional
+Starter Arguments field.  
+
+If you want to be able to attach to a running MPICH2 job using
+TotalView, you must use the \texttt{-tvsu} option to mpiexec when
+starting the job. Using this option will add a barrier inside
+\texttt{MPI\_Init} and hence may affect startup performance slightly. It
+will have no effect on the running of the job once all tasks have
+returned from \texttt{MPI\_Init}. In order to debug a running MPICH2
+job, you must attach TotalView to the instance of Python that is
+running the mpiexec script. If you have just one task running on the
+node where you invoked mpiexec, and no other Python scripts running,
+there will be three instances of Python running on the node. One of
+these is the parent of the MPICH2 task on that node, and one is the
+parent of that Python process. Neither of those is the instance of Python you
+want to attach to---they are both running the MPD script. The third
+instance of Python has no children and is not the child of a
+Python process. That is the one that is running mpiexec and is the one you
+want to attach to.
 
 \section{Other Tools Provided with MPICH2}
 \label{sec:other-tools}
