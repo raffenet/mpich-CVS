@@ -641,7 +641,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
     }
     nr_blks = first_ind;
 
-#ifdef USE_DBG_LOGGING
+#if 0
     if (MPIU_DBG_SELECTED(DATATYPE,VERBOSE)) {
 	MPIU_DBG_OUT(DATATYPE,"--- start of flattened type ---");
         for (i=0; i < nr_blks; i++) {
