@@ -70,7 +70,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         if (complete)
         {
-            MAYBE_SIGNAL(((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_queue);
+            MAYBE_SIGNAL(MPID_nem_mem_region.my_recvQ);
         }
     }
     else
@@ -122,6 +122,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             MPIDI_CH3U_Request_complete(rreq);
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...complete");
             ((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active = NULL;
+            MAYBE_SIGNAL(MPID_nem_mem_region.my_recvQ);
         }
         else
         {
@@ -134,6 +135,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
             {
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...complete");
                 ((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active = NULL;
+                MAYBE_SIGNAL(MPID_nem_mem_region.my_recvQ);
             }
             else
             {

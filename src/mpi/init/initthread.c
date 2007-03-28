@@ -34,6 +34,8 @@
 MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevant */
 MPICH_ThreadInfo_t MPIR_ThreadInfo = { 0 };
 
+int MPIR_Process_really_initialized = FALSE;
+
 /* These are initialized as null (avoids making these into common symbols).
    If the Fortran binding is supported, these can be initialized to 
    their Fortran values (MPI only requires that they be valid between
@@ -311,7 +313,9 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 
 #ifdef HAVE_DEBUGGER_SUPPORT
     MPIR_WaitForDebugger();
-#endif    
+#endif
+    if (mpi_errno == MPI_SUCCESS)
+        MPIR_Process_really_initialized = TRUE;
     return mpi_errno;
 }
 #endif

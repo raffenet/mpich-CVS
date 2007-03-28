@@ -442,9 +442,10 @@ void MPIDI_CH3I_Progress_wakeup(void)
 #define FUNCNAME MPID_nem_handle_pkt
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen, int *complete)
+int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen, int *req_completed)
 {
     int mpi_errno = MPI_SUCCESS;
+    int complete;
     MPID_Request *rreq;
     MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_HANDLE_PKT);
@@ -468,6 +469,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen, int *c
                 buflen -= len;
                 buf    += len;
                 MPIU_DBG_STMT(CH3_CHANNEL, VERBOSE, if (!rreq) MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...completed immediately"));
+                *req_completed = TRUE;
             }
             while (!rreq && buflen >= sizeof(MPIDI_CH3_Pkt_t));
 
@@ -518,6 +520,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen, int *c
             if (!rreq)
             {
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...completed immediately");
+                *req_completed = TRUE;
                 continue;
             }
             /* Channel fields don't get initialized on request creation, init them here */
@@ -536,9 +539,9 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen, int *c
             goto fn_exit;
         }
 
-        *complete = FALSE;
+        complete = FALSE;
 
-        while (buflen && !*complete)
+        while (buflen && !complete)
         {
             MPID_IOV *iov;
             int n_iov;
@@ -579,15 +582,15 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen, int *c
                 {
                     MPIU_Assert(MPIDI_Request_get_type(rreq) != MPIDI_REQUEST_TYPE_GET_RESP);
                     MPIDI_CH3U_Request_complete(rreq);
-                    *complete = TRUE;
+                    complete = TRUE;
                 }
                 else
                 {   
-                    mpi_errno = reqFn(vc, rreq, complete);
+                    mpi_errno = reqFn(vc, rreq, &complete);
                     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
                 }
                         
-                if (!*complete)
+                if (!complete)
                 {
                     rreq->ch.iov_offset = 0;
                     MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN > 0);
@@ -601,6 +604,8 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen, int *c
                 }
             }
         }
+        if (complete)
+            *req_completed = TRUE;
     }
     while (buflen);
     
@@ -1813,7 +1818,7 @@ int MPIDI_CH3I_Posted_recv_enqueued (MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
 
-/*     printf("%d ENQUEUE %d\n", MPIDI_Process.my_pg_rank, rreq->dev.match.rank);//DARIUS */
+    MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "%d Req posted %d", MPIDI_Process.my_pg_rank, rreq->dev.match.rank));
     
     /* don't enqueue for anysource */
     if (rreq->dev.match.rank < 0)
@@ -1842,7 +1847,7 @@ int MPIDI_CH3I_Posted_recv_dequeued (MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
     
-/*     printf("%d DEQUEUE %d\n", MPIDI_Process.my_pg_rank, rreq->dev.match.rank);//DARIUS */
+    MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "%d Req unposted %d", MPIDI_Process.my_pg_rank, rreq->dev.match.rank));
 
     if (rreq->dev.match.rank < 0)
 	goto fn_exit;

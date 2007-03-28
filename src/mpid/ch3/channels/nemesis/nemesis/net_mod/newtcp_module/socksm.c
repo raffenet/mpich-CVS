@@ -11,6 +11,8 @@
 
 /* FIXME trace/log all the state transitions */
 
+extern int MPIR_Process_really_initialized;
+
 static int comm_to_main_index; /* index of pipe between main thread and comm thread */
 static int listener_index; /* index of listener socket */
 
@@ -1220,11 +1222,21 @@ int MPID_nem_newtcp_module_connpoll()
 #else
     CHECK_EINTR(n, poll(socksm_tbl_vars.plfd_tbl, socksm_tbl_vars.tbl_size, 0));
 #endif
-
-    MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, 
-                          "**poll", "**poll %s", strerror (errno));
+    MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, "**poll", "**poll %s", strerror (errno));
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "some sc fd poll event"));
-    for(i = 0; i < socksm_tbl_vars.tbl_size; i++)
+
+    if (!MPIR_Process_really_initialized)
+    {
+        sched_yield();
+        goto fn_exit;
+    }
+
+    
+    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Requesting lock");
+    MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
+    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "  got lock");
+
+    for (i = 0; i < socksm_tbl_vars.tbl_size; i++)
     {
         pollfd_t *it_plfd = &socksm_tbl_vars.plfd_tbl[i];
         sockconn_t *it_sc = &socksm_tbl_vars.sc_tbl[i];
@@ -1236,10 +1248,13 @@ int MPID_nem_newtcp_module_connpoll()
             MPIU_Assert ((it_plfd->revents & POLLNVAL) == 0);
 
             mpi_errno = it_sc->handler(it_plfd, it_sc);
-            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
     }
-    
+
+    MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);
+    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Released lock");
+
  fn_exit:
     return mpi_errno;
  fn_fail:
