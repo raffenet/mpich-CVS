@@ -572,7 +572,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 	}
 	else /* derived type; get a count of contig blocks */
 	{
-	    int tmp_nr_blks;
+	    DLOOP_Count tmp_nr_blks;
 
 	    PREPEND_PREFIX(Segment_init)(NULL,
 					 (DLOOP_Count) blklens[i],

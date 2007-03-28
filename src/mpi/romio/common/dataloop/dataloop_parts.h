@@ -404,13 +404,62 @@ PREPEND_PREFIX(Segment_manipulate)(DLOOP_Segment *segp,
 void PREPEND_PREFIX(Segment_count_contig_blocks)(DLOOP_Segment *segp,
 						 DLOOP_Offset first,
 						 DLOOP_Offset *lastp,
-						 int *countp);
+						 DLOOP_Count *countp);
 void PREPEND_PREFIX(Segment_mpi_flatten)(DLOOP_Segment *segp,
 					 DLOOP_Offset first,
 					 DLOOP_Offset *lastp,
 					 int *blklens,
 					 MPI_Aint *disps,
 					 int *lengthp);
+
+#define DLOOP_M2M_TO_USERBUF   0
+#define DLOOP_M2M_FROM_USERBUF 1
+
+struct PREPEND_PREFIX(m2m_params) {
+    int direction; /* M2M_TO_USERBUF or M2M_FROM_USERBUF */
+    char *streambuf;
+    char *userbuf;
+};
+
+void PREPEND_PREFIX(Segment_pack)(struct DLOOP_Segment *segp,
+				  DLOOP_Offset   first,
+				  DLOOP_Offset  *lastp,
+				  void *streambuf);
+void PREPEND_PREFIX(Segment_unpack)(struct DLOOP_Segment *segp,
+				    DLOOP_Offset   first,
+				    DLOOP_Offset  *lastp,
+				    void *streambuf);
+
+/* Segment piece functions that are used in specific cases elsewhere */
+int PREPEND_PREFIX(Segment_contig_m2m)(DLOOP_Offset *blocks_p,
+				       DLOOP_Type el_type,
+				       DLOOP_Offset rel_off,
+				       void *bufp, /* unused */
+				       void *v_paramp);
+int PREPEND_PREFIX(Segment_vector_m2m)(DLOOP_Offset *blocks_p,
+				       DLOOP_Count count, /* unused */
+				       DLOOP_Count blksz,
+				       DLOOP_Offset stride,
+				       DLOOP_Type el_type,
+				       DLOOP_Offset rel_off,
+				       void *bufp, /* unused */
+				       void *v_paramp);
+int PREPEND_PREFIX(Segment_blkidx_m2m)(DLOOP_Offset *blocks_p,
+				       DLOOP_Count count,
+				       DLOOP_Count blocklen,
+				       DLOOP_Offset *offsetarray,
+				       DLOOP_Type el_type,
+				       DLOOP_Offset rel_off,
+				       void *bufp, /*unused */
+				       void *v_paramp);
+int PREPEND_PREFIX(Segment_index_m2m)(DLOOP_Offset *blocks_p,
+				      DLOOP_Count count,
+				      DLOOP_Count *blockarray,
+				      DLOOP_Offset *offsetarray,
+				      DLOOP_Type el_type,
+				      DLOOP_Offset rel_off,
+				      void *bufp, /*unused */
+				      void *v_paramp);
 #endif
 
 

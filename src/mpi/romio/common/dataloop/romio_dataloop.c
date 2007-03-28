@@ -28,6 +28,7 @@ typedef struct MPIO_Datatype_s {
     int             valid, refct;
     int             dloop_size, dloop_depth; /* size, depth of dloop struct */
     DLOOP_Offset    size, extent; /* size and extent of type */
+    DLOOP_Offset    true_lb, true_extent;
     DLOOP_Dataloop *dloop;
     DLOOP_Count     contig_blks;
 } MPIO_Datatype;
@@ -60,35 +61,6 @@ static int MPIO_Datatype_delete_attr_function(MPI_Datatype type,
 					      int type_keyval,
 					      void *attribute_val,
 					      void *extra_state);
-
-#if 0
-int main(int argc, char *argv[])
-{
-    int mpi_errno;
-    MPI_Datatype type, duptype;
-
-    MPI_Init(&argc, &argv);
-
-    MPIO_Datatype_initialize();
-
-    mpi_errno = MPI_Type_contiguous(2, MPI_INT, &type);
-    DLOOP_Assert(mpi_errno == MPI_SUCCESS);
-
-    MPIO_Datatype_set_loopptr(type, (void *) 7, 0);
-
-    mpi_errno = MPI_Type_dup(type, &duptype);
-    DLOOP_Assert(mpi_errno == MPI_SUCCESS);
-
-    mpi_errno = MPI_Type_free(&type);
-
-    mpi_errno = MPI_Type_free(&duptype);
-
-    foo_finalize();
-
-    MPI_Finalize();
-    return 0;
-}
-#endif
 
 void MPIO_Datatype_get_size(MPI_Datatype type, MPI_Offset *size_p)
 {
@@ -138,6 +110,84 @@ void MPIO_Datatype_get_extent(MPI_Datatype type, MPI_Offset *extent_p)
     return;
 }
 
+/* MPIO_Datatype_get_block_info
+ *
+ * Parameters:
+ * type     - MPI datatype
+ * true_lb  - true_lb for type (offset to start of data)
+ * count    - count of # of contiguous regions in the type
+ * n_contig - flag, indicating if N of these types would also form a 
+ *            single contiguous block
+ */
+void MPIO_Datatype_get_block_info(MPI_Datatype type,
+				  MPI_Offset *true_lb_p,
+				  MPI_Offset *count_p,
+				  int *n_contig_p)
+{
+    int mpi_errno, attrflag;
+    int nr_ints, nr_aints, nr_types, combiner;
+
+    mpi_errno = PMPI_Type_get_envelope(type, &nr_ints, &nr_aints,
+				       &nr_types, &combiner);
+    DLOOP_Assert(mpi_errno == MPI_SUCCESS);
+
+    if (combiner == MPI_COMBINER_NAMED &&
+	(type != MPI_FLOAT_INT &&
+	 type != MPI_DOUBLE_INT &&
+	 type != MPI_LONG_INT &&
+	 type != MPI_SHORT_INT &&
+	 type != MPI_LONG_DOUBLE_INT))
+    {
+	*true_lb_p  = 0;
+	*count_p    = 1;
+	*n_contig_p = 1;
+    }
+    else {
+	MPIO_Datatype *dtp;
+	MPIO_Segment  *segp;
+	MPI_Offset     bytes;
+
+	mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp,
+				      &attrflag);
+	DLOOP_Assert(mpi_errno == MPI_SUCCESS);
+	if (!attrflag) {
+	    /* need to allocate structure and create dataloop representation */
+	    dtp = MPIO_Datatype_allocate(type);
+	}
+	if (!(dtp->valid | MPIO_DATATYPE_VALID_DLOOP_PTR)) {
+	    MPIO_Dataloop_create(type,
+				 &dtp->dloop,
+				 &dtp->dloop_size,
+				 &dtp->dloop_depth, 0);
+	    DLOOP_Assert(dtp->dloop != NULL);
+	}
+	    
+	DLOOP_Assert((dtp->valid | MPIO_DATATYPE_VALID_DLOOP_PTR) &&
+		     (dtp->valid | MPIO_DATATYPE_VALID_DLOOP_SIZE) &&
+		     (dtp->valid | MPIO_DATATYPE_VALID_DLOOP_DEPTH));
+
+	segp = MPIO_Segment_alloc();
+	DLOOP_Assert(segp != NULL);
+
+	MPIO_Segment_init(NULL, 1, type, segp, 0);
+	bytes = SEGMENT_IGNORE_LAST;
+
+	MPIO_Segment_count_contig_blocks(segp, 0, &bytes, &dtp->contig_blks);
+	MPIO_Segment_free(segp);
+	dtp->valid |= MPIO_DATATYPE_VALID_CONTIG_BLKS;
+
+	if (!(dtp->valid | MPIO_DATATYPE_VALID_TYPESZEXT)) {
+	    MPIO_Datatype_set_szext(type, dtp);
+	}
+	*true_lb_p  = dtp->true_lb;
+	*count_p    = dtp->contig_blks;
+	*n_contig_p = (dtp->contig_blks == 1 &&
+		       dtp->true_extent == dtp->extent) ? 1 : 0;
+    }
+
+    return;
+}
+
 void MPIO_Datatype_get_el_type(MPI_Datatype type,
 			       MPI_Datatype *eltype_p,
 			       int flag)
@@ -175,6 +225,7 @@ void MPIO_Datatype_get_el_type(MPI_Datatype type,
     return;
 }
 
+/* dataloop-related functions used by dataloop code */
 void MPIO_Datatype_get_loopptr(MPI_Datatype type,
 			       MPIO_Dataloop **ptr_p,
 			       int flag)
@@ -391,8 +442,8 @@ static MPIO_Datatype *MPIO_Datatype_allocate(MPI_Datatype type)
 
 /* MPIO_Datatype_set_szext()
  *
- * Calculates size and extent of type, fills in values in MPIO_Datatype
- * structure, and sets valid flag.
+ * Calculates size, extent, true_lb, and true_extent of type, fills in values
+ * in MPIO_Datatype structure, and sets valid flag.
  *
  * Note: This code currently checks for compatible variable sizes at
  *       runtime, while this check could instead be performed at configure
@@ -407,7 +458,7 @@ static void MPIO_Datatype_set_szext(MPI_Datatype type, MPIO_Datatype *dtp)
 	sizeof(MPI_Aint) >= sizeof(MPI_Offset))
     {
 	int size;
-	MPI_Aint lb, extent;
+	MPI_Aint lb, extent, true_lb, true_extent;
 	
 	mpi_errno = MPI_Type_size(type, &size);
 	DLOOP_Assert(mpi_errno == MPI_SUCCESS);
@@ -415,15 +466,21 @@ static void MPIO_Datatype_set_szext(MPI_Datatype type, MPIO_Datatype *dtp)
 	mpi_errno = MPI_Type_get_extent(type, &lb, &extent);
 	DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 	
-	dtp->size   = (MPI_Offset) size;
-	dtp->extent = (MPI_Offset) extent;
+	mpi_errno = MPI_Type_get_true_extent(type, &true_lb, &true_extent); 
+
+	dtp->size        = (MPI_Offset) size;
+	dtp->extent      = (MPI_Offset) extent;
+	dtp->true_lb     = (MPI_Offset) true_lb;
+	dtp->true_extent = (MPI_Offset) true_extent;
     }
     else {
 	MPIO_Type_footprint tfp;
 	
 	MPIO_Type_calc_footprint(type, &tfp);
-	dtp->size   = tfp.size;
-	dtp->extent = tfp.extent;
+	dtp->size        = tfp.size;
+	dtp->extent      = tfp.extent;
+	dtp->true_lb     = tfp.true_lb;
+	dtp->true_extent = tfp.true_ub - tfp.true_lb;
     }
 
     dtp->valid |= MPIO_DATATYPE_VALID_TYPESZEXT;

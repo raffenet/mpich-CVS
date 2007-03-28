@@ -109,6 +109,8 @@ void MPIO_Datatype_set_loopsize(MPI_Datatype type, int size, int flag);
 void MPIO_Datatype_set_loopdepth(MPI_Datatype type, int depth, int flag);
 void MPIO_Datatype_get_size(MPI_Datatype type, MPI_Offset *size_p);
 void MPIO_Datatype_get_extent(MPI_Datatype type, MPI_Offset *extent_p);
+void MPIO_Datatype_get_block_info(MPI_Datatype type, MPI_Offset *true_lb,
+				  MPI_Offset *count, int *n_contig);
 int MPIO_Datatype_is_nontrivial(MPI_Datatype type);
 void MPIO_Datatype_get_el_type(MPI_Datatype type, MPI_Datatype *eltype_p,
 			       int flag);
