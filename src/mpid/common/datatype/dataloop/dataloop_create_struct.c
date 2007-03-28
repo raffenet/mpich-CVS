@@ -544,7 +544,6 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
     MPI_Aint *tmp_disps; /* since we're calling another fn that takes
 			    this type as an input parameter */
     DLOOP_Offset bytes;
-    DLOOP_VECTOR *iov_array;
     DLOOP_Segment *segp;
 
     int first_ind, last_ind;
@@ -573,7 +572,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 	}
 	else /* derived type; get a count of contig blocks */
 	{
-	    int tmp_nr_blks;
+	    DLOOP_Count tmp_nr_blks;
 
 	    PREPEND_PREFIX(Segment_init)(NULL,
 					 (DLOOP_Count) blklens[i],
@@ -593,27 +592,17 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 
     nr_blks += 2; /* safety measure */
 
-    iov_array = (DLOOP_VECTOR *) DLOOP_Malloc(nr_blks * sizeof(DLOOP_VECTOR));
-    /* --BEGIN ERROR HANDLING-- */
-    if (!iov_array) {
-	return DLOOP_Dataloop_create_struct_memory_error();
-    }
-    /* --END ERROR HANDLING-- */
-
     tmp_blklens = (int *) DLOOP_Malloc(nr_blks * sizeof(int));
-
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_blklens) {
-	DLOOP_Free(iov_array);
 	return DLOOP_Dataloop_create_struct_memory_error();
     }
     /* --END ERROR HANDLING-- */
 
-    tmp_disps = (MPI_Aint *) DLOOP_Malloc(nr_blks * sizeof(MPI_Aint));
 
+    tmp_disps = (MPI_Aint *) DLOOP_Malloc(nr_blks * sizeof(MPI_Aint));
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_disps) {
-	DLOOP_Free(iov_array);
 	DLOOP_Free(tmp_blklens);
 	return DLOOP_Dataloop_create_struct_memory_error();
     }

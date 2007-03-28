@@ -636,17 +636,7 @@ void MPID_Dataloop_dup(DLOOP_Dataloop *old_loop,
 		       DLOOP_Dataloop **new_loop_p);
 void MPID_Dataloop_free(struct MPID_Dataloop **dataloop);
 
-/* Segment functions */
-void MPID_Segment_pack(struct DLOOP_Segment *segp,
-		       DLOOP_Offset first,
-		       DLOOP_Offset *lastp,
-		       void *pack_buffer);
-
-void MPID_Segment_unpack(struct DLOOP_Segment *segp,
-			 DLOOP_Offset first,
-			 DLOOP_Offset *lastp,
-			 const void * unpack_buffer);
-
+/* Segment functions specific to MPICH2 */
 void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
 			      DLOOP_Offset first,
 			      DLOOP_Offset *lastp,
