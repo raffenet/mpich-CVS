@@ -18,6 +18,7 @@ int MPID_nem_newtcp_module_finalize()
     int count;
     MPID_nem_newtcp_module_poke_msg_t msg;
     int ret;
+    void * thread_ret;
     
     mpi_errno =MPID_nem_newtcp_module_send_finalize();
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -40,9 +41,11 @@ int MPID_nem_newtcp_module_finalize()
     MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);
     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Released lock");
 
-    ret = pthread_join(MPID_nem_newtcp_module_comm_thread_handle, (void *)&mpi_errno);
+    ret = pthread_join(MPID_nem_newtcp_module_comm_thread_handle, &thread_ret);
     MPIU_ERR_CHKANDJUMP1(ret == -1, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", strerror(errno));
-
+    mpi_errno = (MPI_Aint)thread_ret;
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Requesting lock");
     MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "  got lock");

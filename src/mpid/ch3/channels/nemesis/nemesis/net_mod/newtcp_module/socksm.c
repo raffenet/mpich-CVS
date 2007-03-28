@@ -544,7 +544,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
     freenode_t *node;
 
     /* MPIU_DBG_MSG(NEM_SOCK_DET, TYPICAL, FCNAME "checking DBG_MSG Enter"); */
-    if (((MPIDI_CH3I_VC *)vc->channel_private)->state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED) {
+    if (((MPIDI_CH3I_VC *)vc->channel_private)->state == MPID_NEM_VC_STATE_CONNECTING) {
         struct sockaddr_in *sock_addr;
         int rc = 0;
 
@@ -581,7 +581,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         }
         
 /*         sc->handler = sc_state_info[sc->state.cstate].sc_state_handler; */
-        ((MPIDI_CH3I_VC *)vc->channel_private)->state = MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED;
+        ((MPIDI_CH3I_VC *)vc->channel_private)->state = MPID_NEM_VC_STATE_CONNECTED;
         sc->pg_rank = vc->pg_rank;
         if (IS_SAME_PGID(vc->pg->id, MPIDI_Process.my_pg->id)) {
             sc->is_same_pg = TRUE;
@@ -595,7 +595,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
         VC_FIELD(vc, sc) = sc;
         sc->pending_event = 0; /* clear pending events */
     }
-    else if (((MPIDI_CH3I_VC *)vc->channel_private)->state == MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED) {
+    else if (((MPIDI_CH3I_VC *)vc->channel_private)->state == MPID_NEM_VC_STATE_CONNECTED) {
         sc = VC_FIELD(vc, sc);
         switch(sc->state.cstate) {
         case CONN_STATE_TS_D_DCNTING:
@@ -685,12 +685,18 @@ int socksm_disconnect(struct MPIDI_VC *const vc)
 {
     sockconn_t *sc = NULL;
     int mpi_errno = MPI_SUCCESS;
-
+    MPIDI_CH3I_VC * const vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
+    
 /*     FIXME check whether a (different/new) error has to be reported stating the VC is  */
 /*      already disconnected. */
-    if (((MPIDI_CH3I_VC *)vc->channel_private)->state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED)
+    if (vc_ch->state == MPID_NEM_VC_STATE_DISCONNECTED)
         goto fn_exit;
-    else if (((MPIDI_CH3I_VC *)vc->channel_private)->state == MPID_NEM_NEWTCP_MODULE_VC_STATE_CONNECTED) {
+    else if (vc_ch->state == MPID_NEM_VC_STATE_CONNECTING) 
+    {
+        vc_ch->state = MPID_NEM_VC_STATE_DISCONNECTED;
+        goto fn_exit;
+    }
+    else if (vc_ch->state == MPID_NEM_VC_STATE_CONNECTED) {
         switch(sc->state.cstate) {
         case CONN_STATE_TC_C_CNTING:
             sc->pending_event = EVENT_DISCONNECT; /*  (N1) */
@@ -1054,7 +1060,7 @@ static int state_d_quiescent_handler(pollfd_t *const plfd, sockconn_t *const sc)
     sc->fd = plfd->fd = CONN_INVALID_FD;
     if (sc->vc && VC_FIELD(sc->vc, sc) == sc) /* this vc may be connecting/accepting with another sc e.g., this sc lost the tie-breaker */
     {
-        ((MPIDI_CH3I_VC *)sc->vc->channel_private)->state = MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED;
+        ((MPIDI_CH3I_VC *)sc->vc->channel_private)->state = MPID_NEM_VC_STATE_DISCONNECTED;
         if (sc->pending_event != EVENT_CONNECT)
             VC_FIELD(sc->vc, sc) = NULL;
     }

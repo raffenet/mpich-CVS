@@ -110,7 +110,7 @@ typedef struct MPIDI_CH3I_VC
     struct MPIDI_VC *next;
     struct MPIDI_VC *prev;
 
-    enum {MPID_NEM_VC_STATE_CONNECTED, MPID_NEM_VC_STATE_DISCONNECTED} state;
+    enum {MPID_NEM_VC_STATE_DISCONNECTED, MPID_NEM_VC_STATE_CONNECTING, MPID_NEM_VC_STATE_CONNECTED} state;
 
     /* contig function pointers.  Netmods should set these. */
     /* iStartContigMsg -- sends a message consisting of a header (hdr) and contiguous data (data), possibly of 0 size.  If the

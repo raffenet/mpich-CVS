@@ -103,7 +103,7 @@ static void* comm_thread(void* dummy)
     }
 
  fn_exit:
-    return (void *)mpi_errno;
+    return (void *)(MPI_Aint)mpi_errno;
  fn_fail:
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
@@ -356,7 +356,7 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
 
     /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
-    vc_ch->state = MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED;
+    vc_ch->state = MPID_NEM_VC_STATE_DISCONNECTED;
     
     vc->sendEagerNoncontig_fn = MPID_nem_newtcp_SendEagerNoncontig;
     vc_ch->iStartContigMsg    = MPID_nem_newtcp_iStartContigMsg;
