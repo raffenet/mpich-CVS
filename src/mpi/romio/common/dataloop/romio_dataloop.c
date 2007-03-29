@@ -71,7 +71,7 @@ void MPIO_Datatype_get_size(MPI_Datatype type, MPI_Offset *size_p)
 	MPIO_Datatype_initialize();
     }
 
-    mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
+    mpi_errno = PMPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
     
     if (!attrflag) {
@@ -95,7 +95,7 @@ void MPIO_Datatype_get_extent(MPI_Datatype type, MPI_Offset *extent_p)
 	MPIO_Datatype_initialize();
     }
 
-    mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
+    mpi_errno = PMPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
     
     if (!attrflag) {
@@ -147,7 +147,7 @@ void MPIO_Datatype_get_block_info(MPI_Datatype type,
 	MPIO_Segment  *segp;
 	MPI_Offset     bytes;
 
-	mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp,
+	mpi_errno = PMPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp,
 				      &attrflag);
 	DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 	if (!attrflag) {
@@ -237,7 +237,7 @@ void MPIO_Datatype_get_loopptr(MPI_Datatype type,
 	MPIO_Datatype_initialize();
     }
 
-    mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
+    mpi_errno = PMPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
     if (!(dtp->valid & MPIO_DATATYPE_VALID_DLOOP_PTR))
@@ -257,7 +257,7 @@ void MPIO_Datatype_get_loopsize(MPI_Datatype type, int *size_p, int flag)
 	MPIO_Datatype_initialize();
     }
 
-    mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
+    mpi_errno = PMPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
     if (!(dtp->valid & MPIO_DATATYPE_VALID_DLOOP_SIZE))
@@ -277,7 +277,7 @@ void MPIO_Datatype_get_loopdepth(MPI_Datatype type, int *depth_p, int flag)
 	MPIO_Datatype_initialize();
     }
 
-    mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
+    mpi_errno = PMPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
     if (!(dtp->valid & MPIO_DATATYPE_VALID_DLOOP_DEPTH))
@@ -297,7 +297,7 @@ void MPIO_Datatype_set_loopptr(MPI_Datatype type, MPIO_Dataloop *ptr, int flag)
 	MPIO_Datatype_initialize();
     }
 
-    mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
+    mpi_errno = PMPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
     if (!attrflag) {
 	dtp = MPIO_Datatype_allocate(type);
@@ -319,7 +319,7 @@ void MPIO_Datatype_set_loopsize(MPI_Datatype type, int size, int flag)
 	MPIO_Datatype_initialize();
     }
 
-    mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
+    mpi_errno = PMPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
     if (!attrflag) {
 	dtp = MPIO_Datatype_allocate(type);
@@ -339,7 +339,7 @@ void MPIO_Datatype_set_loopdepth(MPI_Datatype type, int depth, int flag)
 	MPIO_Datatype_initialize();
     }
 
-    mpi_errno = MPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
+    mpi_errno = PMPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
     if (!attrflag) {
 	dtp = MPIO_Datatype_allocate(type);
@@ -373,7 +373,7 @@ static int MPIO_Datatype_initialize(void)
     DLOOP_Assert(MPIO_Datatype_keyval == MPI_KEYVAL_INVALID);
 
     /* create keyval for dataloop storage */
-    mpi_errno = MPI_Type_create_keyval(MPIO_Datatype_copy_attr_function,
+    mpi_errno = PMPI_Type_create_keyval(MPIO_Datatype_copy_attr_function,
 				       MPIO_Datatype_delete_attr_function,
 				       &MPIO_Datatype_keyval,
 				       NULL);
@@ -408,10 +408,10 @@ static int MPIO_Datatype_finalize(MPI_Comm comm,
     DLOOP_Assert(MPIO_Datatype_keyval != MPI_KEYVAL_INVALID);
 
     /* remove keyvals */
-    mpi_errno = MPI_Type_free_keyval(&MPIO_Datatype_keyval);
+    mpi_errno = PMPI_Type_free_keyval(&MPIO_Datatype_keyval);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
-    mpi_errno = MPI_Type_free_keyval(&MPIO_Datatype_finalize_keyval);
+    mpi_errno = PMPI_Type_free_keyval(&MPIO_Datatype_finalize_keyval);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
     printf("freed keyvals\n");
@@ -432,7 +432,7 @@ static MPIO_Datatype *MPIO_Datatype_allocate(MPI_Datatype type)
     dtp->dloop_size  = -1;
     dtp->dloop_depth = -1;
     
-    mpi_errno = MPI_Type_set_attr(type, MPIO_Datatype_keyval, dtp);
+    mpi_errno = PMPI_Type_set_attr(type, MPIO_Datatype_keyval, dtp);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
     printf("allocated attr struct\n");
@@ -460,13 +460,13 @@ static void MPIO_Datatype_set_szext(MPI_Datatype type, MPIO_Datatype *dtp)
 	int size;
 	MPI_Aint lb, extent, true_lb, true_extent;
 	
-	mpi_errno = MPI_Type_size(type, &size);
+	mpi_errno = PMPI_Type_size(type, &size);
 	DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 	
-	mpi_errno = MPI_Type_get_extent(type, &lb, &extent);
+	mpi_errno = PMPI_Type_get_extent(type, &lb, &extent);
 	DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 	
-	mpi_errno = MPI_Type_get_true_extent(type, &true_lb, &true_extent); 
+	mpi_errno = PMPI_Type_get_true_extent(type, &true_lb, &true_extent); 
 
 	dtp->size        = (MPI_Offset) size;
 	dtp->extent      = (MPI_Offset) extent;
