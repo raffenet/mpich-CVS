@@ -87,17 +87,17 @@
     }								\
 }
 
-#define MPE_Thread_mutex_trylock(mutex_ptr_, flag_ptr_, err_ptr_)		\
-{										\
-    int err__;									\
-										\
-    err__ = pthread_mutex_trylock(mutex_ptr_);					\
-    *(flag_ptr_) = (err__ == 0) ? TRUE : FALSE;					\
-    if ((err_ptr_) != NULL)							\
-    {										\
-	*(int *)(err_ptr_) = (err__ == EBUSY) : MPE_THREAD_SUCCESS ? err__;	\
-	/* FIXME: convert error to an MPE_THREAD_ERR value */			\
-    }										\
+#define MPE_Thread_mutex_trylock(mutex_ptr_, flag_ptr_, err_ptr_)	\
+{									\
+    int err__;								\
+									\
+    err__ = pthread_mutex_trylock(mutex_ptr_);				\
+    *(flag_ptr_) = (err__ == 0) ? TRUE : FALSE;				\
+    if ((err_ptr_) != NULL)						\
+    {									\
+	*(int *)(err_ptr_) = (err__ == EBUSY) : MPE_THREAD_SUCCESS ? err__;\
+	/* FIXME: convert error to an MPE_THREAD_ERR value */		\
+    }									\
 }
 
 
@@ -129,23 +129,24 @@
     }								\
 }
 
-#define MPE_Thread_cond_wait(cond_ptr_, mutex_ptr_, err_ptr_)						\
-{													\
-    int err__;												\
-    													\
-    /* The latest pthread specification says that cond_wait routines aren't allowed to return EINTR,	\
-       but some of the older implementations still do. */						\
-    do													\
-    {													\
-	err__ = pthread_cond_wait((cond_ptr_), (mutex_ptr_));						\
-    }													\
-    while (err__ == EINTR);										\
-													\
-    if ((err_ptr_) != NULL)										\
-    {													\
-	/* FIXME: convert error to an MPE_THREAD_ERR value */						\
-	*(int *)(err_ptr_) = err__;									\
-    }													\
+#define MPE_Thread_cond_wait(cond_ptr_, mutex_ptr_, err_ptr_)		\
+{									\
+    int err__;								\
+    									\
+    /* The latest pthread specification says that cond_wait routines    \
+       aren't allowed to return EINTR,	                                \
+       but some of the older implementations still do. */		\
+    do									\
+    {									\
+	err__ = pthread_cond_wait((cond_ptr_), (mutex_ptr_));		\
+    }									\
+    while (err__ == EINTR);						\
+									\
+    if ((err_ptr_) != NULL)						\
+    {									\
+	/* FIXME: convert error to an MPE_THREAD_ERR value */		\
+	*(int *)(err_ptr_) = err__;					\
+    }									\
 }
 
 #define MPE_Thread_cond_broadcast(cond_ptr_, err_ptr_)		\
