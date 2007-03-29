@@ -67,7 +67,7 @@ int MPIR_Comm_create( MPID_Comm **newcomm_ptr )
     /* --BEGIN ERROR HANDLING-- */
     if (!newptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-		   "MPIR_Comm_create", __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+		   FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
 	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
@@ -120,7 +120,7 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
     /* --BEGIN ERROR HANDLING-- */
     if (!localcomm_ptr) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-                                 "MPIR_Setup_intercomm_localcomm", __LINE__,
+					  FCNAME, __LINE__,
 					  MPI_ERR_OTHER, "**nomem", 0 );
 	goto fn_fail;
     }
@@ -563,11 +563,14 @@ void MPIR_Free_contextid( int context_id )
 /*
  * Copy a communicator, including creating a new context and copying the
  * virtual connection tables and clearing the various fields.
- * Does *not* copy attributes.  If size is < the size of the input
- * communicator, copy only the first size elements.  If this process
- * is not a member, return a null pointer in outcomm_ptr.
+ * Does *not* copy attributes.  If size is < the size of the (local group
+ * in the ) input communicator, copy only the first size elements.  
+ * If this process is not a member, return a null pointer in outcomm_ptr.
+ * This is only supported in the case where the communicator is in 
+ * Intracomm (not an Intercomm).  Note that this is all that is required
+ * for cart_create and graph_create.
  *
- * Used by comm_create, cart_create, graph_create, and dup_create 
+ * Used by cart_create, graph_create, and dup_create 
  */
 #undef FUNCNAME
 #define FUNCNAME MPIR_Comm_copy
@@ -599,11 +602,13 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     /* --BEGIN ERROR HANDLING-- */
     if (new_context_id == 0 || mpi_errno != MPI_SUCCESS) {
 	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-               "MPIR_Comm_copy", __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
+               FCNAME, __LINE__, MPI_ERR_OTHER, "**toomanycomm", 0 );
 	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 
+    /* This is the local size, not the remote size, in the case of
+       an intercomm */
     if (comm_ptr->rank >= size) {
 	*outcomm_ptr = 0;
 	goto fn_exit;
@@ -621,11 +626,29 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     /* Save the kind of the communicator */
     newcomm_ptr->comm_kind   = comm_ptr->comm_kind;
     newcomm_ptr->local_comm  = 0;
-    
-    /* Duplicate the VCRT references */
-    MPID_VCRT_Add_ref( comm_ptr->vcrt );
-    newcomm_ptr->vcrt = comm_ptr->vcrt;
-    newcomm_ptr->vcr  = comm_ptr->vcr;
+
+    /* There are two cases here - size is the same as the old communicator,
+       or it is smaller.  If the size is the same, we can just add a reference.
+       Otherwise, we need to create a new VCRT.  Note that this is the
+       test that matches the test on rank above. */
+    if (size == comm_ptr->local_size) {
+	/* Duplicate the VCRT references */
+	MPID_VCRT_Add_ref( comm_ptr->vcrt );
+	newcomm_ptr->vcrt = comm_ptr->vcrt;
+	newcomm_ptr->vcr  = comm_ptr->vcr;
+    }
+    else {
+	int i;
+	/* The "remote" vcr gets the shortened vcrt */
+	MPID_VCRT_Create( size, &newcomm_ptr->vcrt );
+	MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, 
+			   &newcomm_ptr->vcr );
+	for (i=0; i<size; i++) {
+	    /* For rank i in the new communicator, find the corresponding
+	       rank in the input communicator */
+	    MPID_VCR_Dup( comm_ptr->vcr[i], &newcomm_ptr->vcr[i] );
+	}
+    }
 
     /* If it is an intercomm, duplicate the local vcrt references */
     if (comm_ptr->comm_kind == MPID_INTERCOMM) {
@@ -635,9 +658,15 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     }
 
     /* Set the sizes and ranks */
-    newcomm_ptr->remote_size = comm_ptr->remote_size;
     newcomm_ptr->rank        = comm_ptr->rank;
-    newcomm_ptr->local_size  = comm_ptr->local_size;
+    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+	newcomm_ptr->local_size  = comm_ptr->local_size;
+	newcomm_ptr->remote_size = comm_ptr->remote_size;
+    }
+    else {
+	newcomm_ptr->local_size  = size;
+	newcomm_ptr->remote_size = size;
+    }
 
     /* Inherit the error handler (if any) */
     newcomm_ptr->errhandler = comm_ptr->errhandler;
