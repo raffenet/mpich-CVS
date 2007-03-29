@@ -916,7 +916,7 @@ MPID_nem_mpich2_test_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox)
     poll_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 
-    if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
+    if ((MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE) && ((MPID_nem_mem_region.ext_procs > 0))
     {
 	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -983,7 +983,7 @@ MPID_nem_mpich2_test_recv_wait (MPID_nem_cell_ptr_t *cell, int *in_fbox, int tim
     poll_fboxes (cell, goto fbox_l);
 #endif/* USE_FASTBOX     */
 
-    if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
+    if ((MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE) && ((MPID_nem_mem_region.ext_procs > 0))
     {
 	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -1060,8 +1060,8 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_
 #ifdef USE_FASTBOX
     poll_fboxes (cell, goto fbox_l);
 #endif /*USE_FASTBOX */
-   
-    if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
+
+    if ((MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE) && ((MPID_nem_mem_region.ext_procs > 0))
     {
 	mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -1080,7 +1080,7 @@ MPID_nem_mpich2_blocking_recv (MPID_nem_cell_ptr_t *cell, int *in_fbox, int num_
 	poll_fboxes (cell, goto fbox_l);
 #endif /*USE_FASTBOX */
 
-	if (MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE)
+	if ((MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE) && ((MPID_nem_mem_region.ext_procs > 0))
 	{
 	    mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
             if (mpi_errno) MPIU_ERR_POP (mpi_errno);
