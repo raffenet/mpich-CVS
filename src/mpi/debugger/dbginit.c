@@ -52,6 +52,7 @@ char * MPIR_debug_abort_string   = 0;
  */
 #define MPIR_DEBUG_SPAWNED   1
 #define MPIR_DEBUG_ABORTING  2
+#if 0
 /*
  * MPIR_PROCDESC is used to pass information to the debugger about 
  * all of the processes.
@@ -63,6 +64,7 @@ typedef struct {
 } MPIR_PROCDESC;
 MPIR_PROCDESC *MPIR_proctable    = 0;
 int MPIR_proctable_size          = 1;
+#endif
 
 /* Other symbols:
  * MPIR_i_am_starter - Indicates that this process is not an MPI process
@@ -87,6 +89,7 @@ void MPIR_WaitForDebugger( void )
     int rank = MPIR_Process.comm_world->rank;
     int size = MPIR_Process.comm_world->local_size;
 
+#if 0
     /* FIXME: In MPICH2, the executables may not have the information
        on the other processes; this is part of the Process Manager Interface
        (PMI).  We need another way to provide this information to 
@@ -127,6 +130,7 @@ void MPIR_WaitForDebugger( void )
 		    &timeout );
 	}
     }
+#endif
 
     if (getenv("MPIEXEC_DEBUG")) {
 	while (!MPIR_debug_gate) ; 

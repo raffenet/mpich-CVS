@@ -17,6 +17,7 @@ mpiexec [global args] [local args] executable [args]
       -1                           # override default of trying 1st proc locally
       -ifhn                        # network interface to use locally
       -tv                          # run procs under totalview (must be installed)
+      -tvsu                        # totalview startup only
       -gdb                         # run procs under gdb
       -m                           # merge output lines (default with gdb)
       -a                           # means assign this alias to the job
@@ -111,6 +112,7 @@ def mpiexec():
                         'MPIEXEC_MACHINEFILE'         :  '',
                         'MPIEXEC_BNR'                 :  0,
                         'MPIEXEC_TOTALVIEW'           :  0,
+                        'MPIEXEC_TVSU'                :  0,
                         'MPIEXEC_EXITCODES_FILENAME'  :  '',
                         'MPIEXEC_TRY_1ST_LOCALLY'     :  1,
                         'MPIEXEC_TIMEOUT'             :  0,
@@ -454,12 +456,25 @@ def mpiexec():
             else:
                 outECs += 'jobid=%s\n' % (jobid.strip())
         # print 'mpiexec: job %s started' % (jobid)
-        if parmdb['MPIEXEC_TOTALVIEW']:
+        if parmdb['MPIEXEC_TVSU']:
+            import mtv
+            mtv.allocate_proctable(parmdb['nprocs'])
+            # extract procinfo (rank,hostname,exec,pid) tuples from msg
+            for i in range(parmdb['nprocs']):
+                tvhost = msg['procinfo'][i][0]
+                tvpgm  = msg['procinfo'][i][1]
+                tvpid  = msg['procinfo'][i][2]
+                # print "%d %s %s %d" % (i,host,pgm,pid)
+                mtv.append_proctable_entry(tvhost,tvpgm,tvpid)
+            mtv.complete_spawn()
+            msgToSend = { 'cmd' : 'tv_ready' }
+            manSock.send_dict_msg(msgToSend)
+        elif parmdb['MPIEXEC_TOTALVIEW']:
             tvname = 'totalview'
             if os.environ.has_key('TOTALVIEW'):
                 tvname = os.environ['TOTALVIEW']
             if not mpd_which(((tvname.strip()).split()[0])):
-                print 'cannot find "totalview" in your $PATH:'
+                print 'cannot find "%s" in your $PATH:' % (tvname)
                 print '    ', os.environ['PATH']
                 sys.exit(-1)
             import mtv
@@ -522,7 +537,8 @@ def mpiexec():
 
 
 def collect_args(args,localArgSets):
-    validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-bnr' : 0, '-tv' : 0,
+    validGlobalArgs = { '-l' : 0, '-usize' : 1, '-gdb' : 0, '-bnr' : 0,
+                        '-tv' : 0, '-tvsu' : 0,
                         '-ifhn' : 1, '-machinefile' : 1, '-s' : 1, '-1' : 0,
                         '-a' : 1, '-m' : 0, '-ecfn' : 1,
                         '-gn' : 1, '-gnp' : 1, '-ghost' : 1, '-gpath' : 1, '-gwdir' : 1,
@@ -633,6 +649,10 @@ def collect_args(args,localArgSets):
             argidx += 1
         elif garg == '-tv':
             parmdb[('cmdline','MPIEXEC_TOTALVIEW')] = 1
+            argidx += 1
+        elif garg == '-tvsu':
+            parmdb[('cmdline','MPIEXEC_TOTALVIEW')] = 1
+            parmdb[('cmdline','MPIEXEC_TVSU')] = 1
             argidx += 1
         elif garg == '-ecfn':
             parmdb[('cmdline','MPIEXEC_EXITCODES_FILENAME')] = args[argidx+1]
