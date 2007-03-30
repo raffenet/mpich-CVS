@@ -5,17 +5,13 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-/* NOTE: THIS IMPLEMENTATION IS MPICH2-SPECIFIC. */
-
-/* NOTE: THIS PROBABLY BELONGS IN A GLUE DIR. */
-
 #include <mpi.h>
 #include <mpid_datatype.h>
 
 #undef PREPEND_PREFIX
 #define PREPEND_PREFIX(fn) MPIO_ ## fn
 
-MPIO_Type_access_contents(MPI_Datatype type,
+MPID_Type_access_contents(MPI_Datatype type,
 			  int **ints_p,
 			  MPI_Aint **aints_p,
 			  MPI_Datatype **types_p)
@@ -62,7 +58,7 @@ MPIO_Type_access_contents(MPI_Datatype type,
     return;
 }
 
-MPIO_Type_release_contents(MPI_Datatype type,
+MPID_Type_release_contents(MPI_Datatype type,
 			   int **ints_p,
 			   MPI_Aint **aints_p,
 			   MPI_Datatype **types_p)

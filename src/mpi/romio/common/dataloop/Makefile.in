@@ -33,7 +33,7 @@ C_COMPILE_SHL = $(CC_SHL)
 
 @VPATH@
 
-DLOOP_OBJECTS = romio_contents_support.o darray_support.o dataloop.o \
+DLOOP_OBJECTS = darray_support.o dataloop.o \
 		dataloop_create.o dataloop_create_blockindexed.o \
 		dataloop_create_contig.o dataloop_create_indexed.o \
 		dataloop_create_pairtype.o dataloop_create_struct.o \
@@ -41,7 +41,7 @@ DLOOP_OBJECTS = romio_contents_support.o darray_support.o dataloop.o \
 		subarray_support.o typesize_support.o segment_ops.o \
 		romio_segment_ops.o
 
-DLOOP_RENAMED_OBJECTS = romio_contents_support.o R_darray_support.o \
+DLOOP_RENAMED_OBJECTS = R_darray_support.o \
 	R_dataloop.o R_dataloop_create.o \
 	R_dataloop_create_blockindexed.o \
 	R_dataloop_create_contig.o R_dataloop_create_indexed.o \

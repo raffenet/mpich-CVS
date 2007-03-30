@@ -95,6 +95,10 @@ struct MPIO_iovec {
 /* assert function */
 #define DLOOP_Assert assert
 
+/* contents access functions */
+#define MPIO_Type_access_contents MPID_Type_access_contents
+#define MPIO_Type_free_contents MPID_Type_free_contents
+
 /* Include dataloop_parts.h at the end to get the rest of the prototypes
  * and defines, in terms of the prefixes and types above.
  */

@@ -19,6 +19,7 @@ lib${MPILIBNAME}_a_SOURCES = \
 	mpid_datatype_contents.c \
 	mpid_type_get_contents.c \
 	mpid_type_create_pairtype.c \
+	mpid_contents_support.c \
 
 HEADERS = dataloop/dataloop_parts.h dataloop/dataloop_create.h mpid_dataloop.h mpid_datatype.h \
 	mpid_ext32_segment.h segment_states.h
