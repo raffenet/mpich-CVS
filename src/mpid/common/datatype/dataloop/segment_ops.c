@@ -632,16 +632,6 @@ static int DLOOP_Segment_contig_mpi_flatten(DLOOP_Offset *blocks_p,
 
     DLOOP_Handle_get_size_macro(el_type, el_size);
     size = *blocks_p * (int) el_size;
-
-#if 0
-    MPIU_DBG_MSG_FMT(DATATYPE,VERBOSE,(MPIU_DBG_FDEST,
-             "\t[contig to vec: do=%d, dp=%x, ind=%d, sz=%d, blksz=%d]\n",
-		    (unsigned) rel_off,
-		    (unsigned) (MPI_Aint) bufp,
-		    paramp->index,
-		    el_size,
-		    (int) *blocks_p));
-#endif
     
     last_idx = paramp->index - 1;
     if (last_idx >= 0) {

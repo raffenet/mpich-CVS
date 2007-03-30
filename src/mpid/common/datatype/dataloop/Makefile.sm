@@ -11,7 +11,6 @@ lib${MPILIBNAME}_a_SOURCES = \
 	dataloop_create_pairtype.c \
 	subarray_support.c \
 	darray_support.c \
-	contents_support.c \
 
 HEADERS = dataloop.h dataloop_parts.h dataloop_create.h ../mpid_dataloop.h  typesize_support.h
 # INCLUDES = -I${srcdir} -I${srcdir}/.. -I../../../include -I${master_top_srcdir}/src/include
