@@ -416,15 +416,15 @@ static int MPIO_Datatype_initialize(void)
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
     /* create keyval to hook to COMM_WORLD for finalize */
-    mpi_errno = MPI_Comm_create_keyval(MPI_COMM_NULL_COPY_FN,
-				       MPIO_Datatype_finalize,
-				       &MPIO_Datatype_finalize_keyval,
-				       NULL);
+    mpi_errno = PMPI_Comm_create_keyval(MPI_COMM_NULL_COPY_FN,
+					MPIO_Datatype_finalize,
+					&MPIO_Datatype_finalize_keyval,
+					NULL);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
-    mpi_errno = MPI_Comm_set_attr(MPI_COMM_WORLD,
-				  MPIO_Datatype_finalize_keyval,
-				  NULL);
+    mpi_errno = PMPI_Comm_set_attr(MPI_COMM_WORLD,
+				   MPIO_Datatype_finalize_keyval,
+				   NULL);
     DLOOP_Assert(mpi_errno == MPI_SUCCESS);
 
     printf("created keyval\n");
