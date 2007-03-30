@@ -4,10 +4,16 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-/* We need to include the conf file first so that we can se
+/* We need to include the conf file first so that we can use
    the _SVID_SOURCE if needed before any file includes features.h 
    on GNU systems */
 #include "mpidi_ch3_conf.h"
+
+#ifdef USE_NOPOSIX_FOR_IFCONF
+/* This is a very special case.  Allow the use of some extensions for 
+   just the rest of this file so that we can get the ifconf structure */
+#undef _POSIX_C_SOURCE
+#endif
 
 #ifdef USE_SVIDSOURCE_FOR_IFCONF
 /* This is a very special case.  Allow the use of some extensions for just
@@ -116,8 +122,24 @@ int MPIDU_CH3U_GetSockInterfaceAddr( int myRank, char *ifname, int maxIfname,
 		ifaddr->len = 0;
 		ifaddr->type = -1;
 	    }
-	    else
+	    else {
 		memcpy( ifaddr->ifaddr, info->h_addr_list[0], ifaddr->len );
+#if 0
+		printf( "ifaddr len = %d\n", ifaddr->len );
+		{int i;
+		    unsigned char *p = info->h_addr_list[0];
+		    for (i=0; i<ifaddr->len; i++) { 
+			printf( "%.2x", *p++ );
+		    }
+		    printf( "\n" ); fflush(stdout);
+		    p = info->h_addr_list[0];
+		    for (i=0; i<ifaddr->len; i++) { 
+			printf( "%.3d", *p++ );
+		    }
+		    printf( "\n" ); fflush(stdout);
+		}
+#endif
+	    }
 	}
     }
 
@@ -239,7 +261,7 @@ static int MPIDI_CH3U_GetIPInterface( MPIDU_Sock_ifaddr_t *ifaddr, int *found )
 	ifreq = (struct ifreq *) ptr;
 
 	if (dbg_ifname) {
-	    fprintf( stdout, "%10s\t", ifreq->ifr_name );
+	    fprintf( stdout, "%10s\t", ifreq->ifr_name ); fflush(stdout);
 	}
 	
 	if (ifreq->ifr_addr.sa_family == AF_INET) {
