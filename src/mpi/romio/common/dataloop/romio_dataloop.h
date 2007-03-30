@@ -102,13 +102,7 @@ struct MPIO_iovec {
 #include "./dataloop_create.h"
 
 /* accessor functions */
-void MPIO_Datatype_get_loopptr(MPI_Datatype type, MPIO_Dataloop **ptr_p,
-			       int flag);
-void MPIO_Datatype_get_loopsize(MPI_Datatype type, int *size_p, int flag);
-void MPIO_Datatype_get_loopdepth(MPI_Datatype type, int *depth_p, int flag);
-void MPIO_Datatype_set_loopptr(MPI_Datatype type, MPIO_Dataloop *ptr, int flag);
-void MPIO_Datatype_set_loopsize(MPI_Datatype type, int size, int flag);
-void MPIO_Datatype_set_loopdepth(MPI_Datatype type, int depth, int flag);
+void MPIO_Datatype_init_dataloop(MPI_Datatype type);
 void MPIO_Datatype_get_size(MPI_Datatype type, MPI_Offset *size_p);
 void MPIO_Datatype_get_extent(MPI_Datatype type, MPI_Offset *extent_p);
 void MPIO_Datatype_get_block_info(MPI_Datatype type, MPI_Offset *true_lb,
@@ -116,6 +110,16 @@ void MPIO_Datatype_get_block_info(MPI_Datatype type, MPI_Offset *true_lb,
 int MPIO_Datatype_is_nontrivial(MPI_Datatype type);
 void MPIO_Datatype_get_el_type(MPI_Datatype type, MPI_Datatype *eltype_p,
 			       int flag);
+
+/* accessor functions used only by dataloop code proper */
+void MPIO_Datatype_get_loopptr(MPI_Datatype type, MPIO_Dataloop **ptr_p,
+			       int flag);
+void MPIO_Datatype_get_loopsize(MPI_Datatype type, int *size_p, int flag);
+void MPIO_Datatype_get_loopdepth(MPI_Datatype type, int *depth_p, int flag);
+void MPIO_Datatype_set_loopptr(MPI_Datatype type, MPIO_Dataloop *ptr, int flag);
+void MPIO_Datatype_set_loopsize(MPI_Datatype type, int size, int flag);
+void MPIO_Datatype_set_loopdepth(MPI_Datatype type, int depth, int flag);
+
 /* These values are defined by DLOOP code.
  *
  * Note: DLOOP_DATALOOP_ALL_BYTES not currently used in MPICH2.

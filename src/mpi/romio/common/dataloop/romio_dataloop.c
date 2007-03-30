@@ -62,6 +62,42 @@ static int MPIO_Datatype_delete_attr_function(MPI_Datatype type,
 					      void *attribute_val,
 					      void *extra_state);
 
+/* MPIO_Datatype_init_dataloop
+ *
+ * Must be called before dataloop is accessed.
+ *
+ * Valid to call more than once on the same type.
+ */
+void MPIO_Datatype_init_dataloop(MPI_Datatype type)
+{
+    int mpi_errno, attrflag;
+    MPIO_Datatype *dtp;
+
+    /* trivial types don't get dataloops */
+    if (!(MPIO_Datatype_is_nontrivial(type))) return;
+
+    if (MPIO_Datatype_keyval != MPI_KEYVAL_INVALID) {
+	MPIO_Datatype_initialize();
+    }
+
+    mpi_errno = PMPI_Type_get_attr(type, MPIO_Datatype_keyval, &dtp, &attrflag);
+    DLOOP_Assert(mpi_errno == MPI_SUCCESS);
+
+    if (!attrflag) {
+	/* need to allocate structure and create dataloop representation */
+	dtp = MPIO_Datatype_allocate(type);
+    }
+    if (!(dtp->valid | MPIO_DATATYPE_VALID_DLOOP_PTR)) {
+	MPIO_Dataloop_create(type,
+			     &dtp->dloop,
+			     &dtp->dloop_size,
+			     &dtp->dloop_depth,
+			     0);
+    }
+
+    return;
+}
+
 void MPIO_Datatype_get_size(MPI_Datatype type, MPI_Offset *size_p)
 {
     int mpi_errno, attrflag;

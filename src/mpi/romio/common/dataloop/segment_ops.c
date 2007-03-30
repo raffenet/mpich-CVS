@@ -75,10 +75,10 @@
 /* m2m_params defined in dataloop_parts.h */
 
 int PREPEND_PREFIX(Segment_contig_m2m)(DLOOP_Offset *blocks_p,
-				       DLOOP_Type el_type,
-				       DLOOP_Offset rel_off,
-				       void *bufp, /* unused */
-				       void *v_paramp)
+				       DLOOP_Type    el_type,
+				       DLOOP_Offset  rel_off,
+				       DLOOP_Buffer  unused,
+				       void         *v_paramp)
 {
     DLOOP_Offset el_size; /* DLOOP_Count? */
     DLOOP_Offset size;
@@ -114,13 +114,13 @@ int PREPEND_PREFIX(Segment_contig_m2m)(DLOOP_Offset *blocks_p,
  * of a whole block in a vector type.
  */
 int PREPEND_PREFIX(Segment_vector_m2m)(DLOOP_Offset *blocks_p,
-				       DLOOP_Count count, /* unused */
-				       DLOOP_Count blksz,
-				       DLOOP_Offset stride,
-				       DLOOP_Type el_type,
-				       DLOOP_Offset rel_off, /* offset into buffer */
-				       void *bufp, /* unused */
-				       void *v_paramp)
+				       DLOOP_Count   unused,
+				       DLOOP_Count   blksz,
+				       DLOOP_Offset  stride,
+				       DLOOP_Type    el_type,
+				       DLOOP_Offset  rel_off, /* into buffer */
+				       DLOOP_Buffer  unused2,
+				       void         *v_paramp)
 {
     DLOOP_Count i, blocks_left, whole_count;
     DLOOP_Offset el_size;
@@ -210,13 +210,13 @@ int PREPEND_PREFIX(Segment_vector_m2m)(DLOOP_Offset *blocks_p,
 /* MPID_Segment_blkidx_m2m
  */
 int PREPEND_PREFIX(Segment_blkidx_m2m)(DLOOP_Offset *blocks_p,
-				       DLOOP_Count count,
-				       DLOOP_Count blocklen,
+				       DLOOP_Count   count,
+				       DLOOP_Count   blocklen,
 				       DLOOP_Offset *offsetarray,
-				       DLOOP_Type el_type,
-				       DLOOP_Offset rel_off,
-				       void *bufp, /*unused */
-				       void *v_paramp)
+				       DLOOP_Type    el_type,
+				       DLOOP_Offset  rel_off,
+				       DLOOP_Buffer  unused,
+				       void         *v_paramp)
 {
     DLOOP_Count curblock = 0;
     DLOOP_Offset el_size;
@@ -273,13 +273,13 @@ int PREPEND_PREFIX(Segment_blkidx_m2m)(DLOOP_Offset *blocks_p,
 /* MPID_Segment_index_m2m
  */
 int PREPEND_PREFIX(Segment_index_m2m)(DLOOP_Offset *blocks_p,
-				      DLOOP_Count count,
-				      DLOOP_Count *blockarray,
+				      DLOOP_Count   count,
+				      DLOOP_Count  *blockarray,
 				      DLOOP_Offset *offsetarray,
-				      DLOOP_Type el_type,
-				      DLOOP_Offset rel_off,
-				      void *bufp, /*unused */
-				      void *v_paramp)
+				      DLOOP_Type    el_type,
+				      DLOOP_Offset  rel_off,
+				      DLOOP_Buffer  unused,
+				      void         *v_paramp)
 {
     int curblock = 0;
     DLOOP_Offset el_size;
@@ -337,13 +337,13 @@ int PREPEND_PREFIX(Segment_index_m2m)(DLOOP_Offset *blocks_p,
 void PREPEND_PREFIX(Segment_pack)(DLOOP_Segment *segp,
 				  DLOOP_Offset   first,
 				  DLOOP_Offset  *lastp,
-				  void *streambuf)
+				  void          *streambuf)
 {
     struct PREPEND_PREFIX(m2m_params) params;
 
     /* experimenting with discarding buf value in the segment, keeping in
      * per-use structure instead. would require moving the parameters around a
-     * bit.
+     * bit. same applies to Segment_unpack below.
      */
     params.userbuf   = segp->ptr;
     params.streambuf = streambuf;
@@ -366,10 +366,6 @@ void PREPEND_PREFIX(Segment_unpack)(DLOOP_Segment *segp,
 {
     struct PREPEND_PREFIX(m2m_params) params;
 
-    /* experimenting with discarding buf value in the segment, keeping in
-     * per-use structure instead. would require moving the parameters around a
-     * bit.
-     */
     params.userbuf   = segp->ptr;
     params.streambuf = streambuf;
     params.direction = DLOOP_M2M_TO_USERBUF;
@@ -395,10 +391,10 @@ struct PREPEND_PREFIX(contig_blocks_params) {
  *       calculations of # of contig regions.
  */
 static int DLOOP_Segment_contig_count_block(DLOOP_Offset *blocks_p,
-					    DLOOP_Type el_type,
-					    DLOOP_Offset rel_off,
-					    DLOOP_Buffer bufp, /* unused */
-					    void *v_paramp)
+					    DLOOP_Type    el_type,
+					    DLOOP_Offset  rel_off,
+					    DLOOP_Buffer  unused,
+					    void         *v_paramp)
 {
     DLOOP_Offset size, el_size;
     struct PREPEND_PREFIX(contig_blocks_params) *paramp = v_paramp;
@@ -442,13 +438,13 @@ static int DLOOP_Segment_contig_count_block(DLOOP_Offset *blocks_p,
  * of a whole block in a vector type.
  */
 static int DLOOP_Segment_vector_count_block(DLOOP_Offset *blocks_p,
-					    DLOOP_Count count,
-					    DLOOP_Count blksz,
-					    DLOOP_Offset stride,
-					    DLOOP_Type el_type,
-					    DLOOP_Offset rel_off, /* offset into buffer */
-					    void *bufp, /* unused */
-					    void *v_paramp)
+					    DLOOP_Count   count,
+					    DLOOP_Count   blksz,
+					    DLOOP_Offset  stride,
+					    DLOOP_Type    el_type,
+					    DLOOP_Offset  rel_off, /* into buffer */
+					    DLOOP_Buffer  unused,
+					    void         *v_paramp)
 {
     DLOOP_Count new_blk_count;
     DLOOP_Offset size, el_size;
@@ -480,13 +476,13 @@ static int DLOOP_Segment_vector_count_block(DLOOP_Offset *blocks_p,
  * beginning of a whole block in a blockindexed type.
  */
 static int DLOOP_Segment_blkidx_count_block(DLOOP_Offset *blocks_p,
-					    DLOOP_Count count,
-					    DLOOP_Count blksz,
+					    DLOOP_Count   count,
+					    DLOOP_Count   blksz,
 					    DLOOP_Offset *offsetarray,
-					    DLOOP_Type el_type,
-					    DLOOP_Offset rel_off,
-					    void *bufp, /* unused */
-					    void *v_paramp)
+					    DLOOP_Type    el_type,
+					    DLOOP_Offset  rel_off,
+					    DLOOP_Buffer  unused,
+					    void         *v_paramp)
 {
     DLOOP_Count i, new_blk_count;
     DLOOP_Offset size, el_size, last_loc;
@@ -522,13 +518,13 @@ static int DLOOP_Segment_blkidx_count_block(DLOOP_Offset *blocks_p,
  * beginning of a whole block in an indexed type.
  */
 static int DLOOP_Segment_index_count_block(DLOOP_Offset *blocks_p,
-					   DLOOP_Count count,
-					   DLOOP_Count *blockarray,
+					   DLOOP_Count   count,
+					   DLOOP_Count  *blockarray,
 					   DLOOP_Offset *offsetarray,
-					   DLOOP_Type el_type,
-					   DLOOP_Offset rel_off,
-					   void *bufp, /* unused */
-					   void *v_paramp)
+					   DLOOP_Type    el_type,
+					   DLOOP_Offset  rel_off,
+					   DLOOP_Buffer  unused,
+					   void         *v_paramp)
 {
     DLOOP_Count new_blk_count;
     DLOOP_Offset el_size, last_loc;
@@ -573,9 +569,9 @@ static int DLOOP_Segment_index_count_block(DLOOP_Offset *blocks_p,
  * Count number of contiguous regions in segment between first and last.
  */
 void PREPEND_PREFIX(Segment_count_contig_blocks)(DLOOP_Segment *segp,
-						 DLOOP_Offset first,
-						 DLOOP_Offset *lastp,
-						 DLOOP_Count *countp)
+						 DLOOP_Offset   first,
+						 DLOOP_Offset  *lastp,
+						 DLOOP_Count   *countp)
 {
     struct PREPEND_PREFIX(contig_blocks_params) params;
 
@@ -620,10 +616,10 @@ struct PREPEND_PREFIX(mpi_flatten_params) {
  *
  */
 static int DLOOP_Segment_contig_mpi_flatten(DLOOP_Offset *blocks_p,
-					    DLOOP_Type el_type,
-					    DLOOP_Offset rel_off,
-					    void *bufp,
-					    void *v_paramp)
+					    DLOOP_Type    el_type,
+					    DLOOP_Offset  rel_off,
+					    DLOOP_Buffer  bufp,
+					    void         *v_paramp)
 {
     int last_idx, size;
     DLOOP_Offset el_size;
@@ -632,16 +628,6 @@ static int DLOOP_Segment_contig_mpi_flatten(DLOOP_Offset *blocks_p,
 
     DLOOP_Handle_get_size_macro(el_type, el_size);
     size = *blocks_p * (int) el_size;
-
-#if 0
-    MPIU_DBG_MSG_FMT(DATATYPE,VERBOSE,(MPIU_DBG_FDEST,
-             "\t[contig to vec: do=%d, dp=%x, ind=%d, sz=%d, blksz=%d]\n",
-		    (unsigned) rel_off,
-		    (unsigned) (MPI_Aint) bufp,
-		    paramp->index,
-		    el_size,
-		    (int) *blocks_p));
-#endif
     
     last_idx = paramp->index - 1;
     if (last_idx >= 0) {
@@ -689,13 +675,13 @@ static int DLOOP_Segment_contig_mpi_flatten(DLOOP_Offset *blocks_p,
  *       COUNT BLOCK CODE ABOVE.
  */
 static int DLOOP_Segment_vector_mpi_flatten(DLOOP_Offset *blocks_p,
-					    DLOOP_Count count,
-					    DLOOP_Count blksz,
-					    DLOOP_Offset stride,
-					    DLOOP_Type el_type,
-					    DLOOP_Offset rel_off, /* offset into buffer */
-					    void *bufp, /* start of buffer */
-					    void *v_paramp)
+					    DLOOP_Count   count,
+					    DLOOP_Count   blksz,
+					    DLOOP_Offset  stride,
+					    DLOOP_Type    el_type,
+					    DLOOP_Offset  rel_off, /* into buffer */
+					    DLOOP_Buffer  bufp, /* start of buffer */
+					    void         *v_paramp)
 {
     int i, size, blocks_left;
     DLOOP_Offset el_size;
@@ -744,9 +730,6 @@ static int DLOOP_Segment_vector_mpi_flatten(DLOOP_Offset *blocks_p,
 	     * the end of the last one.
 	     */
 	    *blocks_p -= (blocks_left + (size / (int) el_size));
-#if 0
-	    paramp->u.pack_vector.index++;
-#endif
 #ifdef MPID_SP_VERBOSE
 	    MPIU_dbg_printf("\t[vector to vec exiting (1): next ind = %d, %d blocks processed.\n",
 			    paramp->u.pack_vector.index,
@@ -796,11 +779,11 @@ static int DLOOP_Segment_vector_mpi_flatten(DLOOP_Offset *blocks_p,
  *           the amount of the array that has actual data)
  */
 void PREPEND_PREFIX(Segment_mpi_flatten)(DLOOP_Segment *segp,
-					 DLOOP_Offset first,
-					 DLOOP_Offset *lastp,
-					 int *blklens,
-					 MPI_Aint *disps,
-					 int *lengthp)
+					 DLOOP_Offset   first,
+					 DLOOP_Offset  *lastp,
+					 int           *blklens,
+					 MPI_Aint      *disps,
+					 int           *lengthp)
 {
     struct PREPEND_PREFIX(mpi_flatten_params) params;
 
