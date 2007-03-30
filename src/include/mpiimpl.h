@@ -2414,6 +2414,19 @@ int MPID_Init( int *argc_p, char ***argv_p, int requested,
 	       int requested, int *provided,
 	       MPID_Comm **parent_comm, int *has_args, int *has_env ); */
 
+/*@ 
+  MPID_InitCompleted - Notify the device that the MPI_Init or MPI_Initthread
+  call has completed setting up MPI
+
+ Notes:
+ This call allows the device to complete any setup that it wishes to perform
+ and for which it needs to access any of the structures (such as 'MPIR_Process')
+ that are initialized after 'MPID_Init' is called.  If the device does not need
+ any extra operations, then it may provide either an empty function or even
+ define this as a macro with the value 'MPI_SUCCESS'.
+  @*/
+int MPID_InitCompleted( void );
+
 /*@
   MPID_Finalize - Perform the device-specific termination of an MPI job
 
