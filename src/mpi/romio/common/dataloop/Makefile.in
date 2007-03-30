@@ -6,20 +6,22 @@ srcdir      = @srcdir@
 CC_SHL      = @CC_SHL@
 SHLIBNAME   = @SHLIBNAME@
 
-QUIET_COMPILE = 1
-ifdef V
-	QUIET_COMPILE = 0
-endif
-
-ifeq ($(QUIET_COMPILE),1)
-	# say a one-line description of the action, do not echo the command
-	Q=@echo
-	E=@	
-else
-	# do not say the short Q lines, but do echo the entire command
-	Q=@echo >/dev/null
-	E=
-endif
+# QUIET_COMPILE = 1
+# ifdef V
+# 	QUIET_COMPILE = 0
+# endif
+# 
+# ifeq ($(QUIET_COMPILE),1)
+# 	# say a one-line description of the action, do not echo the command
+# 	Q=@echo
+# 	E=@	
+# else
+# 	# do not say the short Q lines, but do echo the entire command
+# 	Q=@echo >/dev/null
+# 	E=
+# endif
+Q=@echo
+E=@	
 
 INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I../../include -I${srcdir}/../../mpi-io \
 		-I${srcdir}/../../adio/include -I../../adio/include \
