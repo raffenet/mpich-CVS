@@ -70,5 +70,31 @@ void ADIO_Init(int *argc, char ***argv, int *error_code)
     else ADIOI_Direct_write = 0;
 #endif
 
+#ifdef ADIOI_MPE_LOGGING
+    {
+        MPE_Log_get_state_eventIDs( &ADIOI_MPE_open_a, &ADIOI_MPE_open_b );
+        MPE_Log_get_state_eventIDs( &ADIOI_MPE_read_a, &ADIOI_MPE_read_b );
+        MPE_Log_get_state_eventIDs( &ADIOI_MPE_write_a, &ADIOI_MPE_write_b );
+        MPE_Log_get_state_eventIDs( &ADIOI_MPE_lseek_a, &ADIOI_MPE_lseek_b );
+        MPE_Log_get_state_eventIDs( &ADIOI_MPE_close_a, &ADIOI_MPE_close_b );
+
+        int  comm_world_rank;
+        PMPI_Comm_rank( MPI_COMM_WORLD, &comm_world_rank );
+
+        if ( comm_world_rank == 0 ) {
+            MPE_Describe_state( ADIOI_MPE_open_a, ADIOI_MPE_open_b,
+                                "open", "blue" );
+            MPE_Describe_state( ADIOI_MPE_read_a, ADIOI_MPE_read_b,
+                                "read", "green" );
+            MPE_Describe_state( ADIOI_MPE_write_a, ADIOI_MPE_write_b,
+                                "write", "red" );
+            MPE_Describe_state( ADIOI_MPE_lseek_a, ADIOI_MPE_lseek_b,
+                                "lseek", "orange" );
+            MPE_Describe_state( ADIOI_MPE_close_a, ADIOI_MPE_close_b,
+                                "close", "dark orange" );
+        }
+    }
+#endif
+
     *error_code = MPI_SUCCESS;
 }

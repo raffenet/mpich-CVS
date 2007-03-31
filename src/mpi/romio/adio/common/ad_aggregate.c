@@ -6,9 +6,6 @@
 
 #include "adio.h"
 #include "adio_extern.h"
-#ifdef PROFILE
-#include "mpe.h"
-#endif
 
 #undef AGG_DEBUG
 

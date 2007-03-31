@@ -7,9 +7,6 @@
 
 #include "adio.h"
 #include "adio_extern.h"
-#ifdef PROFILE
-#include "mpe.h"
-#endif
 
 /* prototypes of functions used for collective writes only. */
 static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
@@ -78,10 +75,6 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
     int *buf_idx = NULL, *len_list = NULL;
     int old_error, tmp_error;
 
-
-#ifdef PROFILE
-	MPE_Log_event(13, 0, "start computation");
-#endif
 
     MPI_Comm_size(fd->comm, &nprocs);
     MPI_Comm_rank(fd->comm, &myrank);
@@ -403,10 +396,6 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
     done = 0;
     off = st_loc;
 
-#ifdef PROFILE
-	MPE_Log_event(14, 0, "end computation");
-#endif
-
     for (m=0; m < ntimes; m++) {
        /* go through all others_req and check which will be satisfied
           by the current write */
@@ -425,9 +414,6 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 
 	/* first calculate what should be communicated */
 
-#ifdef PROFILE
-	MPE_Log_event(13, 0, "start computation");
-#endif
 	for (i=0; i < nprocs; i++) count[i] = recv_size[i] = 0;
 
 	size = (int) (ADIOI_MIN(coll_bufsize, end_loc-st_loc+1-done)); 
@@ -487,10 +473,6 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
 	    }
 	}
 	
-#ifdef PROFILE
-	MPE_Log_event(14, 0, "end computation");
-	MPE_Log_event(7, 0, "start communication");
-#endif
 	ADIOI_W_Exchange_data(fd, buf, write_buf, flat_buf, offset_list, 
                             len_list, send_size, recv_size, off, size, count, 
                             start_pos, partial_recv, 
@@ -501,9 +483,6 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
                             done_to_proc, &hole, m, buftype_extent, buf_idx,
 			    error_code); 
         if (*error_code != MPI_SUCCESS) return;
-#ifdef PROFILE
-	MPE_Log_event(8, 0, "end communication");
-#endif
 
 	flag = 0;
 	for (i=0; i<nprocs; i++)
@@ -529,9 +508,6 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
     }
 
     for (i=0; i<nprocs; i++) count[i] = recv_size[i] = 0;
-#ifdef PROFILE
-	MPE_Log_event(7, 0, "start communication");
-#endif
     for (m=ntimes; m<max_ntimes; m++) 
 	/* nothing to recv, but check for send. */
 	ADIOI_W_Exchange_data(fd, buf, write_buf, flat_buf, offset_list, 
@@ -544,9 +520,6 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
                             curr_to_proc, done_to_proc, &hole, m, 
                             buftype_extent, buf_idx, error_code); 
         if (*error_code != MPI_SUCCESS) return;
-#ifdef PROFILE
-	MPE_Log_event(8, 0, "end communication");
-#endif
 
     if (ntimes) ADIOI_Free(write_buf);
     ADIOI_Free(curr_offlen_ptr);
