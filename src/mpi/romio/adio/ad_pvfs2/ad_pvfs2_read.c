@@ -56,8 +56,14 @@ void ADIOI_PVFS2_ReadContig(ADIO_File fd, void *buf, int count,
 	offset = fd->fp_ind;
     }
 
+#ifdef ADIOI_MPE_LOGGING
+    MPE_Log_event( ADIOI_MPE_read_a, 0, NULL );
+#endif
     ret = PVFS_sys_read(pvfs_fs->object_ref, file_req, offset, buf, 
 			mem_req, &(pvfs_fs->credentials), &resp_io);
+#ifdef ADIOI_MPE_LOGGING
+    MPE_Log_event( ADIOI_MPE_read_b, 0, NULL );
+#endif
     /* --BEGIN ERROR HANDLING-- */
     if (ret != 0 ) {
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
@@ -214,9 +220,15 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 		    err_flag = PVFS_Request_contiguous(file_lengths, 
 			    PVFS_BYTE, &file_req);
 		    if (err_flag < 0) break;
+#ifdef ADIOI_MPE_LOGGING
+                    MPE_Log_event( ADIOI_MPE_read_a, 0, NULL );
+#endif
 		    err_flag = PVFS_sys_read(pvfs_fs->object_ref, file_req, 
 			    file_offsets, PVFS_BOTTOM, mem_req, 
 			    &(pvfs_fs->credentials), &resp_io);
+#ifdef ADIOI_MPE_LOGGING
+                    MPE_Log_event( ADIOI_MPE_read_b, 0, NULL );
+#endif
 		    /* --BEGIN ERROR HANDLING-- */
 		    if (err_flag != 0) {
 			*error_code = MPIO_Err_create_code(MPI_SUCCESS,
@@ -429,9 +441,15 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	    /* PVFS_Request_hindexed already expresses the offsets into the
 	     * file, so we should not pass in an offset if we are using
 	     * hindexed for the file type */
+#ifdef ADIOI_MPE_LOGGING
+            MPE_Log_event( ADIOI_MPE_read_a, 0, NULL );
+#endif
 	    err_flag = PVFS_sys_read(pvfs_fs->object_ref, file_req, 0, 
 				     mem_offsets, mem_req,
 				     &(pvfs_fs->credentials), &resp_io);
+#ifdef ADIOI_MPE_LOGGING
+            MPE_Log_event( ADIOI_MPE_read_b, 0, NULL );
+#endif
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (err_flag != 0) {
 		*error_code = MPIO_Err_create_code(MPI_SUCCESS,
@@ -503,8 +521,14 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	    /* --END ERROR HANDLING-- */
 
 	    /* as above, use 0 for 'offset' when using hindexed file type */
+#ifdef ADIOI_MPE_LOGGING
+            MPE_Log_event( ADIOI_MPE_read_a, 0, NULL );
+#endif
 	    err_flag = PVFS_sys_read(pvfs_fs->object_ref, file_req, 0, 
 		    mem_offsets, mem_req, &(pvfs_fs->credentials), &resp_io);
+#ifdef ADIOI_MPE_LOGGING
+            MPE_Log_event( ADIOI_MPE_read_b, 0, NULL );
+#endif
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (err_flag != 0) {
 		*error_code = MPIO_Err_create_code(MPI_SUCCESS,
@@ -905,8 +929,14 @@ void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
 	    /* --END ERROR HANDLING-- */
 
 	    /* offset will be expressed in memory and file datatypes */
+#ifdef ADIOI_MPE_LOGGING
+            MPE_Log_event( ADIOI_MPE_read_a, 0, NULL );
+#endif
 	    err_flag = PVFS_sys_read(pvfs_fs->object_ref, file_req, 0, 
 		    PVFS_BOTTOM, mem_req, &(pvfs_fs->credentials), &resp_io);
+#ifdef ADIOI_MPE_LOGGING
+            MPE_Log_event( ADIOI_MPE_read_b, 0, NULL );
+#endif
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (err_flag != 0) {
 		*error_code = MPIO_Err_create_code(MPI_SUCCESS,
