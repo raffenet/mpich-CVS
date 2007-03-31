@@ -604,5 +604,22 @@ int ADIOI_Snprintf( char *str, size_t size, const char *format, ... )
 
 #include "adioi_error.h"
 
+/*  MPE logging variables  */
+
+#ifdef ADIOI_MPE_LOGGING
+#include "mpe.h"
+
+int  ADIOI_MPE_open_a;
+int  ADIOI_MPE_open_b;
+int  ADIOI_MPE_read_a;
+int  ADIOI_MPE_read_b;
+int  ADIOI_MPE_write_a;
+int  ADIOI_MPE_write_b;
+int  ADIOI_MPE_lseek_a;
+int  ADIOI_MPE_lseek_b;
+int  ADIOI_MPE_close_a;
+int  ADIOI_MPE_close_b;
+#endif
+
 #endif
 
