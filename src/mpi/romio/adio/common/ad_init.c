@@ -83,15 +83,15 @@ void ADIO_Init(int *argc, char ***argv, int *error_code)
 
         if ( comm_world_rank == 0 ) {
             MPE_Describe_state( ADIOI_MPE_open_a, ADIOI_MPE_open_b,
-                                "open", "blue" );
+                                "open", "orange" );
             MPE_Describe_state( ADIOI_MPE_read_a, ADIOI_MPE_read_b,
                                 "read", "green" );
             MPE_Describe_state( ADIOI_MPE_write_a, ADIOI_MPE_write_b,
-                                "write", "red" );
+                                "write", "blue" );
             MPE_Describe_state( ADIOI_MPE_lseek_a, ADIOI_MPE_lseek_b,
-                                "lseek", "orange" );
+                                "lseek", "red" );
             MPE_Describe_state( ADIOI_MPE_close_a, ADIOI_MPE_close_b,
-                                "close", "dark orange" );
+                                "close", "grey" );
         }
     }
 #endif
