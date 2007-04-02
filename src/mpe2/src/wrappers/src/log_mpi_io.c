@@ -74,7 +74,7 @@ void MPE_Init_mpi_io( void )
   state = &states[MPE_FILE_OPEN_ID];
   state->kind_mask = MPE_KIND_FILE;
   state->name = "MPI_File_open";
-  state->color = "brown";
+  state->color = "HotPink";
   
   state = &states[MPE_FILE_CLOSE_ID];
   state->kind_mask = MPE_KIND_FILE;
