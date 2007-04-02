@@ -124,6 +124,16 @@ void MPIO_Datatype_set_loopptr(MPI_Datatype type, MPIO_Dataloop *ptr, int flag);
 void MPIO_Datatype_set_loopsize(MPI_Datatype type, int size, int flag);
 void MPIO_Datatype_set_loopdepth(MPI_Datatype type, int depth, int flag);
 
+/* accessor functions from elsewhere */
+void MPIO_Type_access_contents(MPI_Datatype type,
+			       int **ints_p,
+			       MPI_Aint **aints_p,
+			       MPI_Datatype **types_p);
+void MPIO_Type_release_contents(MPI_Datatype type,
+				int **ints_p,
+				MPI_Aint **aints_p,
+				MPI_Datatype **types_p);
+
 /* These values are defined by DLOOP code.
  *
  * Note: DLOOP_DATALOOP_ALL_BYTES not currently used in MPICH2.
