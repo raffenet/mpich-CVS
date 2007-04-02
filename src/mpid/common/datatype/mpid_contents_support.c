@@ -8,9 +8,6 @@
 #include <mpi.h>
 #include <mpid_datatype.h>
 
-#undef PREPEND_PREFIX
-#define PREPEND_PREFIX(fn) MPIO_ ## fn
-
 MPID_Type_access_contents(MPI_Datatype type,
 			  int **ints_p,
 			  MPI_Aint **aints_p,

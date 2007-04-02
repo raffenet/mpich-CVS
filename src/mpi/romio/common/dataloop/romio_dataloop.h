@@ -95,7 +95,7 @@ struct MPIO_iovec {
 /* assert function */
 #define DLOOP_Assert assert
 
-/* contents access functions */
+/* contents access functions -- use MPICH2 versions for now. */
 #define MPIO_Type_access_contents MPID_Type_access_contents
 #define MPIO_Type_release_contents MPID_Type_release_contents
 
