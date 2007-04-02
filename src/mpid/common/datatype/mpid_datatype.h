@@ -704,5 +704,16 @@ MPI_Aint MPIDI_Datatype_get_basic_size_external32(MPI_Datatype el_type);
 char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type);
 char *MPIDU_Datatype_combiner_to_string(int combiner);
 void MPIDU_Datatype_debug(MPI_Datatype type, int array_ct);
+
+/* contents accessor functions */
+void MPID_Type_access_contents(MPI_Datatype type,
+			       int **ints_p,
+			       MPI_Aint **aints_p,
+			       MPI_Datatype **types_p);
+void MPID_Type_release_contents(MPI_Datatype type,
+				int **ints_p,
+				MPI_Aint **aints_p,
+				MPI_Datatype **types_p);
+
 /* end of file */
 #endif

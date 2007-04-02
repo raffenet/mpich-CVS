@@ -8,10 +8,10 @@
 #include <mpi.h>
 #include <mpid_datatype.h>
 
-MPID_Type_access_contents(MPI_Datatype type,
-			  int **ints_p,
-			  MPI_Aint **aints_p,
-			  MPI_Datatype **types_p)
+void MPID_Type_access_contents(MPI_Datatype type,
+			       int **ints_p,
+			       MPI_Aint **aints_p,
+			       MPI_Datatype **types_p)
 {
     int nr_ints, nr_aints, nr_types, combiner;
     int types_sz, struct_sz, ints_sz, epsilon, align_sz = 8;
@@ -55,10 +55,10 @@ MPID_Type_access_contents(MPI_Datatype type,
     return;
 }
 
-MPID_Type_release_contents(MPI_Datatype type,
-			   int **ints_p,
-			   MPI_Aint **aints_p,
-			   MPI_Datatype **types_p)
+void MPID_Type_release_contents(MPI_Datatype type,
+				int **ints_p,
+				MPI_Aint **aints_p,
+				MPI_Datatype **types_p)
 {
     return;
 }
