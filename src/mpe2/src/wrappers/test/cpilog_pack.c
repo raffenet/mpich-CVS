@@ -9,10 +9,7 @@
 #include "mpi.h"
 #include "mpe.h"
 
-#if defined( USEC_TIMING )
-#include "rdtsc.h"
-#define MYTIME_T  unsigned long long
-#endif
+#define ITER_COUNT  5
 
 double f( double );
 double f( double a )
@@ -34,11 +31,8 @@ int main( int argc, char *argv[] )
     MPE_LOG_BYTES  bytebuf;
     int            bytebuf_pos;
 
-#if defined( USEC_TIMING )
-    MYTIME_T       Atimes[5], Btimes[5];
-#endif
 
-    MPI_Init( &argc,&argv );
+    MPI_Init( &argc, &argv );
         
         MPI_Pcontrol( 0 );
 
@@ -88,32 +82,20 @@ int main( int argc, char *argv[] )
     MPE_Start_log();
     */
 
-    for ( jj = 0; jj < 5; jj++ ) {
+    for ( jj = 0; jj < ITER_COUNT; jj++ ) {
         MPE_Log_event( event1a, 0, NULL );
         MPI_Bcast( &n, 1, MPI_INT, 0, MPI_COMM_WORLD );
         MPE_Log_event( event1b, 0, NULL );
     
-#if defined( USEC_TIMING )
-        TIME_PRE( Atimes[jj] );
-#endif
         MPE_Log_event( event2a, 0, NULL );
-#if defined( USEC_TIMING )
-        TIME_POST( Atimes[jj] );
-#endif
         MPI_Barrier( MPI_COMM_WORLD );
             int line_num;
-#if defined( USEC_TIMING )
-        TIME_PRE( Btimes[jj] );
-#endif
             bytebuf_pos = 0;
             MPE_Log_pack( bytebuf, &bytebuf_pos, 's',
                           sizeof(__func__)-1, __func__ );
             line_num = __LINE__;
             MPE_Log_pack( bytebuf, &bytebuf_pos, 'd', 1, &line_num );
         MPE_Log_event( event2b, 0, bytebuf );
-#if defined( USEC_TIMING )
-        TIME_POST( Btimes[jj] );
-#endif
 
         MPE_Log_event( event3a, 0, NULL );
         h   = 1.0 / (double) n;
@@ -143,21 +125,13 @@ int main( int argc, char *argv[] )
         MPE_Finish_log( "cpilog" );
 #endif
 
-#if defined( USEC_TIMING )
-    if ( myid == 0 ) {
-        for ( jj = 0; jj < 5; jj++ ) {
-             printf( "Atimes[%d] = %5.3f\n", jj, USECS( Atimes[jj] ) );
-             printf( "Btimes[%d] = %5.3f\n", jj, USECS( Btimes[jj] ) );
-        }
-    }
-#endif
-
     if ( myid == 0 ) {
         endwtime = MPI_Wtime();
         printf( "pi is approximately %.16f, Error is %.16f\n",
                 pi, fabs(pi - PI25DT) );
         printf( "wall clock time = %f\n", endwtime-startwtime );
     }
+
     MPI_Finalize();
     return( 0 );
 }
