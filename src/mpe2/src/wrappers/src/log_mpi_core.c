@@ -869,7 +869,7 @@ void MPE_Init_mpi_core( void )
     state = &states[MPE_COMM_FREE_ID];
     state->kind_mask = MPE_KIND_COMM;
     state->name = "MPI_Comm_free";
-    state->color = "LightSeeGreen1";
+    state->color = "LightSeaGreen";
 
     state = &states[MPE_COMM_GROUP_ID];
     state->kind_mask = MPE_KIND_COMM_INFO;
