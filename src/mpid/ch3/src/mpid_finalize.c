@@ -73,9 +73,19 @@ int MPID_Finalize(void)
       * 
       */
     
-/* commenting out the close protocol and simply using MPI_Barrier until 
-   MPI_Comm_disconnect correctly disconnects all VCs */
+    /* commenting out the close protocol and simply using MPI_Barrier until 
+       MPI_Comm_disconnect correctly disconnects all VCs */
 
+    /* FIXME:
+     * Using MPI_Barrier on MPI_COMM_WORLD here is dangerous.  It is fine,
+     * of course, for correct programs, but incorrect programs, for examples, 
+     * ones that call MPI_Barrier(MPI_COMM_WORLD) in some but not all processes
+     * will show unexpected symptoms (e.g., the otherwise Unmatched MPI_Barrier
+     * calls will match this barrier, and then MPI_Finalize will hang.  To
+     * fix this, we need a separate Barrier operation, either an independent
+     * Barrier or an independent communicator that is not used by any
+     * other (user) routine.
+     */
     MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
     mpi_errno = NMPI_Barrier(MPI_COMM_WORLD);
