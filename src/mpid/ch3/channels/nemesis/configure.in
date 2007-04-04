@@ -279,7 +279,7 @@ AC_CHECK_FUNCS(rand)
 AC_CHECK_FUNCS(srand)
 
 # check how to allocate shared memory
-AC_ARG_WITH(shared-memory, [--with-shared-memory[=auto|sysv|mmap] - create shared memory using sysv or mmap (dafault is auto)],,
+AC_ARG_WITH(shared-memory, [--with-shared-memory[=auto|sysv|mmap] - create shared memory using sysv or mmap (default is auto)],,
     with_shared_memory=auto)
 
 if test "$with_shared_memory" = auto -o "$with_shared_memory" = mmap; then
