@@ -311,7 +311,12 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 
 #ifdef HAVE_DEBUGGER_SUPPORT
     MPIR_WaitForDebugger();
-#endif    
+#endif
+    
+    /* Let the device know that the rest of the init process is completed */
+    if (mpi_errno == MPI_SUCCESS) 
+	mpi_errno = MPID_InitCompleted();
+
     return mpi_errno;
 }
 #endif
