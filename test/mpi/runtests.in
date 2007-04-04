@@ -526,10 +526,10 @@ sub FindRunning {
 
     my $logname = $ENV{'USER'};
     my $pidloc = 1;
-    $rc = open PSFD, "ps auxw -U $logname |";
+    $rc = open PSFD, "ps auxw -U $logname 2>&1 |";
 
     if ($rc == 0) { 
-	my $rc = open PSFD, "ps -fu $logname |";
+	my $rc = open PSFD, "ps -fu $logname 2>&1 |";
     }
     if ($rc == 0) {
 	print STDERR "Could not execute ps command\n";
