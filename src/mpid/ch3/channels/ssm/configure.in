@@ -362,6 +362,9 @@ PAC_CC_SUBDIR_SHLIBS
 # we are creating shared libraries for MPICH2 or we are creating the
 # dynamically loadable library for the debugger interface
 if test -z "$CREATESHLIB" ; then
+   if test ! -d ../../../../util ; then 
+       mkdir ../../../../util
+   fi
    CREATESHLIB=`cd ../../../../util && pwd`
    CREATESHLIB="$CREATESHLIB/createshlib"
 fi
