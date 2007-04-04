@@ -233,6 +233,15 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     /* --END ERROR HANDLING-- */
 }
 
+/* This allows each channel to perform final initialization after the
+ rest of MPI_Init completes.  */
+int MPID_InitCompleted( void )
+{
+    int mpi_errno;
+    mpi_errno = MPIU_CALL(MPIDI_CH3,InitCompleted());
+    return mpi_errno;
+}
+
 /*
  * Initialize the process group structure by using PMI calls.
  * This routine initializes PMI and uses PMI calls to setup the 

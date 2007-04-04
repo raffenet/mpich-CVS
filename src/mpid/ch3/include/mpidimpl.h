@@ -1579,6 +1579,28 @@ int MPIDI_CH3_Finalize(void);
   @*/
 int MPIDI_CH3_VC_Init( struct MPIDI_VC *vc );
 
+/*@
+   MPIDI_CH3_PG_Destroy - Perform any channel-specific actions when freeing 
+   a process group 
+
+    Input Parameter:
+.   pg - Process group on which to act
+@*/
+int MPIDI_CH3_PG_Destroy( struct MPIDI_PG *pg );
+
+/*@ MPIDI_CH3_VC_Destroy - Perform and channel-specific actions when freeing a
+    virtual connection.
+
+    Input Parameter:
+.   vc - Virtual connection on which to act
+@*/
+int MPIDI_CH3_VC_Destroy( struct MPIDI_VC *vc );
+
+/*@ MPIDI_CH3_InitComplete - Perform any channel-specific initialization 
+  actions after MPID_Init but before MPI_Init (or MPI_Initthread) returns
+  @*/
+int MPIDI_CH3_InitCompleted( void );
+
 #ifdef MPIDI_CH3_HASIMPL_HEADER
 #include "mpidi_ch3_mpid.h"
 #endif

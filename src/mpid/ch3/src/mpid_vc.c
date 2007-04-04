@@ -186,6 +186,8 @@ int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect )
                             "vc=%p: not sending a close to %d, vc in state %s",
 			     vc, i, MPIDI_VC_GetStateString(vc->state)));
 		}
+		mpi_errno = MPIU_CALL(MPIDI_CH3,VC_Destroy(vc));
+		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 	    }
 	}
 
@@ -194,13 +196,11 @@ int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect )
 
     /* Commented out blocks that are not needed unless MPIU_ERR_POP is 
        used above */
-    /* fn_exit:     */
+ fn_exit:    
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_RELEASE);
     return mpi_errno;
-    /*
  fn_fail:
     goto fn_exit;
-    */
 }
 
 /*@

@@ -20,6 +20,7 @@
    compilers */
 typedef struct MPIDI_CH3_Funcs {
     int (*Init)( int, MPIDI_PG_t *, int );
+    int (*InitCompleted)(void);
     int (*Finalize)(void);
     int (*iSend)( MPIDI_VC_t *, MPID_Request *, void *, int );
     int (*iSendv)( MPIDI_VC_t *, MPID_Request *, MPID_IOV *, int );
@@ -30,7 +31,9 @@ typedef struct MPIDI_CH3_Funcs {
 	  int (*Progress_wait)( MPID_Progress_state * ); */
 
     int (*VC_Init)( struct MPIDI_VC * );
+    int (*VC_Destroy)( struct MPIDI_VC * );
     int (*PG_Init)( struct MPIDI_PG * );
+    int (*PG_Destroy)( struct MPIDI_PG * );
     int (*Connection_terminate)( MPIDI_VC_t * );
     int (*RMAFnsInit)( struct MPIDI_RMA_Ops * );
 

@@ -287,6 +287,7 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 		    MPIU_Free(pg->connData);
 		}
 	    }
+	    mpi_errno = MPIU_CALL(MPIDI_CH3,PG_Destroy(pg));
 	    MPIU_Free(pg);
 
 	    goto fn_exit;

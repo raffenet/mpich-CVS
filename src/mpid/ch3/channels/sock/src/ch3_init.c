@@ -113,3 +113,24 @@ int MPIDI_CH3_PG_Init( MPIDI_PG_t *pg )
 {
     return MPI_SUCCESS;
 }
+
+/* This routine is a hook for any operations that need to be performed before
+   freeing a process group */
+int MPIDI_CH3_PG_Destroy( struct MPIDI_PG *pg )
+{
+    return MPI_SUCCESS;
+}
+
+/* This routine is a hook for any operations that need to be performed before
+   freeing a virtual connection */
+int MPIDI_CH3_VC_Destroy( struct MPIDI_VC *vc )
+{
+    return MPI_SUCCESS;
+}
+
+/* A dummy function so that all channels provide the same set of functions, 
+   enabling dll channels */
+int MPIDI_CH3_InitCompleted( void )
+{
+    return MPI_SUCCESS;
+}

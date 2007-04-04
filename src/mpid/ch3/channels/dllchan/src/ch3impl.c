@@ -81,6 +81,9 @@ int MPIDI_CH3_PreLoad( void )
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Init", 
 				  (void **)&MPIU_CALL_MPIDI_CH3.Init );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+    mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_InitCompleted", 
+				  (void **)&MPIU_CALL_MPIDI_CH3.InitCompleted );
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Finalize", 
 				  (void **)&MPIU_CALL_MPIDI_CH3.Finalize );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
@@ -113,8 +116,14 @@ int MPIDI_CH3_PreLoad( void )
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_VC_Init", 
 				  (void **)&MPIU_CALL_MPIDI_CH3.VC_Init );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+    mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_VC_Destroy", 
+				  (void **)&MPIU_CALL_MPIDI_CH3.VC_Destroy );
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_PG_Init", 
 				  (void **)&MPIU_CALL_MPIDI_CH3.PG_Init );
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+    mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_PG_Destroy", 
+				  (void **)&MPIU_CALL_MPIDI_CH3.PG_Destroy );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_VC_GetStateString", 
 				  (void **)&MPIU_CALL_MPIDI_CH3.VC_GetStateString );

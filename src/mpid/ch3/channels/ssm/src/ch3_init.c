@@ -202,6 +202,13 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
     return 0;
 }
 
+/* Hook routine for any channel-specific actions when a vc is freed. */
+int MPIDI_CH3_VC_Destroy( struct MPIDI_VC *vc )
+{
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    return MPI_SUCCESS;
+}
+
 const char * MPIDI_CH3_VC_GetStateString( struct MPIDI_VC *vc )
 {
 #ifdef USE_DBG_LOGGING
@@ -229,5 +236,19 @@ int MPIDI_CH3_PG_Init( MPIDI_PG_t *pg )
     /* FIXME: This should call a routine from the ch3/util/shm directory
        to initialize the use of shared memory for processes WITHIN this 
        process group */
+    return MPI_SUCCESS;
+}
+
+/* This routine is a hook for any operations that need to be performed before
+   freeing a process group */
+int MPIDI_CH3_PG_Destroy( struct MPIDI_PG *pg )
+{
+    return MPI_SUCCESS;
+}
+
+/* A dummy function so that all channels provide the same set of functions, 
+   enabling dll channels */
+int MPIDI_CH3_InitCompleted( void )
+{
     return MPI_SUCCESS;
 }

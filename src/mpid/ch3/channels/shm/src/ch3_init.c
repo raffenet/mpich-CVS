@@ -90,7 +90,9 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 	/* FIXME: the vc's must be set to active for the close protocol to 
 	   work in the shm channel */
 	pg->vct[p].state = MPIDI_VC_STATE_ACTIVE;
+	/* FIXME: Should the malloc be within the init? */
 	MPIDI_CH3_VC_Init( &pg->vct[p] );
+	/* FIXME: Need to free this request when the vc is removed */
 	vcch->req = (MPID_Request*)MPIU_Malloc(sizeof(MPID_Request));
 	/* FIXME: Should these also be set in the VC_Init, or 
 	   is VC_Init moot (never called because this channel does not
@@ -413,6 +415,16 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
     return 0;
 }
 
+/* Free the request structure that may have been added to this vc */
+int MPIDI_CH3_VC_Destroy( struct MPIDI_VC *vc )
+{
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    if (vcch->req) {
+	MPIU_Free( vcch->req );
+    }
+    return MPI_SUCCESS;
+}
+
 /* This function simply tells the CH3 device to use the defaults for the 
    MPI-2 RMA functions */
 int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a ) 
@@ -427,5 +439,19 @@ int MPIDI_CH3_PG_Init( MPIDI_PG_t *pg )
     /* FIXME: This should call a routine from the ch3/util/shm directory
        to initialize the use of shared memory for processes WITHIN this 
        process group */
+    return MPI_SUCCESS;
+}
+
+/* This routine is a hook for any operations that need to be performed before
+   freeing a process group */
+int MPIDI_CH3_PG_Destroy( struct MPIDI_PG *pg )
+{
+    return MPI_SUCCESS;
+}
+
+/* A dummy function so that all channels provide the same set of functions, 
+   enabling dll channels */
+int MPIDI_CH3_InitCompleted( void )
+{
     return MPI_SUCCESS;
 }
