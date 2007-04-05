@@ -71,9 +71,12 @@ int MPI_Init( int *argc, char ***argv )
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_INIT_STATE_DECL(MPID_STATE_MPI_INIT);
 
-    MPID_CS_INITIALIZE();
-    MPIU_THREAD_SINGLE_CS_ENTER("init");
+#ifdef USE_DBG_LOGGING
+    MPIU_DBG_PreInit( argc, argv );
+#endif
     MPID_MPI_INIT_FUNC_ENTER(MPID_STATE_MPI_INIT);
+    MPID_CS_INITIALIZE();
+    MPID_CS_ENTER();
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
@@ -95,8 +98,8 @@ int MPI_Init( int *argc, char ***argv )
 
     /* ... end of body of routine ... */
     
+    MPID_CS_EXIT();
     MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT);
-    MPIU_THREAD_SINGLE_CS_EXIT("init");
     return mpi_errno;
     
   fn_fail:
@@ -109,8 +112,9 @@ int MPI_Init( int *argc, char ***argv )
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
-    MPIU_THREAD_SINGLE_CS_EXIT("init");
+    MPID_CS_EXIT();
     MPID_CS_FINALIZE();
+    MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT);
     return mpi_errno;
     /* --END ERROR HANDLING-- */
 }

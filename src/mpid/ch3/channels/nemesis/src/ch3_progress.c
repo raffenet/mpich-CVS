@@ -13,7 +13,7 @@
 #endif
 #include "pmi.h"
 
-#define POLL_ITERS_BEFORE_WAIT 100
+#define POLL_ITERS_BEFORE_WAIT 0//100
 
 extern int MPID_nem_lmt_shm_pending; /* defined in mpid_nem_lmt_shm.c */
 

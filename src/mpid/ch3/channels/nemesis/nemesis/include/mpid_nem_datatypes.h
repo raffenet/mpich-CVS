@@ -213,6 +213,8 @@ typedef struct MPID_nem_queue
             });                                                                                                                 \
         if (old == 0)                                                                                                           \
         {                                                                                                                       \
+            MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);                                                            \
+            MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Released lock");                                                                \
             MPIU_DBG_STMT(CH3_CHANNEL, VERBOSE, {                                                                               \
                     int i; int f=0;                                                                                             \
                     for (i = 0; i < MPID_nem_mem_region.num_local; ++i)                                                         \
@@ -224,8 +226,6 @@ typedef struct MPID_nem_queue
                                                             !MPID_nem_queue_empty(MPID_nem_mem_region.my_freeQ),                \
                                                             !MPIDI_CH3I_SendQ_empty(CH3_NORMAL_QUEUE)));                        \
                 });                                                                                                             \
-            MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);                                                            \
-            MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Released lock");                                                                \
             do {                                                                                                                \
                 ret = sem_wait(&MPID_nem_mem_region.my_recvQ->semaphore);                                                       \
             } while (ret == -1 && errno == EINTR);                                                                              \

@@ -276,7 +276,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     if (provided) *provided = thread_provided;
     /* FIXME: Rationalize this with the above */
 #ifdef HAVE_RUNTIME_THREADCHECK
-    MPIR_ThreadInfo.isThreaded = required == MPI_THREAD_MULTIPLE;
+#warning DARIUS
+    //MPIR_ThreadInfo.isThreaded = required == MPI_THREAD_MULTIPLE;
     if (provided) *provided = required;
 #endif
 

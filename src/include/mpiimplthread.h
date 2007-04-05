@@ -134,6 +134,7 @@ void MPIR_CleanupThreadStorage( void *a );
 {								\
     MPIU_THREADPRIV_DECL;                                       \
     MPIU_THREADPRIV_GET;                                        \
+    MPIU_DBG_MSG_D(THREAD,TYPICAL,"--> nest = %d", MPIR_Nest_value());\
     if (MPIR_Nest_value() == 0)					\
     { 								\
         MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");\
@@ -144,6 +145,7 @@ void MPIR_CleanupThreadStorage( void *a );
 {								\
     MPIU_THREADPRIV_DECL;                                       \
     MPIU_THREADPRIV_GET;                                        \
+    MPIU_DBG_MSG_D(THREAD,TYPICAL,"<-- nest = %d", MPIR_Nest_value());\
     if (MPIR_Nest_value() == 0)					\
     { 								\
         MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");\

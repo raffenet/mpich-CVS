@@ -43,7 +43,7 @@ struct {MPID_nem_newtcp_module_send_q_element_t *top;} free_buffers = {0};
 #define FREE_Q_ELEMENTS(e0, e1) S_PUSH_MULTIPLE (&free_buffers, e0, e1)
 #define FREE_Q_ELEMENT(e) S_PUSH (&free_buffers, e)
 
-int send_queued (MPIDI_VC_t *vc);
+int MPID_nem_newtcp_module_send_queued(MPIDI_VC_t *vc);
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_send_init
@@ -54,6 +54,9 @@ int MPID_nem_newtcp_module_send_init()
     int mpi_errno = MPI_SUCCESS;
     int i;
     MPIU_CHKPMEM_DECL (NUM_PREALLOC_SENDQ);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_INIT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_INIT);
     
     /* preallocate sendq elements */
     for (i = 0; i < NUM_PREALLOC_SENDQ; ++i)
@@ -66,10 +69,12 @@ int MPID_nem_newtcp_module_send_init()
     }
 
     MPIU_CHKPMEM_COMMIT();
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_INIT);
     return mpi_errno;
  fn_fail:
     MPIU_CHKPMEM_REAP();
-    return mpi_errno;
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -85,19 +90,19 @@ int MPID_nem_newtcp_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int d
 
 
 #undef FUNCNAME
-#define FUNCNAME send_queued
+#define FUNCNAME MPID_nem_newtcp_module_send_queued
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int send_queued (MPIDI_VC_t *vc)
+int MPID_nem_newtcp_module_send_queued(MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *sreq;
     MPIDI_msg_sz_t offset;
     MPID_IOV *iov;
     int complete;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_QUEUED);
 
-    if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
-	goto fn_exit;
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_QUEUED);
 
     while (!SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
     {
@@ -165,6 +170,7 @@ int send_queued (MPIDI_VC_t *vc)
         UNSET_PLFD(vc);
     
  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_QUEUED);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -177,6 +183,9 @@ int send_queued (MPIDI_VC_t *vc)
 int MPID_nem_newtcp_module_send_finalize()
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_FINALIZE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_FINALIZE);
 
     while (!S_EMPTY (free_buffers))
     {
@@ -186,6 +195,7 @@ int MPID_nem_newtcp_module_send_finalize()
     }
 /*     printf ("  done\n");//DARIUS */
 
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_FINALIZE);
     return mpi_errno;
 }
 
@@ -198,18 +208,23 @@ int MPID_nem_newtcp_module_send_finalize()
 int MPID_nem_newtcp_module_conn_est (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_CONN_EST);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_CONN_EST);
 
 /*     printf ("*** connected *** %d\n", VC_FIELD(vc, sc)->fd); //DARIUS */
 
     if (!SENDQ_EMPTY (VC_FIELD(vc, send_queue)))
     {
         SET_PLFD(vc);
-        mpi_errno = send_queued (vc);
+        mpi_errno = MPID_nem_newtcp_module_send_queued(vc);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
-
- fn_fail:    
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_CONN_EST);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 
@@ -304,7 +319,6 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
     /*     printf("sreq->dev.iov[0].MPID_IOV_LEN = %d\n", sreq->dev.iov[0].MPID_IOV_LEN);//DARIUS */
     /*     printf("&sreq->dev.iov[0].MPID_IOV_LEN = %p\n", &sreq->dev.iov[0].MPID_IOV_LEN);//DARIUS */
 
-
     if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
     {
         SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
@@ -319,7 +333,6 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
     }
     else
         SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
-
 
     *sreq_ptr = sreq;
     
@@ -340,9 +353,9 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_msg_sz_t offset = 0;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIGMSG);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIG);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIGMSG);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIG);
     
     MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
     
@@ -447,7 +460,7 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
         SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIGMSG);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIG);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -466,6 +479,9 @@ int MPID_nem_newtcp_SendEagerNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void 
     MPID_IOV *iov_p;
     MPIDI_msg_sz_t offset;
     int complete;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_SENDEAGERNONCONTIG);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_SENDEAGERNONCONTIG);
 
     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "newtcp_SendEagerNoncontig");
     MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_PktGeneric_t));
@@ -552,7 +568,7 @@ int MPID_nem_newtcp_SendEagerNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void 
         
     sreq->ch.vc = vc;
     sreq->ch.iov_offset = 0;
-        
+
     if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
     {
         SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
@@ -568,9 +584,8 @@ int MPID_nem_newtcp_SendEagerNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void 
     else
         SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
 
-
-
  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_SENDEAGERNONCONTIG);
     return mpi_errno;
  fn_fail:
     MPIU_Object_set_ref(sreq, 0);
@@ -589,10 +604,17 @@ int signal_comm_thread_to_connect(MPIDI_VC_t *vc)
     MPID_nem_newtcp_module_poke_msg_t msg;
     MPIDI_msg_sz_t count;
     MPIDI_CH3I_VC * const vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIDI_STATE_DECL(MPID_STATE_SIGNAL_COMM_THREAD_TO_CONNECT);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SIGNAL_COMM_THREAD_TO_CONNECT);
 
     MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "connecting to %d", vc->pg_rank);
 
-    MPIU_Assert(VC_FIELD(vc, sc) == NULL);
+/*     if (VC_FIELD(vc, sc) != NULL) //DARIUS */
+/*         MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "*****************STUCK***********"); //DARIUS */
+/*     while (VC_FIELD(vc, sc) != NULL) ;//DARIUS */
+    
+/*     MPIU_Assert(VC_FIELD(vc, sc) == NULL); */
     MPIU_Assert(vc_ch->state == MPID_NEM_VC_STATE_DISCONNECTED);
 
     vc_ch->state = MPID_NEM_VC_STATE_CONNECTING;
@@ -605,6 +627,7 @@ int signal_comm_thread_to_connect(MPIDI_VC_t *vc)
     MPIU_ERR_CHKANDJUMP1(count != sizeof(msg), mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "couldn't send whole message");
 
  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_SIGNAL_COMM_THREAD_TO_CONNECT);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -619,6 +642,9 @@ static int set_plfd_and_poke(MPIDI_VC_t *vc)
     int mpi_errno = MPI_SUCCESS;
     MPID_nem_newtcp_module_poke_msg_t msg;
     MPIDI_msg_sz_t count;
+    MPIDI_STATE_DECL(MPID_STATE_SET_PLFD_AND_POKE);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SET_PLFD_AND_POKE);
 
     SET_PLFD(vc);
     
@@ -630,7 +656,8 @@ static int set_plfd_and_poke(MPIDI_VC_t *vc)
     MPIU_ERR_CHKANDJUMP1(count != sizeof(msg), mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "couldn't send whole message");
     
  fn_exit:
-    return mpi_errno;
+     MPIDI_FUNC_EXIT(MPID_STATE_SET_PLFD_AND_POKE);
+   return mpi_errno;
  fn_fail:
     goto fn_exit;
 }

@@ -265,11 +265,15 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
 				       &remote_context_id, 1, MPI_INT, 
 				       0, 0, comm, MPI_STATUS_IGNORE );
 	    if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
+            MPIR_Nest_incr();
 	    NMPI_Bcast( &remote_context_id, 1, MPI_INT, 0, local_comm );
+            MPIR_Nest_decr();
 	}
 	else {
 	    /* Broadcast to the other members of the local group */
+            MPIR_Nest_incr();
 	    NMPI_Bcast( &remote_context_id, 1, MPI_INT, 0, local_comm );
+            MPIR_Nest_decr();
 	}
     }
 

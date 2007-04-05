@@ -105,7 +105,7 @@ static void* comm_thread(void* dummy)
  fn_exit:
     return (void *)(MPI_Aint)mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPID_Abort(NULL, mpi_errno, 1, NULL);
     goto fn_exit;
 }
 

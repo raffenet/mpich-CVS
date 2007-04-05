@@ -2213,8 +2213,10 @@ void MPIR_Nest_decr_export(void);
      MPIU_Strncpy(MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file,__FILE__,\
                   MPICH_MAX_NESTFILENAME);\
      MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].line=__LINE__;}\
+     MPIU_DBG_MSG_FMT(THREAD, VERBOSE, (MPIU_DBG_FDEST, "DMPIR_Nest_incr %d->%d", MPIU_THREADPRIV_FIELD(nest_count), MPIU_THREADPRIV_FIELD(nest_count)+1)); \
      MPIU_THREADPRIV_FIELD(nest_count)++; }
 #define MPIR_Nest_decr() {MPIU_THREADPRIV_FIELD(nest_count)--; \
+     MPIU_DBG_MSG_FMT(THREAD, VERBOSE, (MPIU_DBG_FDEST, "DMPIR_Nest_decr %d->%d", MPIU_THREADPRIV_FIELD(nest_count)+1, MPIU_THREADPRIV_FIELD(nest_count))); \
      if (MPIU_THREADPRIV_FIELD(nest_count) < MPICH_MAX_NESTINFO && \
     strcmp(MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file,__FILE__) != 0) {\
          MPIU_Msg_printf( "Decremented nest count int file %s:%d but incremented in different file (%s:%d)\n",\
@@ -2227,8 +2229,10 @@ void MPIR_Nest_decr_export(void);
 }
 #else
 #define MPIR_Nest_init()
-#define MPIR_Nest_incr() {MPIU_THREADPRIV_FIELD(nest_count)++;}
-#define MPIR_Nest_decr() {MPIU_THREADPRIV_FIELD(nest_count)--;}
+#define MPIR_Nest_incr() {MPIU_DBG_MSG_FMT(THREAD, VERBOSE, (MPIU_DBG_FDEST, "MPIR_Nest_incr %d->%d", MPIU_THREADPRIV_FIELD(nest_count), MPIU_THREADPRIV_FIELD(nest_count)+1)); \
+                          MPIU_THREADPRIV_FIELD(nest_count)++;}
+#define MPIR_Nest_decr() {MPIU_DBG_MSG_FMT(THREAD, VERBOSE, (MPIU_DBG_FDEST, "MPIR_Nest_decr %d->%d", MPIU_THREADPRIV_FIELD(nest_count), MPIU_THREADPRIV_FIELD(nest_count)-1)); \
+                          MPIU_THREADPRIV_FIELD(nest_count)--;}
 #endif /* MPICH_DEBUG_NESTING */
 
 #define MPIR_Nest_value() (MPIU_THREADPRIV_FIELD(nest_count))
