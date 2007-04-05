@@ -175,6 +175,9 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
     ADIOI_PVFS2_makecredentials(&(pvfs2_fs->credentials));
 
     /* one process resolves name and will later bcast to others */
+#ifdef ADIOI_MPE_LOGGING
+    MPE_Log_event( ADIOI_MPE_open_a, 0, NULL );
+#endif
     if (rank == fd->hints->ranklist[0] && fd->fs_ptr == NULL) {
 	/* given the filename, figure out which pvfs filesystem it is on */
 	ret = PVFS_util_resolve(fd->filename, &cur_fs, 
@@ -194,6 +197,9 @@ void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code)
 	pvfs2_fs->object_ref = o_status.object_ref;
 	fd->fs_ptr = pvfs2_fs;
     }
+#ifdef ADIOI_MPE_LOGGING
+    MPE_Log_event( ADIOI_MPE_open_b, 0, NULL );
+#endif
 
     /* broadcast status and (possibly valid) object reference */
     MPI_Address(&o_status.error, &offsets[0]);
