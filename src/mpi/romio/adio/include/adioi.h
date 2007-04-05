@@ -547,12 +547,27 @@ int MPIOI_File_iread(MPI_File fh,
 
 #else
 
+#ifdef ADIOI_MPE_LOGGING
+#   define ADIOI_WRITE_LOCK(fd, offset, whence, len) do { \
+        MPE_Log_event( ADIOI_MPE_writelock_a, 0, NULL ); \
+        ADIOI_Set_lock((fd)->fd_sys, F_SETLKW, F_WRLCK, offset, whence, len); \
+        MPE_Log_event( ADIOI_MPE_writelock_b, 0, NULL ); } while( 0 )
+#   define ADIOI_READ_LOCK(fd, offset, whence, len) \
+        MPE_Log_event( ADIOI_MPE_readlock_a, 0, NULL ); do { \
+        ADIOI_Set_lock((fd)->fd_sys, F_SETLKW, F_RDLCK, offset, whence, len); \
+        MPE_Log_event( ADIOI_MPE_readlock_b, 0, NULL ); } while( 0 )
+#   define ADIOI_UNLOCK(fd, offset, whence, len) do { \
+        MPE_Log_event( ADIOI_MPE_unlock_a, 0, NULL ); \
+        ADIOI_Set_lock((fd)->fd_sys, F_SETLK, F_UNLCK, offset, whence, len); \
+        MPE_Log_event( ADIOI_MPE_unlock_b, 0, NULL ); } while( 0 )
+#else
 #   define ADIOI_WRITE_LOCK(fd, offset, whence, len) \
           ADIOI_Set_lock((fd)->fd_sys, F_SETLKW, F_WRLCK, offset, whence, len)
 #   define ADIOI_READ_LOCK(fd, offset, whence, len) \
           ADIOI_Set_lock((fd)->fd_sys, F_SETLKW, F_RDLCK, offset, whence, len)
 #   define ADIOI_UNLOCK(fd, offset, whence, len) \
           ADIOI_Set_lock((fd)->fd_sys, F_SETLK, F_UNLCK, offset, whence, len)
+#endif
 
 #endif
 
@@ -619,6 +634,14 @@ int  ADIOI_MPE_lseek_a;
 int  ADIOI_MPE_lseek_b;
 int  ADIOI_MPE_close_a;
 int  ADIOI_MPE_close_b;
+int  ADIOI_MPE_writelock_a;
+int  ADIOI_MPE_writelock_b;
+int  ADIOI_MPE_readlock_a;
+int  ADIOI_MPE_readlock_b;
+int  ADIOI_MPE_unlock_a;
+int  ADIOI_MPE_unlock_b;
+int  ADIOI_MPE_postwrite_a;
+int  ADIOI_MPE_postwrite_b;
 #endif
 
 #endif

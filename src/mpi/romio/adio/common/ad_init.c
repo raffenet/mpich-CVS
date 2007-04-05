@@ -77,6 +77,13 @@ void ADIO_Init(int *argc, char ***argv, int *error_code)
         MPE_Log_get_state_eventIDs( &ADIOI_MPE_write_a, &ADIOI_MPE_write_b );
         MPE_Log_get_state_eventIDs( &ADIOI_MPE_lseek_a, &ADIOI_MPE_lseek_b );
         MPE_Log_get_state_eventIDs( &ADIOI_MPE_close_a, &ADIOI_MPE_close_b );
+        MPE_Log_get_state_eventIDs( &ADIOI_MPE_writelock_a,
+                                    &ADIOI_MPE_writelock_b );
+        MPE_Log_get_state_eventIDs( &ADIOI_MPE_readlock_a,
+                                    &ADIOI_MPE_readlock_b );
+        MPE_Log_get_state_eventIDs( &ADIOI_MPE_unlock_a, &ADIOI_MPE_unlock_b );
+        MPE_Log_get_state_eventIDs( &ADIOI_MPE_postwrite_a,
+                                    &ADIOI_MPE_postwrite_b );
 
         int  comm_world_rank;
         PMPI_Comm_rank( MPI_COMM_WORLD, &comm_world_rank );
@@ -92,6 +99,14 @@ void ADIO_Init(int *argc, char ***argv, int *error_code)
                                 "lseek", "red" );
             MPE_Describe_state( ADIOI_MPE_close_a, ADIOI_MPE_close_b,
                                 "close", "grey" );
+            MPE_Describe_state( ADIOI_MPE_writelock_a, ADIOI_MPE_writelock_b,
+                                "writelock", "plum" );
+            MPE_Describe_state( ADIOI_MPE_readlock_a, ADIOI_MPE_readlock_b,
+                                "readlock", "magenta" );
+            MPE_Describe_state( ADIOI_MPE_unlock_a, ADIOI_MPE_unlock_b,
+                                "unlock", "purple" );
+            MPE_Describe_state( ADIOI_MPE_postwrite_a, ADIOI_MPE_postwrite_b,
+                                "postwrite", "ivory" );
         }
     }
 #endif

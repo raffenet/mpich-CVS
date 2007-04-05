@@ -212,6 +212,9 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 
      /* optimization: if only one process performing i/o, we can perform
      * a less-expensive Bcast  */
+#ifdef ADIOI_MPE_LOGGING
+    MPE_Log_event( ADIOI_MPE_postwrite_a, 0, NULL );
+#endif
     if (fd->hints->cb_nodes == 1) 
 	    MPI_Bcast(error_code, 1, MPI_INT, 
 			    fd->hints->ranklist[0], fd->comm);
@@ -220,6 +223,9 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 	    MPI_Allreduce(&tmp_error, error_code, 1, MPI_INT, 
 			    MPI_MAX, fd->comm);
     }
+#ifdef ADIOI_MPE_LOGGING
+    MPE_Log_event( ADIOI_MPE_postwrite_b, 0, NULL );
+#endif
 
     if ( (old_error != MPI_SUCCESS) && (old_error != MPI_ERR_IO) )
 	    *error_code = old_error;
