@@ -355,7 +355,6 @@ static char *defaultFilePattern = "dbg@W%w-@%d@T-%t@.log";
 static int worldNum  = 0;
 static int worldRank = -1;
 static int whichRank = -1;             /* all ranks */
-static int threadID  = 0;
 static double timeOrigin = 0.0;
 
 static int MPIU_DBG_Usage( const char *, const char * );
@@ -372,6 +371,7 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
     void *p;
     MPID_Time_t t;
     double  curtime;
+    int threadID  = 0;
 
     if (!mpiu_dbg_initialized) return 0;
 
@@ -722,6 +722,7 @@ static int MPIU_DBG_OpenFile( void )
 	withinMthread = 0;        /* True if within an @T...@ */
     /* FIXME: Need to know how many MPI_COMM_WORLDs are known */
     int nWorld = 1;
+    int threadID = 0;
 #ifdef MPICH_IS_THREADED
     int nThread = 2;
 #else
