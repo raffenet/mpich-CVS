@@ -135,6 +135,12 @@ static inline void MPIDU_Process_lock_busy_wait( MPIDU_Process_lock_t *lock )
 
 #else
 
+#include <errno.h>
+#ifdef HAVE_WINDOWS_H
+#include <winsock2.h>
+#include <windows.h>
+#endif
+
 #ifdef USE_BUSY_LOCKS
 #ifdef HAVE_MUTEX_INIT
 typedef mutex_t MPIDU_Process_lock_t;
@@ -150,12 +156,6 @@ typedef pthread_mutex_t MPIDU_Process_lock_t;
 #else
 #error *** No locking mechanism for shared memory.specified ***
 #endif
-#endif
-
-#include <errno.h>
-#ifdef HAVE_WINDOWS_H
-#include <winsock2.h>
-#include <windows.h>
 #endif
 
 #ifdef USE_BUSY_LOCKS
