@@ -62,11 +62,13 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     MPID_Group *group_ptr;
     MPIU_CHKLMEM_DECL(3);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CREATE);
+    MPIU_THREADPRIV_DECL;
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPIU_THREAD_SINGLE_CS_ENTER("comm");
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CREATE);
+    MPIU_THREADPRIV_GET;
 
     /* Validate parameters, and convert MPI object handles to object pointers */
 #   ifdef HAVE_ERROR_CHECKING
@@ -246,14 +248,17 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 		if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
 
 		/* Broadcast to the other members of the local group */
+                MPIR_Nest_incr();
 		NMPI_Bcast( rinfo, 2, MPI_INT, 0, 
 			    comm_ptr->local_comm->handle );
 		NMPI_Bcast( remote_mapping, remote_size, MPI_INT, 0, 
 			    comm_ptr->local_comm->handle );
+                MPIR_Nest_decr();
 	    }
 	    else {
 		/* The other processes */
 		/* Broadcast to the other members of the local group */
+                MPIR_Nest_incr();
 		NMPI_Bcast( rinfo, 2, MPI_INT, 0, 
 			    comm_ptr->local_comm->handle );
 		newcomm_ptr->recvcontext_id = rinfo[0];
@@ -263,6 +268,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 				    mpi_errno,"remote_mapping");
 		NMPI_Bcast( remote_mapping, remote_size, MPI_INT, 0, 
 			    comm_ptr->local_comm->handle );
+                MPIR_Nest_decr();
 	    }
 	    newcomm_ptr->remote_size    = remote_size;
 	    /* Now, everyone has the remote_mapping, and can apply that to 
@@ -310,6 +316,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	/* Dummy to complete collective ops in the intercomm case */
 	if (comm_ptr->comm_kind == MPID_INTERCOMM) {
 	    int rinfo[2], remote_size, *remote_mapping = 0;
+            MPIR_Nest_incr();
 	    NMPI_Bcast( rinfo, 2, MPI_INT, 0, 
 			comm_ptr->local_comm->handle );
 	    remote_size                 = rinfo[1];
@@ -318,6 +325,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 				mpi_errno,"remote_mapping");
 	    NMPI_Bcast( remote_mapping, remote_size, MPI_INT, 0, 
 			comm_ptr->local_comm->handle );
+            MPIR_Nest_decr();
 	}
     }
     
