@@ -27,26 +27,28 @@
 #warning ">>>>>>>>>>>>>>>> WRONG NET MODULE SELECTION"
 #endif 
 
-MPID_nem_net_module_init_t MPID_nem_net_module_init = 0;
-MPID_nem_net_module_finalize_t MPID_nem_net_module_finalize = 0;
-MPID_nem_net_module_ckpt_shutdown_t MPID_nem_net_module_ckpt_shutdown = 0;
-MPID_nem_net_module_poll_t MPID_nem_net_module_poll = 0;
-MPID_nem_net_module_send_t MPID_nem_net_module_send = 0;
+MPID_nem_net_module_init_t              MPID_nem_net_module_init              = 0;
+MPID_nem_net_module_finalize_t          MPID_nem_net_module_finalize          = 0;
+MPID_nem_net_module_ckpt_shutdown_t     MPID_nem_net_module_ckpt_shutdown     = 0;
+MPID_nem_net_module_poll_t              MPID_nem_net_module_poll              = 0;
+MPID_nem_net_module_send_t              MPID_nem_net_module_send              = 0;
 MPID_nem_net_module_get_business_card_t MPID_nem_net_module_get_business_card = 0;
-MPID_nem_net_module_connect_to_root_t MPID_nem_net_module_connect_to_root = 0;
-MPID_nem_net_module_vc_init_t MPID_nem_net_module_vc_init = 0;
-MPID_nem_net_module_vc_terminate_t MPID_nem_net_module_vc_terminate = 0;
+MPID_nem_net_module_connect_to_root_t   MPID_nem_net_module_connect_to_root   = 0;
+MPID_nem_net_module_vc_init_t           MPID_nem_net_module_vc_init           = 0;
+MPID_nem_net_module_vc_destroy_t        MPID_nem_net_module_vc_destroy        = 0;
+MPID_nem_net_module_vc_terminate_t      MPID_nem_net_module_vc_terminate      = 0;
 
-#define assign_functions(prefix) do {						          \
-    MPID_nem_net_module_init              = MPID_nem_##prefix##_module_init;	          \
-    MPID_nem_net_module_finalize          = MPID_nem_##prefix##_module_finalize;          \
-    MPID_nem_net_module_ckpt_shutdown     = MPID_nem_##prefix##_module_ckpt_shutdown;	  \
-    MPID_nem_net_module_poll              = MPID_nem_##prefix##_module_poll;		  \
-    MPID_nem_net_module_send              = MPID_nem_##prefix##_module_send;		  \
-    MPID_nem_net_module_get_business_card = MPID_nem_##prefix##_module_get_business_card; \
-    MPID_nem_net_module_connect_to_root   = MPID_nem_##prefix##_module_connect_to_root;	  \
-    MPID_nem_net_module_vc_init           = MPID_nem_##prefix##_module_vc_init;		  \
-    MPID_nem_net_module_vc_terminate      = MPID_nem_##prefix##_module_vc_terminate;   \
+#define assign_functions(prefix) do {                                                           \
+    MPID_nem_net_module_init              = MPID_nem_##prefix##_module_init;                    \
+    MPID_nem_net_module_finalize          = MPID_nem_##prefix##_module_finalize;                \
+    MPID_nem_net_module_ckpt_shutdown     = MPID_nem_##prefix##_module_ckpt_shutdown;           \
+    MPID_nem_net_module_poll              = MPID_nem_##prefix##_module_poll;                    \
+    MPID_nem_net_module_send              = MPID_nem_##prefix##_module_send;                    \
+    MPID_nem_net_module_get_business_card = MPID_nem_##prefix##_module_get_business_card;       \
+    MPID_nem_net_module_connect_to_root   = MPID_nem_##prefix##_module_connect_to_root;         \
+    MPID_nem_net_module_vc_init           = MPID_nem_##prefix##_module_vc_init;                 \
+    MPID_nem_net_module_vc_destroy        = MPID_nem_##prefix##_module_vc_destroy;              \
+    MPID_nem_net_module_vc_terminate      = MPID_nem_##prefix##_module_vc_terminate;            \
 } while (0)
 
 #undef FUNCNAME

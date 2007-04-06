@@ -344,6 +344,22 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     goto fn_exit;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_newtcp_module_vc_destroy
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPID_nem_newtcp_module_vc_destroy(MPIDI_VC_t *vc)
+{
+    int mpi_errno = MPI_SUCCESS;   
+
+    /* free any resources associated with this VC here */
+
+ fn_exit:   
+       return mpi_errno;
+ fn_fail:
+       goto fn_exit;
+}
+
 
 #undef FUNCNAME
 #define FUNCNAME get_addr_port_from_bc

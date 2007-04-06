@@ -686,6 +686,30 @@ fn_exit:
     goto fn_exit;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_vc_destroy
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int
+MPID_nem_vc_destroy(MPIDI_VC_t *vc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIDI_STATE_DECL (MPID_STATE_MPID_NEM_VC_DESTROY);
+
+    MPIDI_FUNC_ENTER (MPID_STATE_MPID_NEM_VC_DESTROY);
+
+    MPIU_Free(vc_ch->pending_pkt);
+
+    mpi_errno = MPID_nem_net_module_vc_destroy(vc);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    fn_exit:
+    MPIDI_FUNC_EXIT (MPID_STATE_MPID_NEM_VC_DESTROY);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
 
 int
 MPID_nem_get_business_card (int my_rank, char *value, int length)
