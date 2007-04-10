@@ -73,7 +73,7 @@ void ADIO_End(int *error_code)
     datarep = ADIOI_Datarep_head;
     while (datarep) {
         datarep_next = datarep->next;
-#ifdef MPICH2
+#ifdef ROMIO_INSIDE_MPICH2
         MPIU_Free(datarep->name);
 #else
         ADIOI_Free(datarep->name);
