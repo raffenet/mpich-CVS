@@ -21,6 +21,28 @@ c-test: $(CTESTS)
 
 default: all
 
+async: async.o
+atomicity: atomicity.o
+coll_perf: coll_perf.o
+coll_test: coll_test.o
+creat_excl.c: creat_excl.o
+error: error.o                                                 
+excl: excl.o
+file_info: file_info.o
+i_noncontig: i_noncontig.o
+large_array: large_array.o
+large_file: large_file.o
+misc: misc.o
+noncontig: noncontig.o
+noncontig_coll2: noncontig_coll2.o
+noncontig_coll: noncontig_coll.o
+perf: perf.o
+psimple: psimple.o                                             
+shared_fp: shared_fp.o
+simple: simple.o
+split_coll: split_coll.o
+status: status.o
+
 .c.o:
 	$(CC) $(USER_CFLAGS) -c $<
 
