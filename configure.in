@@ -240,6 +240,7 @@ implementation.  option may be a list of common separated names including
     log      - Enable debug event logging
     meminit  - Preinitialize memory associated structures and unions to
                eliminate access warnings from programs like valgrind
+    mutex    - Enable error checking on pthread mutexes
     all      - All of the above choices],,enable_g=none)
 dnl
 dnl --enable-sharedlibs=kind is set with the PAC_ARG_SHAREDLIBS macro 
@@ -910,12 +911,16 @@ for option in $enable_g ; do
 	log)
 	perform_dbglog=yes
 	;;
+	mutex)
+	perform_dbgmutex=yes
+	;;
 	all|yes)
 	perform_memtracing=yes
 	perform_nesttesting=yes
 	perform_dbglog=yes
 	CFLAGS="$CFLAGS -g"
 	perform_meminit=yes
+	perform_dbgmutex=yes
 	;;
 	*)
 	AC_MSG_WARN([Unknown value $enable_g for enable-g])
@@ -945,6 +950,10 @@ if test -n "$perform_dbglog" ; then
    else
        AC_DEFINE(USE_DBG_LOGGING,1,[Define to enable logging macros])
    fi
+fi
+
+if test -n "$perform_dbgmutex" ; then 
+   AC_DEFINE(MPICH_DEBUG_MUTEX,1,[Define to enable mutex debugging])
 fi
 
 if test "$enable_debuginfo" = "yes" ; then
