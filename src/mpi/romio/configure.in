@@ -472,18 +472,18 @@ if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     fi
 fi
 #
-if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPHA" || test -n "$arch_netbsd" || test -n "$arch_openbsd" ; then
-    if test -n "$arch_freebsd" || test -n "$arch_netbsd" || test -n "$arch_openbsd"; then
-        longlongsize=${longlongsize:-0}
-	# printf doesn't work properly and no integer*8 as far as I can tell
-    fi
-    # Find the CPP before the header check
-    AC_PROG_CPP
-    if test -z "$MPI" ; then
-        MPI=mpich
-        mpi_mpich=1
-    fi
-fi    
+#if test -n "$arch_freebsd" || test -n "$arch_LINUX" || test -n "$arch_LINUX_ALPHA" || test -n "$arch_netbsd" || test -n "$arch_openbsd" ; then
+#    if test -n "$arch_freebsd" || test -n "$arch_netbsd" || test -n "$arch_openbsd"; then
+#        longlongsize=${longlongsize:-0}
+#	# printf doesn't work properly and no integer*8 as far as I can tell
+#    fi
+#    # Find the CPP before the header check
+#    AC_PROG_CPP
+#    if test -z "$MPI" ; then
+#        MPI=mpich
+#        mpi_mpich=1
+#    fi
+#fi    
 #
 if test -n "$arch_SX4" ; then
     have_aio=no
@@ -1645,6 +1645,7 @@ if test "$ac_cv_header_unistd_h" = "yes" ; then
 fi
 
 
+
 ####################################################################
 # We're about to mess with CC etc.  No more feature tests past here,
 # because we may set CC to something that does not yet exist!
@@ -1894,6 +1895,7 @@ if test "$ac_cv_func_ftruncate" = "yes" ; then
     # Do we need to declare ftruncate?
     PAC_FUNC_NEEDS_DECL([#include <unistd.h>],ftruncate)
 fi
+
 #
 # Create the directory lists for the Makefile
 FILE_SYS_DIRS=""
@@ -2061,7 +2063,7 @@ AC_OUTPUT(Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile \
                    test/fcoll_test.f test/pfcoll_test.f test/fperf.f \
 		   mpi-io/glue/mpich2/Makefile \
 		   mpi-io/glue/mpich1/Makefile \
-		   mpi-io/glue/default/Makefile common/dataloop/Makefile )
+		   mpi-io/glue/default/Makefile )
 #
 rm -f *.o
 
