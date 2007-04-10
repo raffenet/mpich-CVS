@@ -221,22 +221,7 @@ has not been issued, new jumpshot (Jumpshot-4) may display the legend name as
 
 
 
-VI. b) EXAMPLE MAKEFILE 
------------------------
-
-The install directories, share/examples_logging, share/example_graphics and
-share/example_collchk contain some very useful and simple example programs.
-The Makefiles in these directories illustrate the usage of MPE routines
-and how to link with various MPE libraries. In most cases, users can simply
-copy the share/examples_logging/Makefile to their home directory, and do a
-"make" to compile the suggested targets.  Users don't need to copy the
-.c and .f files when MPE has been compiled with a MAKE that has VPATH
-support.  The created executables can be launched with mpiexec or mpirun
-from the MPI implementation to generate sample logfiles.
-
-
-
-VI. c) ENVIRONMENTAL VARIABLES
+VI. b) ENVIRONMENTAL VARIABLES
 ------------------------------
 
 For MPE logging, MPE_TMPDIR and MPE_LOGFILE_PREFIX are 2 environment variables
@@ -336,6 +321,21 @@ For MPE X11 graphics, environment variables DISPLAY set in each process
 is read during MPE_Open_graphics.
 
 DISPLAY: determines where MPE X11 graphics on each process is connected to.
+
+
+
+VI. c) EXAMPLE MAKEFILE 
+-----------------------
+
+The install directories, share/examples_logging, share/example_graphics and
+share/example_collchk contain some very useful and simple example programs.
+The Makefiles in these directories illustrate the usage of MPE routines
+and how to link with various MPE libraries. In most cases, users can simply
+copy the share/examples_logging/Makefile to their home directory, and do a
+"make" to compile the suggested targets.  Users don't need to copy the
+.c and .f files when MPE has been compiled with a MAKE that has VPATH
+support.  The created executables can be launched with mpiexec or mpirun
+from the MPI implementation to generate sample logfiles.
 
 
 
