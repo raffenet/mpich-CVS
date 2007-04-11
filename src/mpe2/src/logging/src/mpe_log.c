@@ -955,6 +955,7 @@ int MPE_Finish_log( const char *filename )
         */
         MPE_Stop_log();
 
+        /* Even every process reads MPE_LOGFILE_PREFIX, only rank=0 needs it */
         env_logfile_prefix = (char *) getenv( "MPE_LOGFILE_PREFIX" );
         if ( env_logfile_prefix != NULL )
             CLOG_Converge_init( CLOG_Stream, env_logfile_prefix );
