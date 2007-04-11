@@ -61,8 +61,8 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     MPID_Comm *newcomm_ptr;
     MPID_Group *group_ptr;
     MPIU_CHKLMEM_DECL(3);
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CREATE);
     MPIU_THREADPRIV_DECL;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CREATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
