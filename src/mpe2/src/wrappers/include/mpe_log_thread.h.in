@@ -5,11 +5,10 @@
 
 @PTHREAD_IN_MPI_DEF@
 
-#if defined( HAVE_PTHREAD_IN_MPI )
-
-#include <pthread.h>
-
 #define MPE_ThreadID_t   int
+
+#if defined( HAVE_PTHREAD_IN_MPI )
+#include <pthread.h>
 
 /* MPE coarse-grained lock support mechanism */
 extern pthread_mutex_t  MPE_Thread_mutex;
@@ -59,12 +58,11 @@ void MPE_Log_thread_init( void );
 
 #else
 
-#define MPE_ThreadID_t   int
+/* When there is no thread support, threadID has to be a constant, e.g. 0 */
 #define MPE_LOG_THREAD_DECL \
-    MPE_ThreadID_t *thdID_ptr = NULL; \
-    MPE_ThreadID_t  thdID; \
-    int             thd_fn_rc;
-    
+    MPE_ThreadID_t  thdID = 0;
+
+/* Define everything else to NULL */
 #define MPE_LOG_THREAD_LOCK
 #define MPE_LOG_THREAD_UNLOCK
 #define MPE_LOG_THREADID_SET
