@@ -194,7 +194,6 @@ struct MPIDU_Sock
 
 /* FIXME: Why aren't these static */
 int MPIDU_Socki_initialized = 0;
-int MPIDU_Socki_socket_bufsz = 0;
 
 static struct MPIDU_Socki_eventq_elem * MPIDU_Socki_eventq_pool = NULL;
 

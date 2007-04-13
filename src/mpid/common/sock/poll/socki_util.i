@@ -982,7 +982,9 @@ int MPIDU_Sock_SetSockBufferSize( int fd, int firm )
 
     /* Get the socket buffer size if we haven't yet acquired it */
     if (sockBufSize < 0) {
-	rc = MPIU_GetEnvInt( "MPICH_SOCK_BUFSIZE", &sockBufSize );
+	/* FIXME: Is this the name that we want to use (this was chosen
+	   to match the original, undocumented name) */
+	rc = MPIU_GetEnvInt( "MPICH_SOCKET_BUFFER_SIZE", &sockBufSize );
 	if (rc <= 0) {
 	    sockBufSize = 0;
 	}
@@ -1019,7 +1021,7 @@ int MPIDU_Sock_SetSockBufferSize( int fd, int firm )
 	    if (rc == 0) {
 		if (bufsz < sockBufSize * 0.9) {
 		MPIU_Msg_printf("WARNING: send socket buffer size differs from requested size (requested=%d, actual=%d)\n",
-				MPIDU_Socki_socket_bufsz, bufsz);
+				sockBufSize, bufsz);
 		}
 	    }
 	    /* --END ERROR HANDLING-- */
@@ -1030,7 +1032,7 @@ int MPIDU_Sock_SetSockBufferSize( int fd, int firm )
 	    if (rc == 0) {
 		if (bufsz < sockBufSize * 0.9) {
 		    MPIU_Msg_printf("WARNING: receive socket buffer size differs from requested size (requested=%d, actual=%d)\n",
-				    MPIDU_Socki_socket_bufsz, bufsz);
+				    sockBufSize, bufsz);
 		}
 	    }
 	    /* --END ERROR HANDLING-- */
