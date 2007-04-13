@@ -192,7 +192,7 @@ struct MPIDU_Sock
     int elem;
 };
 
-
+/* FIXME: Why aren't these static */
 int MPIDU_Socki_initialized = 0;
 int MPIDU_Socki_socket_bufsz = 0;
 
