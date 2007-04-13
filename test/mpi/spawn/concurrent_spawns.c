@@ -123,12 +123,10 @@ int main(int argc, char *argv[])
 	MPI_Send(&errs, 1, MPI_INT, 0, 0, parentcomm);
 	MPI_Comm_free( &parentcomm );
     }
-
-    /* Note that the MTest_Finalize get errs only over COMM_WORLD */
-    /* Note also that both the parent and child will generate "No Errors"
-       if both call MTest_Finalize */
-    if (parentcomm == MPI_COMM_NULL)
-    {
+    else {
+	/* Note that the MTest_Finalize get errs only over COMM_WORLD */
+	/* Note also that both the parent and child will generate "No Errors"
+	   if both call MTest_Finalize */
 	MTest_Finalize( errs );
     }
 
