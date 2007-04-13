@@ -9,6 +9,7 @@
    on GNU systems */
 #include "mpidi_ch3_conf.h"
 
+
 #ifdef USE_NOPOSIX_FOR_IFCONF
 /* This is a very special case.  Allow the use of some extensions for 
    just the rest of this file so that we can get the ifconf structure */
@@ -30,9 +31,10 @@
 #endif
 
 /* We set dbg_ifname to 1 to help debug the choice of interface name 
-   used when determining which interface to advertise to other processes 
+   used when determining which interface to advertise to other processes.
+   The value is -1 if it has not yet been set.
  */
-static int dbg_ifname = 0;
+static int dbg_ifname = -1;
 
 static int MPIDI_CH3U_GetIPInterface( MPIDU_Sock_ifaddr_t *, int * );
 
@@ -63,6 +65,12 @@ int MPIDU_CH3U_GetSockInterfaceAddr( int myRank, char *ifname, int maxIfname,
     char *ifname_string;
     int mpi_errno = MPI_SUCCESS;
     int ifaddrFound = 0;
+
+    if (dbg_ifname < 0) {
+	int rc;
+	rc = MPIU_GetEnvBool( "MPICH_DBG_IFNAME", &dbg_ifname );
+	if (rc != 1) dbg_ifname = 0;
+    }
 
     /* Set "not found" for ifaddr */
     ifaddr->len = 0;
@@ -111,6 +119,7 @@ int MPIDU_CH3U_GetSockInterfaceAddr( int myRank, char *ifname, int maxIfname,
     /* If we don't have an IP address, try to get it from the name */
     if (!ifaddrFound) {
 	struct hostent *info;
+	printf( "Name to check is %s\n", ifname_string ); fflush(stdout);
 	info = gethostbyname( ifname_string );
 	if (info && info->h_addr_list) {
 	    /* Use the primary address */
@@ -189,6 +198,12 @@ static int MPIDI_CH3U_GetIPInterface( MPIDU_Sock_ifaddr_t *ifaddr, int *found )
 #ifdef WORDS_BIGENDIAN
     unsigned int MSBlocalhost = 0x7f000001;
 #endif
+
+    if (dbg_ifname < 0) {
+	int rc;
+	rc = MPIU_GetEnvBool( "MPICH_DBG_IFNAME", &dbg_ifname );
+	if (rc != 1) dbg_ifname = 0;
+    }
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0) {

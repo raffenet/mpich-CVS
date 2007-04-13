@@ -108,6 +108,9 @@ int MPIDU_CH3I_SetupListener( MPIDU_Sock_set_t sock_set )
 				  &MPIDI_CH3I_listener_port, &sock);
     if (mpi_errno) return mpi_errno;
 
+    MPIU_DBG_MSG_D(CH3_CONNECT,VERBOSE,"Listener port %d",
+		   MPIDI_CH3I_listener_port );
+
     MPIDI_CH3I_listener_conn->sock = sock;
 
     return mpi_errno;
