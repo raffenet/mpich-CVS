@@ -119,7 +119,7 @@ int MPIDU_CH3U_GetSockInterfaceAddr( int myRank, char *ifname, int maxIfname,
     /* If we don't have an IP address, try to get it from the name */
     if (!ifaddrFound) {
 	struct hostent *info;
-	printf( "Name to check is %s\n", ifname_string ); fflush(stdout);
+	/* printf( "Name to check is %s\n", ifname_string ); fflush(stdout); */
 	info = gethostbyname( ifname_string );
 	if (info && info->h_addr_list) {
 	    /* Use the primary address */
