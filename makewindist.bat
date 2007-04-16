@@ -74,6 +74,7 @@ echo maint/updatefiles >> sshcmds.txt
 echo tar cvf dotin.tar `find . -name "*.h.in"` >> sshcmds.txt
 echo gzip dotin.tar >> sshcmds.txt
 echo exit >> sshcmds.txt
+dos2unix sshcmds.txt
 ssh -l %USERNAME% %CVS_HOST% < sshcmds.txt
 scp %USERNAME%@%CVS_HOST%:/sandbox/%USERNAME%/dotintmp/mpich2/dotin.tar.gz .
 ssh -l %USERNAME% %CVS_HOST% rm -rf /sandbox/%USERNAME%/dotintmp
