@@ -8,6 +8,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+/* #undef INFO_DEBUG */
+
 /* Set verbose to 0 only if you want no information about any failure */
 static int verbose = 1;
 
@@ -62,7 +64,7 @@ int main(int argc, char **argv)
     for (i=0; i<nkeys; i++) {
 	MPI_Info_get_nthkey(info_used, i, key);
 	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL-1, value, &flag);
-#if 0
+#ifdef INFO_DEBUG
 	if (!mynod) 
 	    fprintf(stderr, "Process %d, Default:  key = %s, value = %s\n", mynod, 
                 key, value);
@@ -224,7 +226,7 @@ int main(int argc, char **argv)
     for (i=0; i<nkeys; i++) {
 	MPI_Info_get_nthkey(info_used, i, key);
 	MPI_Info_get(info_used, key, MPI_MAX_INFO_VAL-1, value, &flag);
-#if 0
+#ifdef INFO_DEBUG	
 	if (!mynod) fprintf(stderr, "Process %d, key = %s, value = %s\n", mynod, 
                 key, value);
 #endif
