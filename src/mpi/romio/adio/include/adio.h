@@ -302,6 +302,7 @@ typedef struct {
 #define ADIO_PVFS2               160   /* PVFS2: 2nd generation PVFS */
 #define ADIO_PANFS               161   /* Panasas FS */
 #define ADIO_GRIDFTP             162   /* Globus GridFTP */
+#define ADIO_ZOIDFS              163   /* ZoidFS: the I/O forwarding fs */
 
 #define ADIO_SEEK_SET            SEEK_SET
 #define ADIO_SEEK_CUR            SEEK_CUR

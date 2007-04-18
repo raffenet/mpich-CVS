@@ -74,4 +74,9 @@ extern struct ADIOI_Fns_struct ADIO_TESTFS_operations;
 extern struct ADIOI_Fns_struct ADIO_GRIDFTP_operations;
 #endif
 
+#ifdef ROMIO_ZOIDFS
+/* prototypes are in adio/ad_zoidfs/ad_zoidfs.h */
+extern struct ADIOI_Fns_struct ADIO_ZOIDFS_operations;
+#endif
+
 #endif
