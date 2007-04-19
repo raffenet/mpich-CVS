@@ -5,36 +5,39 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#ifndef AD_PVFS2_INCLUDE
-#define AD_PVFS2_INCLUDE
+#ifndef AD_ZOIDFS_INCLUDE
+#define AD_ZOIDFS_INCLUDE
 
 #include "adio.h"
 #ifdef HAVE_ZOIDFS_H
 #include "zoidfs.h"
 #endif
 
-void ADIOI_PVFS2_Open(ADIO_File fd, int *error_code);
-void ADIOI_PVFS2_Close(ADIO_File fd, int *error_code);
-void ADIOI_PVFS2_ReadContig(ADIO_File fd, void *buf, int count, 
+
+typedef zoidfs_handle_t ADIOI_ZOIDFS_object;
+
+void ADIOI_ZOIDFS_Open(ADIO_File fd, int *error_code);
+void ADIOI_ZOIDFS_Close(ADIO_File fd, int *error_code);
+void ADIOI_ZOIDFS_ReadContig(ADIO_File fd, void *buf, int count, 
                       MPI_Datatype datatype, int file_ptr_type,
                      ADIO_Offset offset, ADIO_Status *status, int
 		     *error_code);
-void ADIOI_PVFS2_WriteContig(ADIO_File fd, void *buf, int count, 
+void ADIOI_ZOIDFS_WriteContig(ADIO_File fd, void *buf, int count, 
                       MPI_Datatype datatype, int file_ptr_type,
                       ADIO_Offset offset, ADIO_Status *status, int
 		      *error_code);   
-void ADIOI_PVFS2_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int
+void ADIOI_ZOIDFS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct, int
 		*error_code); 
-void ADIOI_PVFS2_WriteStrided(ADIO_File fd, void *buf, int count,
+void ADIOI_ZOIDFS_WriteStrided(ADIO_File fd, void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,
 		       ADIO_Offset offset, ADIO_Status *status, int
 		       *error_code);
-void ADIOI_PVFS2_ReadStrided(ADIO_File fd, void *buf, int count,
+void ADIOI_ZOIDFS_ReadStrided(ADIO_File fd, void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,
 		       ADIO_Offset offset, ADIO_Status *status, int
 		       *error_code);
-void ADIOI_PVFS2_Flush(ADIO_File fd, int *error_code);
-void ADIOI_PVFS2_Delete(char *filename, int *error_code);
-void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
-void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
+void ADIOI_ZOIDFS_Flush(ADIO_File fd, int *error_code);
+void ADIOI_ZOIDFS_Delete(char *filename, int *error_code);
+void ADIOI_ZOIDFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
+void ADIOI_ZOIDFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 #endif

@@ -12,6 +12,9 @@
 
 void ADIOI_ZOIDFS_Delete(char *filename, int *error_code)
 {
+    int ret;
+    static char myname[] = "ADIOI_ZOIDFS_DELETE";
+
     ADIOI_ZOIDFS_Init(error_code);
     /* --BEGIN ERROR HANDLING-- */
     if (*error_code != MPI_SUCCESS) 

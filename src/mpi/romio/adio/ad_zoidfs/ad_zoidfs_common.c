@@ -43,7 +43,7 @@ int ADIOI_ZOIDFS_End_call(MPI_Comm comm, int keyval,
     return error_code;
 }
 
-void ADIOI_ZOIDFS_Init(int *error_code )
+void ADIOI_ZOIDFS_Init(int rank, int *error_code )
 {
     int ret;
     static char myname[] = "ADIOI_ZOIDFS_INIT";
@@ -84,10 +84,10 @@ void ADIOI_ZOIDFS_makeattribs(zoidfs_sattr_t * attribs)
     attribs->gid = getgid(); 
 
     gettimeofday(&now, NULL);
-    sattr.atime.seconds = now.tv_sec;
-    sattr.atime.useconds = now.tv_usec;
-    sattr.mtime.seconds = now.tv_sec;
-    sattr.mtime.useconds = now.tv_usec;
+    attribs->atime.seconds = now.tv_sec;
+    attribs->atime.useconds = now.tv_usec;
+    attribs->mtime.seconds = now.tv_sec;
+    attribs->mtime.useconds = now.tv_usec;
 }
 
 int ADIOI_ZOIDFS_error_convert(int error)

@@ -5,12 +5,12 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#ifndef _AD_ZOIDFS_H
-#define _AD_ZOIDFS_H
+#ifndef _AD_ZOIDFS_COMMON_H
+#define _AD_ZOIDFS_COMMON_H
 #include "ad_zoidfs.h"
 
 
-void ADIOI_ZOIDFS_Init(int *error_code );
+void ADIOI_ZOIDFS_Init(int rank, int *error_code );
 void ADIOI_ZOIDFS_makeattribs(zoidfs_sattr_t * attribs);
 void ADIOI_ZOIDFS_End(int *error_code);
 int ADIOI_ZOIDFS_End_call(MPI_Comm comm, int keyval, 
