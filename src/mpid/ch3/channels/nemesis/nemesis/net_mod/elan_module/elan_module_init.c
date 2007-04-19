@@ -7,7 +7,7 @@
 
 #include <elan/elan.h>
 #include <elan/capability.h>
-#include <elanctrl.h>
+#include <elan/elanctrl.h>
 #include "mpidimpl.h"
 #include "mpid_nem_impl.h"
 #include "elan_module_impl.h"

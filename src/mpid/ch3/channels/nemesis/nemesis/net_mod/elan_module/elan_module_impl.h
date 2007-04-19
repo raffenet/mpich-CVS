@@ -7,7 +7,7 @@
 #ifndef ELAN_MODULE_IMPL_H
 #define ELAN_MODULE_IMPL_H
 
-#include <elan.h>
+#include <elan/elan.h>
 #include "mpid_nem_impl.h"
 
 #define MPID_NEM_ELAN_SLOT_SIZE     MPID_NEM_CELL_PAYLOAD_LEN
