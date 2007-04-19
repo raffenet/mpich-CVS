@@ -18,9 +18,9 @@ struct ADIOI_Fns_struct ADIO_ZOIDFS_operations = {
     ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */
     ADIOI_GEN_SeekIndividual, /* SeekIndividual */
     ADIOI_ZOIDFS_Fcntl, /* Fcntl */
-    ADIOI_ZOIDFS_SetInfo, /* SetInfo */
-    ADIOI_ZOIDFS_ReadStrided, /* ReadStrided */
-    ADIOI_ZOIDFS_WriteStrided, /* WriteStrided */
+    ADIOI_GEN_SetInfo, /* SetInfo */
+    ADIOI_GEN_ReadStrided, /* ReadStrided */
+    ADIOI_GEN_WriteStrided, /* WriteStrided */
     ADIOI_ZOIDFS_Close, /* Close */
     ADIOI_FAKE_IreadContig, /* IreadContig */
     ADIOI_FAKE_IwriteContig, /* IwriteContig */

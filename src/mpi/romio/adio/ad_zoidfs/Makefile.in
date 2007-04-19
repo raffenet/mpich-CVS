@@ -16,8 +16,8 @@ C_COMPILE_SHL = $(CC_SHL)
 @VPATH@
 
 AD_ZOIDFS_OBJECTS = ad_zoidfs.o ad_zoidfs_close.o ad_zoidfs_common.o \
-	ad_zoidfs_delete.o \
-	ad_zoidfs_open.o ad_zoidfs_io.o
+	ad_zoidfs_delete.o ad_zoidfs_fcntl.o ad_zoidfs_flush.o \
+	ad_zoidfs_io.o ad_zoidfs_open.o ad_zoidfs_resize.o
 
 default: $(LIBNAME)
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
