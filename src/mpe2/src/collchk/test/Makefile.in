@@ -79,6 +79,9 @@ time_alltoallv_nochk@EXEEXT@: time_alltoallv.@OBJEXT@
 time_alltoallv0_nochk@EXEEXT@: time_alltoallv0.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(MPI_LIBS)
 
+wrong_int_byte@EXEEXT@: wrong_int_byte.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(COLLCHK_LIBS)
+
 wrong_reals@EXEEXT@: wrong_reals.@OBJEXT@
 	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(COLLCHK_FLIBS)
 
