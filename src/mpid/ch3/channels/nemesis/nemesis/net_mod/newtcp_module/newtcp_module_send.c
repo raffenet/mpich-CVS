@@ -149,7 +149,7 @@ int MPID_nem_newtcp_module_send_queued(MPIDI_VC_t *vc)
                 MPIDI_CH3U_Request_complete(sreq);
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
                 SENDQ_DEQUEUE(&VC_FIELD(vc, send_queue), &sreq);
-                break;
+                continue;
             }
 
             complete = 0;
@@ -160,7 +160,7 @@ int MPID_nem_newtcp_module_send_queued(MPIDI_VC_t *vc)
             {
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
                 SENDQ_DEQUEUE(&VC_FIELD(vc, send_queue), &sreq);
-                break;
+                continue;
             }
             sreq->ch.iov_offset = 0;
         }
