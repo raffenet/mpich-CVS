@@ -81,19 +81,19 @@ MPID_nem_pkt_lmt_cookie_t lmt_cookie;
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
  */
-#define MPIDI_CH3_REQUEST_DECL                                                                                                  \
-    struct MPIDI_CH3I_Request                                                                                                   \
-    {                                                                                                                           \
-        struct MPIDI_VC     *vc;                                                                                                \
-        int                  iov_offset;                                                                                        \
-        int                  noncontig;                                                                                         \
-        MPIDI_msg_sz_t       header_sz;                                                                                         \
-	/*        MPIDI_CH3_Pkt_t      pkt;	*/                                                                              \
-                                                                                                                                \
-        MPI_Request          lmt_req_id;     /* request id of remote side */                                                    \
-        struct MPID_Request *lmt_req;        /* pointer to original send/recv request */                                        \
-        MPIDI_msg_sz_t       lmt_data_sz;    /* data size to be transferred, after checking for truncation */                   \
-        MPID_IOV             lmt_tmp_cookie; /* temporary storage for received cookie */                                        \
+#define MPIDI_CH3_REQUEST_DECL                                                                                  \
+    struct MPIDI_CH3I_Request                                                                                   \
+    {                                                                                                           \
+        struct MPIDI_VC     *vc;                                                                                \
+        int                  iov_offset;                                                                        \
+        int                  noncontig;                                                                         \
+        MPIDI_msg_sz_t       header_sz;                                                                         \
+	/*        MPIDI_CH3_Pkt_t      pkt;	*/                                                              \
+        struct MPID_Request *next;                                                                              \
+        MPI_Request          lmt_req_id;     /* request id of remote side */                                    \
+        struct MPID_Request *lmt_req;        /* pointer to original send/recv request */                        \
+        MPIDI_msg_sz_t       lmt_data_sz;    /* data size to be transferred, after checking for truncation */   \
+        MPID_IOV             lmt_tmp_cookie; /* temporary storage for received cookie */                        \
     } ch;
 
 #if 0

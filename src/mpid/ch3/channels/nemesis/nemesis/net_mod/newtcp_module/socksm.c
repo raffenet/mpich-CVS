@@ -1300,7 +1300,6 @@ Evaluate the need for it by testing and then do it, if needed.
 int MPID_nem_newtcp_module_connpoll()
 {
     int mpi_errno = MPI_SUCCESS, n, i;
-    int locked = 0;
     
 #if 1
     /* #ifdef BLOCKING */
@@ -1318,11 +1317,6 @@ int MPID_nem_newtcp_module_connpoll()
     }
 
     
-    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Requesting lock");
-    MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
-    locked = 1;
-    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "  got lock");
-
     for (i = 0; i < socksm_tbl_vars.tbl_size; i++)
     {
         pollfd_t *it_plfd = &socksm_tbl_vars.plfd_tbl[i];
@@ -1341,12 +1335,6 @@ int MPID_nem_newtcp_module_connpoll()
 
 
  fn_exit:
-    if (locked)
-    {
-        MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);
-        locked = 0;
-        MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Released lock");
-    }
     return mpi_errno;
  fn_fail:
     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Comm thread failed.");

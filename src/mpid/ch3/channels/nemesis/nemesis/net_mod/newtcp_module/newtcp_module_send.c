@@ -6,44 +6,82 @@
 
 #include "newtcp_module_impl.h"
 
-#define NUM_PREALLOC_SENDQ 10
 #define MAX_SEND_IOV 10
 
-#define SENDQ_EMPTY(q) GENERIC_Q_EMPTY (q)
-#define SENDQ_HEAD(q) GENERIC_Q_HEAD (q)
-#define SENDQ_ENQUEUE(qp, ep) GENERIC_Q_ENQUEUE (qp, ep, dev.next)
-#define SENDQ_DEQUEUE(qp, ep) GENERIC_Q_DEQUEUE (qp, ep, dev.next)
 
 static int set_plfd_and_poke(MPIDI_VC_t *vc);
 
-typedef struct MPID_nem_newtcp_module_send_q_element
-{
-    struct MPID_nem_newtcp_module_send_q_element *next;
-    size_t len;                        /* number of bytes left to send */
-    char *start;                       /* pointer to next byte to send */
-    MPID_nem_cell_ptr_t cell;
-    /*     char buf[MPID_NEM_MAX_PACKET_LEN];*/ /* data to be sent */
-} MPID_nem_newtcp_module_send_q_element_t;
-
-struct {MPID_nem_newtcp_module_send_q_element_t *top;} free_buffers = {0};
-
-#define ALLOC_Q_ELEMENT(e) do {                                                                                                         \
-        if (S_EMPTY (free_buffers))                                                                                                     \
-        {                                                                                                                               \
-            MPIU_CHKPMEM_MALLOC (*(e), MPID_nem_newtcp_module_send_q_element_t *, sizeof(MPID_nem_newtcp_module_send_q_element_t),      \
-                                 mpi_errno, "send queue element");                                                                      \
-        }                                                                                                                               \
-        else                                                                                                                            \
-        {                                                                                                                               \
-            S_POP (&free_buffers, e);                                                                                                   \
-        }                                                                                                                               \
-    } while (0)
-
-/* FREE_Q_ELEMENTS() frees a list if elements starting at e0 through e1 */
-#define FREE_Q_ELEMENTS(e0, e1) S_PUSH_MULTIPLE (&free_buffers, e0, e1)
-#define FREE_Q_ELEMENT(e) S_PUSH (&free_buffers, e)
-
 int MPID_nem_newtcp_module_send_queued(MPIDI_VC_t *vc);
+
+
+static inline void sendq_enqueue(MPID_nem_newtcp_send_queue_t *qhead, MPID_Request *element)
+{
+    volatile MPID_Request *prev;
+
+    prev = MPID_NEM_SWAP(&qhead->tail, element);
+
+    if (prev == NULL)
+	qhead->head = element;
+    else
+	prev->ch.next = element;
+}
+
+static inline MPID_Request *sendq_head(MPID_nem_newtcp_send_queue_t *qhead)
+{
+    if (qhead->my_head == NULL)
+    {
+	if (qhead->head == NULL)
+	    return NULL;
+	else
+	{
+	    qhead->my_head = qhead->head;
+	    qhead->head = NULL; /* reset it for next time */
+	}
+    }
+    return qhead->my_head;
+}
+
+static inline int sendq_empty(MPID_nem_newtcp_send_queue_t *qhead)
+{
+    if (qhead->my_head == NULL)
+    {
+	if (qhead->head == NULL)
+	    return 1;
+	else
+	{
+	    qhead->my_head = qhead->head;
+	    qhead->head = NULL; /* reset it for next time */
+	}
+    }
+    return 0;
+}
+
+static inline void sendq_dequeue(MPID_nem_newtcp_send_queue_t *qhead, MPID_Request **element)
+{
+    volatile MPID_Request *e;
+    e = qhead->my_head;
+
+    if (e->ch.next)
+	qhead->my_head = e->ch.next;
+    else
+    {
+	MPID_Request *old_tail;
+      
+	qhead->my_head = NULL;	
+
+	old_tail = MPID_NEM_CAS(&qhead->tail, e, NULL);
+
+	if (old_tail != e)
+	{
+	    while (e->ch.next = NULL)
+		SKIP;
+	    qhead->my_head = e->ch.next;
+	}
+    }
+    e->ch.next = NULL;
+    *element = e;
+}
+
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_send_init
@@ -53,27 +91,14 @@ int MPID_nem_newtcp_module_send_init()
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
-    MPIU_CHKPMEM_DECL (NUM_PREALLOC_SENDQ);
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_INIT);
     
-    /* preallocate sendq elements */
-    for (i = 0; i < NUM_PREALLOC_SENDQ; ++i)
-    {
-        MPID_nem_newtcp_module_send_q_element_t *e;
-        
-        MPIU_CHKPMEM_MALLOC (e, MPID_nem_newtcp_module_send_q_element_t *,
-                             sizeof(MPID_nem_newtcp_module_send_q_element_t), mpi_errno, "send queue element");
-        S_PUSH (&free_buffers, e);
-    }
-
-    MPIU_CHKPMEM_COMMIT();
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_INIT);
     return mpi_errno;
  fn_fail:
-    MPIU_CHKPMEM_REAP();
     goto fn_exit;
 }
 
@@ -104,9 +129,9 @@ int MPID_nem_newtcp_module_send_queued(MPIDI_VC_t *vc)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_QUEUED);
 
-    while (!SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
+    while (!sendq_empty(VC_FIELD(vc, send_queue)))
     {
-        sreq = SENDQ_HEAD(VC_FIELD(vc, send_queue));
+        sreq = sendq_head(VC_FIELD(vc, send_queue));
         
         iov = &sreq->dev.iov[sreq->ch.iov_offset];
 
@@ -148,7 +173,7 @@ int MPID_nem_newtcp_module_send_queued(MPIDI_VC_t *vc)
                 MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
                 MPIDI_CH3U_Request_complete(sreq);
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
-                SENDQ_DEQUEUE(&VC_FIELD(vc, send_queue), &sreq);
+                sendq_dequeue(VC_FIELD(vc, send_queue), &sreq);
                 continue;
             }
 
@@ -159,14 +184,14 @@ int MPID_nem_newtcp_module_send_queued(MPIDI_VC_t *vc)
             if (complete)
             {
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
-                SENDQ_DEQUEUE(&VC_FIELD(vc, send_queue), &sreq);
+                sendq_dequeue(VC_FIELD(vc, send_queue), &sreq);
                 continue;
             }
             sreq->ch.iov_offset = 0;
         }
     }
 
-    if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
+    if (sendq_empty(VC_FIELD(vc, send_queue)))
         UNSET_PLFD(vc);
     
  fn_exit:
@@ -187,13 +212,6 @@ int MPID_nem_newtcp_module_send_finalize()
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_FINALIZE);
 
-    while (!S_EMPTY (free_buffers))
-    {
-        MPID_nem_newtcp_module_send_q_element_t *e;
-        S_POP (&free_buffers, &e);
-        MPIU_Free (e);
-    }
-/*     printf ("  done\n");//DARIUS */
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_FINALIZE);
     return mpi_errno;
@@ -214,7 +232,7 @@ int MPID_nem_newtcp_module_conn_est (MPIDI_VC_t *vc)
 
 /*     printf ("*** connected *** %d\n", VC_FIELD(vc, sc)->fd); //DARIUS */
 
-    if (!SENDQ_EMPTY (VC_FIELD(vc, send_queue)))
+    if (!sendq_empty(VC_FIELD(vc, send_queue)))
     {
         SET_PLFD(vc);
         mpi_errno = MPID_nem_newtcp_module_send_queued(vc);
@@ -246,7 +264,7 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
     
     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "newtcp_iStartContigMsg");
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)hdr);
-    if (!MPID_nem_newtcp_module_vc_is_disconnected(vc) && SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
+    if (!MPID_nem_newtcp_module_vc_is_disconnected(vc) && sendq_empty(VC_FIELD(vc, send_queue)))
     {
         MPID_IOV iov[2];
 
@@ -319,9 +337,9 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
     /*     printf("sreq->dev.iov[0].MPID_IOV_LEN = %d\n", sreq->dev.iov[0].MPID_IOV_LEN);//DARIUS */
     /*     printf("&sreq->dev.iov[0].MPID_IOV_LEN = %p\n", &sreq->dev.iov[0].MPID_IOV_LEN);//DARIUS */
 
-    if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
+    if (sendq_empty(VC_FIELD(vc, send_queue)))
     {
-        SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
+        sendq_enqueue(VC_FIELD(vc, send_queue), sreq);
 
         if (MPID_nem_newtcp_module_vc_is_disconnected(vc))
         {
@@ -332,7 +350,7 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
             set_plfd_and_poke(vc);
     }
     else
-        SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
+        sendq_enqueue(VC_FIELD(vc, send_queue), sreq);
 
     *sreq_ptr = sreq;
     
@@ -362,7 +380,7 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "newtcp_iSendContig");
 
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)hdr);
-    if (!MPID_nem_newtcp_module_vc_is_disconnected(vc) && SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
+    if (!MPID_nem_newtcp_module_vc_is_disconnected(vc) && sendq_empty(VC_FIELD(vc, send_queue)))
     {
         MPID_IOV iov[2];
 
@@ -444,9 +462,9 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
     sreq->ch.vc = vc;
     sreq->ch.iov_offset = 0;
 
-    if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
+    if (sendq_empty(VC_FIELD(vc, send_queue)))
     {
-        SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
+        sendq_enqueue(VC_FIELD(vc, send_queue), sreq);
 
         if (MPID_nem_newtcp_module_vc_is_disconnected(vc))
         {
@@ -457,7 +475,7 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
             set_plfd_and_poke(vc);
     }
     else
-        SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
+        sendq_enqueue(VC_FIELD(vc, send_queue), sreq);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIG);
@@ -499,7 +517,7 @@ int MPID_nem_newtcp_SendEagerNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void 
     iov_n += 1;
     offset = 0;
 
-    if (!MPID_nem_newtcp_module_vc_is_disconnected(vc) && SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
+    if (!MPID_nem_newtcp_module_vc_is_disconnected(vc) && sendq_empty(VC_FIELD(vc, send_queue)))
     {
         CHECK_EINTR(offset, writev(VC_FIELD(vc, sc)->fd, iov, iov_n));
         MPIU_ERR_CHKANDJUMP(offset == 0, mpi_errno, MPI_ERR_OTHER, "**sock_closed");
@@ -569,9 +587,9 @@ int MPID_nem_newtcp_SendEagerNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void 
     sreq->ch.vc = vc;
     sreq->ch.iov_offset = 0;
 
-    if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
+    if (sendq_empty(VC_FIELD(vc, send_queue)))
     {
-        SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
+        sendq_enqueue(VC_FIELD(vc, send_queue), sreq);
 
         if (MPID_nem_newtcp_module_vc_is_disconnected(vc))
         {
@@ -582,7 +600,7 @@ int MPID_nem_newtcp_SendEagerNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void 
             set_plfd_and_poke(vc);
     }
     else
-        SENDQ_ENQUEUE(&VC_FIELD(vc, send_queue), sreq);
+        sendq_enqueue(VC_FIELD(vc, send_queue), sreq);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_SENDEAGERNONCONTIG);

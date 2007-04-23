@@ -49,6 +49,9 @@ struct MPID_Request *MPIDI_CH3I_sendq_head[CH3_NUM_QUEUES] = {0};
 struct MPID_Request *MPIDI_CH3I_sendq_tail[CH3_NUM_QUEUES] = {0};
 struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES] = {0};
 
+static int shm_progress(MPID_Progress_state *progress_state, int is_blocking);
+static int nwk_progress(MPID_Progress_state *progress_state, int is_blocking);
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress
 #undef FCNAME
@@ -76,12 +79,16 @@ int MPIDI_CH3I_Progress(MPID_Progress_state *progress_state, int is_blocking)
 #endif
     mpi_errno = shm_progress(progress_state, is_blocking);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    mpi_errno = nwk_progress(progress_state, is_blocking);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     i = 0;
     while (progress_state && progress_state->ch.completion_count == MPIDI_CH3I_progress_completion_count && is_blocking
            && i < POLL_ITERS_BEFORE_WAIT)
     {
         mpi_errno = shm_progress(progress_state, is_blocking);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        mpi_errno = nwk_progress(progress_state, is_blocking);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         ++i;
     }
@@ -105,6 +112,8 @@ int MPIDI_CH3I_Progress(MPID_Progress_state *progress_state, int is_blocking)
         MPIU_THREAD_CHECK_END;
 #endif        
         mpi_errno = shm_progress(progress_state, TRUE);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        mpi_errno = nwk_progress(progress_state, TRUE);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 
@@ -134,7 +143,7 @@ int MPIDI_CH3I_Progress(MPID_Progress_state *progress_state, int is_blocking)
 #define FUNCNAME shm_progress
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
+static int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
 {
     int                  mpi_errno = MPI_SUCCESS;
     MPID_Request        *sreq;
@@ -383,6 +392,28 @@ int shm_progress(MPID_Progress_state *progress_state, int is_blocking)
     goto fn_exit;
 }
 #ifdef MPICH_IS_THREADED
+
+#undef FUNCNAME
+#define FUNCNAME nwk_progress
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int nwk_progress(MPID_Progress_state *progress_state, int is_blocking)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_NWK_PROGRESS);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_NWK_PROGRESS);
+
+    mpi_errno = MPID_nem_net_module_poll(MPID_NEM_POLL_OUT);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_NWK_PROGRESS);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
 
 /* Note that this routine is only called if threads are enabled; 
    it does not need to check whether runtime threads are enabled */

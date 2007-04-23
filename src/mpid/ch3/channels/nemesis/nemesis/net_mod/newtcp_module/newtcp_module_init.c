@@ -351,6 +351,7 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     int mpi_errno = MPI_SUCCESS;
     struct in_addr addr;
     MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
@@ -372,8 +373,11 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
     vc_ch->next = NULL;
     vc_ch->prev = NULL;
     VC_FIELD(vc, sc) = NULL;
-    VC_FIELD(vc, send_queue).head = VC_FIELD(vc, send_queue).tail = NULL;
+    MPIU_CHKPMEM_MALLOC(VC_FIELD(vc, send_queue), MPID_nem_newtcp_send_queue_t *, sizeof (MPID_nem_newtcp_send_queue_t),
+                        mpi_errno, "send_queue");
+    VC_FIELD(vc, send_queue)->head = VC_FIELD(vc, send_queue)->tail = VC_FIELD(vc, send_queue)->my_head = NULL;
     
+    MPIU_CHKPMEM_COMMIT();
  fn_exit:
     /*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
@@ -381,6 +385,7 @@ int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
  fn_fail:
     /*     fprintf(stdout, "failure. mpi_errno = %d\n", mpi_errno); */
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPIU_CHKPMEM_REAP();
     goto fn_exit;
 }
 

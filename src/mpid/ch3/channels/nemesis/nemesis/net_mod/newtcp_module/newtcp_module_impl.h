@@ -47,18 +47,34 @@ typedef struct MPIDU_Sock_ifaddr_t {
 #define MPIDI_CH3I_ADDR_KEY "addr"
 #define MPIDI_CH3I_IFNAME_KEY "ifname"
 
+#define MPID_nem_newtcp_queue_fields1           \
+    MPID_Request * volatile head;               \
+    MPID_Request * volatile tail
+
+#define MPID_nem_newtcp_queue_fields2           \
+    MPID_Request *my_head
+
+struct MPID_nem_newtcp_queue_fields1_tmp {MPID_nem_newtcp_queue_fields1;};
+struct MPID_nem_newtcp_queue_fields2_tmp {MPID_nem_newtcp_queue_fields2;};
+
+typedef struct MPID_nem_newtcp_send_queue
+{
+    MPID_nem_newtcp_queue_fields1;
+    char padding1[MPID_NEM_CACHE_LINE_LEN - sizeof(struct MPID_nem_newtcp_queue_fields1_tmp)];
+    MPID_nem_newtcp_queue_fields2;
+    char padding2[MPID_NEM_CACHE_LINE_LEN - sizeof(struct MPID_nem_newtcp_queue_fields2_tmp)];
+} MPID_nem_newtcp_send_queue_t;
+
 /* The vc provides a generic buffer in which network modules can store
    private fields This removes all dependencies from the VC struction
    on the network module, facilitating dynamic module loading. */
 typedef struct {
     struct sockaddr_in sock_id;
     struct MPID_nem_new_tcp_module_sockconn *sc;
-    struct
-    {
-        struct MPID_Request *head;
-        struct MPID_Request *tail;
-    } send_queue;
+    MPID_nem_newtcp_send_queue_t *send_queue;
 } MPID_nem_newtcp_module_vc_area;
+/* accessor macro to private fields in VC */
+#define VC_FIELD(vc, field) (((MPID_nem_newtcp_module_vc_area *)((MPIDI_CH3I_VC *)(vc)->channel_private)->netmod_area.padding)->field)
 
 typedef enum {
     MPID_NEM_NEWTCP_MODULE_REFRESH_STATE,
@@ -72,8 +88,6 @@ typedef struct {
     MPIDI_VC_t *vc;
 } MPID_nem_newtcp_module_poke_msg_t;
 
-/* accessor macro to private fields in VC */
-#define VC_FIELD(vc, field) (((MPID_nem_newtcp_module_vc_area *)((MPIDI_CH3I_VC *)(vc)->channel_private)->netmod_area.padding)->field)
 
 
 /* functions */
