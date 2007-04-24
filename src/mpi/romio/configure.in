@@ -2028,7 +2028,7 @@ AC_SUBST(CC_SHL)
 AC_SUBST(LIBTOOL)
 # Remove the .a from the library file name (so that we can use .so or
 # other appropriate suffix)
-SHLIBNAME=`echo $LIBNAME | sed 's/\.a//'`
+SHLIBNAME=`echo $LIBNAME | sed 's/\.a$//'`
 AC_SUBST(SHLIBNAME)
 dnl
 if test ! -d adio ; then mkdir adio ; fi
