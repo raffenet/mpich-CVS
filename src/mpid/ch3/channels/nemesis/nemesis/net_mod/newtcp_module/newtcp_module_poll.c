@@ -57,6 +57,9 @@ int MPID_nem_newtcp_module_recv_handler(struct pollfd *pfd, sockconn_t *sc)
     ssize_t bytes_recvd;
     int complete;
     int ret;
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_RECV_HANDLER);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_RECV_HANDLER);
 
     if (((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active)
     {
@@ -79,7 +82,8 @@ int MPID_nem_newtcp_module_recv_handler(struct pollfd *pfd, sockconn_t *sc)
                 MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror(errno));
         }
 
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "Cont recv %d", bytes_recvd);
+        MPIU_DBG_MSG_P(CH3_CHANNEL, VERBOSE, "Cont recv %p", rreq);
+        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "  bytes recvd %d", bytes_recvd);
 
         /* update the iov */
         for (iov = &rreq->dev.iov[rreq->ch.iov_offset]; iov < &rreq->dev.iov[rreq->ch.iov_offset + rreq->dev.iov_count]; ++iov)
@@ -101,6 +105,7 @@ int MPID_nem_newtcp_module_recv_handler(struct pollfd *pfd, sockconn_t *sc)
         /* the whole iov has been received */
         rreq->dev.iov[0].MPID_IOV_LEN = 0;
         rreq->ch.iov_offset = 0;
+        MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "  Received whole IOV");
     }
 
     /* signal main thread to handle then wait */
@@ -111,6 +116,7 @@ int MPID_nem_newtcp_module_recv_handler(struct pollfd *pfd, sockconn_t *sc)
     CHECK_EINTR(ret, sem_wait(&recv_semaphore));
 
  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_RECV_HANDLER);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -164,6 +170,8 @@ int MPID_nem_newtcp_module_poll (MPID_nem_poll_dir_t in_or_out)
            into the user buffer, complete the request */
         MPID_Request *rreq = ((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active;
         int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+
+        MPIU_DBG_MSG_P(CH3_CHANNEL, VERBOSE, "Cont recv %p", rreq);
 
         /* the whole IOV should have been received */
         MPIU_Assert(rreq->ch.iov_offset == 0);

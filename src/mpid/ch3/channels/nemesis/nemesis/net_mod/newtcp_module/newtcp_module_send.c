@@ -174,6 +174,7 @@ int MPID_nem_newtcp_module_send_queued(MPIDI_VC_t *vc)
                 MPIDI_CH3U_Request_complete(sreq);
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
                 sendq_dequeue(VC_FIELD(vc, send_queue), &sreq);
+                MAYBE_SIGNAL(MPID_nem_mem_region.my_recvQ);
                 continue;
             }
 
@@ -185,6 +186,7 @@ int MPID_nem_newtcp_module_send_queued(MPIDI_VC_t *vc)
             {
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
                 sendq_dequeue(VC_FIELD(vc, send_queue), &sreq);
+                MAYBE_SIGNAL(MPID_nem_mem_region.my_recvQ);
                 continue;
             }
             sreq->ch.iov_offset = 0;
@@ -192,7 +194,15 @@ int MPID_nem_newtcp_module_send_queued(MPIDI_VC_t *vc)
     }
 
     if (sendq_empty(VC_FIELD(vc, send_queue)))
+    {
+        MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Queue empty");
         UNSET_PLFD(vc);
+    }
+    else
+    {
+        MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Queue full");
+    }
+    
     
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_NEWTCP_MODULE_SEND_QUEUED);

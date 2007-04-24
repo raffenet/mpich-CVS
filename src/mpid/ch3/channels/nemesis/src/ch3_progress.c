@@ -567,6 +567,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen, int *r
         if (buflen == 0)
         {
             vc_ch->recv_active = rreq;
+            MPIU_DBG_MSG_P(CH3_CHANNEL, VERBOSE, "recv_active = %p", vc_ch->recv_active);
             goto fn_exit;
         }
 
@@ -603,6 +604,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen, int *r
                 rreq->ch.iov_offset = iov - rreq->dev.iov;
                 rreq->dev.iov_count = n_iov;
                 vc_ch->recv_active = rreq;
+                MPIU_DBG_MSG_P(CH3_CHANNEL, VERBOSE, "recv_active = %p", vc_ch->recv_active);
             }
             else
             {				       
@@ -626,13 +628,15 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen, int *r
                     rreq->ch.iov_offset = 0;
                     MPIU_Assert(rreq->dev.iov_count > 0 && rreq->dev.iov[rreq->ch.iov_offset].MPID_IOV_LEN > 0);
                     vc_ch->recv_active = rreq;
+                    MPIU_DBG_MSG_P(CH3_CHANNEL, VERBOSE, "recv_active = %p", vc_ch->recv_active);
                     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...not complete");
                 }
                 else
                 {
                     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...complete");
                     vc_ch->recv_active = NULL;    
-                }
+                    MPIU_DBG_MSG_P(CH3_CHANNEL, VERBOSE, "recv_active = %p", vc_ch->recv_active);
+               }
             }
         }
         if (complete)
