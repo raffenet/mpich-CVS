@@ -167,6 +167,8 @@ static int expand_sc_plfd_tbls (void)
     int new_capacity = g_tbl_capacity + g_tbl_grow_size, i;
     MPIU_CHKPMEM_DECL (2);
 
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "expand_sc_plfd_tbls Entry"));
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "expand_sc_plfd_tbls b4 g_sc_tbl[0].fd=%d", g_sc_tbl[0].fd));
     MPIU_CHKPMEM_MALLOC (new_sc_tbl, sockconn_t *, new_capacity * sizeof(sockconn_t), 
                          mpi_errno, "expanded connection table");
     MPIU_CHKPMEM_MALLOC (new_plfd_tbl, pollfd_t *, new_capacity * sizeof(pollfd_t), 
@@ -174,6 +176,15 @@ static int expand_sc_plfd_tbls (void)
 
     MPID_NEM_MEMCPY (new_sc_tbl, g_sc_tbl, g_tbl_capacity * sizeof(sockconn_t));
     MPID_NEM_MEMCPY (new_plfd_tbl, g_plfd_tbl, g_tbl_capacity * sizeof(pollfd_t));
+
+    /* VCs have pointers to entries in the sc table.  These
+       are updated here after the expand. */
+    for (i = 1; i < g_tbl_capacity; i++)   /* i=0 = listening socket fd won't have a VC pointer */
+    {
+        if (g_sc_tbl[i].vc && VC_FIELD(g_sc_tbl[i].vc, sc))
+            VC_FIELD(g_sc_tbl[i].vc, sc) = &new_sc_tbl[i];
+    }
+
     MPIU_Free(g_sc_tbl);
     MPIU_Free(g_plfd_tbl);
     g_sc_tbl = new_sc_tbl;
@@ -184,8 +195,7 @@ static int expand_sc_plfd_tbls (void)
     }
     g_tbl_capacity = new_capacity;
 
-    /* FIXME: VCs have pointers to entries in the sc table.  These
-       need to be updated after the expand. */
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "expand_sc_plfd_tbls af g_sc_tbl[0].fd=%d", g_sc_tbl[0].fd));
     for (i = 0; i < g_tbl_capacity; ++i)
     {
         MPIU_Assert(g_sc_tbl[i].state.cstate != CONN_STATE_TS_COMMRDY || VC_FIELD(g_sc_tbl[i].vc, sc) == &g_sc_tbl[i])
@@ -194,6 +204,7 @@ static int expand_sc_plfd_tbls (void)
     
     MPIU_CHKPMEM_COMMIT();    
  fn_exit:
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "expand_sc_plfd_tbls Exit"));
     return mpi_errno;
  fn_fail:
     MPIU_CHKPMEM_REAP();
@@ -619,6 +630,7 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
  fn_fail:
     if (index != -1) {
         if (sc->fd != CONN_INVALID_FD) {
+            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "MPID_nem_newtcp_module_connect(). closing fd = %d", sc->fd));
             close(sc->fd);
             sc->fd = CONN_INVALID_FD;
             plfd->fd = CONN_INVALID_FD;
@@ -1011,6 +1023,7 @@ static int state_d_quiescent_handler(pollfd_t *const plfd, sockconn_t *const sc)
     int mpi_errno = MPI_SUCCESS, rc;
     freenode_t *node;
 
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_d_quiescent_handler(). closing fd = %d", sc->fd));
     CHECK_EINTR(rc, close(sc->fd));
     MPIU_ERR_CHKANDJUMP1 (rc == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, 
                           "**close", "**close %s", strerror (errno));
@@ -1127,7 +1140,7 @@ int MPID_nem_newtcp_module_connpoll()
     CHECK_EINTR(n, poll(g_plfd_tbl, g_tbl_size, 0));
     MPIU_ERR_CHKANDJUMP1 (n == -1, mpi_errno, MPI_ERR_OTHER, 
                           "**poll", "**poll %s", strerror (errno));
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "some sc fd poll event"));
+    /* MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "some sc fd poll event")); */
     for(i = 0; i < g_tbl_size; i++)
     {
         pollfd_t *it_plfd = &g_plfd_tbl[i];
@@ -1135,17 +1148,22 @@ int MPID_nem_newtcp_module_connpoll()
 
         if (it_plfd->fd != CONN_INVALID_FD && it_plfd->revents != 0)
         {
+          /* FIXME@san  Uncomment and test
             MPIU_Assert ((it_plfd->revents & POLLHUP) == 0);
             MPIU_Assert ((it_plfd->revents & POLLERR) == 0);
             MPIU_Assert ((it_plfd->revents & POLLNVAL) == 0);
+            */
 
             mpi_errno = it_sc->handler(it_plfd, it_sc);
-            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno); 
+            /* @san The above line results in error propagated to above layers that causes
+             * MPI process to abort */
         }
     }
     
  fn_exit:
-    return mpi_errno;
+    return mpi_errno;   /* @san Always return success ok?? */
+    /* return MPI_SUCCESS; */
  fn_fail:
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
@@ -1171,25 +1189,34 @@ int MPID_nem_newtcp_module_connpoll()
   EOF received from peer).
   Now, it is decided not to check for this condition at this point. After all, in the next
   state, anyhow we can close the socket, if we receive an EOF.
+
+  N3:  find_free_entry is called within the while loop. It may cause the table to expand. So, 
+  the arguments passed for this callback function may get invalidated. So, it is imperative
+  that we obtain sc pointer and plfd pointer everytime within the while loop.
+  Accordingly, the parameters are named unused1 and unused2 for clarity.
 */
 #undef FUNCNAME
 #define FUNCNAME state_listening_handler
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_newtcp_module_state_listening_handler(pollfd_t *const l_plfd, sockconn_t *const l_sc)
+int MPID_nem_newtcp_module_state_listening_handler(pollfd_t *const unused_1, sockconn_t *const unused_2)
         /*  listener fd poll struct and sockconn structure */
 {
     int mpi_errno = MPI_SUCCESS;
     int connfd;
     socklen_t len;
     SA_IN rmt_addr;
+    pollfd_t *l_plfd;
+    sockconn_t *l_sc;
 
     while (1) {
+        l_sc = &g_sc_tbl[0];  /* N3 Important */
+        l_plfd = &g_plfd_tbl[0];
         len = sizeof(SA_IN);
         MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "before accept"));
         if ((connfd = accept(l_sc->fd, (SA *) &rmt_addr, &len)) < 0) {
-            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "after accept, connfd=%d, errno=%d:%s ", connfd, errno, strerror(errno)));
-            if (errno == EINTR)
+            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "after accept, l_sc=%08X lstnfd=%d connfd=%d, errno=%d:%s ", l_sc, l_sc->fd, connfd, errno, strerror(errno)));
+            if (errno == EINTR) 
                 continue;
             else if (errno == EWOULDBLOCK)
                 break; /*  no connection in the listen queue. get out of here.(N1) */
