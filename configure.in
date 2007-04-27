@@ -1978,6 +1978,31 @@ if test "$enable_cxx" = "yes" ; then
         # that the compiler accepts from optimizations
         CXXFLAGS=$saveCXXFLAGS
     fi
+    # Another bug in autoconf.  The checks for the C++ compiler do not
+    # ensure that you can link a program that is built with the C++ 
+    # compiler.  We've seen this error with gcc and icc, particularly
+    # when those compilers accept C++ language elements but are unable
+    # to link programs that are really C++.  For that reason,
+    # we've added a test to see if the C++ compiler can produce
+    # an executable.
+    AC_CACHE_CHECK([whether the C++ compiler $CXX can build an executable],
+    pac_cv_cxx_builds_exe,[
+ AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ AC_TRY_LINK([
+class mytest { 
+  int a;
+public:
+  mytest(void) : a(1) {}
+  ~mytest(void) {}
+};],[mytest a;],
+ pac_cv_cxx_builds_exe=yes, ac_cv_builds_exe=no)
+ AC_LANG_RESTORE
+])
+    if test "$pac_cv_cxx_builds_exe" != yes; then
+       AC_MSG_ERROR([Aborting because C++ compiler does not work.  If you do not need a C++ compiler, configure with --disable-cxx])
+    fi
+
     AC_LANG_CPLUSPLUS
     AC_CXX_EXCEPTIONS
     AC_CXX_BOOL
