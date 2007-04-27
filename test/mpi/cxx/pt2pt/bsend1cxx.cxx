@@ -21,12 +21,19 @@ using namespace std;
 #else
 #include <iostream.h>
 #endif
-/*
-#include <stdio.h>
-#include <stdlib.h>
 
-extern "C" void strncpy( char *, const char *, int );
-*/
+/* Rather than deal with the need to declare strncpy correctly 
+   (avoiding possible conflicts with other header files), we 
+   simply define a copy routine that is used for this example */
+void CopyChars( char *, int, const char * );
+void CopyChars( char *dest, int len, const char *src )
+{
+    int i;
+    for (i=0; i<len && *src; i++) {
+	dest[i] = src[i];
+    }
+    if (i < len) dest[i] = 0;
+}
 
 /* 
  * This is a simple program that tests bsend.  It may be run as a single
@@ -55,8 +62,8 @@ int main( int argc, char *argv[] )
     buf = new char[bufsize];
     MPI::Attach_buffer( buf, bufsize );
 
-    strncpy( msg1, "012345", 7 );
-    strncpy( msg3, "0123401234012341", 17 );
+    CopyChars( msg1, sizeof(msg1), "012345" );
+    CopyChars( msg3, sizeof(msg3), "0123401234012341" );
     msg2[0] = 1.23; msg2[1] = 3.21;
 
     if (rank == src) {
