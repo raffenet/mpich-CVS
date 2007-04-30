@@ -2262,8 +2262,9 @@ changequote(%%,::)dnl
 #! /bin/bash
 A[0]="b"
 A[1]="c"
-if test \${A[1]} != "c" ; then exit 1 ; fi
-exit 0
+rc=1
+if test \${A[1]} != "c" ; then rc=2 ; else rc=0 ; fi
+exit \$rc
 EOF
 changequote([,])dnl
     AC_MSG_CHECKING([whether $BASH supports arrays])
