@@ -292,11 +292,14 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	if (pg_rank == root_rank)
 	{
 #ifdef USE_PERSISTENT_SHARED_MEMORY
-	    /* With persistent shared memory, only the first process of the first group needs to create the bootstrap queue. */
-	    /* Everyone else including spawned processes will attach to this queue. */
+	    /* With persistent shared memory, only the first process of the 
+	       first group needs to create the bootstrap queue. */
+	    /* Everyone else including spawned processes will attach to this 
+	       queue. */
 	    initialize_queue = !has_parent;
 #else
-	    /* Without persistent shared memory the root of each node initializes the queue */
+	    /* Without persistent shared memory the root of each node 
+	       initializes the queue */
 	    initialize_queue = 1;
 #endif
 	}
