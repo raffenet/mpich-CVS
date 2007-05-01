@@ -41,7 +41,13 @@ int MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int 
         memory->max_addr     = (char *)(memory->current_addr) + memory->max_size;
         memory->size_left    = memory->max_size;
         memory->symmetrical  = 0 ;   
-        
+
+        /* we still do the barriers in case another node has more than one process */
+	pmi_errno = PMI_Barrier();
+        MPIU_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
+        pmi_errno = PMI_Barrier();
+        MPIU_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
+
         MPIU_CHKPMEM_COMMIT();
         goto fn_exit;
     }
