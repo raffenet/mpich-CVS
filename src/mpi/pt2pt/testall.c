@@ -160,6 +160,13 @@ int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag,
 	    
     for (i = 0; i < count; i++)
     {
+	if (request_ptrs[i] != NULL && 
+			request_ptrs[i]->kind == MPID_UREQUEST &&
+			request_ptrs[i]->poll_fn != NULL)
+	{
+	    (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, 
+			    &(array_of_statuses[i]));
+	}
 	if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
 	{
 	    n_completed++;
