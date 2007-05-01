@@ -7,6 +7,8 @@
 
 #include "adio.h"
 
+#include "mpiu_greq.h"
+
 /* Generic implementation of IwriteContig calls the blocking WriteContig
  * immediately.
  */
@@ -18,12 +20,6 @@ void ADIOI_FAKE_IwriteContig(ADIO_File fd, void *buf, int count,
     ADIO_Status status;
     int len, typesize;
 
-    *request = ADIOI_Malloc_request();
-    (*request)->optype = ADIOI_WRITE;
-    (*request)->fd = fd;
-    (*request)->queued = 0;
-    (*request)->datatype = datatype;
-
     MPI_Type_size(datatype, &typesize);
     len = count * typesize;
 
@@ -32,13 +28,19 @@ void ADIOI_FAKE_IwriteContig(ADIO_File fd, void *buf, int count,
      */
     ADIO_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset,
 		     &status, error_code);  
+    status.MPI_ERROR = *error_code;
+    /* --BEGIN ERROR HANDLING-- */
+    if (*error_code != MPI_SUCCESS)
+	    *error_code = MPIO_Err_return_file(fd, *error_code);
+    /* --END ERROR HANDLING-- */
+    MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn,
+		    MPIU_Greq_cancel_fn, &status, request);
 
-    fd->async_count++;
 
 #ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
 	MPI_Get_elements(&status, MPI_BYTE, &len);
-	(*request)->nbytes = len;
+	/* do something with 'len' */
     }
 #endif
 }
@@ -57,25 +59,24 @@ void ADIOI_FAKE_IwriteStrided(ADIO_File fd, void *buf, int count,
     int typesize;
 #endif
 
-    *request = ADIOI_Malloc_request();
-    (*request)->optype = ADIOI_WRITE;
-    (*request)->fd = fd;
-    (*request)->datatype = datatype;
-    (*request)->queued = 0;
-    (*request)->handle = 0;
-
     /* Call the blocking function.  It will create an error code 
      * if necessary.
      */
     ADIO_WriteStrided(fd, buf, count, datatype, file_ptr_type, 
 		      offset, &status, error_code);  
 
-    fd->async_count++;
+    status.MPI_ERROR = *error_code;
+    /* --BEGIN ERROR HANDLING-- */
+    if (*error_code != MPI_SUCCESS)
+	    *error_code = MPIO_Err_return_file(fd, *error_code);
+    /* --END ERROR HANDLING-- */
+    MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn,
+		    MPIU_Greq_cancel_fn, &status, request);
 
 #ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
 	MPI_Type_size(datatype, &typesize);
-	(*request)->nbytes = count * typesize;
+	/* do something with count * typesize */
     }
 #endif
 }

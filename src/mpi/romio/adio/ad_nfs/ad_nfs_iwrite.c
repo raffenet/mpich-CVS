@@ -10,6 +10,7 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
                 MPI_Datatype datatype, int file_ptr_type,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
+#if 0
     int len, typesize;
 #ifndef ROMIO_HAVE_WORKING_AIO
     ADIO_Status status;
@@ -63,6 +64,8 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
 #endif
 
     fd->async_count++;
+#endif
+    return;
 }
 
 
@@ -76,6 +79,7 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
 int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		  int wr, void *handle)
 {
+#if 0
     int err=-1, fd_sys;
     int error_code, this_errno;
 
@@ -164,7 +168,9 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     }
 
     *((struct aiocb **) handle) = aiocbp;
+#endif
 
     return 0;
 }
+
 #endif

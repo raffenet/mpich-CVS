@@ -395,9 +395,10 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
    common, let me do the simplest thing possible here: Each process
    completes all pending nonblocking operations before completing. */
 
-    ADIOI_Complete_async(error_code);
+    /*ADIOI_Complete_async(error_code);
     if (*error_code != MPI_SUCCESS) return;
     MPI_Barrier(fd->comm);
+    */
 
     done = 0;
     off = st_loc;

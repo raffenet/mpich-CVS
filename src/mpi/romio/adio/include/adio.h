@@ -242,20 +242,7 @@ typedef struct ADIOI_FileD {
 
 typedef struct ADIOI_FileD *ADIO_File;
 
-struct ADIOI_RequestD {
-    int cookie;              /* for error checking */
-    void *handle;        /* return handle */
-    int optype;          /* ADIOI_READ or ADIOI_WRITE */
-    ADIO_File fd;        /* associated file descriptor */
-    MPI_Datatype datatype;  /* datatype for read/write operation */
-    int queued;          /* 1 = request still queued in the system, 
-                            0 = request already dequeued */
-    int nbytes;          /* no. of bytes read/written in async I/O operation */
-    struct ADIOI_Async *ptr_in_async_list;  /* pointer to location in list of 
-					   asynchronous requests */
-};
-
-typedef struct ADIOI_RequestD *ADIO_Request;
+typedef MPI_Request ADIO_Request;
 
 /* fcntl structure */
 typedef struct {
