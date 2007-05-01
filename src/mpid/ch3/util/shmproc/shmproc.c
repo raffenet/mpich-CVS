@@ -48,6 +48,7 @@ int MPIDI_SHM_InitRWProc( pid_t pid, int *fd )
     return mpi_errno;
 }
 
+#if defined(USE_RDMA_READV) || defined(USE_RDMA_WRITEV)
 /* Call with vc->ch.nSharedProcessID 
  * This must be called to allow other operations
  */
@@ -118,6 +119,7 @@ int MPIDI_SHM_ReadProcessMemory( int fd, int pid,
  fn_fail:
     return mpi_errno;
 }
+#endif /* defined(USE_RDMA_READV) || defined(USE_RDMA_WRITEV) */
 
 #else
 /* HAVE_WINDOWS_H and use Windows interface */

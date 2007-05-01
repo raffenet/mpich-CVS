@@ -281,7 +281,8 @@ int MPIDI_CH3I_SHM_writev(MPIDI_VC_t *vc, MPID_IOV *iov, int n,
     return MPI_SUCCESS;
 }
 
-#if 0
+/* No one defines USE_RDMA_WRITEV; this is old, unused code */
+#ifdef USE_RDMA_WRITEV
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_SHM_rdma_writev
 #undef FCNAME
@@ -461,9 +462,9 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
 		    }
 		} while (0);
 		num_written = len;
-#endif
+#endif /* HAVE_PROC_RDMA_WRITE */
 
-#endif
+#endif /* HAVE_WINDOWS_H */
 		/*printf("wrote %d bytes to remote process\n", num_written);
 		  fflush(stdout);*/
 		if (num_written < (SIZE_T)rbuf_len)
@@ -589,10 +590,11 @@ int MPIDI_CH3I_SHM_rdma_writev(MPIDI_VC_t *vc, MPID_Request *sreq)
     mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_WRITEV);
     return mpi_errno;
-#endif
+#endif /* MPIDI_CH3_CHANNEL_RNDV */
 }
-#endif
+#endif /* USE_RDMA_WRITEV */
 
+#ifdef USE_RDMA_READV
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_SHM_rdma_readv
 #undef FCNAME
@@ -709,7 +711,7 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
 		    }
 		    ptrace(PTRACE_PEEKDATA, vc->ch.nSharedProcessID, sbuf + len - num_read, 0);
 		}
-#endif
+#endif /* HAVE_WINDOWS_H */
 		/*printf("read %d bytes from the remote process\n", num_read);fflush(stdout);*/
 		if (num_read < (SIZE_T)sbuf_len)
 		{
@@ -834,8 +836,9 @@ int MPIDI_CH3I_SHM_rdma_readv(MPIDI_VC_t *vc, MPID_Request *rreq)
     mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**notimpl", 0);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_RDMA_READV);
     return mpi_errno;
-#endif
+#endif /* MPIDI_CH3_CHANNEL_RNDV */
 }
+#endif /* USE_RDMA_READV */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_SHM_read_progress
