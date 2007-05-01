@@ -28,14 +28,7 @@ void ADIOI_FAKE_IwriteContig(ADIO_File fd, void *buf, int count,
      */
     ADIO_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset,
 		     &status, error_code);  
-    status.MPI_ERROR = *error_code;
-    /* --BEGIN ERROR HANDLING-- */
-    if (*error_code != MPI_SUCCESS)
-	    *error_code = MPIO_Err_return_file(fd, *error_code);
-    /* --END ERROR HANDLING-- */
-    MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn,
-		    MPIU_Greq_cancel_fn, &status, request);
-
+    MPIO_Completed_request_create(fd, error_code, request);
 
 #ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
@@ -65,13 +58,7 @@ void ADIOI_FAKE_IwriteStrided(ADIO_File fd, void *buf, int count,
     ADIO_WriteStrided(fd, buf, count, datatype, file_ptr_type, 
 		      offset, &status, error_code);  
 
-    status.MPI_ERROR = *error_code;
-    /* --BEGIN ERROR HANDLING-- */
-    if (*error_code != MPI_SUCCESS)
-	    *error_code = MPIO_Err_return_file(fd, *error_code);
-    /* --END ERROR HANDLING-- */
-    MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn,
-		    MPIU_Greq_cancel_fn, &status, request);
+    MPIO_Completed_request_create(fd, error_code, request);
 
 #ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {

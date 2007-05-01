@@ -105,8 +105,5 @@ void ADIOI_GEN_IreadStrided(ADIO_File fd, void *buf, int count,
 	/* do something with count * typesize.. but what? */
     }
 #endif
-    /* all work done, so init request and complete immediately */
-    MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
-		    MPIU_Greq_cancel_fn, &status, request);
-    MPI_Grequest_complete(*request);
+    MPIO_Completed_request_create(fd, error_code, request);
 }

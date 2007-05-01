@@ -55,13 +55,11 @@ void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count,
 
     ADIO_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
 		     &status, error_code);  
-    MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn, 
-		    MPIU_Greq_cancel_fn, status, request);
-    MPI_Grequest_complete(request);
+    MPIO_Completed_request_create(fd, error_code, request);
 # ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
 	MPI_Get_elements(&status, MPI_BYTE, &len);
-	(*request)->nbytes = len;
+	/* how to set status? */
     }
 # endif
 
@@ -205,10 +203,7 @@ void ADIOI_GEN_IwriteStrided(ADIO_File fd, void *buf, int count,
 	/* do something with count * typesize and status */
     }
 #endif
-    /* initialize and immediately complete the request */
-    MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn,
-		    MPIU_Greq_cancel_fn, &status, request);
-    MPI_Grequest_complete(*request);
+    MPIO_Completed_request_create(fd, error_code, request);
 }
 
 /* generic POSIX aio completion test routine */

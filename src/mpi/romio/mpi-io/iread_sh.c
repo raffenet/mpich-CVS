@@ -112,10 +112,7 @@ int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count,
 	    {
                 ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
 	    }
-	    status.MPI_ERROR = error_code;
-	    MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn,
-			    MPIU_Greq_cancel_fn, &status, request);
-	    MPI_Grequest_complete(*request);
+	    MPI_completed_request_create(fh, error_code, request);
         }
     }
     else

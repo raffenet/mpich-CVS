@@ -156,15 +156,8 @@ int MPIOI_File_iwrite(MPI_File mpi_fh,
 	    {
                 ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
 	    }
-
-	    status.MPI_ERROR = error_code;
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (error_code != MPI_SUCCESS)
-		    error_code = MPIO_Err_return_file(fh, error_code);
-	    /* --END ERROR HANDLING-- */
-	    MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn,
-			    MPIU_Greq_cancel_fn, &status, request);
-	    MPI_Grequest_complete(*request);
+	    
+	    MPIO_Completed_request_create(fh, error_code, request);
 	}
     }
     else {

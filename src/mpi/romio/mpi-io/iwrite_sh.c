@@ -102,16 +102,7 @@ int MPI_File_iwrite_shared(MPI_File mpi_fh, void *buf, int count,
             if (fh->file_system != ADIO_NFS)
                 ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
 
-	    status.MPI_ERROR = error_code;
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (error_code != MPI_SUCCESS)
-		    error_code = MPIO_Err_return_file(mpi_fh, error_code);
-	    /* --END ERROR HANDLING-- */
-	    /* kick off the request */
-	    MPI_Grequest_start(MPIU_Greq_query_fn, MPIU_Greq_free_fn,
-			    MPIU_Greq_cancel_fn, &status, request); 
-	    /* but we did all the work already */
-	    MPI_Grequest_complete(*request);
+	    MPIO_Completed_request_create(fh, error_code, request);
 	}
     }
     else
