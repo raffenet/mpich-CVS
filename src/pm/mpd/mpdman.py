@@ -556,8 +556,9 @@ class MPDMan(object):
                     sleep(0.1)  # minor pause before intr
                     os.kill(clientPid,signal.SIGUSR1)
                 else:
-                    pmiMsgToSend = 'cmd=barrier_out\n'
-                    self.pmiSock.send_char_msg(pmiMsgToSend)
+                    if self.pmiSock:
+                        pmiMsgToSend = 'cmd=barrier_out\n'
+                        self.pmiSock.send_char_msg(pmiMsgToSend)
             else:
                 self.holdingPMIBarrierLoop1 = 1
                 if self.pmiBarrierInRecvd:
