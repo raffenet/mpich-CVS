@@ -19,8 +19,8 @@
 
 /* This structure is defined by the debugger interface */
 typedef struct MPIR_PROCDESC {
-  char *host_name;
-  char *executable_name;
+  const char *host_name;
+  const char *executable_name;
   long  pid;
 } MPIR_PROCDESC;
 

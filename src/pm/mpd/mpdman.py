@@ -148,7 +148,8 @@ class MPDMan(object):
         self.pmiSubversion = 1
         self.KVSs = {}
         if self.singinitPID:
-            self.kvsname_template = 'singinit_kvs_'
+            # self.kvsname_template = 'singinit_kvs_'
+            self.kvsname_template = 'singinit_kvs_' + str(os.getpid())
         else:
             self.kvsname_template = 'kvs_' + self.kvs_template_from_env + '_'
         self.default_kvsname = self.kvsname_template + '0'
@@ -300,6 +301,11 @@ class MPDMan(object):
             self.pmiSock = MPDSock(name='pmi')
             self.pmiSock.connect((self.myIfhn,self.singinitPORT))
             self.streamHandler.set_handler(self.pmiSock,self.handle_pmi_input)
+            self.pmiSock.send_char_msg('cmd=singinit authtype=none\n')
+            line = self.pmiSock.recv_char_msg()
+            charMsg = 'cmd=singinit_info rc=0 versionok=yes stdio=yes kvsname=%s\n' % (self.default_kvsname)
+            self.pmiSock.send_char_msg(charMsg)
+
             sock_write_cli_stdin = MPDSock(name='write_cli_stdin')
             sock_write_cli_stdin.connect((self.myIfhn,self.singinitPORT))
             self.fd_write_cli_stdin = sock_write_cli_stdin.fileno()

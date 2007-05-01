@@ -138,6 +138,7 @@ class MPD(object):
                                  'MPD_PID_FILENAME'     :  '',
                                  'MPD_ZC'               :  0,
                                  'MPD_LOGFILE_TRUNC_SZ' :  4000000,  # -1 -> don't trunc
+                                 'MPD_PORT_RANGE'       :  0,
                                }
         for (k,v) in self.parmsToOverride.items():
             self.parmdb[('thispgm',k)] = v
@@ -146,6 +147,8 @@ class MPD(object):
         self.parmdb.get_parms_from_env(self.parmsToOverride)
         self.myIfhn = self.parmdb['MPD_MY_IFHN']    # variable for convenience
         self.myPid = os.getpid()
+        if self.parmdb['MPD_PORT_RANGE']:
+            os.environ['MPICH_PORT_RANGE'] = self.parmdb['MPD_PORT_RANGE']
         self.listenSock = MPDListenSock(name='ring_listen_sock',
                                         port=self.parmdb['MPD_LISTEN_PORT'])
         self.parmdb[('thispgm','MPD_LISTEN_PORT')] = self.listenSock.sock.getsockname()[1]
