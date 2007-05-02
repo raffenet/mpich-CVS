@@ -128,6 +128,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     lrequest_ptr->cancel_fn            = cancel_fn;
     lrequest_ptr->free_fn              = free_fn;
     lrequest_ptr->query_fn             = query_fn;
+    lrequest_ptr->poll_fn              = NULL;
     lrequest_ptr->grequest_extra_state = extra_state;
     lrequest_ptr->greq_lang            = MPID_LANG_C;
     *request = lrequest_ptr->handle;
