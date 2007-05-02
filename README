@@ -80,7 +80,7 @@ later, in the section "Alternative configurations".
 
 4.  Configure MPICH2, specifying the installation directory:
 
-      ./configure -prefix=/home/you/mpich2-install |& tee configure.log
+      ./configure --prefix=/home/you/mpich2-install |& tee configure.log
 
     (On sh and its derivatives, use "2>&1 | tee configure.log" instead
     of "|& tee configure.log").  Other configure options are described
