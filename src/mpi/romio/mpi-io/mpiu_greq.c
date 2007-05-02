@@ -38,7 +38,6 @@ int MPIU_Greq_query_fn(void *extra_state, MPI_Status *status)
 
 int MPIU_Greq_free_fn(void *extra_state)
 {
-    ADIOI_Free(extra_state);
     return MPI_SUCCESS;
 }
 int MPIU_Greq_cancel_fn(void *extra_state, int complete)

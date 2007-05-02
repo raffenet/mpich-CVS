@@ -98,6 +98,11 @@ typedef struct ADIOI_Fl_node {
     struct ADIOI_Fl_node *next;  /* pointer to next node */
 } ADIOI_Flatlist_node;
 
+typedef struct ADIOI_AIO_req_str {
+	struct aiocb *aiocbp;
+	MPI_Request *req;
+	MPI_Offset nbytes;
+} ADIOI_AIO_Request;
 
 struct ADIOI_Fns_struct {
     void (*ADIOI_xxx_Open) (ADIO_File fd, int *error_code);
@@ -316,6 +321,8 @@ int ADIOI_GEN_IODone(ADIO_Request *request, ADIO_Status *status,
 void ADIOI_GEN_IOComplete(ADIO_Request *request, ADIO_Status *status,
 			  int *error_code);
 int ADIOI_GEN_aio_poll_fn(void *extra_state, ADIO_Status *status);
+int ADIOI_GEN_aio_query_fn(void *extra_state, ADIO_Status *status);
+int ADIOI_GEN_aio_free_fn(void *extra_state);
 void ADIOI_GEN_ReadStrided_naive(ADIO_File fd, void *buf, int count,
                        MPI_Datatype buftype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
