@@ -4277,6 +4277,15 @@ Function CompileFile(fname)
 	If fname = "${socksources}" Then
 		CompileFile = false
 	End If
+	If fname = "${ssmsources}" Then
+		CompileFile = false
+	End If
+	If fname = "${shmsources}" Then
+		CompileFile = false
+	End If
+	If fname = "${sshmsources}" Then
+		CompileFile = false
+	End If
 	If fname = "timelimit.c" Then
 		CompileFile = false
 	End If
@@ -4324,6 +4333,10 @@ Sub OutputLine(path, line)
 	End If
 	If Left(line, 14) = "socksources = " Then
 		line = Right(line, Len(line) - 14)
+		do_output = true
+	End If
+	If Left(line, 13) = "ssmsources = " Then
+		line = Right(line, Len(line) - 13)
 		do_output = true
 	End If
 	If do_output Then
