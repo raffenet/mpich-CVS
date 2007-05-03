@@ -1327,9 +1327,14 @@ EOF
          pac_cv_prog_f90_and_c_stdio_libs=none
     else
          # Try again with -lSystemStubs
-         tmpcmd='${F90-f90} $FFLAGS -o conftest conftest.$f90_ext conftestc.o -lSystemStubs 1>&AC_FD_CC'
+         tmpcmd='${F90-f90} $F90FLAGS -o conftest conftest.$f90_ext conftestc.o -lSystemStubs 1>&AC_FD_CC'
          if AC_TRY_EVAL(tmpcmd) && test -x conftest ; then
              pac_cv_prog_f90_and_c_stdio_libs="-lSystemStubs"
+	 else 
+	     echo "configure: failed program was:" >&AC_FD_CC
+	     cat conftestc.c >&AC_FD_CC 
+	     echo "configure: with Fortran 90 program:" >&AC_FD_CC
+	     cat conftest.$f90_ext >&AC_FD_CC
          fi
     fi
 
