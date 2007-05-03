@@ -1292,10 +1292,10 @@ AC_DEFUN([PAC_PROG_F90_AND_C_STDIO_LIBS],[
     confname=conf1_
     case "$pac_cv_prog_f77_name_mangle" in
     "lower underscore")       confname=conf1_ ;;
-    lower)                    confname=conf1  ;;
     "upper stdcall")          confname=CONF1  ;;
     upper)                    confname=CONF1  ;;
-    "lower doubleunderscore") confname=conf1  ;;
+    "lower doubleunderscore") confname=conf1_  ;;
+    lower)                    confname=conf1  ;;
     "mixed underscore")       confname=conf1_ ;;
     mixed)                    confname=conf1  ;;
     esac

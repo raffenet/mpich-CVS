@@ -1311,10 +1311,10 @@ AC_DEFUN([PAC_PROG_F77_AND_C_STDIO_LIBS],[
     confname=conf1_
     case "$pac_cv_prog_f77_name_mangle" in
     "lower underscore")       confname=conf1_ ;;
-    lower)                    confname=conf1  ;;
     "upper stdcall")          confname=CONF1  ;;
     upper)                    confname=CONF1  ;;
-    "lower doubleunderscore") confname=conf1  ;;
+    "lower doubleunderscore") confname=conf1_ ;;
+    lower)                    confname=conf1  ;;
     "mixed underscore")       confname=conf1_ ;;
     mixed)                    confname=conf1  ;;
     esac
@@ -1348,6 +1348,11 @@ EOF
          tmpcmd='${F77-f77} $FFLAGS -o conftest conftest.f conftestc.o -lSystemStubs 1>&AC_FD_CC'
          if AC_TRY_EVAL(tmpcmd) && test -x conftest ; then
              pac_cv_prog_f77_and_c_stdio_libs="-lSystemStubs"
+	 else 
+	     echo "configure: failed program was:" >&AC_FD_CC
+	     cat conftestc.c >&AC_FD_CC 
+	     echo "configure: with Fortran 77 program:" >&AC_FD_CC
+	     cat conftest.f >&AC_FD_CC
          fi
     fi
 
