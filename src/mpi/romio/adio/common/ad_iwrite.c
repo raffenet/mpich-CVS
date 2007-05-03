@@ -20,7 +20,7 @@
 #include <sys/aio.h>
 #endif
 
-
+#include "../../mpi-io/mpioimpl.h"
 #include "mpiu_greq.h"
 /* Workaround for incomplete set of definitions if __REDIRECT is not 
    defined and large file support is used in aio.h */
@@ -229,7 +229,9 @@ int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
     } else if (errno == 0) {
 	    errno = aio_return(aio_req->aiocbp);
 	    aio_req->nbytes = errno;
+	    MPIR_Nest_incr();
 	    MPI_Grequest_complete(*(aio_req->req));
+	    MPIR_Nest_decr();
     }
 }
 
