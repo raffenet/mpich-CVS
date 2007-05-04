@@ -219,8 +219,9 @@ static void MPIR_Init_contextid (void) {
     for (i=1; i<MAX_CONTEXT_MASK; i++) {
 	context_mask[i] = 0xFFFFFFFF;
     }
-    /* the first two values are already used */
-    context_mask[0] = 0xFFFFFFFC; 
+    /* the first three values are already used (comm_world, comm_self,
+       and the internal-only copy of comm_world) */
+    context_mask[0] = 0xFFFFFFF8; 
     initialize_context_mask = 0;
 }
 /* Return the context id corresponding to the first set bit in the mask.

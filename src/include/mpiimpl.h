@@ -188,22 +188,6 @@ void MPIU_dump_dbg_memlog(FILE * fp);
 /* Routines for memory management */
 #include "mpimem.h"
 
-#if 0
-/* ------------------------------------------------------------------------- */
-/* mpimsg.h */
-/* ------------------------------------------------------------------------- */
-/* Message printing */
-int MPIU_Usage_printf( const char *str, ... ) ATTRIBUTE((format(printf,1,2)));
-int MPIU_Msg_printf( const char *str, ... ) ATTRIBUTE((format(printf,1,2)));
-int MPIU_Error_printf( const char *str, ... ) ATTRIBUTE((format(printf,1,2)));
-int MPIU_Internal_error_printf( const char *str, ... ) ATTRIBUTE((format(printf,1,2)));
-int MPIU_Internal_sys_error_printf( const char *, int, const char *str, ... ) ATTRIBUTE((format(printf,3,4)));
-#endif
-
-/* ------------------------------------------------------------------------- */
-/* end of mpimsg.h */
-/* ------------------------------------------------------------------------- */
-
 /*
  * Use MPIU_SYSCALL to wrap system calls; this provides a convenient point
  * for timing the calls and keeping track of the use of system calls.
@@ -750,8 +734,11 @@ int MPIU_GetEnvBool( const char *envName, int *val );
   S*/
 typedef struct MPID_Info {
     int                handle;
-    volatile int       ref_count;  /* FIXME: ref_count isn't needed by Info objects, but MPIU_Info_free does not work correctly
-				      unless MPID_Info and MPIU_Handle_common have the next pointer in the same location */
+    volatile int       ref_count;  /* FIXME: ref_count isn't needed by Info 
+				      objects, but MPIU_Info_free does not 
+				      work correctly unless MPID_Info and 
+				      MPIU_Handle_common have the next 
+				      pointer in the same location */
     struct MPID_Info   *next;
     char               *key;
     char               *value;
@@ -1253,10 +1240,16 @@ int MPIR_Comm_release(MPID_Comm *, int );
        MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
          "Decr comm %p ref count to %d",_comm,_comm->ref_count));}
 
-/* Preallocated comm objects */
-#define MPID_COMM_N_BUILTIN 2
+/* Preallocated comm objects.  There are 3: comm_world, comm_self, and 
+   a private (non-user accessible) dup of comm world that is provided 
+   if needed in MPI_Finalize.  Having a separate version of comm_world
+   avoids possible interference with User code */
+#define MPID_COMM_N_BUILTIN 3
 extern MPID_Comm MPID_Comm_builtin[MPID_COMM_N_BUILTIN];
 extern MPID_Comm MPID_Comm_direct[];
+/* This is the handle for the internal MPI_COMM_WORLD .  The "2" at the end
+   of the handle is 3-1 (e.g., the index in the builtin array) */
+#define MPIR_ICOMM_WORLD  ((MPI_Comm)0x44000002)
 
 /*
  * The order of the context offsets is important.  The collective routines
@@ -1891,29 +1884,15 @@ struct MPID_Datatype;
 
 typedef struct MPICH_PerProcess_t {
     MPIR_MPI_State_t  initialized;      /* Is MPI initalized? */
-#if 0
-    int               thread_provided;  /* Provided level of thread support */
-    /* This is a special case for is_thread_main, which must be
-       implemented even if MPICH2 itself is single threaded.  */
-#if (MPICH_THREAD_LEVEL >= MPI_THREAD_SERIALIZED)    
-    MPID_Thread_tls_t thread_storage;   /* Id for perthread data */
-    MPID_Thread_id_t  master_thread;    /* Thread that started MPI */
-#endif
-#ifdef HAVE_RUNTIME_THREADCHECK
-    int isThreaded;                      /* Set to true if user requested
-					    THREAD_MULTIPLE */
-#endif
-#endif
     int               do_error_checks;  /* runtime error check control */
     struct MPID_Comm  *comm_world;      /* Easy access to comm_world for
                                            error handler */
     struct MPID_Comm  *comm_self;       /* Easy access to comm_self */
     struct MPID_Comm  *comm_parent;     /* Easy access to comm_parent */
+    struct MPID_Comm  *icomm_world;     /* An internal version of comm_world
+					   that is separate from user's 
+					   versions */
     PreDefined_attrs  attrs;            /* Predefined attribute values */
-#if 0
-    /* Communicator context ids.  Special data is needed for thread-safety */
-    int context_id_mask[32];
-#endif
 
     /* The topology routines dimsCreate is independent of any communicator.
        If this pointer is null, the default routine is used */
@@ -1944,12 +1923,7 @@ typedef struct MPICH_PerProcess_t {
        C++ interface and exported to C).  The first argument is used
        to specify the kind (comm,file,win) */
     void  (*cxx_call_errfn) ( int, int *, int *, void (*)(void) );
-#endif
-#if 0
-# if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
-    MPID_Thread_mutex_t global_mutex;
-# endif
-#endif
+#endif /* HAVE_CXX_BINDING */
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 

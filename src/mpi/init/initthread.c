@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpich2info.h"
 #include "datatype.h"
 #include "mpi_init.h"
 #ifdef HAVE_CRTDBG_H
@@ -31,7 +32,8 @@
 /* Any internal routines can go here.  Make them static if possible */
 
 /* Global variables can be initialized here */
-MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; /* all others are irelevant */
+MPICH_PerProcess_t MPIR_Process = { MPICH_PRE_INIT }; 
+     /* all other fields in MPIR_Process are irrelevant */
 MPICH_ThreadInfo_t MPIR_ThreadInfo = { 0 };
 
 /* These are initialized as null (avoids making these into common symbols).
@@ -40,6 +42,22 @@ MPICH_ThreadInfo_t MPIR_ThreadInfo = { 0 };
    MPI_Init and MPI_Finalize) */
 MPIU_DLL_SPEC MPI_Fint *MPI_F_STATUS_IGNORE = 0;
 MPIU_DLL_SPEC MPI_Fint *MPI_F_STATUSES_IGNORE = 0;
+
+/* 
+   Global definitions of variables that hold information about the
+   version and patchlevel.  This allows easy access to the version 
+   and configure information without requiring the user to run an MPI
+   program 
+*/
+const char MPIR_Version_string[]       = MPICH2_VERSION;
+const char MPIR_Version_date[]         = MPICH2_VERSION_DATE;
+const char MPIR_Version_patch_string[] = MPICH2_PATCH_STRING;
+const char MPIR_Version_configure[]    = MPICH2_CONFIGURE_ARGS_CLEAN;
+const char MPIR_Version_device[]       = MPICH2_DEVICE;
+const char MPIR_Version_CC[]           = MPICH2_COMPILER_CC;
+const char MPIR_Version_CXX[]          = MPICH2_COMPILER_CXX;
+const char MPIR_Version_F77[]          = MPICH2_COMPILER_F77;
+const char MPIR_Version_F90[]          = MPICH2_COMPILER_F90;
 
 #ifdef HAVE_WINDOWS_H
 /* User-defined abort hook function.  Exiting here will prevent the system from
@@ -219,6 +237,27 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.comm_self->errhandler	    = NULL; /* XXX */
     MPIR_Process.comm_self->coll_fns	    = NULL; /* XXX */
     MPIR_Process.comm_self->topo_fns	    = NULL; /* XXX */
+
+    MPIR_Process.icomm_world		    = MPID_Comm_builtin + 2;
+    MPIR_Process.icomm_world->handle	    = MPIR_ICOMM_WORLD;
+    MPIU_Object_set_ref( MPIR_Process.icomm_world, 1 );
+    MPIR_Process.icomm_world->context_id    = 8; /* XXX */
+    MPIR_Process.icomm_world->recvcontext_id= 8;
+    MPIR_Process.icomm_world->attributes    = NULL;
+    MPIR_Process.icomm_world->local_group   = NULL;
+    MPIR_Process.icomm_world->remote_group  = NULL;
+    MPIR_Process.icomm_world->comm_kind	    = MPID_INTRACOMM;
+    /* This initialization of the comm name could be done only when 
+       comm_get_name is called */
+    MPIU_Strncpy(MPIR_Process.icomm_world->name, "MPI_ICOMM_WORLD",
+		 MPI_MAX_OBJECT_NAME);
+    MPIR_Process.icomm_world->errhandler    = NULL; /* XXX */
+    MPIR_Process.icomm_world->coll_fns	    = NULL; /* XXX */
+    MPIR_Process.icomm_world->topo_fns	    = NULL; /* XXX */
+
+    /* Note that these communicators are not ready for use - MPID_Init 
+       will setup self and world.  We'll setup iworld after MPID_Init
+       completes. */
 
     MPIR_Process.comm_parent = NULL;
 
