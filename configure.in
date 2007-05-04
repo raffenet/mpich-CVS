@@ -128,6 +128,15 @@ if test -s "$srcdir/maint/Version" ; then
 else
     VERSION="1.0.5"
 fi
+if test -s "$srcdir/maint/ReleaseDate" ; then
+    RELEASE_DATE="`cat $srcdir/maint/ReleaseDate`"
+else
+    RELEASE_DATE="Unknown, built on `date`"
+fi
+AC_SUBST(RELEASE_DATE)
+
+CONFIGURE_ARGS_CLEAN=`echo $* | tr '"' ' '`
+AC_SUBST(CONFIGURE_ARGS_CLEAN)
 # Produce a numeric version assuming that the version is of the form
 # x.yy.zz, prefixing zeros for single digit verison numbers
 changequote(<<,>>)
@@ -5446,10 +5455,13 @@ AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h f
 # which include flags should start in MPICH2_INCLUDE_FLAGS and which in 
 # CPPFLAGS
 CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
+
+
 dnl
 dnl This includes an experimental pkgconfig file for ch3 in the src/pkgconfig
 dnl directory
 AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
+	  src/include/mpich2info.h \
 	  mpich2-doxygen \
           src/include/mpichtimer.h \
           src/binding/Makefile \
@@ -5474,7 +5486,6 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/env/mpif90 \
 	  src/env/mpif90.conf \
 	  src/env/mpif90.bash \
-          src/env/mpich2version \
 	  src/env/parkill \
 	  src/env/Makefile\
 	  src/util/createshlib \
