@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "mpich2info.h"
 #include "datatype.h"
 #include "mpi_init.h"
 #ifdef HAVE_CRTDBG_H
@@ -43,21 +42,9 @@ MPICH_ThreadInfo_t MPIR_ThreadInfo = { 0 };
 MPIU_DLL_SPEC MPI_Fint *MPI_F_STATUS_IGNORE = 0;
 MPIU_DLL_SPEC MPI_Fint *MPI_F_STATUSES_IGNORE = 0;
 
-/* 
-   Global definitions of variables that hold information about the
-   version and patchlevel.  This allows easy access to the version 
-   and configure information without requiring the user to run an MPI
-   program 
-*/
-const char MPIR_Version_string[]       = MPICH2_VERSION;
-const char MPIR_Version_date[]         = MPICH2_VERSION_DATE;
-const char MPIR_Version_patch_string[] = MPICH2_PATCH_STRING;
-const char MPIR_Version_configure[]    = MPICH2_CONFIGURE_ARGS_CLEAN;
-const char MPIR_Version_device[]       = MPICH2_DEVICE;
-const char MPIR_Version_CC[]           = MPICH2_COMPILER_CC;
-const char MPIR_Version_CXX[]          = MPICH2_COMPILER_CXX;
-const char MPIR_Version_F77[]          = MPICH2_COMPILER_F77;
-const char MPIR_Version_F90[]          = MPICH2_COMPILER_F90;
+/* This will help force the load of initinfo.o, which contains data about
+   how MPICH2 was configured. */
+extern const char MPIR_Version_device[];
 
 #ifdef HAVE_WINDOWS_H
 /* User-defined abort hook function.  Exiting here will prevent the system from
@@ -160,7 +147,13 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 	MPID_Thread_self(&MPIR_ThreadInfo.master_thread);
     }
 #   endif
-    
+
+#if 0
+    /* This should never happen */
+    if (MPIR_Version_device == 0) {
+	
+    }
+#endif     
 #ifdef HAVE_ERROR_CHECKING
     /* Eventually this will support commandline and environment options
      for controlling error checks.  It will use the routine 
