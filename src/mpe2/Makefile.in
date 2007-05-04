@@ -21,7 +21,7 @@ MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 # MPI implementation: used to turn on/off of certain feature
 MPI_IMPL             = @MPI_IMPL@
 # MPE header files that are needed by endusers
-MPE_HEADERS          = mpe.h mpe_misc.h mpe_log.h mpe_graphics.h
+MPE_HEADERS          = mpe.h mpe_misc.h mpe_callstack.h mpe_log.h mpe_graphics.h
 
 # The empty string, "", in PKGS is needed to avoid /bin/sh from complaining
 # when PKGS is really empty.

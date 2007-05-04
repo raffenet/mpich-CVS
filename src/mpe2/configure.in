@@ -512,6 +512,7 @@ export mpe_enable_softerror
 
 
 misc_dirname="src/misc"
+callstack_dirname="src/callstack"
 logging_dirname="src/logging"
 wrappers_dirname="src/wrappers"
 graphics_dirname="src/graphics"
@@ -521,7 +522,7 @@ slog2_dirname="src/slog2sdk"
 dnl Cleanup the subpackages' Makefiles if they exist
 AC_MSG_CHECKING( [for leftover Makefiles in subpackages] )
 leftover_pkgs=""
-for pkg in misc logging wrappers graphics collchk slog2 ; do
+for pkg in misc callstack logging wrappers graphics collchk slog2 ; do
     dirname=${pkg}_dirname
     eval dirvalue=\$"$dirname"
     if test -s $rootbuild_dir/$dirvalue/Makefile ; then
@@ -539,7 +540,7 @@ else
     AC_MSG_RESULT( [$leftover_pkgs cleaned] )
 fi
 
-dnl trial_pkgs="misc logging wrappers graphics collchk"
+dnl trial_pkgs="misc callstack logging wrappers graphics collchk"
 
 dnl
 AC_ARG_ENABLE( misc,
@@ -548,6 +549,13 @@ AC_ARG_ENABLE( misc,
                                      MPE_xxxTags() and MPE_GetHostName()....
                                      The default enable=yes.],
 , enable_misc=yes )
+
+dnl
+AC_ARG_ENABLE( callstack,
+[--enable-callstack                 - Build MPE callstack routines, i.e.
+                                     MPE_CallStack_xxx()...
+                                     The default enable=yes.],
+, enable_callstack=yes )
 
 dnl
 AC_ARG_ENABLE( logging,
@@ -594,12 +602,23 @@ AC_ARG_ENABLE( collchk,
 [--enable-collchk                   - Build MPI Collective and Datatype 
                                      checking library, libmpe_collchk.a],
 , enable_collchk=yes )
+dnl  src/collchk requires at least src/callstack
+if test "$enable_collchk" = "yes" ; then
+    if test "$enable_callstack" != "yes" ; then
+        enable_callstack=yes
+        AC_MSG_WARN( [Enabling CallStack which is required by CollChk.] ); 
+    fi
+fi
 
 selected_pkgs=""
 
 if test "$enable_misc" = "yes" -a -s $srcdir/src/misc/configure ; then
     selected_pkgs="$selected_pkgs misc"
     AC_CONFIG_SUBDIRS(src/misc)
+fi
+if test "$enable_callstack" = "yes" -a -s $srcdir/src/callstack/configure ; then
+    selected_pkgs="$selected_pkgs callstack"
+    AC_CONFIG_SUBDIRS(src/callstack)
 fi
 if test "$enable_logging" = "yes" -a -s $srcdir/src/logging/configure ; then
     selected_pkgs="$selected_pkgs logging"
