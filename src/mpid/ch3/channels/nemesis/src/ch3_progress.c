@@ -13,7 +13,7 @@
 #endif
 #include "pmi.h"
 
-#define POLL_ITERS_BEFORE_WAIT 0//100
+#define POLL_ITERS_BEFORE_WAIT 100
 
 extern int MPID_nem_lmt_shm_pending; /* defined in mpid_nem_lmt_shm.c */
 
@@ -99,6 +99,7 @@ int MPIDI_CH3I_Progress(MPID_Progress_state *progress_state, int is_blocking)
         MPIU_THREAD_CHECK_BEGIN;
         {
             MPIDI_CH3I_progress_blocked = TRUE;
+            MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);
         }
         MPIU_THREAD_CHECK_END;
 #endif
@@ -106,6 +107,7 @@ int MPIDI_CH3I_Progress(MPID_Progress_state *progress_state, int is_blocking)
 #ifdef MPICH_IS_THREADED
         MPIU_THREAD_CHECK_BEGIN;
         {
+            MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
             MPIDI_CH3I_progress_blocked = FALSE;
             MPIDI_CH3I_progress_wakeup_signalled = FALSE;
         }
