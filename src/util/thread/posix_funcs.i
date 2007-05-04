@@ -38,7 +38,7 @@
  */
 
 /* FIXME: using constant initializer if available */
-#ifndef MPICH_DEBUG_MUTEX
+#if !defined(MPICH_DEBUG_MUTEX) || !defined(PTHREAD_MUTEX_ERRORCHECK_NP)
 #define MPE_Thread_mutex_create(mutex_ptr_, err_ptr_)                   \
 {                                                                       \
     int err__;                                                          \
@@ -51,22 +51,22 @@
     }                                                                   \
 }
 #else
-#define MPE_Thread_mutex_create(mutex_ptr_, err_ptr_)                           \
-{                                                                               \
-    int err__;                                                                  \
-    pthread_mutexattr_t attr__;                                                 \
-                                                                                \
-    pthread_mutexattr_init(&attr__);                                            \
-    pthread_mutexattr_settype(&attr__, PTHREAD_MUTEX_ERRORCHECK_NP);            \
-    err__ = pthread_mutex_init((mutex_ptr_), &attr__);                          \
-    if (err__)                                                                  \
-        MPIU_Internal_sys_error_printf("pthread_mutex_init", err__,             \
-                                       "    %s:%d\n", __FILE__, __LINE__);      \
-    if ((err_ptr_) != NULL)                                                     \
-    {                                                                           \
-	/* FIXME: convert error to an MPE_THREAD_ERR value */                   \
-	*(int *)(err_ptr_) = err__;                                             \
-    }                                                                           \
+#define MPE_Thread_mutex_create(mutex_ptr_, err_ptr_)                   \
+{                                                                       \
+    int err__;                                                          \
+    pthread_mutexattr_t attr__;                                         \
+                                                                        \
+    pthread_mutexattr_init(&attr__);                                    \
+    pthread_mutexattr_settype(&attr__, PTHREAD_MUTEX_ERRORCHECK_NP);    \
+    err__ = pthread_mutex_init((mutex_ptr_), &attr__);                  \
+    if (err__)                                                          \
+        MPIU_Internal_sys_error_printf("pthread_mutex_init", err__,     \
+                                       "    %s:%d\n", __FILE__, __LINE__);\
+    if ((err_ptr_) != NULL)                                              \
+    {                                                                    \
+	/* FIXME: convert error to an MPE_THREAD_ERR value */            \
+	*(int *)(err_ptr_) = err__;                                      \
+    }                                                                    \
 }
 #endif
 
