@@ -51,7 +51,7 @@ build_include:
 build_lib_bin:
 	@for pkg in $(PKGS) ; do \
 	     if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
-	         echo "Making $$pkg ...." ; \
+	         echo ; echo "**** Making $$pkg ...." ; \
 	         ( cd $$pkg && $(MAKE) ) ; \
 	     fi ; \
 	 done
