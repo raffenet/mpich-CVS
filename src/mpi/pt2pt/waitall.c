@@ -77,7 +77,7 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
     MPI_Status * status_ptr;
     MPID_Progress_state progress_state;
     int i;
-    int n_completed;
+    int n_completed, n_native;
     int active_flag;
     int rc;
     int mpi_errno = MPI_SUCCESS;
@@ -159,6 +159,15 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 	goto fn_exit;
     }
     
+    n_native=0;
+    for (i = 0; i< count; i++ )
+    {
+	    /* we have to avoid calling the channel poll if all we have are
+	     * generalized requests.  will block indefinitely */
+	    if (request_ptrs[i] != NULL && 
+			    request_ptrs[i]->kind != MPID_UREQUEST)
+		    n_native += 1;
+    }
     MPID_Progress_start(&progress_state);
     for(;;)
     {
@@ -220,13 +229,15 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 	    break;
 	}
 
-	mpi_errno = MPID_Progress_wait(&progress_state);
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    /* --BEGIN ERROR HANDLING-- */
-	    MPID_Progress_end(&progress_state);
-	    goto fn_fail;
-	    /* --END ERROR HANDLING-- */
+	if (n_native > 0) {
+	    mpi_errno = MPID_Progress_wait(&progress_state);
+	    if (mpi_errno != MPI_SUCCESS)
+	    {
+	        /* --BEGIN ERROR HANDLING-- */
+	        MPID_Progress_end(&progress_state);
+	        goto fn_fail;
+	        /* --END ERROR HANDLING-- */
+	    }
 	}
     }
     MPID_Progress_end(&progress_state);
