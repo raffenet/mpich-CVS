@@ -124,6 +124,7 @@ fi
 AC_HEADER_STDC
 
 AC_C_CONST
+AC_C_INLINE
 
 AC_CHECK_HEADERS( stdio.h string.h unistd.h fcntl.h )
 
@@ -144,10 +145,30 @@ changequote([, ])dnl
                 backtrace_symbols_fd( buffer, depth, 1 );
             ] )
         ], [
-           AC_MSG_RESULT(yes)
-           mpe_callstack_impl_type="#define HAVE_BACKTRACE 1"
+            AC_MSG_RESULT(yes)
+            mpe_callstack_impl_type="#define HAVE_BACKTRACE 1"
+            AC_MSG_CHECKING( [if <execinfo.h> links with -rdynamic] )
+            old_LDFLAGS="$LDFLAGS"
+            LDFLAGS="$LDFLAGS -rdynamic"
+            AC_LINK_IFELSE( [
+                AC_LANG_PROGRAM( [
+                    #include <execinfo.h>
+                ], [
+changequote(<<, >>)dnl
+                    void* buffer[10];
+changequote([, ])dnl
+                    int   depth;
+                    depth = backtrace( buffer, 10 );
+                    backtrace_symbols_fd( buffer, depth, 1 );
+                ] )
+            ], [
+                AC_MSG_RESULT(yes)
+            ], [
+                AC_MSG_RESULT(no)
+                LDFLAGS="$old_LDFLAGS"
+            ] ) dnl Endof AC_LINK_IFELSE
         ], [
-           AC_MSG_RESULT(no)
+            AC_MSG_RESULT(no)
         ] ) dnl Endof AC_COMPILE_IFELSE
     ] ) dnl Endof AC_CHECK_HEADERS
 fi
