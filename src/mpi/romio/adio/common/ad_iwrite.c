@@ -222,7 +222,6 @@ int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
     errno = aio_error(aio_req->aiocbp);
     if (errno == EINPROGRESS) {
 	    /* TODO: need to diddle with status somehow */
-	    return 0;
     }
     else if (errno == ECANCELED) {
 	    /* TODO: unsure how to handle this */
@@ -233,6 +232,7 @@ int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
 	    MPI_Grequest_complete(*(aio_req->req));
 	    MPIR_Nest_decr();
     }
+    return MPI_SUCCESS;
 }
 
 int ADIOI_GEN_aio_query_fn(void *extra_state, MPI_Status *status) 
