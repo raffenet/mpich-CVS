@@ -105,5 +105,5 @@ void ADIOI_GEN_IreadStrided(ADIO_File fd, void *buf, int count,
 	/* do something with count * typesize.. but what? */
     }
 #endif
-    MPIO_Completed_request_create(fd, error_code, request);
+    MPIO_Completed_request_create(&fd, error_code, request);
 }

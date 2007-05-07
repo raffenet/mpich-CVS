@@ -153,7 +153,7 @@ int MPIOI_File_iread(MPI_File mpi_fh,
 	    {
                 ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
 	    }
-	    MPIO_Completed_request_create(fh, error_code, request);
+	    MPIO_Completed_request_create(&fh, &error_code, request);
         }
     }
     else ADIO_IreadStrided(fh, buf, count, datatype, file_ptr_type,
