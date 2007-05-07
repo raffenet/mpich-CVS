@@ -42,6 +42,10 @@ void MPE_CallStack_iteratorInit( MPE_CallStack_t *cstk )
     close( pipefds[1] );
     cstk->pipefile = fdopen( pipefds[0], "r" );
     memset( cstk->line_buf, 0, MPE_CALLSTACK_MAXLINE );
+#if defined( HAVE_PRINTSTACK )
+    /* Take off the stackframe that contains this function call. */
+    MPE_CallStack_iteratorHasMore( cstk );
+#endif
 }
 
 /*@

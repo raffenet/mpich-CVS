@@ -38,6 +38,10 @@ void MPE_CallStack_fancyprint( MPE_CallStack_t *cstk, int fd,
     int    printf_mode, idx;
 
     MPE_CallStack_iteratorInit( cstk );
+#if defined( HAVE_PRINTSTACK )
+    /* Take off the stackframe that contains this function call. */
+    MPE_CallStack_iteratorHasMore( cstk );
+#endif
 
     printf_mode = printidx ? 1 : 0;
     printf_mode = prefix != NULL ? printf_mode+2 : printf_mode; 
