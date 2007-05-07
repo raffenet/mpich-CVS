@@ -15,7 +15,7 @@ C   mpiexec -n 1 ./allocmemf
 C
         real a
         pointer (p,a(100,100))
-        include '../rma/addsize.h'
+        include 'add1size.h'
         integer ierr, sizeofreal, errs
         integer i,j
 C

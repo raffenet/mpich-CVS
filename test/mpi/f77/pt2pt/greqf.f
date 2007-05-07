@@ -7,7 +7,7 @@ C
       implicit none
       include 'mpif.h'
       integer status(MPI_STATUS_SIZE), ierr
-      include '../attr/attraints.h'
+      include 'attr1aints.h'
 C
 C    set a default status
       status(MPI_SOURCE) = MPI_UNDEFINED

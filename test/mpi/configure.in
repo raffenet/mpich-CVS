@@ -875,6 +875,8 @@ AC_OUTPUT(maint/testmerge \
 	  f77/Makefile \
 	  f77/attr/Makefile \
 	  f77/attr/attraints.h \
+	  f77/pt2pt/attr1aints.h \
+	  f77/ext/add1size.h \
 	  f77/datatype/Makefile \
 	  f77/datatype/typeaints.h \
 	  f77/util/Makefile \
