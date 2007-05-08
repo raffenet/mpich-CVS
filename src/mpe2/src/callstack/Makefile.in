@@ -23,7 +23,7 @@ MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 # MPE header files that are needed by endusers
 MPE_HEADERS          = mpe_callstack.h
 
-all: build_include build_lib_bin
+all: build_include build_lib_bin build_etc
 
 #######  Building from the source
 build_include:

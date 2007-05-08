@@ -1,0 +1,5 @@
+# Append LDFLAGS if necessary
+MPE_CALLSTACK_LDFLAGS="@mpe_callstack_ldflags@"
+if [ "x$MPE_CALLSTACK_LDFLAGS" != "x" ] ; then
+    LDFLAGS="$LDFLAGS $MPE_CALLSTACK_LDFLAGS"
+fi

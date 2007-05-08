@@ -129,6 +129,7 @@ AC_C_INLINE
 AC_CHECK_HEADERS( stdio.h string.h unistd.h fcntl.h )
 
 mpe_callstack_impl_type=""
+mpe_callstack_ldflags=""
 if test "X$mpe_callstack_impl_type" = "X" ; then
     dnl Check if backtrace() API is available
     AC_CHECK_HEADERS( [execinfo.h], [ 
@@ -163,6 +164,7 @@ changequote([, ])dnl
                 ] )
             ], [
                 AC_MSG_RESULT(yes)
+                mpe_callstack_ldflags="-rdynamic"
             ], [
                 AC_MSG_RESULT(no)
                 LDFLAGS="$old_LDFLAGS"
@@ -203,6 +205,7 @@ if test "X$mpe_callstack_impl_type" = "X" ; then
 fi
 
 AC_SUBST(mpe_callstack_impl_type)
+AC_SUBST(mpe_callstack_ldflags)
 AC_SUBST(mpe_callstack_string_h)
 AC_SUBST(mpe_callstack_unistd_h)
 
@@ -222,4 +225,5 @@ AC_SUBST(MPI_INC)
 AC_SUBST(MPI_LIBS)
 AC_SUBST(PROF_LIBNAME)
 
-AC_OUTPUT( Makefile src/Makefile include/mpe_callstack.h )
+AC_OUTPUT( Makefile src/Makefile include/mpe_callstack.h \
+           etc/mpe_callstack_ldflags.conf)
