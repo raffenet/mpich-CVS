@@ -13,7 +13,7 @@
 #endif
 #include "pmi.h"
 
-#define POLL_ITERS_BEFORE_WAIT 0//100
+#define POLL_ITERS_BEFORE_WAIT 100
 
 extern int MPID_nem_lmt_shm_pending; /* defined in mpid_nem_lmt_shm.c */
 
@@ -85,7 +85,7 @@ int MPIDI_CH3I_Progress(MPID_Progress_state *progress_state, int is_blocking)
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         ++i;
     }
-
+    MPIU_DBG_MSG_D(THREAD, VERBOSE, "progress_state = %d", progress_state ? progress_state->ch.completion_count : -1);
     while (progress_state && progress_state->ch.completion_count == MPIDI_CH3I_progress_completion_count && is_blocking)
     {
 #ifdef MPICH_IS_THREADED
@@ -396,10 +396,17 @@ static int MPIDI_CH3I_Progress_delay(unsigned int completion_count)
     
 #if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
-	while (completion_count == MPIDI_CH3I_progress_completion_count)
-	{
+        MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_DELAY);
+        MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_DELAY);    
+        MPIU_DBG_MSG_D(THREAD, VERBOSE, "completion_count %d", completion_count);
+        while (completion_count == MPIDI_CH3I_progress_completion_count && MPIDI_CH3I_progress_blocked == TRUE)
+        {
+            MPIU_DBG_MSG_D(THREAD, VERBOSE, "MPIDI_CH3I_progress_completion_count %d", MPIDI_CH3I_progress_completion_count);
+            MPIU_DBG_MSG_P(THREAD, VERBOSE, "entering cond_wait %p", &MPIDI_CH3I_progress_completion_cond);
 	    MPID_Thread_cond_wait(&MPIDI_CH3I_progress_completion_cond, &MPIR_ThreadInfo.global_mutex);
+            MPIU_DBG_MSG_P(THREAD, VERBOSE, "leaving cond_wait %p", &MPIDI_CH3I_progress_completion_cond);
 	}
+        MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_DELAY);
     }
 #endif
     
@@ -418,7 +425,13 @@ static int MPIDI_CH3I_Progress_continue(unsigned int completion_count)
 
 #if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
+        MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_CONTINUE);
+
+        MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_CONTINUE);    
+        MPIU_DBG_MSG_D(THREAD, VERBOSE, "MPIDI_CH3I_progress_completion_count %d", MPIDI_CH3I_progress_completion_count);
+        MPIU_DBG_MSG_P(THREAD, VERBOSE, "calling cond_broadcast %p", &MPIDI_CH3I_progress_completion_cond);
 	MPID_Thread_cond_broadcast(&MPIDI_CH3I_progress_completion_cond);
+        MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_CONTINUE);
     }
 #endif
     
