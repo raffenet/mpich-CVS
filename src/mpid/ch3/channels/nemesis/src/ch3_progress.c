@@ -49,6 +49,10 @@ struct MPID_Request *MPIDI_CH3I_sendq_head[CH3_NUM_QUEUES] = {0};
 struct MPID_Request *MPIDI_CH3I_sendq_tail[CH3_NUM_QUEUES] = {0};
 struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES] = {0};
 
+#include <poll.h>
+extern int g_tbl_size;//DARIUS
+extern struct pollfd *g_plfd_tbl;//DARIUS
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress
 #undef FCNAME
@@ -118,6 +122,15 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                         ++MPID_nem_curr_fbox_all_poll;
                         if (MPID_nem_curr_fbox_all_poll > MPID_nem_fboxq_elem_list_last)
                             MPID_nem_curr_fbox_all_poll = MPID_nem_fboxq_elem_list;
+                        {/* hack to check newtcp network */
+                            int n;
+
+                            n = poll(g_plfd_tbl, g_tbl_size, 0);//DARIUS
+
+                            MPIU_ERR_CHKANDJUMP1(n == -1 && errno != EINTR, mpi_errno, MPI_ERR_OTHER, "**poll", "**poll %s", strerror(errno));//DARIUS
+                            if (n)
+                                break;
+                        }
                     }
                     
                     MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
@@ -421,7 +434,7 @@ static int MPIDI_CH3I_Progress_delay(unsigned int completion_count)
     
 #   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
     {
-	while (completion_count == MPIDI_CH3I_progress_completion_count)
+	while (completion_count == MPIDI_CH3I_progress_completion_count && MPIDI_CH3I_progress_blocked == TRUE)
 	{
 	    MPID_Thread_cond_wait(&MPIDI_CH3I_progress_completion_cond, &MPIR_ThreadInfo.global_mutex);
 	}

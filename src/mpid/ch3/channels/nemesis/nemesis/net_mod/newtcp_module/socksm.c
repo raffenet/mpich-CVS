@@ -21,12 +21,12 @@ struct {
     freenode_t *head, *tail;
 } freeq = {NULL, NULL};
 
-static int g_tbl_size = 0;
+int g_tbl_size = 0; //DARIUS
 static int g_tbl_capacity = CONN_PLFD_TBL_INIT_SIZE;
 static int g_tbl_grow_size = CONN_PLFD_TBL_GROW_SIZE;
 
 static sockconn_t *g_sc_tbl = NULL;
-static pollfd_t *g_plfd_tbl = NULL;
+pollfd_t *g_plfd_tbl = NULL; //DARIUS
 
 sockconn_t g_lstn_sc;
 pollfd_t g_lstn_plfd;
