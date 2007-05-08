@@ -148,9 +148,12 @@ changequote([, ])dnl
         ], [
             AC_MSG_RESULT(yes)
             mpe_callstack_impl_type="#define HAVE_BACKTRACE 1"
-            AC_MSG_CHECKING( [if <execinfo.h> links with -rdynamic] )
+            dnl Only gcc compiler suite knows -rdynamic, other compilers like
+            dnl ifort does not know -rdynamic.  So explicit linker option,
+            dnl -Wl,--export-dynamic will be more universal.
+            AC_MSG_CHECKING( [if <execinfo.h> links with -Wl,--export-dynamic] )
             old_LDFLAGS="$LDFLAGS"
-            LDFLAGS="$LDFLAGS -rdynamic"
+            LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
             AC_LINK_IFELSE( [
                 AC_LANG_PROGRAM( [
                     #include <execinfo.h>
@@ -164,7 +167,7 @@ changequote([, ])dnl
                 ] )
             ], [
                 AC_MSG_RESULT(yes)
-                mpe_callstack_ldflags="-rdynamic"
+                mpe_callstack_ldflags="-Wl,--export-dynamic"
             ], [
                 AC_MSG_RESULT(no)
                 LDFLAGS="$old_LDFLAGS"
