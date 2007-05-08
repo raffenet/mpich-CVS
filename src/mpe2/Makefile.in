@@ -53,6 +53,7 @@ build_lib_bin:
 	     if [ -n "$$pkg" -a -s $$pkg/Makefile ] ; then \
 	         echo ; echo "**** Making $$pkg ...." ; \
 	         ( cd $$pkg && $(MAKE) ) ; \
+                 sleep 1 ; \
 	     fi ; \
 	 done
 
