@@ -15,7 +15,9 @@
 #define DATA_SIZE   4
 #define MP_TAG      999
 
+#define PROGRESS_COUNT 0xfff
 static int verbose = 0;
+static int loopProgress = 0;
 
 int main( int argc, char *argv[] )
 {
@@ -27,10 +29,27 @@ int main( int argc, char *argv[] )
     MPI_Comm_size( MPI_COMM_WORLD, &nProc ) ;
     MPI_Comm_rank( MPI_COMM_WORLD, &rank ) ;
 
+    for (i=1; i<argc; i++) {
+	if (strcmp(argv[i],"-v") == 0 ||
+	    strcmp(argv[i],"--verbose") == 0) verbose = 1;
+	else if (strcmp(argv[i],"-p") == 0 ||
+		 strcmp(argv[i],"--progress") == 0) loopProgress = 1;
+	else {
+	    if (rank == 0) {
+		fprintf( stderr, "%s: [ -v | --verbose ] [ -p | --progress ]\n",
+			 argv[0] );
+		fflush(stderr);
+	    }
+	}
+    }
+
     if (verbose) {
 	char    buf[ 128 ] ;
 	sprintf( buf, "fast_mpi_%d.dmp", rank ) ;
 	pf = fopen( buf, "w" ) ;
+    }
+    else if (loopProgress) {
+	pf = stdout;
     }
 
     if( !rank ) {
@@ -46,6 +65,9 @@ int main( int argc, char *argv[] )
 	   if (verbose) {
 	       fprintf( pf, "Master : loop %d\n", i ) ;
 	       fflush( pf ) ;
+	   }
+	   else if (loopProgress && (i & PROGRESS_COUNT) == 0) {
+	     fprintf( pf, "Master: loop %d\n", i ); fflush( pf );
 	   }
           for( j = 1 ; j < nProc ; j++ ) {
 	      if (verbose) {
@@ -90,6 +112,11 @@ int main( int argc, char *argv[] )
 	       fprintf( pf, "  send to master\n" ) ;
 	       fflush( pf ) ;
 	   }
+	   /*
+	   else if (loopProgress && (i & PROGRESS_COUNT) == 0) {
+	     fprintf( pf, "Slave: loop %d\n", i ); fflush( pf );
+	   }
+	   */
 	   status = MPI_Send( psend, DATA_SIZE - 1, MPI_LONG, 0, MP_TAG,
 			      MPI_COMM_WORLD ) ;
 	   if (verbose) {
