@@ -185,6 +185,47 @@ if test "$lac_cv_have_gcc_asm_and_x86_lfence" = "yes" ; then
     AC_DEFINE(HAVE_GCC_ASM_AND_X86_LFENCE, 1, [Define if using gcc on a x86 system with the lfence instruction])
 fi
 
+AC_CACHE_CHECK([for SPARC membar instruction with gcc],pac_cv_gcc_sparc_membar,[
+AC_TRY_RUN([
+int main(int argc, char **argv){
+    __asm__ __volatile__ ( "membar #StoreLoad | #StoreStore" : : : "memory" );
+    exit(0);
+}],pac_cv_gcc_sparc_membar=yes,pac_cv_gcc_sparc_membar=no)])
+if test "$pac_cv_gcc_sparc_membar" = yes ; then
+    AC_DEFINE(HAVE_GCC_ASM_SPARC_MEMBAR,1,[Define if gcc asm membar supported])
+fi
+
+AC_CACHE_CHECK([for SPARC membar instruction with Solaris C],pac_cv_solaris_sparc_membar,[
+AC_TRY_RUN([
+int main(int argc, char **argv){
+    __asm ( "membar #StoreLoad | #StoreStore");
+    exit(0);
+}],pac_cv_solaris_sparc_membar=yes,pac_cv_solaris_sparc_membar=no)])
+if test "$pac_cv_solaris_sparc_membar" = yes ; then
+    AC_DEFINE(HAVE_SOLARIS_ASM_SPARC_MEMBAR,1,[Define if solaris asm membar supported])
+fi
+
+AC_CACHE_CHECK([for SPARC stbar instruction with gcc],pac_cv_gcc_sparc_stbar,[
+AC_TRY_RUN([
+int main(int argc, char **argv){
+    __asm__ __volatile__ ( "stbar" : : : "memory" );
+    exit(0);
+}],pac_cv_gcc_sparc_stbar=yes,pac_cv_gcc_sparc_stbar=no)])
+if test "$pac_cv_gcc_sparc_stbar" = yes ; then
+    AC_DEFINE(HAVE_GCC_ASM_SPARC_STBAR,1,[Define if gcc asm stbar supported])
+fi
+
+AC_CACHE_CHECK([for SPARC stbar instruction with Solaris C],pac_cv_solaris_sparc_stbar,[
+AC_TRY_RUN([
+int main(int argc, char **argv){
+    __asm ( "stbar" );
+    exit(0);
+}],pac_cv_solaris_sparc_stbar=yes,pac_cv_solaris_sparc_stbar=no)])
+if test "$pac_cv_solaris_sparc_stbar" = yes ; then
+    AC_DEFINE(HAVE_SOLARIS_ASM_SPARC_STBAR,1,[Define if solaris asm stbar supported])
+fi
+
+
 AC_SUBST(device_name)
 AC_SUBST(channel_name)
 

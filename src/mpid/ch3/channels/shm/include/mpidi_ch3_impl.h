@@ -92,7 +92,29 @@
 #define MPID_READ_WRITE_BARRIER()
 #endif
 
+#elif defined(HAVE_GCC_ASM_SPARC_MEMBAR)
+#define MPID_WRITE_BARRIER() __asm__ __volatile__ ( "membar #StoreLoad | #StoreStore" : : : "memory" );
+#define MPID_READ_BARRIER() __asm__ __volatile__ ( "membar #LoadLoad | #LoadStore" : : : "memory" );
+#define MPID_READ_WRITE_BARRIER() __asm__ __volatile__ ( "membar #StoreLoad | #StoreStore | #LoadLoad | #LoadStore" : : : "memory" );
+
+#elif defined(HAVE_GCC_ASM_SPARC_STBAR)
+#define MPID_WRITE_BARRIER() __asm__ __volatile__ ( "stbar" : : : "memory" );
+#define MPID_READ_BARRIER()  __asm__ __volatile__ ( "stbar" : : : "memory" );
+#define MPID_READ_WRITE_BARRIER() __asm__ __volatile__ ( "stbar" : : : "memory" );
+
+#elif defined(HAVE_SOLARIS_ASM_SPARC_MEMBAR)
+#define MPID_WRITE_BARRIER() __asm ( "membar #StoreLoad | #StoreStore");
+#define MPID_READ_BARRIER()  __asm ( "membar #LoadLoad | #LoadStore");
+#define MPID_READ_WRITE_BARRIER() __asm ( "membar #StoreLoad | #StoreStore | #LoadLoad | #LoadStore");
+
+#elif defined(HAVE_SOLARIS_ASM_SPARC_STBAR)
+#define MPID_WRITE_BARRIER() __asm ( "stbar" );
+#define MPID_READ_BARRIER() __asm ( "stbar" );
+#define MPID_READ_WRITE_BARRIER() __asm ( "stbar" );
+
 #else
+/* FIXME: We need to ensure read/write barriers for correctness, if the 
+   processor might possibly reorder */
 #define MPID_WRITE_BARRIER()
 #define MPID_READ_BARRIER()
 #define MPID_READ_WRITE_BARRIER()
