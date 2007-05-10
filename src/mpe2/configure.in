@@ -457,6 +457,21 @@ if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
     MPE_FFLAGS="$FFLAGS"
 fi
 
+dnl Determine if this is "UserSupplied" MPI implmentation.
+dnl If so, build mpecc and mpefc.
+dnl    MPE_CLINKER/MPE_FLINKER need to sync with sbin/mpeinstall
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    mpe_compilers=bin/mpecc
+    if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
+        mpe_compilers="$mpe_compilers bin/mpefc"
+    fi
+    MPE_CLINKER="$binbuild_dir/mpecc -"
+    MPE_FLINKER="$binbuild_dir/mpefc -"
+else dnl This is MPICH2.
+    MPE_CLINKER="$MPI_CC -mpe="
+    MPE_FLINKER="$MPI_F77 -mpe="
+fi
+
 dnl The following does not work as expected because
 dnl AC_CONFIG_SUBDIRS sets the "precious" variables like CFLAGS from the
 dnl settings recorded at the top of the configure. That means CFLAGS cannot
@@ -477,10 +492,12 @@ AC_SUBST(CC)
 AC_SUBST(CLINKER)
 AC_SUBST(MPE_CFLAGS)
 AC_SUBST(MPI_CC)
+AC_SUBST(MPE_CLINKER)
 AC_SUBST(F77)
 AC_SUBST(FLINKER)
 AC_SUBST(MPE_FFLAGS)
 AC_SUBST(MPI_F77)
+AC_SUBST(MPE_FLINKER)
 AC_SUBST(MPI_INC)
 AC_SUBST(MPI_LIBS)
 AC_SUBST(LDFLAGS)
@@ -496,11 +513,13 @@ export MPE_BUILD_FORTRAN2C
 export CC
 export CLINKER
 export MPI_CC
+export MPE_CLINKER
 export MPE_CFLAGS
 export F77
 export FLINKER
-export MPE_FFLAGS
 export MPI_F77
+export MPE_FLINKER
+export MPE_FFLAGS
 export MPI_INC
 export MPI_LIBS
 export LDFLAGS
@@ -670,15 +689,6 @@ if test -s $srcdir/$slog2_dirname/configure ; then
     fi
 fi
 
-
-dnl Determine if this is "UserSupplied" MPI implmentation.
-dnl If so, build mpecc and mpefc.
-if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
-    mpe_compilers=bin/mpecc
-    if test "$MPE_BUILD_FORTRAN2C" = "yes" ; then
-        mpe_compilers="$mpe_compilers bin/mpefc"
-    fi
-fi
 
 AC_OUTPUT_COMMANDS( [
 if test ! -x ./sbin/mpeinstall -a -s ./sbin/mpeinstall; then
