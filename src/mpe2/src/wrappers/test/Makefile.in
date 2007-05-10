@@ -8,6 +8,8 @@ MPI_CC               = @MPI_CC@
 MPI_F77              = @MPI_F77@
 MPI_CLINKER          = $(MPI_CC)
 MPI_FLINKER          = $(MPI_F77)
+MPE_CLINKER          = @MPE_CLINKER@
+MPE_FLINKER          = @MPE_FLINKER@
 #
 DEBUG_LIBS           = @DEBUG_LIBS@
 MPI_INC              = @MPI_INC@
@@ -90,52 +92,71 @@ all: default $(EXTRA_C_EXECS)
 	  fi
 
 cpi_trace@EXEEXT@: cpi.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(TRACE_LIBS) $(DEBUG_LIBS) -lm
+	$(MPE_CLINKER)mpitrace $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(TRACE_LIBS) $(DEBUG_LIBS) -lm
 
 cpi_log@EXEEXT@: cpi.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 cpilog@EXEEXT@: cpilog.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm 
+	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm 
+#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm 
 
 cpilog_pack@EXEEXT@: cpilog_pack.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm 
+	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm 
+#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm 
 
 ncpilog@EXEEXT@: cpilog.n@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(PROF_LIBS) $(DEBUG_LIBS) -lm 
+	$(MPE_CLINKER)log $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm 
+#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(PROF_LIBS) $(DEBUG_LIBS) -lm 
 
 ncpilog_pack@EXEEXT@: cpilog_pack.n@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(PROF_LIBS) $(DEBUG_LIBS) -lm 
+	$(MPE_CLINKER)log $(CC_LDFLAGS)  -o $@ $? $(DEBUG_LIBS) -lm 
+#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(PROF_LIBS) $(DEBUG_LIBS) -lm 
 
 fpilog@EXEEXT@: fpilog.@OBJEXT@
-	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(LOG_FLIBS) $(DEBUG_LIBS) -lm
+	$(MPE_FLINKER)mpilog $(FC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(LOG_FLIBS) $(DEBUG_LIBS) -lm
 
 fpilog_pack@EXEEXT@: fpilog_pack.@OBJEXT@
-	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(LOG_FLIBS) $(DEBUG_LIBS) -lm
+	$(MPE_FLINKER)mpilog $(FC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(LOG_FLIBS) $(DEBUG_LIBS) -lm
 
 nfpilog_pack@EXEEXT@: fpilog_pack.n@OBJEXT@
-	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(PROF_FLIBS) $(DEBUG_LIBS) -lm
+	$(MPE_FLINKER)log $(FC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(PROF_FLIBS) $(DEBUG_LIBS) -lm
 
 srtest@EXEEXT@: srtest.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 iotest@EXEEXT@: iotest.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 comm1_isr@EXEEXT@: comm1_isr.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 comm1_isr_loop@EXEEXT@: comm1_isr_loop.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+	$(MPE_CLINKER)mpilog $(CC_LDFLAGS)  -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 fcomm1_isr@EXEEXT@: fcomm1_isr.@OBJEXT@
-	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(LOG_FLIBS) $(DEBUG_LIBS) -lm
+	$(MPE_FLINKER)mpilog $(FC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(LOG_FLIBS) $(DEBUG_LIBS) -lm
 
 comm2_connect_accept@EXEEXT@: comm2_connect_accept.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 comm2_join@EXEEXT@: comm2_join.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+
+log_cost@EXEEXT@: log_cost.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? -L$(MPE_LIBDIR) -lmpe_nompi
 
 linktest: linktest_C
 
