@@ -83,7 +83,7 @@ time_alltoallv0_nochk@EXEEXT@: time_alltoallv0.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(MPI_LIBS)
 
 wrong_int_byte@EXEEXT@: wrong_int_byte.@OBJEXT@
-	$(MPE_CLINKER)mpicheck $(CC_LDFLAGS) -o $@ $<
+	$(MPE_CLINKER)mpicheck $(CC_LDFLAGS) -o $@ $?
 #	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(COLLCHK_LIBS)
 
 wrong_reals@EXEEXT@: wrong_reals.@OBJEXT@
