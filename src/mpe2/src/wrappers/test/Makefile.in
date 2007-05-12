@@ -4,6 +4,8 @@
 MAKE                 = @MAKE@
 
 CPP                  = @CPP@
+CC                   = @CC@
+CLINKER              = @CLINKER@
 MPI_CC               = @MPI_CC@
 MPI_F77              = @MPI_F77@
 MPI_CLINKER          = $(MPI_CC)
@@ -49,7 +51,7 @@ FC_FLAGS      = $(FFLAGS) $(F_INCS) $(MPE_FOPTS)
 CC_LDFLAGS    = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 FC_LDFLAGS    = $(LDFLAGS) $(FFLAGS) $(MPE_LDOPTS)
 C_EXECS       = cpilog@EXEEXT@ cpilog_pack@EXEEXT@ srtest@EXEEXT@ comm1_isr@EXEEXT@
-EXTRA_C_EXECS = cpi_trace@EXEEXT@ cpi_log@EXEEXT@ ncpilog@EXEEXT@ ncpilog_pack@EXEEXT@ iotest@EXEEXT@ comm1_isr_loop@EXEEXT@ 
+EXTRA_C_EXECS = cpi_trace@EXEEXT@ cpi_log@EXEEXT@ ncpilog@EXEEXT@ ncpilog_pack@EXEEXT@ iotest@EXEEXT@ comm1_isr_loop@EXEEXT@ log_cost@EXEEXT@
 F_EXECS       = fpilog@EXEEXT@ fpilog_pack@EXEEXT@ fcomm1_isr@EXEEXT@
 EXTRA_F_EXECS = nfpilog_pack@EXEEXT@
 
@@ -155,8 +157,9 @@ comm2_join@EXEEXT@: comm2_join.@OBJEXT@
 	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
 #	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
-log_cost@EXEEXT@: log_cost.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? -L$(MPE_LIBDIR) -lmpe_nompi
+log_cost@EXEEXT@: log_cost.c
+	$(CC) $(CC_FLAGS) -DCLOG_NOMPI -c $?
+	$(CLINKER) $(CC_LDFLAGS) -DCLOG_NOMPI -o $@ log_cost.@OBJEXT@ -L$(MPE_LIBDIR) -lmpe_nompi
 
 linktest: linktest_C
 
