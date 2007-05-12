@@ -14,15 +14,17 @@
 #include <string.h>
 #endif
 
+#if !defined( CLOG_NOMPI )
+#include "mpi.h"
+#else
+#include "mpi_null.h"
+#endif /* Endof if !defined( CLOG_NOMPI ) */
+
 #include "clog_const.h"
 #include "clog_mem.h"
 #include "clog_timer.h"
 #include "clog_util.h"
 #include "clog_sync.h"
-
-#if !defined( CLOG_NOMPI )
-#include "mpi.h"
-#endif
 
 CLOG_Sync_t *CLOG_Sync_create( int world_size, int world_rank )
 {
@@ -59,7 +61,6 @@ void CLOG_Sync_free( CLOG_Sync_t **sync_handle )
 
 void CLOG_Sync_init( CLOG_Sync_t *sync )
 {
-#if !defined( CLOG_NOMPI )
     char         *env_forced_sync;
     char         *env_sync_agrm;
     char         *env_sync_freq;
@@ -114,12 +115,10 @@ void CLOG_Sync_init( CLOG_Sync_t *sync )
     }
     PMPI_Bcast( &(sync->algorithm_ID), 1, MPI_INT,
                 sync->root, MPI_COMM_WORLD );
-#endif
 }
 
 
 
-#if !defined( CLOG_NOMPI )
 static int CLOG_Sync_ring_rank( int world_size, int root, int adjusting_rank )
 {
     if ( adjusting_rank >= root )
@@ -510,7 +509,6 @@ static CLOG_Time_t CLOG_Sync_run_altngbr( CLOG_Sync_t *sync )
 
     return sync->best_gpofst[1];
 }
-#endif /* #if !defined( CLOG_NOMPI ) */
 
 /*@
       CLOG_Sync_run - synchronize clocks with selected algorithm through
@@ -524,7 +522,6 @@ Return value:
 @*/
 CLOG_Time_t CLOG_Sync_run( CLOG_Sync_t *sync )
 {
-#if !defined( CLOG_NOMPI )
     switch ( sync->algorithm_ID ) {
         case CLOG_SYNC_AGRM_DEFAULT:
             if ( sync->world_size > 16 )
@@ -550,9 +547,6 @@ CLOG_Time_t CLOG_Sync_run( CLOG_Sync_t *sync )
             else
                 return CLOG_Sync_run_seq( sync );
     }
-#else
-    return 0.0;
-#endif
 }
 
 char *CLOG_Sync_print_type( const CLOG_Sync_t *sync )

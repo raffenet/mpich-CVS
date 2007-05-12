@@ -24,8 +24,15 @@
 #endif
 
 #if !defined( CLOG_NOMPI )
+
 #include "mpi.h"
+#if !defined( HAVE_PMPI_COMM_GET_ATTR )
+#define PMPI_Comm_get_attr PMPI_Attr_get
 #endif
+
+#else
+#include "mpi_null.h"
+#endif /* Endof if !defined( CLOG_NOMPI ) */
 
 #include "clog_const.h"
 #include "clog_util.h"
@@ -41,11 +48,7 @@ extern int mkstemp(char *t);
 */
 void CLOG_Util_abort( int errorcode )
 {
-#if !defined( CLOG_NOMPI )
     PMPI_Abort( MPI_COMM_WORLD, errorcode );
-#else
-    exit( errorcode );
-#endif
 }
 
 /*
@@ -58,9 +61,7 @@ void CLOG_Util_set_tmpfilename( char *tmp_pathname )
     char    tmpdirname[ CLOG_PATH_STRLEN ] = "";
     char    tmpfilename[ CLOG_PATH_STRLEN ] = "";
     int     my_rank;
-#if !defined( CLOG_NOMPI )
     int     ierr;
-#endif
 #if defined( HAVE_MKSTEMP )
     int     tmp_fd;
 #endif
@@ -72,11 +73,7 @@ void CLOG_Util_set_tmpfilename( char *tmp_pathname )
         CLOG_Util_abort( 1 );
     }
 
-#if !defined( CLOG_NOMPI )
     PMPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
-#else
-    my_rank = 0;
-#endif
 
     /* MPE_TMPDIR takes precedence over TMPDIR */
     env_tmpdir = (char *) getenv( "MPE_TMPDIR" );
@@ -100,7 +97,6 @@ void CLOG_Util_set_tmpfilename( char *tmp_pathname )
 #endif
     }
                                                                                 
-#if !defined( CLOG_NOMPI )
     /*  Let everyone in MPI_COMM_WORLD know what root has */
     ierr = PMPI_Bcast( tmpdirname_ref, CLOG_PATH_STRLEN, MPI_CHAR,
                        0, MPI_COMM_WORLD );
@@ -110,7 +106,6 @@ void CLOG_Util_set_tmpfilename( char *tmp_pathname )
         fflush( stderr );
         PMPI_Abort( MPI_COMM_WORLD, 1 );
     }
-#endif
                                                                                 
     /*  Use TMPDIR if set in children processes  */
     if ( env_tmpdir != NULL )
@@ -232,14 +227,14 @@ char *CLOG_Util_strbuf_get(       char *val_ptr, const char *val_tail,
 /*
     The function returns CLOG_BOOL_TRUE if the MPI implementation sychronized.
 */
-#if !defined( CLOG_NOMPI )
 CLOG_BOOL_T CLOG_Util_is_MPIWtime_synchronized( void )
 {
     int           flag, *is_globalp;
     /* int           my_rank; */
 
     /* PMPI_Comm_rank( MPI_COMM_WORLD, &my_rank ); */
-    PMPI_Attr_get( MPI_COMM_WORLD, MPI_WTIME_IS_GLOBAL, &is_globalp, &flag );
+    PMPI_Comm_get_attr( MPI_COMM_WORLD, MPI_WTIME_IS_GLOBAL,
+                        &is_globalp, &flag );
     /*
     printf( "TaskID = %d : flag = %d, is_globalp = %d, *is_globalp = %d\n",
             my_rank, flag, is_globalp, *is_globalp);
@@ -249,12 +244,6 @@ CLOG_BOOL_T CLOG_Util_is_MPIWtime_synchronized( void )
     else
         return CLOG_BOOL_TRUE;   /* MPI Clocks are synchronized */
 }
-#else
-CLOG_BOOL_T CLOG_Util_is_MPIWtime_synchronized( void )
-{
-    return CLOG_BOOL_FALSE;
-}
-#endif
 
 CLOG_BOOL_T CLOG_Util_is_runtime_bigendian( void )
 {

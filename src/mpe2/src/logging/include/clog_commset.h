@@ -43,11 +43,19 @@ typedef int          CLOG_ThreadLID_t
 
 #if !defined( CLOG_NOMPI )
 #include "mpi.h"
-#else  /* of if !defined( CLOG_NOMPI ) */
-#define MPI_Comm                    int
-#define MPI_COMM_WORLD              0
-#define CLOG_CommSet_get_IDs(A,B)   NULL
-#endif /* of if !defined( CLOG_NOMPI ) */
+#else 
+/*
+    To avoid mpi_null.h from being exposed to the user's include_dir,
+    the definition of MPI_Comm has to match that in mpi_null.h.
+    The "#if !defined( _MPI_NULL_MPI_COMM )" is to avoid duplicated
+    definition of MPI_Comm when both mpi_null.h and this .h are used
+    in the same .c file.
+*/
+#if !defined( _MPI_NULL_MPI_COMM )
+#define _MPI_NULL_MPI_COMM
+typedef int  MPI_Comm;
+#endif
+#endif /* Endof if !defined( CLOG_NOMPI ) */
 
 typedef struct CLOG_CommIDs_t_ {
           CLOG_CommGID_t   global_ID;  /* global comm ID */
@@ -86,7 +94,6 @@ CLOG_BOOL_T CLOG_CommSet_sync_IDs(       CLOG_CommSet_t *parent_commset,
                                    const CLOG_CommIDs_t *child_table );
 #endif
 
-#if !defined( CLOG_NOMPI )
 void CLOG_CommSet_init( CLOG_CommSet_t *commset );
 
 const CLOG_CommIDs_t* CLOG_CommSet_add_intracomm( CLOG_CommSet_t *commset,
@@ -103,7 +110,6 @@ const CLOG_CommIDs_t* CLOG_CommSet_get_IDs( CLOG_CommSet_t *commset,
                                             MPI_Comm comm );
 
 void CLOG_CommSet_merge( CLOG_CommSet_t *commset );
-#endif /* of if !defined( CLOG_NOMPI ) */
 
 #if defined( CLOG_IMPL )
 int CLOG_CommSet_write( const CLOG_CommSet_t *commset, int fd,

@@ -57,6 +57,9 @@ EXECS            = ${binbuild_dir}/clog2_print@EXEEXT@ \
 CC_FLAGS         = $(CFLAGS) $(INCLUDE_DIR) $(MPE_COPTS)
 CC_LDFLAGS       = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 
+MPE_ZSOURCES     = mpi_null.c
+MPE_N_ZOBJECTS   = $(MPE_ZSOURCES:.c=.n@OBJEXT@)
+
 MPE_CSOURCES     = clog_util.c clog_timer.c clog_uuid.c clog_commset.c \
                    clog_preamble.c clog_record.c clog_sync.c \
                    clog_block.c clog_buffer.c clog_merger.c \
@@ -125,8 +128,8 @@ ${libbuild_dir}/lib$(PROF_LIBNAME).a: $(MPE_P_COBJECTS)
 	 fi
 	$(RANLIB) $@
 
-${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: $(MPE_N_COBJECTS)
-	$(AR) $(ARFLAGS) $@ $(MPE_N_COBJECTS)
+${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: $(MPE_N_ZOBJECTS) $(MPE_N_COBJECTS)
+	$(AR) $(ARFLAGS) $@ $(MPE_N_ZOBJECTS) $(MPE_N_COBJECTS)
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	     $(MAKE) $(MPE_N_WOBJECTS) ; \
 	     $(AR) $(ARFLAGS) $@ $(MPE_N_WOBJECTS) ; \
@@ -143,8 +146,8 @@ ${libbuild_dir}/lib$(PROF_LIBNAME)_null.a: $(MPE_P_XOBJECTS)
 	$(RANLIB) $@
 
 # -DCLOG_NOMPI can be used when creating lib$(PROF_LIBNAME)_nompi_null.a
-${libbuild_dir}/lib$(PROF_LIBNAME)_nompi_null.a: $(MPE_N_XOBJECTS)
-	$(AR) $(ARFLAGS) $@ $(MPE_N_XOBJECTS)
+${libbuild_dir}/lib$(PROF_LIBNAME)_nompi_null.a: $(MPE_N_ZOBJECTS) $(MPE_N_XOBJECTS)
+	$(AR) $(ARFLAGS) $@ $(MPE_N_ZOBJECTS) $(MPE_N_XOBJECTS)
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
 	     $(MAKE) $(MPE_N_WOBJECTS) ; \
 	     $(AR) $(ARFLAGS) $@ $(MPE_N_WOBJECTS) ; \
