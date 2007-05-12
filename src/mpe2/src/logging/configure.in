@@ -302,6 +302,13 @@ case "$host" in
 esac
 
 dnl snprintf may have been missing in headerfile,
+dnl e.g. gcc -ansi remove gethostname's prototype
+AC_CHECK_FUNCS(gethostname)
+if test "$ac_cv_func_gethostname" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],gethostname)
+fi
+
+dnl snprintf may have been missing in headerfile,
 dnl e.g. gcc -ansi remove snprintf's prototype
 AC_CHECK_FUNCS(snprintf)
 if test "$ac_cv_func_snprintf" = "yes" ; then
