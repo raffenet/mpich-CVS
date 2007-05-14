@@ -256,6 +256,8 @@ typedef mutex_t                 MPIDU_Process_lock_t;
 #if defined(USE_SPARC_ASM_LOCKS)
 typedef int MPIDU_Process_lock_t;
 #elif defined(USE_NT_LOCKS)
+#include <winsock2.h>
+#include <windows.h>
 typedef HANDLE MPIDU_Process_lock_t;
 #elif defined(USE_SUN_MUTEX)
 #include <synch.h>
