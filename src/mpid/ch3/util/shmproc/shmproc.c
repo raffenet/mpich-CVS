@@ -124,6 +124,10 @@ int MPIDI_SHM_ReadProcessMemory( int fd, int pid,
 #else
 /* HAVE_WINDOWS_H and use Windows interface */
 /* Initialize for reading and writing to the designated process */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_SHM_InitRWProc
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_SHM_InitRWProc( pid_t pid, int *phandle )
 {
 	int mpi_errno = MPI_SUCCESS;
