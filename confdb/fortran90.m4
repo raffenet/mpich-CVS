@@ -1047,7 +1047,7 @@ if AC_TRY_EVAL(ac_compile) ; then
     else
 	AC_MSG_WARN([Unable to build a simple F90 module])
         echo "configure: failed program was:" >&AC_FD_CC
-        cat conftest.$ac_f90ext >&AC_FD_CC
+        cat conftest.$ac_ext >&AC_FD_CC
     fi
 else
     echo "configure: failed program was:" >&AC_FD_CC
