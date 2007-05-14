@@ -17,7 +17,49 @@
    packets, there is no universal packet type (there is the 
    MPIDI_CH3_Pkt_t, but the "extension" packets are not of this type).
    Using a void * pointer avoids unnecessary complaints from the
-   compilers */
+   compilers 
+
+   In addition to the obvious functions, in an environment where the 
+   dynamic library is loaded into a static executable, it may not
+   be possible to link with routines that are in the executable. 
+   Instead, the dynamically loaded library will need to use a function
+   table, and that table must be provided by the program that loads 
+   this library.  There are two categories of functions: Ones that 
+   are predefined and used by many channels (e.g., some of the PMI functions)
+   and ones that are specific to one channel.  As much as possible, the
+   specific functions should be linked directly into the DLL for that channel,
+   but where this is not possible, we need a way to extend the function name
+   support.  Here is a possible extension:
+
+   ExportFnTable( MPIDI_CH3DLL_FnTable * ) - The calling program initializes
+   the FnTable with pointers to the functions and invokes this routine that
+   is loaded from the DLL.  The FnTable is defined as part of the DLL version.
+   One of the functions in that table is
+
+       ImportFn( const char *name, (void)(*fn) )
+
+   that can be used by the DLL to attempt to import another function with
+   the given name.
+
+   Finally, we don't always want to bother with this - in many environments,
+   it isn't necessary to go to these lengths.  The dllchan code (which 
+   will be in the calling program, will check to see if the ExportFnTable
+   function exists.  If not, then this step (of setting up the export tables)
+   is skipped.  
+
+   A channel will enable this option by setting
+
+   USE_EXPORT_FN_TABLE
+
+   All calls to routines that might be in that table are made through
+   the function call macro 
+
+        MPIU_EXP_CALL(MPIDI_CH3EXP,fn(...))
+
+   We use a different name from MPIU_CALL (used in mpid/ch3/src) to 
+   allow us to support both styles with one source code; the "EXP"
+   refers to "exported".  
+*/
 typedef struct MPIDI_CH3_Funcs {
     int (*Init)( int, MPIDI_PG_t *, int );
     int (*InitCompleted)(void);
