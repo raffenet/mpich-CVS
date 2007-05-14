@@ -284,4 +284,7 @@ MPID_REQUEST_DECL
    implemented */
 #define HAVE_GPID_ROUTINES
 
+/* Tell initthread to prepare a private comm_world */
+#define MPID_NEEDS_ICOMM_WORLD
+
 #endif /* !defined(MPICH_MPIDPRE_H_INCLUDED) */

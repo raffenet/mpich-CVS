@@ -231,6 +231,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.comm_self->coll_fns	    = NULL; /* XXX */
     MPIR_Process.comm_self->topo_fns	    = NULL; /* XXX */
 
+#ifdef MPID_NEEDS_ICOMM_WORLD
     MPIR_Process.icomm_world		    = MPID_Comm_builtin + 2;
     MPIR_Process.icomm_world->handle	    = MPIR_ICOMM_WORLD;
     MPIU_Object_set_ref( MPIR_Process.icomm_world, 1 );
@@ -249,8 +250,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     MPIR_Process.icomm_world->topo_fns	    = NULL; /* XXX */
 
     /* Note that these communicators are not ready for use - MPID_Init 
-       will setup self and world.  We'll setup iworld after MPID_Init
-       completes. */
+       will setup self and world, and icomm_world if it desires it. */
+#endif
 
     MPIR_Process.comm_parent = NULL;
 
