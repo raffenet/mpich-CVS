@@ -162,6 +162,7 @@ int MPIX_Grequest_class_create(void)
 	return MPI_UNDEFINED;
 
 }
+
 int MPIX_Grequest_start( MPI_Grequest_query_function *query_fn, 
 			MPI_Grequest_free_function *free_fn, 
 			MPI_Grequest_cancel_function *cancel_fn, 
@@ -169,76 +170,18 @@ int MPIX_Grequest_start( MPI_Grequest_query_function *query_fn,
 			MPIX_Grequest_wait_function *wait_fn,
 			void *extra_state, MPI_Request *request )
 {
-    static const char FCNAME[] = "MPI_Grequest_start";
-    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno;
     MPID_Request *lrequest_ptr;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GREQUEST_START);
 
-    MPIR_ERRTEST_INITIALIZED_ORDIE();
-    
-    MPIU_THREAD_SINGLE_CS_ENTER("pt2pt");
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GREQUEST_START);
+    mpi_errno = MPI_Grequest_start(query_fn, free_fn, cancel_fn, 
+		    extra_state, request);
 
-    /* Validate parameters if error checking is enabled */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS;
-        {
-	    MPIR_ERRTEST_ARGNULL(request,"request",mpi_errno);
-            if (mpi_errno) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS;
+    if (mpi_errno == MPI_SUCCESS)
+    { 
+	MPID_Request_get_ptr(*request, lrequest_ptr);
+        lrequest_ptr->poll_fn              = poll_fn;
+	lrequest_ptr->wait_fn              = wait_fn;
     }
-#   endif /* HAVE_ERROR_CHECKING */
 
-    /* ... body of routine ...  */
-    
-    lrequest_ptr = MPID_Request_create();
-    /* --BEGIN ERROR HANDLING-- */
-    if (lrequest_ptr == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-					  FCNAME, __LINE__, MPI_ERR_OTHER, 
-					  "**nomem", "**nomem %s", 
-					  "generalized request" );
-	goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
-    
-    lrequest_ptr->kind                 = MPID_UREQUEST;
-    MPIU_Object_set_ref( lrequest_ptr, 1 );
-    lrequest_ptr->cc_ptr               = &lrequest_ptr->cc;
-    lrequest_ptr->cc                   = 1;
-    lrequest_ptr->comm                 = NULL;
-    lrequest_ptr->cancel_fn            = cancel_fn;
-    lrequest_ptr->free_fn              = free_fn;
-    lrequest_ptr->query_fn             = query_fn;
-    lrequest_ptr->poll_fn              = poll_fn;
-    lrequest_ptr->wait_fn              = wait_fn;
-    lrequest_ptr->grequest_extra_state = extra_state;
-    lrequest_ptr->greq_lang            = MPID_LANG_C;
-    *request = lrequest_ptr->handle;
-    
-    /* ... end of body of routine ... */
-
-  fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_START);
-    MPIU_THREAD_SINGLE_CS_EXIT("pt2pt");
     return mpi_errno;
-    
-  fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
-	    "**mpi_grequest_start",
-	    "**mpi_grequest_start %p %p %p %p %p %p %p", 
-	    query_fn, free_fn, cancel_fn, poll_fn, wait_fn, 
-	    extra_state, request);
-    }
-#   endif
-    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
-    goto fn_exit;
-    /* --END ERROR HANDLING-- */
 }
