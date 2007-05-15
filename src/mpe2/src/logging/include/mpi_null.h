@@ -12,9 +12,12 @@
 extern "C" {
 #endif
 
-/* Define MPI_Aint=void* is only good enough for clog_commset.c */
+/*
+   Define MPI_Aint=void* is only good enough for clog_commset.c, because
+   clog_commset.c only uses MPI_Aint in PMPI_Comm_get(set)_attr().  Otherwise,
+   a real address-sized integer would have to be defined through configure.
+*/
 typedef void*  MPI_Aint;
-/* typedef int MPI_Aint; */
 
 #if !defined( _MPI_NULL_MPI_COMM )
 #define _MPI_NULL_MPI_COMM
