@@ -509,7 +509,7 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
                                     buf_ptr, "CLOG_KNOWN_EVENTID_START Value" );
-    preamble->known_eventID_start = (unsigned int) atoi( value_str );
+    preamble->known_eventID_start = atoi( value_str );
 
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
@@ -517,7 +517,7 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
                                     buf_ptr, "CLOG_USER_EVENTID_START Value" );
-    preamble->user_eventID_start = (unsigned int) atoi( value_str );
+    preamble->user_eventID_start = atoi( value_str );
 
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
@@ -527,7 +527,7 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
                                     buf_ptr,
                                     "CLOG_KNOWN_SOLO_EVENTID_START Value" );
-    preamble->known_solo_eventID_start = (unsigned int) atoi( value_str );
+    preamble->known_solo_eventID_start = atoi( value_str );
 
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
@@ -537,7 +537,7 @@ void CLOG_Preamble_read( CLOG_Preamble_t *preamble, int fd )
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
                                     buf_ptr,
                                     "CLOG_USER_SOLO_EVENTID_START Value" );
-    preamble->user_solo_eventID_start = (unsigned int) atoi( value_str );
+    preamble->user_solo_eventID_start = atoi( value_str );
 
     buf_ptr = CLOG_Util_strbuf_get( value_str,
                                     &(value_str[ CLOG_PREAMBLE_STRLEN-1 ]),
