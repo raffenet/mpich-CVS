@@ -213,7 +213,6 @@ void ADIOI_GEN_IwriteStrided(ADIO_File fd, void *buf, int count,
 /* generic POSIX aio completion test routine */
 int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
 {
-    struct aiocb aiocbst;
     ADIOI_AIO_Request *aio_req;
     int err;
 
@@ -233,6 +232,42 @@ int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
 	    MPIR_Nest_decr();
     }
     return MPI_SUCCESS;
+}
+
+/* wait for multiple requests to complete */
+int ADIOI_GEN_aio_wait_fn(int count, void * array_of_states, 
+		double timeout, MPI_Status *status)
+{
+	struct aiocb **cblist;
+	ADIOI_AIO_Request **aio_reqlist;
+	int i;
+
+	aio_reqlist = (ADIOI_AIO_Request **)array_of_states;
+
+	cblist = (struct aiocb**) calloc(count, sizeof(struct aiocb*));
+
+	for (i=0; i< count; i++)
+	{
+		cblist[i] = aio_reqlist[i]->aiocbp;
+	}
+
+	errno = aio_suspend(cblist, count, NULL);
+	if (errno == 0) 
+	{ /* run through the list of requests, and mark all the completed ones
+	     as done */
+		for (i=0; i< count; i++)
+		{
+			aio_error(aio_reqlist[i]->aiocbp);
+			if (errno == 0) {
+				errno = aio_return(aio_reqlist[i]->aiocbp);
+				aio_reqlist[i]->nbytes = errno;
+				MPIR_Nest_incr();
+				MPI_Grequest_complete(*(aio_reqlist[i]->req));
+				MPIR_Nest_decr();
+			} 
+			/* TODO: need to handle error conditions somehow*/
+		}
+	} /* TODO: also need to handle errors here  */
 }
 
 int ADIOI_GEN_aio_query_fn(void *extra_state, MPI_Status *status) 
