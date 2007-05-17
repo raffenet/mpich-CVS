@@ -28,6 +28,8 @@
 #define aiocb aiocb64
 #endif
 
+static MPIX_Grequest_class ADIOI_GEN_greq_class = 0;
+
 /* ADIOI_GEN_IwriteContig
  *
  * This code handles two distinct cases.  If ROMIO_HAVE_WORKING_AIO is not
@@ -174,9 +176,13 @@ int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     }
     aio_req->aiocbp = aiocbp;
     aio_req->req = request;
-    MPIX_Grequest_start(ADIOI_GEN_aio_query_fn, ADIOI_GEN_aio_free_fn,
-		    MPIU_Greq_cancel_fn, ADIOI_GEN_aio_poll_fn, NULL, 
-		    aio_req, request);
+    if (ADIOI_GEN_greq_class == 0) {
+	    MPIX_Grequest_class_create(ADIOI_GEN_aio_query_fn, 
+			    ADIOI_GEN_aio_free_fn, MPIU_Greq_cancel_fn, 
+			    ADIOI_GEN_aio_poll_fn, ADIOI_GEN_aio_wait_fn, 
+			    &ADIOI_GEN_greq_class);
+    }
+    MPIX_Grequest_class_allocate(ADIOI_GEN_greq_class, aio_req, request);
     return 0;
 }
 #endif
