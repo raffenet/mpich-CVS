@@ -572,6 +572,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Info_get_ptr(a,ptr)       MPID_Get_ptr(Info,a,ptr)
 #define MPID_Win_get_ptr(a,ptr)        MPID_Get_ptr(Win,a,ptr)
 #define MPID_Request_get_ptr(a,ptr)    MPID_Get_ptr(Request,a,ptr)
+#define MPID_Grequest_class_get_ptr(a,ptr) MPID_Get_ptr(Grequest_class,a,ptr)
 /* Keyvals have a special format. This is roughly MPID_Get_ptrb, but
    the handle index is in a smaller bit field.  In addition, 
    there is no storage for the builtin keyvals.  
@@ -1350,7 +1351,8 @@ typedef struct MPID_Request {
     MPI_Grequest_query_function  *query_fn;
     MPIX_Grequest_poll_function   *poll_fn;
     MPIX_Grequest_wait_function   *wait_fn;
-    void *grequest_extra_state;
+    void             *grequest_extra_state;
+    MPIX_Grequest_class	        greq_class;
     MPID_Lang_t                  greq_lang;         /* language that defined
 						       the generalize req */
     
@@ -3145,6 +3147,18 @@ void MPID_Request_set_completed(MPID_Request *);
   Request
 @*/
 void MPID_Request_release(MPID_Request *);
+
+typedef struct MPID_Grequest_class {
+     int                handle;      /* value of MPIX_Grequest_class for 
+					this structure */
+     volatile int       ref_count;
+     MPI_Grequest_query_function *query_fn;
+     MPI_Grequest_free_function *free_fn;
+     MPI_Grequest_cancel_function *cancel_fn;
+     MPIX_Grequest_poll_function *poll_fn;
+     MPIX_Grequest_wait_function *wait_fn;
+} MPID_Grequest_class;
+
 
 /*TTopoOverview.tex
  *

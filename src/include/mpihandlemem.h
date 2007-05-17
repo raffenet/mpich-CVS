@@ -69,7 +69,8 @@ typedef enum MPID_Object_kind {
   MPID_ATTR       = 0xa,
   MPID_REQUEST    = 0xb,
   MPID_PROCGROUP  = 0xc,               /* These are internal device objects */
-  MPID_VCONN      = 0xd
+  MPID_VCONN      = 0xd,
+  MPID_GREQ_CLASS = 0xf
   } MPID_Object_kind;
 
 #define HANDLE_MPI_KIND_SHIFT 26
