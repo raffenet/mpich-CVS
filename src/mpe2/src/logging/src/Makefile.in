@@ -154,17 +154,25 @@ ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi_null.a: $(MPE_N_ZOBJECTS) $(MPE_N_XOBJE
 	 fi
 	$(RANLIB) $@
 
+# Link with *.o instead of *.no
+# as NEC SX-8's cross-compiler refuses to link with *.no
 ${binbuild_dir}/clog2_print@EXEEXT@: clog_print.n@OBJEXT@
-	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_print.n@OBJEXT@ \
+	$(MV) clog_print.n@OBJEXT@ mpe2tmp.@OBJEXT@
+	$(CLINKER) $(CC_LDFLAGS) -o $@ mpe2tmp.@OBJEXT@ \
 	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
+	@-$(RM) -f mpe2tmp.@OBJEXT@
 
 ${binbuild_dir}/clog2_join@EXEEXT@: clog_join.n@OBJEXT@
-	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_join.n@OBJEXT@ \
+	$(MV) clog_join.n@OBJEXT@ mpe2tmp.@OBJEXT@
+	$(CLINKER) $(CC_LDFLAGS) -o $@ mpe2tmp.@OBJEXT@ \
 	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
+	@-$(RM) -f mpe2tmp.@OBJEXT@
 
 ${binbuild_dir}/clog2_repair@EXEEXT@: clog_repair.n@OBJEXT@
-	$(CLINKER) $(CC_LDFLAGS) -o $@ clog_repair.n@OBJEXT@ \
+	$(MV) clog_repair.n@OBJEXT@ mpe2tmp.@OBJEXT@
+	$(CLINKER) $(CC_LDFLAGS) -o $@ mpe2tmp.@OBJEXT@ \
 	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
+	@-$(RM) -f mpe2tmp.@OBJEXT@
 
 #
 # Remove the old libraries before rebuilding (in case they came from another

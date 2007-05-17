@@ -101,9 +101,13 @@ ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a: $(MPE_N_COBJECTS)
 	$(AR) $(ARFLAGS) $@ $(MPE_N_COBJECTS)
 	$(RANLIB) $@
 
+# Link with *.o instead of *.no
+# as NEC SX-8's cross-compiler refuses to link with *.no
 ${binbuild_dir}/check_callstack@EXEEXT@: check_callstack.n@OBJEXT@
-	$(CLINKER) $(CC_LDFLAGS) -o $@ check_callstack.n@OBJEXT@ \
+	$(MV) check_callstack.n@OBJEXT@ mpe2tmp.@OBJEXT@
+	$(CLINKER) $(CC_LDFLAGS) -o $@ mpe2tmp.@OBJEXT@ \
 	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
+	@-$(RM) -f mpe2tmp.@OBJEXT@
 
 #
 # Remove the old libraries before rebuilding (in case they came from another
