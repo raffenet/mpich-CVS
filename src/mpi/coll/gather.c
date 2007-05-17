@@ -58,9 +58,7 @@ int MPIR_Gather (
     int        mpi_errno = MPI_SUCCESS;
     int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
     int mask, sendtype_size, recvtype_size, src, dst, position;
-#ifdef MPID_HAS_HETERO
     int tmp_buf_size;
-#endif
     void *tmp_buf=NULL;
     MPI_Status status;
     MPI_Aint   extent=0;            /* Datatype extent */
@@ -113,7 +111,8 @@ int MPIR_Gather (
                 /* allocate temporary buffer to receive data because it
                    will not be in the right order. We will need to
                    reorder it into the recv_buf. */
-                tmp_buf = MPIU_Malloc(nbytes*comm_size);
+		tmp_buf_size = nbytes*comm_size;
+                tmp_buf = MPIU_Malloc(tmp_buf_size);
 		/* --BEGIN ERROR HANDLING-- */
                 if (!tmp_buf)
 		{
@@ -161,7 +160,8 @@ int MPIR_Gather (
 	{
             /* allocate temporary buffer for nodes other than leaf
                nodes. max size needed is (nbytes*comm_size)/2. */
-            tmp_buf = MPIU_Malloc((nbytes*comm_size)/2);
+	    tmp_buf_size = (nbytes*comm_size)/2;
+            tmp_buf = MPIU_Malloc(tmp_buf_size);
 	    /* --BEGIN ERROR HANDLING-- */
             if (!tmp_buf)
 	    {
@@ -196,7 +196,7 @@ int MPIR_Gather (
                         /* root is 0. Receive directly into recvbuf */
                         mpi_errno = MPIC_Recv(((char *)recvbuf + 
                                                src*recvcnt*extent), 
-                                              recvcnt*mask, recvtype, src,
+                                              recvcnt*(comm_size-src), recvtype, src,
                                               MPIR_GATHER_TAG, comm, 
                                               &status);
 			/* --BEGIN ERROR HANDLING-- */
@@ -212,7 +212,7 @@ int MPIR_Gather (
                         /* intermediate nodes or nonzero root. store in
                            tmp_buf */
                         mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt), 
-                                              mask*nbytes, MPI_BYTE, src,
+                                              tmp_buf_size-curr_cnt, MPI_BYTE, src,
                                               MPIR_GATHER_TAG, comm, 
                                               &status);
 			/* --BEGIN ERROR HANDLING-- */
@@ -337,7 +337,7 @@ int MPIR_Gather (
 		{
                     src = (src + root) % comm_size;
                     mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt), 
-                                          mask*nbytes, MPI_BYTE, src,
+                                          tmp_buf_size-curr_cnt, MPI_BYTE, src,
                                           MPIR_GATHER_TAG, comm, 
                                           &status);
 		    /* --BEGIN ERROR HANDLING-- */
