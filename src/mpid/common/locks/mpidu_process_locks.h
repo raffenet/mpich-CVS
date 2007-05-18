@@ -79,10 +79,13 @@
    on systems that provide asm() extensions to the C compiler */
 
 #if defined(USE_BUSY_LOCKS)
-/* FIXME: This uses an invalid prefix */
 typedef volatile long MPIDU_Process_lock_t;
+/* FIXME: This uses an invalid prefix */
 extern int g_nLockSpinCount;
 
+/* We need an atomic "test and set if clear" operation.  The following
+   definitions are used to create that.  The operation itself
+   is MPID_ATOMIC_SET_IF_ZERO */
 
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
 #define HAVE_COMPARE_AND_SWAP
@@ -134,6 +137,24 @@ static inline unsigned long _InterlockedExchange(volatile long *ptr, unsigned lo
 #define _InterlockedExchange(ptr,x) _InterlockedExchange(ptr,x)
 #endif
 
+/* Given the possible atomic operations, define the set if zero operation.
+   This operation returns true if the value was zero.  */
+#ifdef HAVE_INTERLOCKEDEXCHANGE
+#define MPID_ATOMIC_SET_IF_ZERO(_lock) \
+    (InterlockedExchange((LPLONG)_lock, 1) == 0))
+#elif defined(HAVE__INTERLOCKEDEXCHANGE)
+	/* The Intel compiler complains if the lock is cast to
+	 * volatile void * (the type of lock is probably
+	 * volatile long *).  The void * works for the Intel 
+	 * compiler. */
+#define MPID_ATOMIC_SET_IF_ZERO(_lock) \
+    (_InterlockedExchange((void *)lock, 1) == 0)
+#elif defined(HAVE_COMPARE_AND_SWAP)
+#define MPID_ATOMIC_SET_IF_ZERO(_lock) (compare_and_swap(_lock, 0, 1) == 1)
+#else
+#error Cannot define atomic set flag if zero operation; needed for busy locks
+#endif
+
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Process_lock_init
 #undef FCNAME
@@ -146,6 +167,9 @@ static inline void MPIDU_Process_lock_init( MPIDU_Process_lock_t *lock )
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK_INIT);
 }
 
+/* 
+ * This routine requires an atomic "test and set if clear" operation
+ */
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Process_lock
 #undef FCNAME
@@ -155,37 +179,13 @@ static inline void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
     int i;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_PROCESS_LOCK);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_PROCESS_LOCK);
-    for (;;)
-    {
-        for (i=0; i<g_nLockSpinCount; i++)
-        {
-            if (*lock == 0)
-            {
-#ifdef HAVE_INTERLOCKEDEXCHANGE
-                if (InterlockedExchange((LPLONG)lock, 1) == 0)
-                {
+    for (;;) {
+        for (i=0; i<g_nLockSpinCount; i++) {
+            if (*lock == 0) {
+		if (MPID_ATOMIC_SET_IF_ZERO(lock)) {
                     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK);
                     return;
                 }
-#elif defined(HAVE__INTERLOCKEDEXCHANGE)
-		/* The Intel compiler complains if the lock is cast to
-		 * volatile void * (the type of lock is probably
-		 * volatile long *).  The void * works for the Intel 
-		 * compiler. */
-                if (_InterlockedExchange((void *)lock, 1) == 0)
-                {
-                    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK);
-                    return;
-                }
-#elif defined(HAVE_COMPARE_AND_SWAP)
-                if (compare_and_swap(lock, 0, 1) == 1)
-                {
-                    MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK);
-                    return;
-                }
-#else
-#error *** No atomic memory operation specified to implement busy locks ***
-#endif
             }
         }
         MPIDU_Yield();
