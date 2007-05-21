@@ -1363,3 +1363,50 @@ if test "$pac_cv_prog_f77_and_c_stdio_libs" != none -a \
     F77_OTHER_LIBS="$F77_OTHER_LIBS $pac_cv_prog_f77_and_c_stdio_libs"    
 fi
 ])
+dnl
+dnl Check that the FLIBS determined by AC_F77_LIBRARY_LDFLAGS is valid.
+dnl That macro (at least as of autoconf 2.59) attempted to parse the output
+dnl of the compiler when asked to be verbose; in the case of the Fujitsu
+dnl frt Fortran compiler, it included files that frt looked for and then
+dnl discarded because they did not exist.
+AC_DEFUN([PAC_PROG_F77_FLIBS_VALID],[
+    pac_cv_f77_flibs_valid=unknown
+    AC_MSG_CHECKING([whether $F77 accepts the FLIBS found by autoconf])
+    AC_LANG_SAVE
+    AC_LANG_FORTRAN77
+dnl We can't use TRY_LINK, because it wants a routine name, not a 
+dnl declaration.  The following is the body of TRY_LINK, slightly modified.
+cat > conftest.$ac_ext <<EOF
+       program main
+       end
+EOF
+    if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeext}; then
+      pac_cv_f77_flibs_valid=yes
+    else
+      echo "configure: failed program was:" >&AC_FD_CC
+      cat conftest.$ac_ext >&AC_FD_CC
+      pac_cv_f77_flibs_valid=no
+    fi
+AC_MSG_RESULT($pac_cv_f77_flibs_valid)
+if test $pac_cv_f77_flibs_valid = no ; then
+    # See which ones *are* valid
+    AC_MSG_CHECKING([for valid entries in FLIBS])
+    goodFLIBS=""
+    saveFLIBS=$FLIBS
+    FLIBS=""
+    for arg in $saveFLIBS ; do
+      FLIBS="$goodFLIBS $arg"
+      if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeext}; then
+          goodFLIBS=$FLIBS
+      else
+        echo "configure: failed program was:" >&AC_FD_CC
+        cat conftest.$ac_ext >&AC_FD_CC
+      fi
+      done
+    FLIBS=$goodFLIBS
+    AC_MSG_RESULT($FLIBS)
+fi
+#
+rm -f conftest*
+AC_LANG_RESTORE
+])
