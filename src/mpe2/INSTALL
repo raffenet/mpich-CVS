@@ -497,7 +497,7 @@ For Cray X1E MPI implementation: cross-compilation at a linux front-end
     CROSS_SIZEOF_INT=4                                                    \
     CROSS_SIZEOF_LONG_LONG=8                                              \
     CROSS_BIGENDIAN=true                                                  \
-    CROSS_MPI_STATUS_SIZE=24                                              \
+    CROSS_MPI_STATUS_SIZE=6                                               \
     CROSS_FORTRAN2C_TRUE=1                                                \
     CROSS_FORTRAN2C_FALSE=0                                               \
     --disable-misc --disable-graphics --disable-collchk                   \
