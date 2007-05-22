@@ -76,8 +76,8 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
     MPID_Request ** request_ptrs = request_ptr_array;
     MPI_Status * status_ptr;
     MPID_Progress_state progress_state;
-    int i;
-    int n_completed, n_native;
+    int i, j;
+    int n_completed, n_native, n_greq, n_classes;
     int active_flag;
     int rc;
     int mpi_errno = MPI_SUCCESS;
@@ -159,26 +159,59 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 	goto fn_exit;
     }
     
+    MPID_Progress_start(&progress_state);
+
     n_native=0;
+    n_greq=0;
     for (i = 0; i< count; i++ )
     {
 	    /* we have to avoid calling the channel poll if all we have are
 	     * generalized requests.  will block indefinitely */
-	    if (request_ptrs[i] != NULL && 
-			    request_ptrs[i]->kind != MPID_UREQUEST)
-		    n_native += 1;
+	    if (request_ptrs[i] != NULL)
+	    {
+		    if ( request_ptrs[i]->kind == MPID_UREQUEST)
+			    n_greq += 1;
+		    else 
+			    n_native += 1;
+	    }
     }
-    MPID_Progress_start(&progress_state);
+#if 0
+    /* examine requests for both generalized requests and generalized request
+     * classes */
+    for (i=0, j=0, n_classes=1; i< count; i++)
+    {
+        if(request_ptrs[i] != NULL)
+	{
+	    if (request_ptrs[i]->kind == MPID_UREQUEST)
+	    {
+	        state_ptrs[j] = request_ptrs[i]->grequest_extra_state;
+		j++;
+		if (i+1 < count) {
+		    if (request_ptrs[i]->greq_class != 
+				    request_ptrs[i+1]->greq_class )
+		        n_classes+= 1;
+		}
+	    }
+	}
+    }
+#endif
+
     for(;;)
     {
 	for (i = 0; i < count; i++)
 	{
 	    if (request_ptrs[i] != NULL && 
 			    request_ptrs[i]->kind == MPID_UREQUEST &&
-			    request_ptrs[i]->poll_fn != NULL)
+			    request_ptrs[i]->wait_fn != NULL)
 	    {
-	        (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, 
+	        if (request_ptrs[i]->wait_fn != NULL) {
+		    (request_ptrs[i]->wait_fn)(1, 
+		        &(request_ptrs[i]->grequest_extra_state), 
+			0, &(array_of_statuses[i]));
+		} else {
+		    (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, 
 				&(array_of_statuses[i]));
+		}
 	    }
 
 	    if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
