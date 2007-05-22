@@ -241,7 +241,7 @@ int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
 }
 
 /* wait for multiple requests to complete */
-int ADIOI_GEN_aio_wait_fn(int count, void * array_of_states, 
+int ADIOI_GEN_aio_wait_fn(int count, void ** array_of_states, 
 		double timeout, MPI_Status *status)
 {
 	struct aiocb **cblist;

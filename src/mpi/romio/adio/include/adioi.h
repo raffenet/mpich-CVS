@@ -321,7 +321,7 @@ int ADIOI_GEN_IODone(ADIO_Request *request, ADIO_Status *status,
 void ADIOI_GEN_IOComplete(ADIO_Request *request, ADIO_Status *status,
 			  int *error_code);
 int ADIOI_GEN_aio_poll_fn(void *extra_state, ADIO_Status *status);
-int ADIOI_GEN_aio_wait_fn(int count, void *array_of_states, double timeout, 
+int ADIOI_GEN_aio_wait_fn(int count, void **array_of_states, double timeout, 
 		ADIO_Status *status);
 int ADIOI_GEN_aio_query_fn(void *extra_state, ADIO_Status *status);
 int ADIOI_GEN_aio_free_fn(void *extra_state);
