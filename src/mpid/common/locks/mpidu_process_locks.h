@@ -141,7 +141,7 @@ static inline unsigned long _InterlockedExchange(volatile long *ptr, unsigned lo
    This operation returns true if the value was zero.  */
 #ifdef HAVE_INTERLOCKEDEXCHANGE
 #define MPID_ATOMIC_SET_IF_ZERO(_lock) \
-    (InterlockedExchange((LPLONG)_lock, 1) == 0))
+    (InterlockedExchange((LPLONG)_lock, 1) == 0)
 #elif defined(HAVE__INTERLOCKEDEXCHANGE)
 	/* The Intel compiler complains if the lock is cast to
 	 * volatile void * (the type of lock is probably
