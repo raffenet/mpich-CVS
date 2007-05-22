@@ -112,10 +112,10 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	while((*(request_ptr)->cc_ptr) != 0)
 	{
 	    if (request_ptr->kind == MPID_UREQUEST && 
-			    request_ptr->poll_fn != NULL) 
+			    request_ptr->wait_fn != NULL) 
 	    {
-		mpi_errno = (request_ptr->poll_fn)
-			(request_ptr->grequest_extra_state, status);
+		mpi_errno = (request_ptr->wait_fn)
+			(1, &(request_ptr->grequest_extra_state), 0, status);
 		if (mpi_errno != MPI_SUCCESS)
 		{
 		    /* --BEGIN ERROR HANDLING-- */ 
