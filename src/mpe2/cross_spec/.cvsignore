@@ -1,3 +1,4 @@
+configure
 config.log
 config.status
 config.cache
@@ -7,6 +8,6 @@ config.h.in
 autom4te.cache
 autom4te-*.cache
 Makefile
-cross_spec.h
-cross_spec.h.in*
+cross_conf.h
+cross_conf.h.in*
 *.o
