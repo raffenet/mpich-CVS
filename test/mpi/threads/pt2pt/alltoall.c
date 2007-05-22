@@ -5,7 +5,9 @@
  */
 #include <mpi.h>
 #include "mpitest.h"
-#include <unistd.h>
+#ifdef HAVE_UNISTD_H
+    #include <unistd.h>
+#endif
 #include <stdio.h>
 
 #ifdef DO_DEBUG
@@ -20,17 +22,28 @@ const int ANS_TAG = 222;
 #ifdef HAVE_WINDOWS_H
 #include <windows.h>
 #define THREAD_RETURN_TYPE DWORD
+/* HANDLE to listener thread */
+HANDLE hThread;
 int start_send_thread(THREAD_RETURN_TYPE (*fn)(void *p))
 {
-    HANDLE hThread;
     hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)fn, NULL, 0, NULL);
-    if (hThread == NULL)
-    {
-	return GetLastError();
+    if (hThread == NULL){
+        DEBUG(printf("Error CreateThread() \n"));
+	    return GetLastError();
     }
-    CloseHandle(hThread);
     return 0;
 }
+
+int join_thread( void ){
+    int err = 0;
+    if(WaitForSingleObject(hThread, INFINITE) == WAIT_FAILED){
+        DEBUG(printf("Error WaitForSingleObject() \n"));
+        err = GetLastError();
+    }
+    CloseHandle(hThread);
+    return err;
+}
+
 #else
 #include <pthread.h>
 #define THREAD_RETURN_TYPE void *
@@ -95,8 +108,10 @@ void* listener(void*extra) {
 
 
 int main(int argc, char* argv[]) {
+    /*
     pthread_t thr;
     pthread_attr_t attr;
+    */
     int buf = 0;
     long int i;
     
@@ -113,7 +128,7 @@ int main(int argc, char* argv[]) {
 #ifdef USE_BARRIER
     MPI_Barrier( MPI_COMM_WORLD );
 #endif
-    
+
     /* create listener thread */
     start_send_thread(listener);
 
