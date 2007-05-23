@@ -36,8 +36,8 @@ FC_FLAGS      = $(FFLAGS) $(MPI_INC) $(MPE_FOPTS)
 CC_LDFLAGS    = $(LDFLAGS) $(CFLAGS) $(MPE_LDOPTS)
 FC_LDFLAGS    = $(LDFLAGS) $(FFLAGS) $(MPE_LDOPTS)
 
-C_EXECS       = cross_sizeof@EXEEXT@
-F2C_EXECS     = cross_flogical@EXEEXT@
+C_EXECS       = cross_cc@EXEEXT@
+F2C_EXECS     = cross_f2c@EXEEXT@
 
 .SUFFIXES: .c .f .@OBJEXT@ @EXEEXT@
 
@@ -65,11 +65,11 @@ run:
 	  fi
 	
 
-cross_sizeof@EXEEXT@: cross_sizeof.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ cross_sizeof.@OBJEXT@ $(MPI_LIBS)
+cross_cc@EXEEXT@: cross_cc.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ cross_cc.@OBJEXT@ $(MPI_LIBS)
 
-cross_flogical@EXEEXT@: flogical.@OBJEXT@ cross_flogical.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ cross_flogical.@OBJEXT@ flogical.@OBJEXT@
+cross_f2c@EXEEXT@: flogical.@OBJEXT@ cross_f2c.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ cross_f2c.@OBJEXT@ flogical.@OBJEXT@
 
 clean:
 	@-$(RM) -f *.@OBJEXT@ $(C_EXECS) $(F2C_EXECS) cross_spec.txt
