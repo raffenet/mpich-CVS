@@ -17,9 +17,9 @@ RANLIB               = @RANLIB@
 MAKE                 = @MAKE@
 MPI_INC              = @MPI_INC@
 MPI_LIBS             = @MPI_LIBS@
-INCLUDE_DIR          = -I.. -I${top_srcdir}/include \
-                       -I${includebuild_dir} \
-                       -I../../.. -I${top_srcdir}/../../include \
+INCLUDE_DIR          = -I.. -I../../.. \
+                       -I../include -I${top_srcdir}/include \
+                       -I${includebuild_dir} -I${top_srcdir}/../../include \
                        $(MPI_INC)
 PROF_LIBNAME         = @PROF_LIBNAME@
 CFLAGS               = @CFLAGS@

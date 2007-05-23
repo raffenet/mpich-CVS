@@ -274,6 +274,27 @@ if test "X$mpe_c99_stdint_h" != "X" ; then
     fi
 fi
 
+dnl Set ZMPI_AINT for mpi_null.h
+AC_CHECK_SIZEOF( void *, $CROSS_SIZEOF_VOID_P )
+ZMPI_AINT=mpe_int64_t
+AC_MSG_CHECKING( [for address-sized integer] )
+for bytelen in 8 16 32 64 ; do
+    charlen=`expr $bytelen / 8`
+    if test "$ac_cv_sizeof_void_p" = "$charlen" ; then
+        ZMPI_AINT=CLOG_int${bytelen}_t
+        ZMPI_SIZEOF_AINT=$charlen
+        break;
+    fi
+done
+AC_MSG_RESULT([$ZMPI_AINT])
+AC_SUBST(ZMPI_AINT)
+
+# If sizeof(mpi_aint) = sizeof(int), set this value
+if test "$ac_cv_sizeof_int" = "$ac_cv_sizeof_void_p" ; then
+    AC_DEFINE(SIZEOF_INT_IS_AINT,1,[define if sizeof(int) = sizeof(void*)])
+fi
+
+
 
 dnl ****   Checking for specific functions needed for the package.
  
@@ -498,5 +519,5 @@ AC_SUBST(MPI_INC)
 AC_SUBST(MPI_LIBS)
 AC_SUBST(PROF_LIBNAME)
 
-AC_OUTPUT( Makefile src/Makefile include/clog_inttypes.h \
+AC_OUTPUT( Makefile src/Makefile include/clog_inttypes.h include/mpi_null.h \
            etc/mpe_log.conf etc/mpe_nolog.conf )
