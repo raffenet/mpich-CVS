@@ -112,10 +112,10 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS( stdlib.h stdio.h string.h )
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
-dnl SIZEOF_VOIDP, SIZEOF_LONG, SIZEOF_LONG_LONG and SIZEOF__INT64 created
+dnl SIZEOF_VOID_P, SIZEOF_LONG, SIZEOF_LONG_LONG and SIZEOF__INT64 created
 dnl by AC_CHECK_SIZEOF( *, * ) are needed to compile
 dnl slog2sdk/src/logformat/trace/logformat_trace_InputLog.c
-AC_CHECK_SIZEOF( void*, $CROSS_SIZEOF_VOIDP )
+AC_CHECK_SIZEOF( void *, $CROSS_SIZEOF_VOID_P )
 AC_CHECK_SIZEOF( int, $CROSS_SIZEOF_INT )
 AC_CHECK_SIZEOF( long, $CROSS_SIZEOF_LONG )
 AC_CHECK_SIZEOF( long long, $CROSS_SIZEOF_LONG_LONG )
