@@ -17,6 +17,8 @@ F77                  = @F77@
 MPI_F77              = @MPI_F77@
 FFLAGS               = @FFLAGS@
 
+MPERUN               = @MPERUN@
+
 
 ### End User configurable options ###
 
@@ -51,6 +53,16 @@ default: $(C_EXECS)
 	  fi
 
 run:
+	@-echo "Running $(C_EXECS) to get C compiler features..."
+	@-$(MPERUN) $(C_EXECS)
+	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
+	       echo "Running $(F2C_EXECS) to get Fortran to C features..." ; \
+	       $(MPERUN) $(F2C_EXECS) ; \
+	  fi
+	@-if [ -x ./cross_env ] ; then \
+	      echo "Setting C and Fortran Development variables..." ; \
+	      ./cross_env ; \
+	  fi
 	
 
 cross_sizeof@EXEEXT@: cross_sizeof.@OBJEXT@
@@ -60,4 +72,4 @@ cross_flogical@EXEEXT@: flogical.@OBJEXT@ cross_flogical.@OBJEXT@
 	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ cross_flogical.@OBJEXT@ flogical.@OBJEXT@
 
 clean:
-	@-$(RM) -f *.@OBJEXT@ $(C_EXECS) $(F2C_EXECS)
+	@-$(RM) -f *.@OBJEXT@ $(C_EXECS) $(F2C_EXECS) cross_spec.txt
