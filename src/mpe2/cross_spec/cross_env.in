@@ -1,0 +1,26 @@
+#! @SHELL@
+
+MPI_CC=@MPI_CC@
+CC=@CC@
+CFLAGS=@CFLAGS@
+MPI_F77=@MPI_F77@
+F77=@F77@
+FFLAGS=@FFLAGS@
+MPI_INC=@MPI_INC@
+MPI_LIBS=@MPI_LIBS@
+LDFLAGS=@LDFLAGS@
+
+cross_spec_file=@CROSS_SPEC_FILE@
+
+if [ -f $cross_spec_file ] ; then
+    echo "# C and Fortran development tool variables..." >> $cross_spec_file
+else
+    echo "# C and Fortran development tool variables..." > $cross_spec_file
+fi
+
+for var in MPI_CC CC CFLAGS MPI_F77 F77 FFLAGS MPI_INC MPI_LIBS LDFLAGS ; do
+    eval value=\$"$var"
+    if [ "X$value" != "X" ] ; then
+        echo "$var=$value" >> $cross_spec_file
+    fi
+done
