@@ -1,8 +1,8 @@
 #include "cross_conf.h"
 
-#define CROSS_SPEC_OUTPUT  "cross_spec.txt"
-
+#if defined( STD_HEADERS) || defined( HAVE_STDIO_H )
 #include <stdio.h>
+#endif
 #include "mpi.h"
 
 static char* is_runtime_bigendian( void )
@@ -23,12 +23,13 @@ int main( int argc, char *argv[] )
     FILE     *cross_file;
     MPI_Fint  itrue, ifalse;
 
-    cross_file = fopen( CROSS_SPEC_OUTPUT, "w" );
+    cross_file = fopen( CROSS_SPEC_FILE, "a" );
     if ( cross_file == NULL ) {
-        fprintf( stderr, "Can't open %s for writing!\n", CROSS_SPEC_OUTPUT );
+        fprintf( stderr, "Can't open %s for appending!\n", CROSS_SPEC_FILE );
         return 1;
     }
 
+    fprintf( cross_file, "%s\n", "# C compiler runtime characteristics..." );
     fprintf( cross_file, "CROSS_SIZEOF_CHAR=%d\n", sizeof(char) );
     fprintf( cross_file, "CROSS_SIZEOF_SHORT=%d\n", sizeof(short) );
     fprintf( cross_file, "CROSS_SIZEOF_INT=%d\n", sizeof(int) );
