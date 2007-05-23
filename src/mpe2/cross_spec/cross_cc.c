@@ -35,7 +35,7 @@ int main( int argc, char *argv[] )
     fprintf( cross_file, "CROSS_SIZEOF_INT=%d\n", sizeof(int) );
     fprintf( cross_file, "CROSS_SIZEOF_LONG=%d\n", sizeof(long) );
     fprintf( cross_file, "CROSS_SIZEOF_LONG_LONG=%d\n", sizeof(long long) );
-    fprintf( cross_file, "CROSS_SIZEOF_VOIDP=%d\n", sizeof(void*) );
+    fprintf( cross_file, "CROSS_SIZEOF_VOID_P=%d\n", sizeof(void *) );
     fprintf( cross_file, "CROSS_BIGENDIAN=%s\n", is_runtime_bigendian() );
     fprintf( cross_file, "CROSS_MPI_STATUS_SIZE=%d\n",
                           sizeof(MPI_Status)/sizeof(MPI_Fint) );
