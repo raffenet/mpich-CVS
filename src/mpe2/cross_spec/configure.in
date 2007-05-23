@@ -63,6 +63,19 @@ MV=mv
 AC_SUBST(RM)
 AC_SUBST(MV)
 
+AC_ARG_WITH( spec,
+[--with-spec=filename               - Specify the default filename to
+                                     store the cross-compilation
+                                     variables and property values to
+                                     be used in MPE2's --with-cross-spec
+                                     option.  The default filename is
+                                     cross_spec.txt],
+[CROSS_SPEC_FILE=$withval], [CROSS_SPEC_FILE="cross_spec.txt"] )
+dnl Export CROSS_SPEC_FILE so cross_env.in and *.c can use it.
+AC_SUBST(CROSS_SPEC_FILE)
+AC_DEFINE_UNQUOTED( CROSS_SPEC_FILE, "$CROSS_SPEC_FILE",
+                    [Define Cross-Spec's output filename] )
+
 dnl MPE_BUILD_FORTRAN2C=yes means that ALL subpackages will be building
 dnl the fortran2c wrapper libraries.  This does not necessarily mean that
 dnl specific subpackage has to build fortran2c wrapper library.  One example:
@@ -122,10 +135,13 @@ AC_ARG_VAR( MPI_CC, [C compiler to compile MPI program and to create parallel ex
 AC_ARG_VAR( MPI_F77, [F77 compiler to compile MPI program and to create parallel executable, e.g. mpxlf for IBM MPI, or mpif77 from MPICHx or LAM-MPI.] )
 AC_ARG_VAR( MPI_INC, [MPI compiler's include flags prefixed with -I.  It specifies where mpi.h and mpif.h are located, e.g. -I/pkgs/MPI/include.] )
 AC_ARG_VAR( MPI_LIBS, [MPI compiler's library flags prefixed with -L for the library path and prefixed with -l for the name of the MPI libraries. It specifies the location of the MPI libraries. e.g. -L/pkgs/MPI/lib -lpmpich -lmpich.] )
+AC_ARG_VAR( MPERUN, [MPI application launch command for the test programs created by this package.  This variable is necessary only if user needs a special command to launch MPI testing application to run in the backend compute nodes.] )
 
 AC_PROG_CC
 AC_OBJEXT
 AC_EXEEXT
+AC_HEADER_STDC
+AC_CHECK_HEADERS(stdio.h)
 
 AC_MSG_CHECKING( whether MPI_CC has been set )
 if test -z "$MPI_CC" ; then
@@ -223,5 +239,11 @@ AC_SUBST(MPE_FLINKER)
 AC_SUBST(MPI_INC)
 AC_SUBST(MPI_LIBS)
 AC_SUBST(LDFLAGS)
+AC_SUBST(MPERUN)
 
-AC_OUTPUT( Makefile )
+AC_OUTPUT_COMMANDS( [
+if test ! -x ./cross_env -a -s ./cross_env ; then
+    chmod u+x ./cross_env
+fi
+] )
+AC_OUTPUT( Makefile cross_env )
