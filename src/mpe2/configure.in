@@ -278,7 +278,7 @@ AC_ARG_VAR( MPI_CC, [C compiler to compile MPI program and to create parallel ex
 AC_ARG_VAR( MPI_F77, [F77 compiler to compile MPI program and to create parallel executable, e.g. mpxlf for IBM MPI, or mpif77 from MPICHx or LAM-MPI.] )
 AC_ARG_VAR( MPI_INC, [MPI compiler's include flags prefixed with -I.  It specifies where mpi.h and mpif.h are located, e.g. -I/pkgs/MPI/include.] )
 AC_ARG_VAR( MPI_LIBS, [MPI compiler's library flags prefixed with -L for the library path and prefixed with -l for the name of the MPI libraries. It specifies the location of the MPI libraries. e.g. -L/pkgs/MPI/lib -lpmpich -lmpich.] )
-AC_ARG_VAR( MPERUN, [MPI application launch command.  This variable is necessary only if user wants to run "make check", "make installcheck-all" or "$sbindir/mpecheckinstall -run" and the default MPERUN value, "$bindir/mpiexec -n 4", is not correct.] )
+AC_ARG_VAR( MPERUN, [MPI application launch command.  This variable is necessary only if user wants to run "make check", "make installcheck-all" or "$sbindir/mpecheckinstall -run" when the default MPERUN value, "$bindir/mpiexec -n 4", is not correct.] )
 
 # Prepend/Append '"' before/after MPERUN.
 if test "x$MPERUN" != "x" ; then
@@ -288,13 +288,13 @@ fi
 dnl
 dnl Set non-standard autoconf/GNU install directory variables, htmldir & docdir
 dnl
-AC_ARG_WITH(htmldir,
+AC_ARG_WITH( htmldir,
 [--with-htmldir=dir                 - Specify the HTML directory.],,
-with_htmldir='${prefix}/www')
+with_htmldir='${prefix}/www' )
 
-AC_ARG_WITH(docdir,
+AC_ARG_WITH( docdir,
 [--with-docdir=dir                  - Specify the documentation directory.],,
-with_docdir='${prefix}/doc')
+with_docdir='${prefix}/doc' )
 
 #
 # Set the defaults for directories that are not included in configure's
@@ -314,17 +314,18 @@ fi
 AC_SUBST(docdir)
 
 dnl
-AC_ARG_WITH(cross,
-[--with-cross=file                  - Specify the values of variables that
+AC_ARG_WITH( cross-spec,
+[--with-cross-spec=file             - Specify the values of variables that
                                      configure cannot determine in a
-                                     cross-compilation environment], ,
-with_cross=no)
+                                     cross-compilation environment through
+                                     a file], ,
+with_cross_spec=no )
 dnl
 pac_cross_compiling=no
-if test "$with_cross" != "no" ; then
-    if test -s "$with_cross" ; then
-        AC_MSG_RESULT([Reading values from cross-compilation file $with_cross])
-        . $with_cross
+if test "$with_cross_spec" != "no" ; then
+    if test -s "$with_cross_spec" ; then
+        AC_MSG_RESULT([Reading the cross-compilation file $with_cross_spec])
+        . $with_cross_spec
         # Autoconf 2.52 no longer sets cross_compiling except with the
         # awkward "targethost" options.
         pac_cross_compiling=yes
@@ -722,28 +723,28 @@ fi
 
 
 AC_OUTPUT_COMMANDS( [
-if test ! -x ./sbin/mpeinstall -a -s ./sbin/mpeinstall; then
+if test ! -x ./sbin/mpeinstall -a -s ./sbin/mpeinstall ; then
     chmod u+x ./sbin/mpeinstall
 fi
-if test ! -x ./sbin/mpecheckinstall -a -s ./sbin/mpecheckinstall; then
+if test ! -x ./sbin/mpecheckinstall -a -s ./sbin/mpecheckinstall ; then
     chmod u+x ./sbin/mpecheckinstall
 fi
-if test ! -x ./sbin/mpecheckbuild -a -s ./sbin/mpecheckbuild; then
+if test ! -x ./sbin/mpecheckbuild -a -s ./sbin/mpecheckbuild ; then
     chmod u+x ./sbin/mpecheckbuild
 fi
-if test ! -x ./sbin/mpetestlink -a -s ./sbin/mpetestlink; then
+if test ! -x ./sbin/mpetestlink -a -s ./sbin/mpetestlink ; then
     chmod u+x ./sbin/mpetestlink
 fi
-if test ! -x ./sbin/mpetestexec -a -s ./sbin/mpetestexec; then
+if test ! -x ./sbin/mpetestexec -a -s ./sbin/mpetestexec ; then
     chmod u+x ./sbin/mpetestexec
 fi
-if test ! -x ./sbin/mpetestexeclog -a -s ./sbin/mpetestexeclog; then
+if test ! -x ./sbin/mpetestexeclog -a -s ./sbin/mpetestexeclog ; then
     chmod u+x ./sbin/mpetestexeclog
 fi
-if test ! -x ./bin/mpecc -a -s ./bin/mpecc; then
+if test ! -x ./bin/mpecc -a -s ./bin/mpecc ; then
     chmod a+x ./bin/mpecc
 fi
-if test ! -x ./bin/mpefc -a -s ./bin/mpefc; then
+if test ! -x ./bin/mpefc -a -s ./bin/mpefc ; then
     chmod a+x ./bin/mpefc
 fi
 ] )
