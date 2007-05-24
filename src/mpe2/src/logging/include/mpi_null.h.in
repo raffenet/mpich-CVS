@@ -12,13 +12,7 @@
 extern "C" {
 #endif
 
-/*
-   Define MPI_Aint=void* is only good enough for clog_commset.c, because
-   clog_commset.c only uses MPI_Aint in PMPI_Comm_get(set)_attr().  Otherwise,
-   a real address-sized integer would have to be defined through configure.
-*/
-/* typedef void*  MPI_Aint; */
-
+/* Define Address-Sized integer based on configure's result */
 #include "clog_inttypes.h"
 typedef @ZMPI_AINT@  MPI_Aint;
 
