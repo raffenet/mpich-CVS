@@ -26,6 +26,7 @@ SHELL                = @SHELL@
 MAKE                 = @MAKE@
 MV                   = @MV@
 RM                   = @RM@
+CP                   = @CPRP@
 
 @VPATH@
 
@@ -39,13 +40,21 @@ FC_LDFLAGS    = $(LDFLAGS) $(FFLAGS) $(MPE_LDOPTS)
 C_EXECS       = cross_cc@EXEEXT@
 F2C_EXECS     = cross_f2c@EXEEXT@
 
-.SUFFIXES: .c .f .@OBJEXT@ @EXEEXT@
+.SUFFIXES: .c .f .@OBJEXT@ .p@OBJEXT@ @EXEEXT@
 
 .f.@OBJEXT@:
 	$(F77) $(FC_FLAGS) -c $<
 
 .c.@OBJEXT@:
+	$(CC) $(CC_FLAGS) -c $<
+
+.f.p@OBJEXT@:
+	$(MPI_F77) $(FC_FLAGS) -c $<
+	$(MV) $*.@OBJEXT@ $*.p@OBJEXT@
+
+.c.p@OBJEXT@:
 	$(MPI_CC) $(CC_FLAGS) -c $<
+	$(MV) $*.@OBJEXT@ $*.p@OBJEXT@
 
 default: $(C_EXECS)
 	@-if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
@@ -66,10 +75,12 @@ run:
 	
 
 cross_cc@EXEEXT@: cross_cc.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ cross_cc.@OBJEXT@ $(MPI_LIBS)
+	$(CLINKER) $(CC_LDFLAGS) -o $@ cross_cc.@OBJEXT@
 
-cross_f2c@EXEEXT@: flogical.@OBJEXT@ cross_f2c.@OBJEXT@
-	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ cross_f2c.@OBJEXT@ flogical.@OBJEXT@
+cross_f2c@EXEEXT@: flogical.@OBJEXT@ cross_f2c.p@OBJEXT@
+	$(CP) -f cross_f2c.p@OBJEXT@ mpe2tmp.@OBJEXT@
+	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ mpe2tmp.@OBJEXT@ flogical.@OBJEXT@
+	@-$(RM) -f mpe2tmp.@OBJEXT@
 
 clean:
 	@-$(RM) -f *.@OBJEXT@ $(C_EXECS) $(F2C_EXECS) cross_spec.txt

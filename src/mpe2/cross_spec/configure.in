@@ -60,8 +60,10 @@ fi
 
 RM=rm
 MV=mv
+CPRP=cp
 AC_SUBST(RM)
 AC_SUBST(MV)
+AC_SUBST(CPRP)
 
 AC_ARG_WITH( spec,
 [--with-spec=filename               - Specify the default filename to
