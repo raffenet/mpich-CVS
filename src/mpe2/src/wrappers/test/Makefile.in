@@ -42,6 +42,7 @@ MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 SHELL         = @SHELL@
 RM            = @RM@
 MV            = @MV@
+CP            = @CPRP@
 
 @VPATH@
 
@@ -111,13 +112,13 @@ cpilog_pack@EXEEXT@: cpilog_pack.@OBJEXT@
 #	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm 
 
 ncpilog@EXEEXT@: cpilog.n@OBJEXT@
-	$(MV) $? mpe2tmp.@OBJEXT@
+	$(CP) -f $? mpe2tmp.@OBJEXT@
 	$(MPE_CLINKER)log $(CC_LDFLAGS) -o $@ mpe2tmp.@OBJEXT@ $(DEBUG_LIBS) -lm 
 	@-$(RM) -f mpe2tmp.@OBJEXT@
 #	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(PROF_LIBS) $(DEBUG_LIBS) -lm 
 
 ncpilog_pack@EXEEXT@: cpilog_pack.n@OBJEXT@
-	$(MV) $? mpe2tmp.@OBJEXT@
+	$(CP) -f $? mpe2tmp.@OBJEXT@
 	$(MPE_CLINKER)log $(CC_LDFLAGS)  -o $@ mpe2tmp.@OBJEXT@ $(DEBUG_LIBS) -lm 
 	@-$(RM) -f mpe2tmp.@OBJEXT@
 #	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(PROF_LIBS) $(DEBUG_LIBS) -lm 
@@ -131,7 +132,7 @@ fpilog_pack@EXEEXT@: fpilog_pack.@OBJEXT@
 #	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(LOG_FLIBS) $(DEBUG_LIBS) -lm
 
 nfpilog_pack@EXEEXT@: fpilog_pack.n@OBJEXT@
-	$(MV) $? mpe2tmp.@OBJEXT@
+	$(CP) -f $? mpe2tmp.@OBJEXT@
 	$(MPE_FLINKER)log $(FC_LDFLAGS) -o $@ mpe2tmp.@OBJEXT@ $(DEBUG_LIBS) -lm
 	@-$(RM) -f mpe2tmp.@OBJEXT@
 #	$(MPI_FLINKER) $(FC_LDFLAGS) -o $@ $? $(PROF_FLIBS) $(DEBUG_LIBS) -lm

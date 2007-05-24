@@ -34,6 +34,7 @@ MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 SHELL            = @SHELL@
 RM               = @RM@
 MV               = @MV@
+CP               = @CPRP@
 
 @VPATH@
 
@@ -157,19 +158,19 @@ ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi_null.a: $(MPE_N_ZOBJECTS) $(MPE_N_XOBJE
 # Link with *.o instead of *.no
 # as NEC SX-8's cross-compiler refuses to link with *.no
 ${binbuild_dir}/clog2_print@EXEEXT@: clog_print.n@OBJEXT@
-	$(MV) clog_print.n@OBJEXT@ mpe2tmp.@OBJEXT@
+	$(CP) -f clog_print.n@OBJEXT@ mpe2tmp.@OBJEXT@
 	$(CLINKER) $(CC_LDFLAGS) -o $@ mpe2tmp.@OBJEXT@ \
 	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
 	@-$(RM) -f mpe2tmp.@OBJEXT@
 
 ${binbuild_dir}/clog2_join@EXEEXT@: clog_join.n@OBJEXT@
-	$(MV) clog_join.n@OBJEXT@ mpe2tmp.@OBJEXT@
+	$(CP) -f clog_join.n@OBJEXT@ mpe2tmp.@OBJEXT@
 	$(CLINKER) $(CC_LDFLAGS) -o $@ mpe2tmp.@OBJEXT@ \
 	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
 	@-$(RM) -f mpe2tmp.@OBJEXT@
 
 ${binbuild_dir}/clog2_repair@EXEEXT@: clog_repair.n@OBJEXT@
-	$(MV) clog_repair.n@OBJEXT@ mpe2tmp.@OBJEXT@
+	$(CP) -f clog_repair.n@OBJEXT@ mpe2tmp.@OBJEXT@
 	$(CLINKER) $(CC_LDFLAGS) -o $@ mpe2tmp.@OBJEXT@ \
 	                         -L${libbuild_dir} -l$(PROF_LIBNAME)_nompi
 	@-$(RM) -f mpe2tmp.@OBJEXT@
