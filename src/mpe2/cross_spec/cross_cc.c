@@ -3,7 +3,6 @@
 #if defined( STD_HEADERS) || defined( HAVE_STDIO_H )
 #include <stdio.h>
 #endif
-#include "mpi.h"
 
 static char* is_runtime_bigendian( void )
 {
@@ -21,7 +20,6 @@ static char* is_runtime_bigendian( void )
 int main( int argc, char *argv[] )
 {
     FILE     *cross_file;
-    MPI_Fint  itrue, ifalse;
 
     cross_file = fopen( CROSS_SPEC_FILE, "a" );
     if ( cross_file == NULL ) {
@@ -37,8 +35,6 @@ int main( int argc, char *argv[] )
     fprintf( cross_file, "CROSS_SIZEOF_LONG_LONG=%d\n", sizeof(long long) );
     fprintf( cross_file, "CROSS_SIZEOF_VOID_P=%d\n", sizeof(void *) );
     fprintf( cross_file, "CROSS_BIGENDIAN=%s\n", is_runtime_bigendian() );
-    fprintf( cross_file, "CROSS_MPI_STATUS_SIZE=%d\n",
-                          sizeof(MPI_Status)/sizeof(MPI_Fint) );
 
     fclose( cross_file );
     return 0;

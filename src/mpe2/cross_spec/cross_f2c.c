@@ -23,8 +23,10 @@ int main( int argc, char *argv[] )
     }
 
     /* Invoke the Fortran subroutine to get Fortran's TRUE/FALSE in C */
-    flogical_( &itrue, &ifalse );
     fprintf( cross_file, "%s\n", "# Fortran to C runtime characteristics..." );
+    fprintf( cross_file, "CROSS_MPI_STATUS_SIZE=%d\n",
+                          sizeof(MPI_Status)/sizeof(MPI_Fint) );
+    flogical_( &itrue, &ifalse );
     fprintf( cross_file, "CROSS_FORTRAN2C_TRUE=%d\n", itrue );
     fprintf( cross_file, "CROSS_FORTRAN2C_FALSE=%d\n", ifalse );
 
