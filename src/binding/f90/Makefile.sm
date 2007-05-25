@@ -16,7 +16,7 @@ F90INCLUDES = @F90INCFLAG@.
 lib${MPILIBNAME}f90_a_SOURCES = mpi.o mpi_constants.o mpi_sizeofs.o
 all-preamble: $(MPIMOD).$(MOD)
 
-# Thes copy line in this step makes the F90 modules available to 
+# The copy line in this step makes the F90 modules available to 
 # the mpif90 script before an install takes place
 # The if handles the Intel F90 compiler, which has an unusual interface
 # (The mpimod.pcl file should contain only a local mpimod.pc name; if
@@ -56,7 +56,7 @@ $(MPICONSTMOD).$(MOD): $(srcdir)/mpi_constants.f90 mpifnoext.h
 	    rm -f mpimod.pc mpimod.pcl ; \
 	    echo "mpimod.pc" > mpimod.pcl ; \
 	    echo $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c $(srcdir)/mpi_constants.f90 ; \
-	    $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c $(srcdir)/mpi.f90 ; \
+	    $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c $(srcdir)/mpi_constants.f90 ; \
 	    cp mpimod.pc ../../../src/include/mpimod.pc ; \
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
