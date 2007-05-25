@@ -757,6 +757,11 @@ extern MPID_Info MPID_Info_direct[];
   The MPI-1 Standard declared only the C version of this, implicitly 
   assuming that 'int' and 'MPI_Fint' were the same. 
 
+  Since Fortran does not have a C-style variable number of arguments 
+  interface, the Fortran interface simply accepts two arguments.  Some
+  calling conventions for Fortran (particularly under Windows) require
+  this.
+
   Module:
   ErrHand-DS
   
@@ -766,11 +771,10 @@ extern MPID_Info MPID_Info_direct[];
   to this structure?  Does the C++ handler need to be different (not part
   of the union)?
 
-  What is the interface for the Fortran version of the error handler?  
   E*/
 typedef union MPID_Errhandler_fn {
    void (*C_Comm_Handler_function) ( MPI_Comm *, int *, ... );
-   void (*F77_Handler_function) ( MPI_Fint *, MPI_Fint *, ... );
+   void (*F77_Handler_function) ( MPI_Fint *, MPI_Fint * );
    void (*C_Win_Handler_function) ( MPI_Win *, int *, ... );
    void (*C_File_Handler_function) ( MPI_File *, int *, ... );
 } MPID_Errhandler_fn;

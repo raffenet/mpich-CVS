@@ -264,7 +264,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 	case MPID_LANG_FORTRAN90:
 	case MPID_LANG_FORTRAN:
 	    (*comm_ptr->errhandler->errfn.F77_Handler_function)( 
-		(MPI_Fint *)&comm_ptr->handle, &errcode, 0 );
+		(MPI_Fint *)&comm_ptr->handle, &errcode );
 	    break;
 #endif
 	}
@@ -337,7 +337,7 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
 	    case MPID_LANG_FORTRAN90:
 	    case MPID_LANG_FORTRAN:
 		(*win_ptr->errhandler->errfn.F77_Handler_function)( 
-		    (MPI_Fint *)&win_ptr->handle, &errcode, 0 );
+		    (MPI_Fint *)&win_ptr->handle, &errcode );
 		break;
 #endif
 	}
