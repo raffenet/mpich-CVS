@@ -210,8 +210,8 @@ MPIDI_CH3I_VC;
 #define MPIDI_CH3_REQUEST_DECL	\
 struct MPIDI_CH3I_Request	\
 {				\
-    MPIDI_CH3_Pkt_t pkt;	\
-    MPIDI_VC_t* vc;                    \
+    union MPIDI_CH3_Pkt* pkt;         \
+    struct MPIDI_VC* vc;                    \
     int stream;                        \
 } ch;
 
