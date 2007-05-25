@@ -4,6 +4,8 @@ Makefile.in
 mpi.f90
 mpimod.pcl
 mpi_sizeofs.f90
+mpi_base.f90
+mpif90model.h
 .deps
 *.mod
 *.MOD
@@ -13,3 +15,7 @@ mpi_sizeofs.f90
 .libs
 .state-cache
 mpifnoext.h
+configure
+config.status
+config.log
+autom4te.cache

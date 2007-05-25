@@ -1425,6 +1425,11 @@ if test "$enable_f77" = yes ; then
     FLIBS_save="$FLIBS"
     FLIBS=""
     AC_F77_LIBRARY_LDFLAGS
+    # The autoconf macro for finding FLIBS sometimes makes mistakes
+    # (particularly with the Fujitsu frt compiler).  This next step
+    # first sees if the FLIBS is valid with the Fortran compiler
+    PAC_PROG_F77_FLIBS_VALID
+    # Now see if FLIBS works with the C compiler
     PAC_PROG_F77_CHECK_FLIBS
 
     PAC_PROG_F77_LINKER_WITH_C
@@ -5205,7 +5210,27 @@ AC_SUBST(FORTRAN_MPI_OFFSET)
 dnl Extra status information, from device subsystem, to be included in the
 dnl declaration of MPI_Status in mpi.h.in
 AC_SUBST(EXTRA_STATUS_DECL)
-
+#
+# See if we can support the type create functions that take 
+# precision and exponent range.  These need are determined by running
+# a configure script in the f90 test directory
+if test "$enable_f77" = yes -a "$enable_f90" = yes ; then
+    # Create the local directory
+    if test ! -d src ; then mkdir src ; fi
+    if test ! -d src/binding ; then mkdir src/binding ; fi
+    if test ! -d src/binding/f90 ; then mkdir src/binding/f90 ; fi
+    export F77
+    export F90
+    echo "Running Configure for F90 Type routines"
+    (cd src/binding/f90 && \
+    $master_top_srcdir/src/binding/f90/configure )
+    rc=$?
+    if test $rc = 0 ; then
+        AC_DEFINE(HAVE_F90_TYPE_ROUTINES,1,[Define if F90 type routines available])
+    else
+        AC_MSG_WARN([Unable to determine F90 type support; defaults used])
+    fi
+fi
 # -----------------------------------------------------------------------------
 # Get the value of MPI_MAX_PROCESSOR_NAME
 if test -z "$MPID_MAX_PROCESSOR_NAME" ; then
@@ -5346,13 +5371,6 @@ chmod a+x bin/mpicc ],
 includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
 bashWorks=$bashWorks)
-
-# move the mpich2version file into the bin directory of the build tree
-AC_OUTPUT_COMMANDS([
-   chmod a+x src/env/mpich2version ;
-   if test ! -d bin  ; then mkdir bin ; fi 
-   cp src/env/mpich2version bin/mpich2version ;
-   chmod a+x bin/mpich2version])
 
 # move the parkill command into the bin directory of the build tree
 AC_OUTPUT_COMMANDS([

@@ -5,7 +5,12 @@
  */
 
 #include "mpiimpl.h"
-#include "mpif90conf.h"
+#ifdef HAVE_F90_TYPE_ROUTINES
+#include "mpif90model.h"
+#else
+/* Assume only 4 byte integers available */
+#define MPIR_F90_INTEGER_MODEL_MAP { 9, 4, 4 }
+#endif
 
 /* -- Begin Profiling Symbol Block for routine MPI_Type_create_f90_integer */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -24,6 +29,9 @@
 #define MPI_Type_create_f90_integer PMPI_Type_create_f90_integer
 
 #endif
+
+typedef struct intModel {
+    int range, kind, bytes; } intModel;
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Type_create_f90_integer
@@ -52,9 +60,10 @@ returns an error of class 'MPI_ERR_ARG'.
 int MPI_Type_create_f90_integer( int range, MPI_Datatype *newtype )
 {
     static const char FCNAME[] = "MPI_Type_create_f90_integer";
+    int i, bytes;
     int mpi_errno = MPI_SUCCESS;
-    static int f90_integer_model = MPIR_F90_INTEGER_MODEL;
-    static int f90_integer_map[] = { MPIR_F90_INTEGER_MODEL_MAP 0, 0 };
+    static intModel f90_integer_map[] = { MPIR_F90_INTEGER_MODEL_MAP
+					  {0, 0, 0 } };
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_F90_INTEGER);
 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_F90_INTEGER);
@@ -72,6 +81,23 @@ int MPI_Type_create_f90_integer( int range, MPI_Datatype *newtype )
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
+    *newtype = MPI_DATATYPE_NULL;
+    for (i=0; f90_integer_map[i].range > 0; i++) {
+	if (f90_integer_map[i].range >= range) {
+	    /* Find the corresponding INTEGER type */
+	    bytes = f90_integer_map[i].bytes;
+	    switch (bytes) {
+	    case 1: *newtype = MPI_INTEGER1; break;
+	    case 2: *newtype = MPI_INTEGER2; break;
+	    case 4: *newtype = MPI_INTEGER4; break;
+	    case 8: *newtype = MPI_INTEGER8; break;
+	    default: break;
+	    }
+	    break;
+	}
+    }
+
+    /* FIXME: Check on action if no match found */
 
     /* ... end of body of routine ... */
 
