@@ -1725,6 +1725,7 @@ fi
 MPIMODNAME=mpi
 MPICONSTMODNAME=mpi_constants
 MPISIZEOFMODNAME=mpi_sizeofs
+MPIBASEMODNAME=mpi_base
 if test "$enable_f90" = "yes" ; then
     # Determine characteristics of the Fortran 90 compiler
     # Find a Fortran 90 compiler.  Sets F90
@@ -1759,14 +1760,17 @@ if test "$enable_f90" = "yes" ; then
         MPIMODNAME=MPI
         MPICONSTMODNAME=MPI_CONSTANTS
 	MPISIZEOFMODNAME=MPI_SIZEOFS
+	MPIBASEMODNAME=MPI_BASE
     else
         MPIMODNAME=mpi
         MPICONSTMODNAME=mpi_constants
 	MPISIZEOFMODNAME=mpi_sizeofs
+	MPIBASEMODNAME=mpi_base
     fi
     AC_SUBST(MPIMODNAME)
     AC_SUBST(MPICONSTMODNAME)
     AC_SUBST(MPISIZEOFMODNAME)
+    AC_SUBST(MPIBASEMODNAME)
     if test -z "$modincdir" ; then
         # The default module include dir is the same as the include dir
         modincdir=$includedir

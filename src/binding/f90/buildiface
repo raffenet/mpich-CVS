@@ -593,12 +593,13 @@ print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 
 print MAKEFD "smvar_do_dependencies = ignore\n";
 print MAKEFD "smvar_do_sharedlibs   = 0\n";
+print MAKEFD "smvar_makefile_configdir = ../../..\n";
 #print MAKEFD "smvar_debug=1\n";
 print MAKEFD "MOD              = \@F90MODEXT\@\n";
 print MAKEFD "MPIMOD           = \@MPIMODNAME\@\n";
 print MAKEFD "MPICONSTMOD      = \@MPICONSTMODNAME\@\n";
 print MAKEFD "MPISIZEOFMOD     = \@MPISIZEOFMODNAME\@\n";
-print MAKEFD "MPIBASEMOD       = mpi_base\n";
+print MAKEFD "MPIBASEMOD       = \@MPIBASEMODNAME\@\n";
 print MAKEFD "F90INCFLAG       = \@F90INCFLAG\@\n";
 print MAKEFD "F90EXT           = \@F90EXT\@\n";
 print MAKEFD "F90_COMPILE_MODS = \$(F90_COMPILE)\n";
@@ -663,7 +664,7 @@ print MAKEFD "\$(MPICONSTMOD).\$(MOD): \$(srcdir)/mpi_constants.f90 mpifnoext.h\
 print MAKEFD "\$(MPISIZEOFMOD).\$(MOD): mpi_sizeofs.f90 mpifnoext.h\n";
 &createModSteps( "mpi_sizeofs.f90" );
 
-print MAKEFD "mpi_base.\$(MOD): \$(srcdir)/mpi_base.f90\n";
+print MAKEFD "\$(MPIBASEMOD).\$(MOD): \$(srcdir)/mpi_base.f90\n";
 &createModSteps( '$(srcdir)/mpi_base.f90' );
 
 print MAKEFD "\
@@ -690,7 +691,7 @@ print MAKEFD "maint-clean:\
 
 #print MAKEFD "install_BIN     = mpif90\n";
 #print MAKEFD "install_ETC     = mpif90.conf\n";
-print MAKEFD "install_INCLUDE = \$(MPIMOD).\$(MOD) \$(MPICONSTMOD).\$(MOD) mpi_base.\$(MOD) \$(MPISIZEOFMOD).\$(MOD)\n";
+print MAKEFD "install_INCLUDE = \$(MPIMOD).\$(MOD) \$(MPICONSTMOD).\$(MOD) \$(MPIBASEMODE).\$(MOD) \$(MPISIZEOFMOD).\$(MOD)\n";
 # These next two are special files needed by some versions of the Intel 
 # compilers
 print MAKEFD "optinstall_INCLUDE = mpimod.pcl mpimod.pc\n";
@@ -721,7 +722,7 @@ print MAKEFD "distclean-local:\n";
 print MAKEFD "\trm -f lib\${MPILIBNAME}f90.a\n";
 print MAKEFD "\trm -f ../../../bin/mpif90\n";
 print MAKEFD "\trm -f ../../../src/include/\$(MPIMOD).\$(MOD)\n";
-print MAKEFD "\trm -f ../../../src/include/mpi_base.\$(MOD)\n";
+print MAKEFD "\trm -f ../../../src/include/\$(MPIBASEMOD).\$(MOD)\n";
 print MAKEFD "\trm -f ../../../src/include/\$(MPICONSTMOD).\$(MOD)\n";
 print MAKEFD "\trm -f ../../../src/include/\$(MPISIZEOFMOD).\$(MOD)\n";
 
