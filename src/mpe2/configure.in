@@ -452,9 +452,23 @@ if test -z "$CC" -o -z "$MPI_CC"; then
 fi
  
 if test -n "$F77" -a "$MPE_BUILD_FORTRAN2C" = "yes" ; then 
+    FLIBS_save="$FLIBS"
+    FLIBS=""
     AC_F77_LIBRARY_LDFLAGS
+    # The autoconf macro for finding FLIBS sometimes makes mistakes
+    # (particularly with the Fujitsu frt compiler).  This next step
+    # first sees if the FLIBS is valid with the Fortran compiler
+    PAC_PROG_F77_FLIBS_VALID
+    # Now see if FLIBS works with the C compiler
     PAC_PROG_F77_CHECK_FLIBS
+
+    PAC_PROG_F77_LINKER_WITH_C
+    # For name mangle, we need the library flags
     PAC_PROG_F77_NAME_MANGLE
+    # Check whether additional libraries are needed when linking with C
+    PAC_PROG_F77_AND_C_STDIO_LIBS
+    AC_SUBST(F77_OTHER_LIBS)
+
     PAC_PROG_F77_LIBRARY_DIR_FLAG
     if test -z "$FLIB_PATH_LEADER" ; then
         FLIB_PATH_LEADER=$F77_LIBDIR_LEADER
