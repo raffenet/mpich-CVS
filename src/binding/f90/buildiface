@@ -691,7 +691,7 @@ print MAKEFD "maint-clean:\
 
 #print MAKEFD "install_BIN     = mpif90\n";
 #print MAKEFD "install_ETC     = mpif90.conf\n";
-print MAKEFD "install_INCLUDE = \$(MPIMOD).\$(MOD) \$(MPICONSTMOD).\$(MOD) \$(MPIBASEMODE).\$(MOD) \$(MPISIZEOFMOD).\$(MOD)\n";
+print MAKEFD "install_INCLUDE = \$(MPIMOD).\$(MOD) \$(MPICONSTMOD).\$(MOD) \$(MPIBASEMOD).\$(MOD) \$(MPISIZEOFMOD).\$(MOD)\n";
 # These next two are special files needed by some versions of the Intel 
 # compilers
 print MAKEFD "optinstall_INCLUDE = mpimod.pcl mpimod.pc\n";
