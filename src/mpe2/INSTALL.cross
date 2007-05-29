@@ -129,8 +129,9 @@ CC=/usr/local/bin/lans64_cc
 MPI_F77=/usr/local/bin/lans64_mpif90
 F77=/usr/local/bin/lans64_fc
 
-One can append any extra configure variables in the cross_spec.txt, e.g.
-AR, RANLIB, that is necessary for configuring MPE for the backend.
+Any other configure variables, e.g. AR or RANLIB, for MPE configure
+should NOT append in the cross_spec.txt, as they won't proprogangate
+down to subdirectories. 
 
 
 
@@ -145,10 +146,13 @@ MPE becomes easy.  One can do it as follows:
     <mpe2_src_dir>/configure --prefix=<mpe2_install_dir>                       \
                              --host=x86_64_linux                               \
                              --with-cross-spec=<build_spec_dir>/cross_spec.txt \
+                             AR=ar RANLIB=ranlib                               \
                              MPERUN="/usr/local/bin/lans64_run -np 4"
     make
     make install
     make installcheck-all
+
+Here AR and RANLIB are added for illustration purposes.
 
 Where --host is used to inform configure what type of host to be built for
 the backend.  Again, MPERUN is optional here.  With MPERUN, the 
