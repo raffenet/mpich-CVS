@@ -93,6 +93,16 @@ if test ! -s src/trace_impl.c -a -z "$VPATH" ; then
         You may need to set your make command
         The GNU make (sometimes available as gnumake) can be used.])
 fi
+VPATH_EXTRA=""
+case $VPATH in
+    VPATH=*)
+        VPATH_EXTRA=":\$(TRACE_SRCDIR)"
+        ;;
+    .PATH:*)
+        VPATH_EXTRA=" \$(TRACE_SRCDIR)"
+        ;;
+esac
+AC_SUBST(VPATH_EXTRA)
 AC_SUBST(MAKE)
 
 # Check if --without-java is specified

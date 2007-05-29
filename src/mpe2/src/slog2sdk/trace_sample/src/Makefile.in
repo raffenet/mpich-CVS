@@ -20,7 +20,7 @@ TRACE_INCDIR     = $(TRACE_HOME)/src/logformat/trace
 TRACE_SRCDIR     = $(TRACE_HOME)/src/logformat/trace
 
 # Use VPATH so logformat/trace/*.c(h) do NOT need to be here.
-@VPATH@:$(TRACE_SRCDIR)
+@VPATH@@VPATH_EXTRA@
 
 # Define the TRACE-API shared library name and utility program names here
 LIB_TRACE        = @LIBSO_PREFIX@TraceInput.la
