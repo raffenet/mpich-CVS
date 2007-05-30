@@ -64,7 +64,8 @@ MPE_N_ZOBJECTS   = $(MPE_ZSOURCES:.c=.n@OBJEXT@)
 MPE_CSOURCES     = clog_util.c clog_timer.c clog_uuid.c clog_commset.c \
                    clog_preamble.c clog_record.c clog_sync.c \
                    clog_block.c clog_buffer.c clog_merger.c \
-                   clog_cache.c clog_joiner.c clog.c mpe_log.c
+                   clog_cache.c clog_joiner.c clog.c \
+                   mpe_log_thread.c mpe_log.c
 MPE_P_COBJECTS   = $(MPE_CSOURCES:.c=.p@OBJEXT@)
 MPE_N_COBJECTS   = $(MPE_CSOURCES:.c=.n@OBJEXT@)
 

@@ -1,6 +1,14 @@
+#if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
 #include <stdio.h>
+#endif
+#if defined( STDC_HEADERS ) || defined( HAVE_STDLIB_H )
 #include <stdlib.h>
+#endif
+#if defined( HAVE_PTHREAD_H )
 #include <pthread.h>
+#endif
+
+#if defined( HAVE_LIBPTHREAD )
 
 #define MPE_ThreadID_t  int
 
@@ -29,3 +37,15 @@ void MPE_Log_thread_init( void )
         pthread_exit( NULL );
     }
 }
+
+#else
+
+void MPE_ThreadID_free( void *thdID_ptr );
+void MPE_ThreadID_free( void *thdID_ptr )
+{}
+
+void MPE_Log_thread_init( void );
+void MPE_Log_thread_init( void )
+{}
+
+#endif

@@ -109,8 +109,8 @@ default:
 # is done once (e.g., a blip in the filesystem time can't be 
 # responsible if make works as Sun documents it).  To fix this, we
 # add all the objects to the library, not just the "recent" ones.
-${libbuild_dir}/lib$(LOG_LIBNAME).a: mpe_log_thread.@OBJEXT@ log_mpi_core.@OBJEXT@
-	$(AR) $(ARFLAGS) $@ mpe_log_thread.@OBJEXT@ log_mpi_core.@OBJEXT@
+${libbuild_dir}/lib$(LOG_LIBNAME).a: log_mpi_core.@OBJEXT@
+	$(AR) $(ARFLAGS) $@ log_mpi_core.@OBJEXT@
 	$(RANLIB) $@
 
 ${libbuild_dir}/lib$(TRACE_LIBNAME).a: trace_mpi_core.@OBJEXT@

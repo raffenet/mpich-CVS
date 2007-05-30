@@ -112,6 +112,12 @@ AC_SUBST(CPRP)
 AC_SUBST(RM)
 AC_SUBST(MV)
 
+AC_ARG_ENABLE( threadlogging,
+[--enable-threadlogging             - Turn on/off the coarse-grained thread
+                                      support in MPE logging.  The default is
+                                      enable=yes.], ,
+enable_threadlogging=yes )
+
 dnl Set the various build directories from their mpe_ prefixed env variables.
 dnl
 dnl includebuild_dir is for all user header files
@@ -509,6 +515,58 @@ if test "$mpe_link_ok" = "yes" ; then
                [Define if PMPI_Comm_get_attr() available] )
 fi
 
+dnl Check if pthread exists
+AC_CHECK_HEADERS( pthread.h, [
+    AC_CHECK_LIB( pthread, [pthread_mutex_lock],
+                  HAVE_PTHREAD_IN_CC=yes, HAVE_PTHREAD_IN_CC=no )
+] )
+
+dnl Assume there is no thread support, by default.
+PTHREAD_IN_MPI_DEF="#undef HAVE_PTHREAD_IN_MPI"
+if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
+    if test "$HAVE_PTHREAD_IN_CC" = "yes" \
+         -a "$enable_threadlogging" = "yes" ; then
+        AC_MSG_CHECKING( [for pthread_mutex_lock/unlock in MPI] )
+        PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC],
+                              [$MPI_LIBS -lpthread],
+                              [#include <pthread.h>],
+                              [ pthread_mutex_t pthd_mutex ],
+                              [
+                                pthread_mutex_lock(&pthd_mutex);
+                                pthread_mutex_unlock(&pthd_mutex);
+                              ],
+                              [ mpe_link_ok=yes ], [ mpe_link_ok=no ] )
+        if test "$mpe_link_ok" = "yes" ; then
+            AC_MSG_RESULT(yes)
+            PTHREAD_IN_MPI_DEF="#define HAVE_PTHREAD_IN_MPI 1"
+        else
+            AC_MSG_RESULT(no)
+            PTHREAD_IN_MPI_DEF="#undef HAVE_PTHREAD_IN_MPI"
+        fi
+    else
+dnl     Either HAVE_PTHREAD_IN_CC=no or enable_threadlogging is false,
+dnl     set logging thread support to false,
+        PTHREAD_IN_MPI_DEF="#undef HAVE_PTHREAD_IN_MPI"
+    fi
+else
+    if test "$MPI_IMPL" = "MPICH2" ; then
+        if test "$enable_threadlogging" = "yes" ; then
+            if test "$MPICH_THREAD_LEVEL" = "MPI_THREAD_MULTIPLE" \
+                -a  "$MPICH2_THREAD_PACKAGE" = "pthreads" ; then
+                PTHREAD_IN_MPI_DEF="#define HAVE_PTHREAD_IN_MPI 1"
+            else
+                PTHREAD_IN_MPI_DEF="#undef HAVE_PTHREAD_IN_MPI"
+            fi
+        else
+            PTHREAD_IN_MPI_DEF="#undef HAVE_PTHREAD_IN_MPI"
+        fi
+    else
+dnl MPICH1 has no MPI_Init_thread(), set HAVE_PTHREAD_IN_MPI to Null.
+        PTHREAD_IN_MPI_DEF="#undef HAVE_PTHREAD_IN_MPI"
+    fi
+fi
+AC_SUBST(PTHREAD_IN_MPI_DEF)
+
 
 AC_SUBST(MPE_BUILD_FORTRAN2C)
 AC_SUBST(CC)
@@ -519,5 +577,6 @@ AC_SUBST(MPI_INC)
 AC_SUBST(MPI_LIBS)
 AC_SUBST(PROF_LIBNAME)
 
-AC_OUTPUT( Makefile src/Makefile include/clog_inttypes.h include/mpi_null.h \
+AC_OUTPUT( Makefile src/Makefile \
+           include/clog_inttypes.h include/mpi_null.h include/mpe_log_thread.h \
            etc/mpe_log.conf etc/mpe_nolog.conf )
