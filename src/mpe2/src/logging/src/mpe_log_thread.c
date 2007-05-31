@@ -1,3 +1,9 @@
+/*
+     (C) 2007 by Argonne National Laboratory.
+          See COPYRIGHT in top-level directory.
+*/
+#include "mpe_logging_conf.h"
+
 #if defined( STDC_HEADERS ) || defined( HAVE_STDIO_H )
 #include <stdio.h>
 #endif
