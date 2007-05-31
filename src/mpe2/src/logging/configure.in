@@ -518,13 +518,18 @@ fi
 dnl Check if pthread exists
 AC_CHECK_HEADERS( pthread.h, [
     AC_CHECK_LIB( pthread, [pthread_mutex_lock],
-                  HAVE_PTHREAD_IN_CC=yes, HAVE_PTHREAD_IN_CC=no )
+                  [ have_pthread_in_cc=yes ],
+                  [ have_pthread_in_cc=no ] )
 ] )
+if test "$have_pthread_in_cc" = "yes" ; then
+    AC_DEFINE( HAVE_LIBPTHREAD, 1,
+               [Define if libpthread.a(so) is defined] )
+fi
 
 dnl Assume there is no thread support, by default.
 PTHREAD_IN_MPI_DEF="#undef HAVE_PTHREAD_IN_MPI"
 if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
-    if test "$HAVE_PTHREAD_IN_CC" = "yes" \
+    if test "$have_pthread_in_cc" = "yes" \
          -a "$enable_threadlogging" = "yes" ; then
         AC_MSG_CHECKING( [for pthread_mutex_lock/unlock in MPI] )
         PAC_MPI_LINK_CC_FUNC( $MPI_CC, [$CFLAGS $MPI_INC],
@@ -544,8 +549,8 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
             PTHREAD_IN_MPI_DEF="#undef HAVE_PTHREAD_IN_MPI"
         fi
     else
-dnl     Either HAVE_PTHREAD_IN_CC=no or enable_threadlogging is false,
-dnl     set logging thread support to false,
+dnl     Either have_pthread_in_cc is no or enable_threadlogging is false,
+dnl     set logging thread-support to false,
         PTHREAD_IN_MPI_DEF="#undef HAVE_PTHREAD_IN_MPI"
     fi
 else
