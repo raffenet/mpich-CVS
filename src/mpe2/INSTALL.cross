@@ -82,6 +82,7 @@ One can configure cross_spec as follows:
     mkdir <build_spec_dir>
     cd <build_spec_dir>
     <mpe2_src_dir>/cross_spec/configure --host=x86_64-linux                   \
+                                        AR=ar RANLIB=ranlib                   \
                                         CC=/usr/local/bin/lans64_cc           \
                                         F77=/usr/local/bin/lans64_fc          \
                                         MPI_CC=/usr/local/bin/lans64_mpicc    \
@@ -92,10 +93,14 @@ One can configure cross_spec as follows:
 
 Where --host=x86_64_linux informs configure we are building for 64bit linux.
 Notice there isn't a --prefix option in the configure command, as it isn't
-necessary to install this subpackage anywhere.  The MPERUN allows users to
-run the tests on the backend through Makefile, i.e. through the "make run"
-commad.  Without MPERUN, the "make run" will execute the tests locally on
-the frontend.  In that case, one has to launch the tests separately by hand.
+necessary to install this subpackage anywhere.  Here AR and RANLIB are used
+in the configure command to highlight these variables can be added for
+platform which has specific AR and RANLIB for the backend nodes.  The MPERUN
+allows users to run the tests on the backend through Makefile, i.e. through
+the "make run" commad.  Without MPERUN or there isn't a command to launch
+executable to run on the backend, the "make run" will execute the tests
+locally on the frontend.  In that case, one has to launch the tests separately
+by hand.
 
 There are 2 executables and 1 script created by cross_spec.  They are
 cross_cc, cross_f2c and cross_env.
@@ -128,10 +133,12 @@ MPI_CC=/usr/local/bin/lans64_mpicc
 CC=/usr/local/bin/lans64_cc
 MPI_F77=/usr/local/bin/lans64_mpif90
 F77=/usr/local/bin/lans64_fc
+AR=ar
+RANLIB=ranlib
 
-Any other configure variables, e.g. AR or RANLIB, for MPE configure
-should NOT append in the cross_spec.txt, as they won't proprogangate
-down to subdirectories. 
+Any other configure variables, e.g. CFLAGS, for MPE configure
+can be appended in the cross_spec.txt, as they will be proprogangated
+down to other subpackages within MPE configure.
 
 
 
@@ -146,7 +153,6 @@ MPE becomes easy.  One can do it as follows:
     <mpe2_src_dir>/configure --prefix=<mpe2_install_dir>                       \
                              --host=x86_64_linux                               \
                              --with-cross-spec=<build_spec_dir>/cross_spec.txt \
-                             AR=ar RANLIB=ranlib                               \
                              MPERUN="/usr/local/bin/lans64_run -np 4"
     make
     make install
@@ -157,7 +163,9 @@ Here AR and RANLIB are added for illustration purposes.
 Where --host is used to inform configure what type of host to be built for
 the backend.  Again, MPERUN is optional here.  With MPERUN, the 
 "make installcheck-all" command will launch runtime tests to the backend
-to check if every selected components are built correctly.
+to check if every selected components are built correctly.  Notice that
+the MPERUN command here is different from the one used in cross_spec, since
+we want to run multiple processes job in the "installcheck-all".
 
 
     instructions for BlueGeneLight (BG/L)
