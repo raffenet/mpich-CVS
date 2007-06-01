@@ -256,6 +256,8 @@ AC_SUBST(MPI_INC)
 AC_SUBST(MPI_LIBS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(MPERUN)
+AC_SUBST(AR)
+AC_SUBST(RANLIB)
 
 AC_OUTPUT_COMMANDS( [
 if test ! -x ./cross_env -a -s ./cross_env ; then
