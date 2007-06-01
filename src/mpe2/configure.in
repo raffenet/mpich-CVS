@@ -335,13 +335,14 @@ if test "$with_cross_spec" != "no" ; then
         ac_cv_prog_f90_cross=yes
         ac_cv_prog_cxx_cross=yes
         export cross_compiling
-        # Export all cross variables.  Any subsidiary configure should also
-        # export CROSS_xxx
-        rm -f confcross
-        (set) 2>&1 | grep CROSS_ | \
-              sed -e 's/^/export /g' -e 's/=.*//g' > confcross
-        . confcross
-        rm -f confcross
+        # Export all the variables in cross_spec/cross_spec.txt
+        # i.e. CROSS_xxx, MPI_xxx and friends...
+        cross_spec_vars=`grep -v '^#' $with_cross_spec | sed -e 's/=.*//g'`
+        for var in $cross_spec_vars ; do
+            eval value=\$"$var"
+            echo "Exporting $var=$value ..."
+            export $var
+        done
     fi
 fi
 
