@@ -1333,9 +1333,9 @@ fout.Close()
 '
 ' Generate mpe_log_thread.h
 '
-cEcho "Creating src\mpe2\src\wrappers\mpe_log_thread.h"
-set fout = f.CreateTextFile("src\mpe2\src\wrappers\include\mpe_log_thread.h")
-set fin  = f.OpenTextFile("src\mpe2\src\wrappers\include\mpe_log_thread.h.in")
+cEcho "Creating src\mpe2\src\logging\include\mpe_log_thread.h"
+set fout = f.CreateTextFile("src\mpe2\src\logging\include\mpe_log_thread.h")
+set fin  = f.OpenTextFile("src\mpe2\src\logging\include\mpe_log_thread.h.in")
 contents = fin.ReadAll()
 contents = ReplaceAts(contents, false, false)
 fout.Write(contents)
