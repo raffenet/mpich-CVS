@@ -2505,7 +2505,10 @@ int MPID_Finalize(void);
   @*/
 
 /* FIXME: the 4th argument isn't part of the original design and isn't documented */
+
 int MPID_Abort( MPID_Comm *comm, int mpi_errno, int exit_code, const char *error_msg );
+/* We want to also declare MPID_Abort in mpiutil.h if mpiimpl.h is not used */
+#define HAS_MPID_ABORT_DECL
 
 int MPID_Open_port(MPID_Info *, char *);
 int MPID_Close_port(const char *);
