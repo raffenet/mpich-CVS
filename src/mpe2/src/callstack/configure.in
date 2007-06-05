@@ -189,10 +189,22 @@ if test "X$mpe_callstack_impl_type" = "X" ; then
                 printstack( 1 );
             ] )
         ], [
-           AC_MSG_RESULT(yes)
-           mpe_callstack_impl_type="#define HAVE_PRINTSTACK 1"
+            AC_MSG_RESULT(yes)
+            AC_MSG_CHECKING( [whether printstack() can be linked] )
+            AC_LINK_IFELSE( [
+                AC_LANG_PROGRAM( [
+                    #include <ucontext.h>
+                ], [
+                    printstack( 1 );
+                ] )
+            ], [
+                AC_MSG_RESULT(yes)
+                mpe_callstack_impl_type="#define HAVE_PRINTSTACK 1"
+            ], [
+                AC_MSG_RESULT(no)
+            ] ) dnl Endof AC_LINK_IFELSE
         ], [
-           AC_MSG_RESULT(no)
+            AC_MSG_RESULT(no)
         ] ) dnl Endof AC_COMPILE_IFELSE
     ] ) dnl Endof AC_CHECK_HEADERS
 fi
