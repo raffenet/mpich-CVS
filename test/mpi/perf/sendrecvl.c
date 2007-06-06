@@ -15,6 +15,8 @@
 
 #define MAXTESTS 32
 
+static int verbose = 0;
+
 int main( int argc, char *argv[] )
 {
     int wsize, wrank, partner, len, maxlen, k, reps, repsleft;
@@ -24,6 +26,7 @@ int main( int argc, char *argv[] )
     double times[3][MAXTESTS];
 
     MPI_Init( &argc, &argv );
+    if (getenv("MPITEST_VERBOSE")) verbose = 1;
 
     MPI_Comm_size( MPI_COMM_WORLD, &wsize );
     MPI_Comm_rank( MPI_COMM_WORLD, &wrank );
@@ -59,7 +62,7 @@ int main( int argc, char *argv[] )
     MPI_Barrier( MPI_COMM_WORLD );
 
     /* Test Irecv and send, head to head */
-    if (wrank == 0) {
+    if (wrank == 0 && verbose) {
 	printf( "Irecv-send\n" );
 	printf( "len\ttime    \trate\n" );
     }
@@ -89,13 +92,16 @@ int main( int argc, char *argv[] )
 		double rate;
 		rate = (len / t1) / 1.e6;
 		t1   = t1 * 1.e6;
-		printf( "%d\t%g\t%g\n", len, t1, len/t1 );
+		if (verbose) 
+		    printf( "%d\t%g\t%g\n", len, t1, len/t1 );
 	    }
 	    else {
 		t1   = t1 * 1.e6;
-		printf( "%d\t%g\tINF\n", len, t1 );
+		if (verbose)
+		    printf( "%d\t%g\tINF\n", len, t1 );
 	    }
-	    fflush( stdout );
+	    if (verbose)
+		fflush( stdout );
 	}
 
 	len *= 2;
@@ -104,7 +110,7 @@ int main( int argc, char *argv[] )
     MPI_Barrier( MPI_COMM_WORLD );
 
     /* Test Sendrecv, head to head */
-    if (wrank == 0) {
+    if (wrank == 0 && verbose) {
 	printf( "Sendrecv\n" );
 	printf( "len\ttime (usec)\trate (MB/s)\n" );
     }
@@ -134,13 +140,16 @@ int main( int argc, char *argv[] )
 		double rate;
 		rate = (len / t1) / 1.e6;
 		t1   = t1 * 1.e6;
-		printf( "%d\t%g\t%g\n", len, t1, len/t1 );
+		if (verbose)
+		    printf( "%d\t%g\t%g\n", len, t1, len/t1 );
 	    }
 	    else {
 		t1   = t1 * 1.e6;
-		printf( "%d\t%g\tINF\n", len, t1 );
+		if (verbose)
+		    printf( "%d\t%g\tINF\n", len, t1 );
 	    }
-	    fflush( stdout );
+	    if (verbose)
+		fflush( stdout );
 	}
 
 	len *= 2;
@@ -149,7 +158,7 @@ int main( int argc, char *argv[] )
     MPI_Barrier( MPI_COMM_WORLD );
 
     /* Test Send/recv, ping-pong */
-    if (wrank == 0) {
+    if (wrank == 0 && verbose) {
 	printf( "Pingpong\n" );
 	printf( "len\ttime (usec)\trate (MB/s)\n" );
     }
@@ -186,13 +195,16 @@ int main( int argc, char *argv[] )
 		double rate;
 		rate = (len / t1) / 1.e6;
 		t1   = t1 * 1.e6;
-		printf( "%d\t%g\t%g\n", len, t1, len/t1 );
+		if (verbose)
+		    printf( "%d\t%g\t%g\n", len, t1, len/t1 );
 	    }
 	    else {
 		t1   = t1 * 1.e6;
-		printf( "%d\t%g\tINF\n", len, t1 );
+		if (verbose)
+		    printf( "%d\t%g\tINF\n", len, t1 );
 	    }
-	    fflush( stdout );
+	    if (verbose)
+		fflush( stdout );
 	}
 
 	len *= 2;
@@ -206,14 +218,42 @@ int main( int argc, char *argv[] )
 
     if (wrank == 0) {
 	len = 1;
+	int nPerfErrors = 0;
 	for (k=0; k<20; k++) {
 	    double t0,t1,t2;
 	    t0 = times[0][k] * 1.e6;
 	    t1 = times[1][k] * 1.e6;
 	    t2 = times[2][k] * 1.e6;
-	    printf( "%d\t%12.2f\t%12.2f\t%12.2f\n", len, t0, t1, t2 );
+	    if (verbose)
+		printf( "%d\t%12.2f\t%12.2f\t%12.2f\n", len, t0, t1, t2 );
+	    /* Lets look at long messages only */
+	    if (k > 10) {
+		double t0Old, t1Old, t2Old;
+		t0Old = times[0][k-1] * 1.0e6;
+		t1Old = times[1][k-1] * 1.0e6;
+		t2Old = times[2][k-1] * 1.0e6;
+		if (t0 > (2+0.5) * t0Old) {
+		    nPerfErrors++;
+		    printf( "Irecv-Send:\t%d\t%12.2f\t%12.2f\n", len, t0Old, t0 );
+		}
+		if (t1 > (2+0.5) * t1Old) {
+		    nPerfErrors++;
+		    printf( "Sendrecv:\t%d\t%12.2f\t%12.2f\n", len, t1Old, t1 );
+		}
+		if (t2 > (2+0.5) * t2Old) {
+		    nPerfErrors++;
+		    printf( "Pingpong:\t%d\t%12.2f\t%12.2f\n", len, t2Old, t2 );
+		}
+	    }
 	    len *= 2;
 	}
+	if (nPerfErrors > 0) {
+	    printf( " Found %d errors\n", nPerfErrors );
+	}
+	else {
+	    printf( " No Errors\n" );
+	}
+	fflush( stdout );
     }
 
     free( sbuf );
