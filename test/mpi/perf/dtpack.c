@@ -18,10 +18,11 @@
 /* Needed for restrict and const definitions */
 #include "mpitestconf.h"
 
-static int verbose = 1;
+static int verbose = 0;
 
 #define N_REPS 1000
 #define THRESHOLD 0.10
+#define NTRIALS 5
 
 /* Here are the tests */
 
@@ -60,6 +61,50 @@ int TestVecPackDouble( int n, int stride,
 	position = 0;
 	MPI_Pack( (void *)src, 1, vectype, dest, n*sizeof(double),
 		  &position, MPI_COMM_SELF );
+    }
+    t2 = MPI_Wtime() - t1;
+    *avgTimeMPI = t2 / N_REPS;
+
+    MPI_Type_free( &vectype );
+
+    return 0;
+}
+
+/* Test unpacking a vector of individual doubles */
+int TestVecUnPackDouble( int n, int stride, 
+		       double *avgTimeUser, double *avgTimeMPI,
+		       double * restrict dest, const double * restrict src )
+{
+    double *restrict d_dest;
+    const double *restrict d_src;
+    register int i;
+    int          rep, position;
+    double       t1, t2;
+    MPI_Datatype vectype;
+
+    t1 = MPI_Wtime();
+    /* User code */
+    for (rep=0; rep<N_REPS; rep++) {
+	i = n;
+	d_dest = dest;
+	d_src  = src;
+	while (i--) {
+	    *d_dest = *d_src++;
+	    d_dest += stride;
+	}
+    }
+    t2 = MPI_Wtime() - t1;
+    *avgTimeUser = t2 / N_REPS;
+    
+    /* MPI Vector code */
+    MPI_Type_vector( n, 1, stride, MPI_DOUBLE, &vectype );
+    MPI_Type_commit( &vectype );
+    
+    t1 = MPI_Wtime();
+    for (rep=0; rep<N_REPS; rep++) {
+	position = 0;
+	MPI_Unpack( (void *)src, n*sizeof(double), 
+		    &position, dest, 1, vectype, MPI_COMM_SELF );
     }
     t2 = MPI_Wtime() - t1;
     *avgTimeMPI = t2 / N_REPS;
@@ -126,26 +171,30 @@ int TestIndexPackDouble( int n, int stride,
     double *restrict d_dest;
     const double *restrict d_src;
     register int i;
-    int          rep, position;
+    int          rep, position, k;
     int          *restrict displs = 0;
-    double       t1, t2;
+    double       t1, t2, tbest;
     MPI_Datatype indextype;
 
     displs = (int *)malloc( n * sizeof(int) );
     for (i=0; i<n; i++) displs[i] = i * stride;
 
-    t1 = MPI_Wtime();
-    /* User code */
-    for (rep=0; rep<N_REPS; rep++) {
-	i = n;
-	d_dest = dest;
-	d_src  = src;
-	for (i=0; i<n; i++) {
-	    *d_dest++ = d_src[displs[i]];
+    tbest = 10000;
+    for (k=0; k<NTRIALS; k++) {
+	t1 = MPI_Wtime();
+	/* User code */
+	for (rep=0; rep<N_REPS; rep++) {
+	    i = n;
+	    d_dest = dest;
+	    d_src  = src;
+	    for (i=0; i<n; i++) {
+		*d_dest++ = d_src[displs[i]];
+	    }
 	}
+	t2 = MPI_Wtime() - t1;
+	if (t2 < tbest) tbest = t2;
     }
-    t2 = MPI_Wtime() - t1;
-    *avgTimeUser = t2 / N_REPS;
+    *avgTimeUser = tbest / N_REPS;
     
     /* MPI Index code */
     MPI_Type_create_indexed_block( n, 1, displs, MPI_DOUBLE, &indextype );
@@ -153,21 +202,26 @@ int TestIndexPackDouble( int n, int stride,
 
     free( displs );
     
-    t1 = MPI_Wtime();
-    for (rep=0; rep<N_REPS; rep++) {
-	position = 0;
-	MPI_Pack( (void *)src, 1, indextype, dest, n*sizeof(double),
-		  &position, MPI_COMM_SELF );
+    tbest = 10000;
+    for (k=0; k<NTRIALS; k++) {
+	t1 = MPI_Wtime();
+	for (rep=0; rep<N_REPS; rep++) {
+	    position = 0;
+	    MPI_Pack( (void *)src, 1, indextype, dest, n*sizeof(double),
+		      &position, MPI_COMM_SELF );
+	}
+	t2 = MPI_Wtime() - t1;
+	if (t2 < tbest) tbest = t2;
     }
-    t2 = MPI_Wtime() - t1;
-    *avgTimeMPI = t2 / N_REPS;
+    *avgTimeMPI = tbest / N_REPS;
 
     MPI_Type_free( &indextype );
 
     return 0;
 }
 
-int Report( const char *name, double avgTimeMPI, double avgTimeUser )
+int Report( const char *name, const char *packname, 
+	    double avgTimeMPI, double avgTimeUser )
 {
     double diffTime, maxTime;
     int errs=0;
@@ -186,8 +240,8 @@ int Report( const char *name, double avgTimeMPI, double avgTimeUser )
     }
     if (avgTimeMPI > avgTimeUser && (diffTime > THRESHOLD * maxTime)) {
 	errs++;
-	printf( "%s:\tMPI Pack code is too slow: MPI %g\t User %g\n",
-		name, avgTimeMPI, avgTimeUser );
+	printf( "%s:\tMPI %s code is too slow: MPI %g\t User %g\n",
+		name, packname, avgTimeMPI, avgTimeUser );
     }
 
     return errs;
@@ -201,20 +255,26 @@ int main( int argc, char *argv[] )
     double avgTimeUser, avgTimeMPI;
 
     MPI_Init( &argc, &argv );
+    if (getenv("MPITEST_VERBOSE")) verbose = 1;
 
     n      = 10000;
     stride = 4;
     dest = (void *)malloc( n * sizeof(double) );
     src  = (void *)malloc( n * ((1+stride)*sizeof(double)) );
-    memset( dest, 0, n * sizeof(double) );
+    /* Touch the source and destination arrays */
     memset( src, 0, n * (1+stride)*sizeof(double) );
+    memset( dest, 0, n * sizeof(double) );
     err = TestVecPackDouble( n, stride, &avgTimeUser, &avgTimeMPI,
 			     dest, src );
-    errs += Report( "VecPackDouble", avgTimeMPI, avgTimeUser );
+    errs += Report( "VecPackDouble", "Pack", avgTimeMPI, avgTimeUser );
+
+    err = TestVecUnPackDouble( n, stride, &avgTimeUser, &avgTimeMPI,
+			       src, dest );
+    errs += Report( "VecUnPackDouble", "Unpack", avgTimeMPI, avgTimeUser );
 
     err = TestIndexPackDouble( n, stride, &avgTimeUser, &avgTimeMPI,
 			     dest, src );
-    errs += Report( "VecIndexDouble", avgTimeMPI, avgTimeUser );
+    errs += Report( "VecIndexDouble", "Pack", avgTimeMPI, avgTimeUser );
 
     free(dest);
     free(src);
@@ -225,7 +285,7 @@ int main( int argc, char *argv[] )
     memset( src, 0, (1+n) * (1+stride)*sizeof(double) );
     err = TestVecPack2Double( n, stride, &avgTimeUser, &avgTimeMPI,
 			      dest, src );
-    errs += Report( "VecPack2Double", avgTimeMPI, avgTimeUser );
+    errs += Report( "VecPack2Double", "Pack", avgTimeMPI, avgTimeUser );
     free(dest);
     free(src);
     
