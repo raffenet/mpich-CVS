@@ -147,7 +147,8 @@ void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble )
         fprintf( stderr, __FILE__":CLOG_Preamble_env_init() - \n"
                          "\t""MPI_Bcast(preamble->block_size) fails.\n" );
         fflush( stderr );
-        PMPI_Abort( MPI_COMM_WORLD, 1 );
+        /* PMPI_Abort( MPI_COMM_WORLD, 1 ); */
+        CLOG_Util_abort( 1 );
     }
 
     ierr = PMPI_Bcast( &(preamble->num_buffered_blocks), 1, MPI_INT,
@@ -156,7 +157,8 @@ void CLOG_Preamble_env_init( CLOG_Preamble_t *preamble )
         fprintf( stderr, __FILE__":CLOG_Preamble_env_init() - \n"
                          "\t""MPI_Bcast(num_buffered_blocks) fails.\n" );
         fflush( stderr );
-        PMPI_Abort( MPI_COMM_WORLD, 1 );
+        /* PMPI_Abort( MPI_COMM_WORLD, 1 ); */
+        CLOG_Util_abort( 1 );
     }
 
     /*

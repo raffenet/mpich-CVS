@@ -140,7 +140,8 @@ void CLOG_Buffer_env_init( CLOG_Buffer_t *buffer )
         fprintf( stderr, __FILE__":CLOG_Buffer_env_init() - \n"
                          "\t""PMPI_Bcast(buffer->delete_localfile) fails!\n" );
         fflush( stderr );
-        PMPI_Abort( MPI_COMM_WORLD, 1 );
+        /* PMPI_Abort( MPI_COMM_WORLD, 1 ); */
+        CLOG_Util_abort( 1 );
     }
 
     ierr = PMPI_Bcast( &(buffer->log_overhead), 1, MPI_INT,
@@ -149,7 +150,8 @@ void CLOG_Buffer_env_init( CLOG_Buffer_t *buffer )
         fprintf( stderr, __FILE__":CLOG_Buffer_env_init() - \n"
                          "\t""PMPI_Bcast(buffer->log_overhead) fails!\n" );
         fflush( stderr );
-        PMPI_Abort( MPI_COMM_WORLD, 1 );
+        /* PMPI_Abort( MPI_COMM_WORLD, 1 ); */
+        CLOG_Util_abort( 1 );
     }
 }
 
