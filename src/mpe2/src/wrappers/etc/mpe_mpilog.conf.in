@@ -15,3 +15,8 @@ fi
 
 . $MPE_ETCDIR/mpe_log_postlib.conf
 PROFILE_POSTLIB="$MPE_LOG_THREAD_LIBS"
+
+# Append LDFLAGS if necessary
+if [ -f "$MPE_ETCDIR/mpe_callstack_ldflags.conf" ] ; then
+    . $MPE_ETCDIR/mpe_callstack_ldflags.conf
+fi
