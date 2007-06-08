@@ -205,13 +205,12 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
             int n_iov;
             int again = 0;
 
-            if (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL && MPIDI_CH3I_SendQ_head(CH3_NORMAL_QUEUE) == NULL &&
-                !MPID_nem_lmt_shm_pending)
+            if (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] == NULL && MPIDI_CH3I_SendQ_head(CH3_NORMAL_QUEUE) == NULL)
             {
 #ifdef MPICH_IS_THREADED
                 MPIU_THREAD_CHECK_BEGIN;
                 {
-                    if (MPIDI_CH3I_progress_blocked == TRUE && is_blocking)
+                    if (MPIDI_CH3I_progress_blocked == TRUE && is_blocking && !MPID_nem_lmt_shm_pending)
                     {
                         /* There's nothing to send and there's another thread already blocking in the progress engine.*/
                         MPIDI_CH3I_Progress_delay(MPIDI_CH3I_progress_completion_count);
