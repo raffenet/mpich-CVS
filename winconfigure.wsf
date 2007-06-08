@@ -1343,6 +1343,18 @@ fin.Close()
 fout.Close()
 
 '
+' Generate mpe_callstack.h
+'
+cEcho "Creating src\mpe2\src\callstack\include\mpe_callstack.h"
+set fout = f.CreateTextFile("src\mpe2\src\callstack\include\mpe_callstack.h")
+set fin  = f.OpenTextFile("src\mpe2\src\callstack\include\mpe_callstack.h.in")
+contents = fin.ReadAll()
+contents = ReplaceAts(contents, false, false)
+fout.Write(contents)
+fin.Close()
+fout.Close()
+
+'
 ' Generate mpio.h
 '
 
@@ -2309,6 +2321,12 @@ Function ReplaceAts( str, use_f77, b64 )
 				str = Replace(str, "@mpe_int64_fmt@", """%lld""")
 			Case "@PTHREAD_IN_MPI_DEF@"
 				str = Replace(str, "@PTHREAD_IN_MPI_DEF@", "#undef HAVE_PTHREAD_IN_MPI")
+			Case "@mpe_callstack_impl_type@"
+				str = Replace(str, "@mpe_callstack_impl_type@", "/* MPE CALLSTACK NOT IMPLEMENTED IN WINDOWS */")
+			Case "@mpe_callstack_string_h@"
+				str = Replace(str, "@mpe_callstack_string_h@", "/* MPE CALLSTACK NOT IMPLEMENTED IN WINDOWS */")
+			Case "@mpe_callstack_unistd_h@"
+				str = Replace(str, "@mpe_callstack_unistd_h@", "/* MPE CALLSTACK NOT IMPLEMENTED IN WINDOWS */")
 			Case Else
 			'	unhandled_ats = unhandled_ats & Match & vbNewLine
 			'	unhandled_ats_count = unhandled_ats_count + 1
