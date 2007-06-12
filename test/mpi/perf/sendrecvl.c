@@ -217,8 +217,8 @@ int main( int argc, char *argv[] )
        fall-off in performance noted in the ch3:sock device:channel */
 
     if (wrank == 0) {
-	len = 1;
 	int nPerfErrors = 0;
+	len = 1;
 	for (k=0; k<20; k++) {
 	    double t0,t1,t2;
 	    t0 = times[0][k] * 1.e6;
