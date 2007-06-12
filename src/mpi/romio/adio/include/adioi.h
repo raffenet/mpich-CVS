@@ -175,6 +175,7 @@ struct ADIOI_Fns_struct {
     void (*ADIOI_xxx_Flush) (ADIO_File fd, int *error_code); 
     void (*ADIOI_xxx_Resize) (ADIO_File fd, ADIO_Offset size, int *error_code);
     void (*ADIOI_xxx_Delete) (char *filename, int *error_code);
+    int  (*ADIOI_xxx_Feature) (ADIO_File fd, int flag);
 };
 
 /* optypes for ADIO_RequestD */
@@ -269,6 +270,9 @@ struct ADIOI_Fns_struct {
 
 #define ADIO_SetInfo(fd, users_info, error_code) \
         (*(fd->fns->ADIOI_xxx_SetInfo))(fd, users_info, error_code)
+
+#define ADIO_Feature(fd, flag) \
+	(*(fd->fns->ADIOI_xxx_Feature))(fd, flag)
 
 
 /* structure for storing access info of this process's request 

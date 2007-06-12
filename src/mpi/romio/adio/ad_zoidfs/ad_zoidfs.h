@@ -40,4 +40,5 @@ void ADIOI_ZOIDFS_Flush(ADIO_File fd, int *error_code);
 void ADIOI_ZOIDFS_Delete(char *filename, int *error_code);
 void ADIOI_ZOIDFS_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 void ADIOI_ZOIDFS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
+int  ADIOI_ZOIDFS_Feature(ADIO_File fd, int flag);
 #endif

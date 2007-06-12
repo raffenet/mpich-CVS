@@ -136,7 +136,7 @@ void ADIOI_ZOIDFS_Open(ADIO_File fd, int *error_code)
     /* Assertion: if we hit this Bcast, then all processes collectively
      *            called this open.
      *
-     * That's because deferred open never happens with PVFS2.
+     * That's because deferred open never happens with this fs.
      */
     MPI_Bcast(MPI_BOTTOM, 1, open_status_type, fd->hints->ranklist[0],
 	      fd->comm);

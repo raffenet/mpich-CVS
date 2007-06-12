@@ -33,6 +33,7 @@ struct ADIOI_Fns_struct ADIO_ZOIDFS_operations = {
     ADIOI_ZOIDFS_Flush, /* Flush */
     ADIOI_ZOIDFS_Resize, /* Resize */
     ADIOI_ZOIDFS_Delete, /* Delete */
+    ADIOI_ZOIDFS_Feature,
 };
 
 /* 

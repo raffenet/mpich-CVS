@@ -161,21 +161,14 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	goto fn_fail;
     }
 
-    /* Test for invalid flags in amode.
-     *
-     * eventually we should allow the ADIO implementations to test for 
-     * invalid flags through some functional interface rather than having
-     *  these tests here. -- Rob, 06/06/2001
-     */
-    if (((file_system == ADIO_PIOFS) ||
-	 (file_system == ADIO_PVFS) ||
-	 (file_system == ADIO_PVFS2) ||
-	 (file_system == ADIO_GRIDFTP)) && 
-        (amode & MPI_MODE_SEQUENTIAL))
+    /* if MPI_MODE_SEQUENTIAL requested, file systems cannot do explicit offset
+     * or independent file pointer accesses, leaving not much else aside from
+     * shared file pointer accesses. */
+    if ( !ADIO_Feature(fh, ADIO_SHARED_FP) && (amode & MPI_MODE_SEQUENTIAL)) 
     {
-	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-					  myname, __LINE__,
-					  MPI_ERR_UNSUPPORTED_OPERATION, 
+        error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+			                  myname, __LINE__, 
+					  MPI_ERR_UNSUPPORTED_OPERATION,
 					  "**iosequnsupported", 0);
 	goto fn_fail;
     }
@@ -205,10 +198,8 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
     /* determine name of file that will hold the shared file pointer */
     /* can't support shared file pointers on a file system that doesn't
        support file locking. */
-    if ((error_code == MPI_SUCCESS) && ((*fh)->file_system != ADIO_PIOFS)
-          && ((*fh)->file_system != ADIO_PVFS) 
-	  && ((*fh)->file_system != ADIO_PVFS2)
-	  && ((*fh)->file_system != ADIO_GRIDFTP) ){
+    if ((error_code == MPI_SUCCESS) && 
+		    ADIO_Feature((*fh), ADIO_SHARED_FP)) {
 	MPI_Comm_rank(dupcomm, &rank);
 	ADIOI_Shfp_fname(*fh, rank);
 

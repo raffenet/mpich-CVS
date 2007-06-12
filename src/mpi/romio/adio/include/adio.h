@@ -312,6 +312,13 @@ typedef struct {
 #define ADIO_FCNTL_SET_DISKSPACE 188
 #define ADIO_FCNTL_GET_FSIZE     200
 
+/* file system feature tests */
+#define ADIO_LOCKS               300
+#define ADIO_SHARED_FP           301
+#define ADIO_ATOMIC_MODE         302
+#define ADIO_DATA_SIEVING_WRITES 303
+#define ADIO_SCALABLE_OPEN       304
+
 /* for default file permissions */
 #define ADIO_PERM_NULL           -1
 
@@ -398,6 +405,7 @@ void ADIO_Get_shared_fp(ADIO_File fd, int size, ADIO_Offset *shared_fp,
 void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
 void ADIO_Set_view(ADIO_File fd, ADIO_Offset disp, MPI_Datatype etype, 
 		MPI_Datatype filetype, MPI_Info info,  int *error_code);
+int  ADIO_Feature(ADIO_File fd, int flag);
 
 /* functions to help deal with the array datatypes */
 int ADIO_Type_create_subarray(int ndims,

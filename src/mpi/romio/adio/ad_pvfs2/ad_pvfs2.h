@@ -37,4 +37,6 @@ void ADIOI_PVFS2_Flush(ADIO_File fd, int *error_code);
 void ADIOI_PVFS2_Delete(char *filename, int *error_code);
 void ADIOI_PVFS2_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 void ADIOI_PVFS2_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
+int ADIOI_PVFS2_Feature(ADIO_File fd, int flag);
+
 #endif
