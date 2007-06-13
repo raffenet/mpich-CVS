@@ -8,6 +8,7 @@
 #define MPID_NEM_ATOMICS_H
 
 #include <mpichconf.h>
+#include <mpidi_ch3i_nemesis_conf.h>
 
 static inline void *MPID_NEM_SWAP (volatile void *ptr, void *val)
 {

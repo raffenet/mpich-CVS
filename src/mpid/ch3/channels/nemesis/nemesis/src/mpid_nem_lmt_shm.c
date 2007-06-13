@@ -49,6 +49,17 @@ typedef struct MPID_nem_lmt_shm_wait_element
 #define LMT_SHM_Q_DEQUEUE(qp, epp) GENERIC_Q_DEQUEUE(qp, epp, next)
 #define LMT_SHM_Q_SEARCH_REMOVE(qp, req_id, epp) GENERIC_Q_SEARCH_REMOVE(qp, _e->req->handle == (req_id), epp, \
                                                                          MPID_nem_lmt_shm_wait_element_t, next)
+#define CHECK_Q(qp) do{\
+    if (LMT_SHM_Q_EMPTY(*(qp))) break;\
+    if (LMT_SHM_Q_HEAD(*(qp))->next == NULL && (qp)->head != (qp)->tail)\
+    {\
+	printf ("ERROR\n");\
+	while(1);\
+    }\
+    \
+    }while(0)
+
+
 /* copy buffer in shared memory */
 #define MPID_NEM_COPY_BUF_LEN (64 * 1024)
 
@@ -164,7 +175,7 @@ int MPID_nem_lmt_shm_start_recv(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_co
     e->progress = lmt_shm_recv_progress;
     e->req = req;
     LMT_SHM_Q_ENQUEUE(&vc_ch->lmt_queue, e); /* MT: not thread safe */
-    
+        
     /* make progress on that vc */
     mpi_errno = lmt_shm_progress_vc(vc, &done);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -245,7 +256,7 @@ int MPID_nem_lmt_shm_start_send(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV r_co
     e->progress = lmt_shm_send_progress;
     e->req = req;
     LMT_SHM_Q_ENQUEUE(&vc_ch->lmt_queue, e); /* MT: not thread safe */
-
+    
     /* make progress on that vc */
     mpi_errno = lmt_shm_progress_vc(vc, &done);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -304,8 +315,11 @@ static int get_next_req(MPIDI_VC_t *vc)
     if (prev_owner_rank == NO_OWNER)
     {
         /* successfully grabbed idle copy buf */
-        copy_buf->flag[0].val = BUF_EMPTY;
+	MPID_NEM_WRITE_BARRIER();
+	copy_buf->flag[0].val = BUF_EMPTY;
         copy_buf->flag[1].val = BUF_EMPTY;
+
+        MPID_NEM_WRITE_BARRIER();
 
         LMT_SHM_Q_DEQUEUE(&vc_ch->lmt_queue, &vc_ch->lmt_active_lmt);
         copy_buf->owner_info.val.remote_req_id = vc_ch->lmt_active_lmt->req->ch.lmt_req_id;
@@ -316,6 +330,7 @@ static int get_next_req(MPIDI_VC_t *vc)
         /* remote side chooses next transfer */
         int i = 0;
         
+        MPID_NEM_READ_BARRIER();
         while (copy_buf->owner_info.val.remote_req_id == MPI_REQUEST_NULL)
         {
             if (i == NUM_BUSY_POLLS)
@@ -326,8 +341,9 @@ static int get_next_req(MPIDI_VC_t *vc)
             ++i;
         }    
 
+        MPID_NEM_READ_BARRIER();
         LMT_SHM_Q_SEARCH_REMOVE(&vc_ch->lmt_queue, copy_buf->owner_info.val.remote_req_id, &vc_ch->lmt_active_lmt);
-
+        
         if (vc_ch->lmt_active_lmt == NULL)
             /* request not found  */
             goto fn_exit;
@@ -413,9 +429,11 @@ static int lmt_shm_send_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
             ++i;
         }
 
-        /* quit if receiver indicates that its done receiving */
-        if (copy_buf->flag[buf_num].val == BUF_DONE)
-            break;
+/*        /\* quit if receiver indicates that its done receiving *\/ */
+/*        if (copy_buf->flag[buf_num].val == BUF_DONE)*/
+/*            break;*/
+        
+        MPID_NEM_READ_WRITE_BARRIER();
 
         /* we have a free buffer, fill it */
         last = (data_sz - first <= MPID_NEM_COPY_BUF_LEN) ? data_sz : first + MPID_NEM_COPY_BUF_LEN;
@@ -497,16 +515,20 @@ static int lmt_shm_recv_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
             ++i;
         }
 
-        /* receiver should never find a buffer with the DONE flag */
-        MPIU_Assert(copy_buf->flag[buf_num].val != BUF_DONE);
-
+ /*       /\* receiver should never find a buffer with the DONE flag *\/ */
+ /*       MPIU_Assert(copy_buf->flag[buf_num].val != BUF_DONE); */
+      
+        MPID_NEM_READ_BARRIER();
+        
         last = (data_sz - first <= MPID_NEM_COPY_BUF_LEN) ? data_sz : first + MPID_NEM_COPY_BUF_LEN;
 	MPID_Segment_unpack(req->dev.segment_ptr, first, &last, (void *)copy_buf->buf[buf_num]); /* cast away volatile */
-        MPID_NEM_READ_BARRIER();
-        if (last < data_sz)
-            copy_buf->flag[buf_num].val = BUF_EMPTY;
-        else
-            copy_buf->flag[buf_num].val = BUF_DONE;
+
+        MPID_NEM_READ_WRITE_BARRIER();
+        copy_buf->flag[buf_num].val = BUF_EMPTY;	
+/*	if (last < data_sz) */
+/*           copy_buf->flag[buf_num].val = BUF_EMPTY; */
+/*        else */
+/*            copy_buf->flag[buf_num].val = BUF_DONE; */
         MPID_NEM_WRITE_BARRIER();
 
         first = last;

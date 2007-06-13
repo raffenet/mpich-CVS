@@ -329,6 +329,9 @@ if test "$pac_cv_have_haddr_list" = "yes" ; then
     AC_DEFINE(HAVE_H_ADDR_LIST,1,[Define if struct hostent contains h_addr_list])
 fi
 
+# Check for memory atomic instructions
+PAC_C_MEMATOMIC
+
 AC_SUBST(device_name)
 AC_SUBST(channel_name)
 AC_SUBST(nemesis_network)
