@@ -139,19 +139,27 @@ nfpilog_pack@EXEEXT@: fpilog_pack.n@OBJEXT@
 
 srtest@EXEEXT@: srtest.@OBJEXT@
 	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
-#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+
+pthread_sendrecv@EXEEXT@: pthread_sendrecv.@OBJEXT@
+	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+
+pthread_allreduce@EXEEXT@: pthread_allreduce.@OBJEXT@
+	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 iotest@EXEEXT@: iotest.@OBJEXT@
 	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
-#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 comm1_isr@EXEEXT@: comm1_isr.@OBJEXT@
 	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
-#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 comm1_isr_loop@EXEEXT@: comm1_isr_loop.@OBJEXT@
 	$(MPE_CLINKER)mpilog $(CC_LDFLAGS)  -o $@ $? $(DEBUG_LIBS) -lm
-#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 fcomm1_isr@EXEEXT@: fcomm1_isr.@OBJEXT@
 	$(MPE_FLINKER)mpilog $(FC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
@@ -159,11 +167,11 @@ fcomm1_isr@EXEEXT@: fcomm1_isr.@OBJEXT@
 
 comm2_connect_accept@EXEEXT@: comm2_connect_accept.@OBJEXT@
 	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
-#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 comm2_join@EXEEXT@: comm2_join.@OBJEXT@
 	$(MPE_CLINKER)mpilog $(CC_LDFLAGS) -o $@ $? $(DEBUG_LIBS) -lm
-#	$(MPI_CLINKER) $(CC_LDFLAGS)  -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
+#	$(MPI_CLINKER) $(CC_LDFLAGS) -o $@ $? $(LOG_LIBS) $(DEBUG_LIBS) -lm
 
 log_cost@EXEEXT@: log_cost.c
 	$(CC) $(CC_FLAGS) -DCLOG_NOMPI -c $?
