@@ -1383,8 +1383,8 @@ MPI_Comm comm;
     MPI_Allgather - prototyping replacement for MPI_Allgather
     Log the beginning and ending of the time spent in MPI_Allgather calls.
 */
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ALLGATHER_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1463,8 +1463,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Allreduce calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ALLREDUCE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3477,9 +3477,9 @@ char  ***argv;
     MPE_LOG_SOLO_EVENT_DECL
     MPE_LOG_THREAD_DECL
 
-    MPE_LOG_THREAD_LOCK
     MPE_LOG_THREAD_INIT
     MPE_LOG_THREADID_GET
+    MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     is_mylog_on  = 1;
     MPE_LOG_OFF
@@ -3532,9 +3532,9 @@ int    *provided;
     MPE_LOG_SOLO_EVENT_DECL
     MPE_LOG_THREAD_DECL
 
-    MPE_LOG_THREAD_LOCK
     MPE_LOG_THREAD_INIT
     MPE_LOG_THREADID_GET
+    MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     is_mylog_on  = 1;
     MPE_LOG_OFF
@@ -4536,8 +4536,8 @@ MPI_Status * status;
     Log the beginning and ending of the time spent in MPI_Recv calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_RECV_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4676,8 +4676,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Send calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_SEND_ID)
 
   PMPI_Type_size( datatype, &size );
