@@ -136,8 +136,8 @@ int MPI_Accumulate( void *origin_addr, int origin_count,
       Log the beginning and ending of the time spent in MPI_Accumulate calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ACCUMULATE_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -172,8 +172,8 @@ int MPI_Alloc_mem( MPI_Aint size, MPI_Info info, void *baseptr )
       Log the beginning and ending of the time spent in MPI_Alloc_mem calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ALLOC_MEM_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -205,8 +205,8 @@ int MPI_Free_mem( void *base )
       Log the beginning and ending of the time spent in MPI_Free_mem calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_FREE_MEM_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -241,8 +241,8 @@ int MPI_Get( void *origin_addr, int origin_count,
       Log the beginning and ending of the time spent in MPI_Get calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -280,8 +280,8 @@ int MPI_Put( void *origin_addr, int origin_count,
       Log the beginning and ending of the time spent in MPI_Put calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_PUT_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -316,8 +316,8 @@ int MPI_Win_complete( MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_complete calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_COMPLETE_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -350,8 +350,8 @@ int MPI_Win_create( void *base, MPI_Aint size, int disp_unit,
       Log the beginning and ending of the time spent in MPI_Win_create calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_WIN_CREATE_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -383,8 +383,8 @@ int MPI_Win_fence( int assert, MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_fence calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_FENCE_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -416,8 +416,8 @@ int MPI_Win_free( MPI_Win *win )
       Log the beginning and ending of the time spent in MPI_Win_free calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_FREE_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -449,8 +449,8 @@ int MPI_Win_get_group( MPI_Win win, MPI_Group *group )
       Log the beginning and ending of the time spent in MPI_Win_get_group calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_GET_GROUP_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -482,8 +482,8 @@ int MPI_Win_get_name( MPI_Win win, char *win_name, int *resultlen )
       Log the beginning and ending of the time spent in MPI_Win_get_name calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_GET_NAME_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -516,8 +516,8 @@ int MPI_Win_lock( int lock_type, int rank, int assert, MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_lock calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_LOCK_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -550,8 +550,8 @@ int MPI_Win_post( MPI_Group group, int assert, MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_post calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_POST_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -583,8 +583,8 @@ int MPI_Win_set_name( MPI_Win win, char *win_name )
       Log the beginning and ending of the time spent in MPI_Win_set_name calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_SET_NAME_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -616,8 +616,8 @@ int MPI_Win_start( MPI_Group group, int assert, MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_start calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_START_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -650,8 +650,8 @@ int MPI_Win_test( MPI_Win win, int *flag )
       Log the beginning and ending of the time spent in MPI_Win_test calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_TEST_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -685,8 +685,8 @@ int MPI_Win_unlock( int rank, MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_unlock calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_UNLOCK_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -719,8 +719,8 @@ int MPI_Win_wait( MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_wait calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_WAIT_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )

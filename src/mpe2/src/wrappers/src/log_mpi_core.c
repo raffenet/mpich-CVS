@@ -1423,8 +1423,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Allgatherv calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ALLGATHERV_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1503,8 +1503,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Alltoall calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ALLTOALL_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1546,8 +1546,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Alltoallv calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ALLTOALLV_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1581,8 +1581,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Barrier calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_BARRIER_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1619,8 +1619,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Bcast calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_BCAST_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1660,8 +1660,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Gather calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_GATHER_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1702,8 +1702,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Gatherv calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_GATHERV_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1739,8 +1739,8 @@ MPI_Op * op;
     Log the beginning and ending of the time spent in MPI_Op_create calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_OP_CREATE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1773,8 +1773,8 @@ MPI_Op * op;
     Log the beginning and ending of the time spent in MPI_Op_free calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_OP_FREE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1812,8 +1812,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Reduce_scatter calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_REDUCE_SCATTER_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1853,8 +1853,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Reduce calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_REDUCE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1892,8 +1892,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Scan calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_SCAN_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1933,8 +1933,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Scatter calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_SCATTER_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -1977,8 +1977,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Scatterv calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_SCATTERV_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2013,8 +2013,8 @@ int keyval;
     Log the beginning and ending of the time spent in MPI_Attr_delete calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_DELETE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2050,8 +2050,8 @@ int * flag;
     Log the beginning and ending of the time spent in MPI_Attr_get calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_GET_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2086,8 +2086,8 @@ void * attr_value;
     Log the beginning and ending of the time spent in MPI_Attr_put calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ATTR_PUT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2122,8 +2122,8 @@ int * result;
     Log the beginning and ending of the time spent in MPI_Comm_compare calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_COMM_COMPARE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2159,8 +2159,8 @@ MPI_Comm * comm_out;
     Log the beginning and ending of the time spent in MPI_Comm_create calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_CREATE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2197,8 +2197,8 @@ MPI_Comm * comm_out;
     Log the beginning and ending of the time spent in MPI_Comm_dup calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_DUP_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2234,8 +2234,8 @@ MPI_Comm * comm;
     Log the beginning and ending of the time spent in MPI_Comm_free calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(*comm,MPE_COMM_FREE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2273,8 +2273,8 @@ MPI_Group * group;
     Log the beginning and ending of the time spent in MPI_Comm_group calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_GROUP_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2308,8 +2308,8 @@ int * rank;
     Log the beginning and ending of the time spent in MPI_Comm_rank calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_RANK_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2343,8 +2343,8 @@ MPI_Group * group;
     Log the beginning and ending of the time spent in MPI_Comm_remote_group calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_REMOTE_GROUP_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2378,8 +2378,8 @@ int * size;
     Log the beginning and ending of the time spent in MPI_Comm_remote_size calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_REMOTE_SIZE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2413,8 +2413,8 @@ int * size;
     Log the beginning and ending of the time spent in MPI_Comm_size calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_SIZE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2451,8 +2451,8 @@ MPI_Comm * comm_out;
     Log the beginning and ending of the time spent in MPI_Comm_split calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_SPLIT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2488,8 +2488,8 @@ int * flag;
     Log the beginning and ending of the time spent in MPI_Comm_test_inter calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_COMM_TEST_INTER_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2524,8 +2524,8 @@ int * result;
     Log the beginning and ending of the time spent in MPI_Group_compare calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_COMPARE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2560,8 +2560,8 @@ MPI_Group * group_out;
     Log the beginning and ending of the time spent in MPI_Group_difference calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_DIFFERENCE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2597,8 +2597,8 @@ MPI_Group * newgroup;
     Log the beginning and ending of the time spent in MPI_Group_excl calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_EXCL_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2631,8 +2631,8 @@ MPI_Group * group;
     Log the beginning and ending of the time spent in MPI_Group_free calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_FREE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2668,8 +2668,8 @@ MPI_Group * group_out;
     Log the beginning and ending of the time spent in MPI_Group_incl calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_INCL_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2704,8 +2704,8 @@ MPI_Group * group_out;
     Log the beginning and ending of the time spent in MPI_Group_intersection calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_INTERSECTION_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2739,8 +2739,8 @@ int * rank;
     Log the beginning and ending of the time spent in MPI_Group_rank calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANK_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2776,8 +2776,8 @@ MPI_Group * newgroup;
     Log the beginning and ending of the time spent in MPI_Group_range_excl calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANGE_EXCL_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2813,8 +2813,8 @@ MPI_Group * newgroup;
     Log the beginning and ending of the time spent in MPI_Group_range_incl calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_RANGE_INCL_ID)
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
@@ -2847,8 +2847,8 @@ int * size;
     Log the beginning and ending of the time spent in MPI_Group_size calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_SIZE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2885,8 +2885,8 @@ int * ranks_b;
     Log the beginning and ending of the time spent in MPI_Group_translate_ranks calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_TRANSLATE_RANKS_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2922,8 +2922,8 @@ MPI_Group * group_out;
     Log the beginning and ending of the time spent in MPI_Group_union calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GROUP_UNION_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -2962,8 +2962,8 @@ MPI_Comm * comm_out;
     Log the beginning and ending of the time spent in MPI_Intercomm_create calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(local_comm,MPE_INTERCOMM_CREATE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3003,8 +3003,8 @@ MPI_Comm * comm_out;
     Log the beginning and ending of the time spent in MPI_Intercomm_merge calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_INTERCOMM_MERGE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3042,8 +3042,8 @@ void * extra_state;
     Log the beginning and ending of the time spent in MPI_Keyval_create calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_KEYVAL_CREATE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3076,8 +3076,8 @@ int * keyval;
     Log the beginning and ending of the time spent in MPI_Keyval_free calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_KEYVAL_FREE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3111,8 +3111,8 @@ int errorcode;
     Log the beginning and ending of the time spent in MPI_Abort calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ABORT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3147,8 +3147,8 @@ int * errorclass;
     Log the beginning and ending of the time spent in MPI_Error_class calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERROR_CLASS_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3182,8 +3182,8 @@ MPI_Errhandler * errhandler;
     Log the beginning and ending of the time spent in MPI_Errhandler_create calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERRHANDLER_CREATE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3216,8 +3216,8 @@ MPI_Errhandler * errhandler;
     Log the beginning and ending of the time spent in MPI_Errhandler_free calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERRHANDLER_FREE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3251,8 +3251,8 @@ MPI_Errhandler * errhandler;
     Log the beginning and ending of the time spent in MPI_Errhandler_get calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ERRHANDLER_GET_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3287,8 +3287,8 @@ int * resultlen;
     Log the beginning and ending of the time spent in MPI_Error_string calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ERROR_STRING_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3322,8 +3322,8 @@ MPI_Errhandler errhandler;
     Log the beginning and ending of the time spent in MPI_Errhandler_set calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ERRHANDLER_SET_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3361,8 +3361,9 @@ int  MPI_Finalize( )
 /*
     MPI_Finalize - prototyping replacement for MPI_Finalize
 */
-    MPE_LOG_THREAD_LOCK
+
     MPE_LOG_THREADID_GET
+    MPE_LOG_THREAD_LOCK
 
     is_mylog_on  = 1;
     MPE_LOG_SOLO_EVENT( CLOG_CommIDs4World, thdID, MPE_COMM_FINALIZE_ID )
@@ -3441,8 +3442,8 @@ int * resultlen;
     Log the beginning and ending of the time spent in MPI_Get_processor_name calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_PROCESSOR_NAME_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3576,7 +3577,11 @@ int    *provided;
 #endif
 
 
-
+/*
+    MPI_Initialized - prototyping replacement for MPI_Initialized
+    Log the beginning and ending of the time spent in MPI_Initialized calls.
+*/
+/*
 int  MPI_Initialized( flag )
 int * flag;
 {
@@ -3584,13 +3589,8 @@ int * flag;
   MPE_LOG_STATE_DECL
   MPE_LOG_THREAD_DECL
 
-/*
-    MPI_Initialized - prototyping replacement for MPI_Initialized
-    Log the beginning and ending of the time spent in MPI_Initialized calls.
-*/
-
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_INITIALIZED_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3610,6 +3610,7 @@ int * flag;
 
   return returnVal;
 }
+*/
 
 #ifdef FOO
 /*
@@ -3627,8 +3628,8 @@ double  MPI_Wtick(  )
     Log the beginning and ending of the time spent in MPI_Wtick calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WTICK_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3660,8 +3661,8 @@ double  MPI_Wtime(  )
     Log the beginning and ending of the time spent in MPI_Wtime calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WTIME_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3696,8 +3697,8 @@ MPI_Aint * address;
     Log the beginning and ending of the time spent in MPI_Address calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ADDRESS_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3736,8 +3737,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Bsend calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_BSEND_ID)
 
   PMPI_Type_size( datatype, &size );
@@ -3779,8 +3780,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Bsend_init calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_BSEND_INIT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3817,8 +3818,8 @@ int size;
     Log the beginning and ending of the time spent in MPI_Buffer_attach calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_BUFFER_ATTACH_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3852,8 +3853,8 @@ int * size;
     Log the beginning and ending of the time spent in MPI_Buffer_detach calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_BUFFER_DETACH_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -3886,8 +3887,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Cancel calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_CANCEL_ID)
   
   MPE_Req_cancel( *request );
@@ -3922,8 +3923,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Request_free calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_REQUEST_FREE_ID)
 
   MPE_Req_remove( *request );
@@ -3964,8 +3965,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Recv_init calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_RECV_INIT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4010,8 +4011,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Send_init calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_SEND_INIT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4049,8 +4050,8 @@ int * elements;
     Log the beginning and ending of the time spent in MPI_Get_elements calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_ELEMENTS_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4085,8 +4086,8 @@ int * count;
     Log the beginning and ending of the time spent in MPI_Get_count calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_COUNT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4125,8 +4126,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Ibsend calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_IBSEND_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4171,8 +4172,8 @@ MPI_Status * status;
     Log the beginning and ending of the time spent in MPI_Iprobe calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_IPROBE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4221,8 +4222,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Irecv calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_IRECV_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4265,8 +4266,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Irsend calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_IRSEND_ID)
 
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4308,8 +4309,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Isend calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ISEND_ID)
 
   PMPI_Type_size( datatype, &size );
@@ -4354,8 +4355,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Issend calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_ISSEND_ID)
 
   PMPI_Type_size( datatype, &size );
@@ -4399,8 +4400,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Pack calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_PACK_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4437,8 +4438,8 @@ int * size;
     Log the beginning and ending of the time spent in MPI_Pack_size calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_PACK_SIZE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4480,8 +4481,8 @@ MPI_Status * status;
     Log the beginning and ending of the time spent in MPI_Probe calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_PROBE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4590,8 +4591,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Rsend calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_RSEND_ID)
 
   PMPI_Type_size( datatype, &size );
@@ -4633,8 +4634,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Rsend_init calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_RSEND_INIT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4733,8 +4734,8 @@ MPI_Status * status;
     Log the beginning and ending of the time spent in MPI_Sendrecv calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_SENDRECV_ID)
 
       PMPI_Type_size( sendtype, &sendsize );
@@ -4800,8 +4801,8 @@ MPI_Status * status;
     Log the beginning and ending of the time spent in MPI_Sendrecv_replace calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_SENDRECV_REPLACE_ID)
 
       PMPI_Type_size( datatype, &sendsize );
@@ -4855,8 +4856,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Ssend calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_SSEND_ID)
 
   PMPI_Type_size( datatype, &size );
@@ -4898,8 +4899,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Ssend_init calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_SSEND_INIT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4934,8 +4935,8 @@ MPI_Request * request;
     Log the beginning and ending of the time spent in MPI_Start calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_START_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -4972,8 +4973,8 @@ MPI_Request * array_of_requests;
     Log the beginning and ending of the time spent in MPI_Startall calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_STARTALL_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5018,8 +5019,8 @@ MPI_Status * status;
         status = &tmp_status;
 #endif
 
-    MPE_LOG_THREAD_LOCK
     MPE_LOG_THREADID_GET
+    MPE_LOG_THREAD_LOCK
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TEST_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5071,8 +5072,8 @@ MPI_Status * array_of_statuses;
     }
 #endif
 
-    MPE_LOG_THREAD_LOCK
     MPE_LOG_THREADID_GET
+    MPE_LOG_THREAD_LOCK
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TESTALL_ID)
 
     if (count > MPE_MAX_REQUESTS) {
@@ -5141,8 +5142,8 @@ MPI_Status * status;
         status = &tmp_status;
 #endif
 
-    MPE_LOG_THREAD_LOCK
     MPE_LOG_THREADID_GET
+    MPE_LOG_THREAD_LOCK
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TESTANY_ID)
 
     if (count > MPE_MAX_REQUESTS) {
@@ -5192,8 +5193,8 @@ int * flag;
     Log the beginning and ending of the time spent in MPI_Test_cancelled calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TEST_CANCELLED_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5247,8 +5248,8 @@ MPI_Status * array_of_statuses;
     }
 #endif
 
-    MPE_LOG_THREAD_LOCK
     MPE_LOG_THREADID_GET
+    MPE_LOG_THREAD_LOCK
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TESTSOME_ID)
 
     if (incount > MPE_MAX_REQUESTS) {
@@ -5306,8 +5307,8 @@ MPI_Datatype * datatype;
     Log the beginning and ending of the time spent in MPI_Type_commit calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_COMMIT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5342,8 +5343,8 @@ MPI_Datatype * newtype;
     Log the beginning and ending of the time spent in MPI_Type_contiguous calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_CONTIGUOUS_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5377,8 +5378,8 @@ MPI_Aint * extent;
     Log the beginning and ending of the time spent in MPI_Type_extent calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_EXTENT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5411,8 +5412,8 @@ MPI_Datatype * datatype;
     Log the beginning and ending of the time spent in MPI_Type_free calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_FREE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5449,8 +5450,8 @@ MPI_Datatype * newtype;
     Log the beginning and ending of the time spent in MPI_Type_hindexed calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_HINDEXED_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5488,8 +5489,8 @@ MPI_Datatype * newtype;
     Log the beginning and ending of the time spent in MPI_Type_hvector calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_HVECTOR_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5526,8 +5527,8 @@ MPI_Datatype * newtype;
     Log the beginning and ending of the time spent in MPI_Type_indexed calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_INDEXED_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5561,8 +5562,8 @@ MPI_Aint * displacement;
     Log the beginning and ending of the time spent in MPI_Type_lb calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_LB_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5596,8 +5597,8 @@ int          * size;
     Log the beginning and ending of the time spent in MPI_Type_size calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_SIZE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5634,8 +5635,8 @@ MPI_Datatype * newtype;
     Log the beginning and ending of the time spent in MPI_Type_struct calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_STRUCT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5669,8 +5670,8 @@ MPI_Aint * displacement;
     Log the beginning and ending of the time spent in MPI_Type_ub calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_UB_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5707,8 +5708,8 @@ MPI_Datatype * newtype;
     Log the beginning and ending of the time spent in MPI_Type_vector calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_TYPE_VECTOR_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5747,8 +5748,8 @@ MPI_Comm comm;
     Log the beginning and ending of the time spent in MPI_Unpack calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_UNPACK_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5790,8 +5791,8 @@ MPI_Status * status;
         status = &tmp_status;
 #endif
 
-    MPE_LOG_THREAD_LOCK
     MPE_LOG_THREADID_GET
+    MPE_LOG_THREAD_LOCK
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WAIT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -5842,8 +5843,8 @@ MPI_Status * array_of_statuses;
     }
 #endif
 
-    MPE_LOG_THREAD_LOCK
     MPE_LOG_THREADID_GET
+    MPE_LOG_THREAD_LOCK
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WAITALL_ID)
 
     if (count > MPE_MAX_REQUESTS) {
@@ -5910,8 +5911,8 @@ MPI_Status * status;
         status = &tmp_status;
 #endif
 
-    MPE_LOG_THREAD_LOCK
     MPE_LOG_THREADID_GET
+    MPE_LOG_THREAD_LOCK
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WAITANY_ID)
   
     if (count > MPE_MAX_REQUESTS) {
@@ -5989,8 +5990,8 @@ MPI_Status * array_of_statuses;
     }
 #endif
 
-    MPE_LOG_THREAD_LOCK
     MPE_LOG_THREADID_GET
+    MPE_LOG_THREAD_LOCK
     MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WAITSOME_ID)
 
     if (incount > MPE_MAX_REQUESTS) {
@@ -6051,8 +6052,8 @@ int * coords;
     Log the beginning and ending of the time spent in MPI_Cart_coords calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_COORDS_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6091,8 +6092,8 @@ MPI_Comm * comm_cart;
     Log the beginning and ending of the time spent in MPI_Cart_create calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm_old,MPE_CART_CREATE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6132,8 +6133,8 @@ int * coords;
     Log the beginning and ending of the time spent in MPI_Cart_get calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_GET_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6170,8 +6171,8 @@ int * newrank;
     Log the beginning and ending of the time spent in MPI_Cart_map calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm_old,MPE_CART_MAP_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6206,8 +6207,8 @@ int * rank;
     Log the beginning and ending of the time spent in MPI_Cart_rank calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_RANK_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6244,8 +6245,8 @@ int * dest;
     Log the beginning and ending of the time spent in MPI_Cart_shift calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_SHIFT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6281,8 +6282,8 @@ MPI_Comm * comm_new;
     Log the beginning and ending of the time spent in MPI_Cart_sub calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_CART_SUB_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6318,8 +6319,8 @@ int * ndims;
     Log the beginning and ending of the time spent in MPI_Cartdim_get calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_CARTDIM_GET_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6354,8 +6355,8 @@ int * dims;
     Log the beginning and ending of the time spent in MPI_Dims_create calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_DIMS_CREATE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6394,8 +6395,8 @@ MPI_Comm * comm_graph;
     Log the beginning and ending of the time spent in MPI_Graph_create calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm_old,MPE_GRAPH_CREATE_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6435,8 +6436,8 @@ int * edges;
     Log the beginning and ending of the time spent in MPI_Graph_get calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_GET_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6473,8 +6474,8 @@ int * newrank;
     Log the beginning and ending of the time spent in MPI_Graph_map calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm_old,MPE_GRAPH_MAP_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6510,8 +6511,8 @@ int * neighbors;
     Log the beginning and ending of the time spent in MPI_Graph_neighbors calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_NEIGHBORS_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6546,8 +6547,8 @@ int * nneighbors;
     Log the beginning and ending of the time spent in MPI_Graph_neighbors_count calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPH_NEIGHBORS_COUNT_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6582,8 +6583,8 @@ int * nedges;
     Log the beginning and ending of the time spent in MPI_Graphdims_get calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_GRAPHDIMS_GET_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
@@ -6617,8 +6618,8 @@ int * top_type;
     Log the beginning and ending of the time spent in MPI_Topo_test calls.
 */
 
-  MPE_LOG_THREAD_LOCK
   MPE_LOG_THREADID_GET
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_TOPO_TEST_ID)
   
 #if defined( MAKE_SAFE_PMPI_CALL )
