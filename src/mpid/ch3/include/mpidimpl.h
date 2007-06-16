@@ -692,8 +692,8 @@ int MPIDI_VC_Init( MPIDI_VC_t *, MPIDI_PG_t *, int );
 #endif
 
 typedef struct __MPIDI_CH3U_SRBuf_element {
+    char                              * buf;
     struct __MPIDI_CH3U_SRBuf_element * next;
-    char                                buf[MPIDI_CH3U_SRBuf_size];
 } MPIDI_CH3U_SRBuf_element_t;
 
 extern MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool;
@@ -705,6 +705,8 @@ extern MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool;
         if (!MPIDI_CH3U_SRBuf_pool) {                                   \
              MPIDI_CH3U_SRBuf_pool =                                    \
                 MPIU_Malloc(sizeof(MPIDI_CH3U_SRBuf_element_t));        \
+            MPIDI_CH3U_SRBuf_pool->buf =                                \
+                MPIU_Malloc(MPIDI_CH3U_SRBuf_size);                     \
             MPIDI_CH3U_SRBuf_pool->next = NULL;                         \
         }                                                               \
         tmp = MPIDI_CH3U_SRBuf_pool;                                    \
