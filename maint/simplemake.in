@@ -3124,7 +3124,6 @@ sub TargetPrograms {
 	}
 	$ruleline .= " \${LIBS}";
 	&print_make_longline( FD, $ruleline );
-#	&print_make_longline( FD, "\t$progrules{$pgmsrctype{$pgm}} -o $pgm $pgmobjs $pgmlibs{$pgm} $pgm_ldadd{$pgm} \${LIBS}" );
     }
 
 }
