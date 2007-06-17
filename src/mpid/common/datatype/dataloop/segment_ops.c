@@ -11,8 +11,7 @@
 #include <sys/types.h>
 
 #include "./dataloop.h"
-
-
+#include "./veccpy.h"
 
 #ifdef HAVE_ANY_INT64_T_ALIGNEMENT
 #define MPIR_ALIGN8_TEST(p1,p2)
@@ -31,22 +30,21 @@
     type * l_src = (type *)src, * l_dest = (type *)dest;	\
     int i, j;							\
     const int l_stride = stride;				\
+    unsigned long soffset, doffset;                             \
+                                                                \
     if (nelms == 1) {						\
         for (i=count;i!=0;i--) {				\
             *l_dest++ = *l_src;					\
             l_src = (type *) ((char *) l_src + l_stride);	\
         }							\
+        dest = (char *) l_dest;                                 \
+        src = (char *) l_src;                                   \
     }								\
     else {							\
-        for (i=count; i!=0; i--) {				\
-            for (j=0; j<nelms; j++) {				\
-                *l_dest++ = l_src[j];				\
-	    }							\
-            l_src = (type *) ((char *) l_src + l_stride);	\
-        }							\
+        MPIDI_VEC_TO_BUF(src,dest,stride,type,nelms,count,soffset,doffset); \
+        dest = (char *) ((MPI_Aint) dest + doffset);            \
+        src = (char *) ((MPI_Aint) src + soffset);              \
     }								\
-    dest = (char *) l_dest;					\
-    src  = (char *) l_src;                                      \
 }
 
 #define MPIDI_COPY_TO_VEC(src,dest,stride,type,nelms,count)	\
@@ -54,25 +52,22 @@
     type * l_src = (type *)src, * l_dest = (type *)dest;	\
     int i, j;							\
     const int l_stride = stride;				\
+    unsigned long soffset, doffset;                             \
+                                                                \
     if (nelms == 1) {						\
         for (i=count;i!=0;i--) {				\
             *l_dest = *l_src++;					\
             l_dest = (type *) ((char *) l_dest + l_stride);	\
         }							\
+        dest = (char *) l_dest;                                 \
+        src = (char *) l_src;                                   \
     }								\
     else {							\
-        for (i=count; i!=0; i--) {				\
-            for (j=0; j<nelms; j++) {				\
-                l_dest[j] = *l_src++;				\
-	    }							\
-            l_dest = (type *) ((char *) l_dest + l_stride);	\
-        }							\
+        MPIDI_BUF_TO_VEC(src,dest,stride,type,nelms,count,soffset,doffset); \
+        dest = (char *) ((MPI_Aint) dest + doffset);            \
+        src = (char *) ((MPI_Aint) src + soffset);              \
     }								\
-    dest = (char *) l_dest;					\
-    src  = (char *) l_src;                                      \
 }
-
-/* m2m_params defined in dataloop_parts.h */
 
 int PREPEND_PREFIX(Segment_contig_m2m)(DLOOP_Offset *blocks_p,
 				       DLOOP_Type el_type,
