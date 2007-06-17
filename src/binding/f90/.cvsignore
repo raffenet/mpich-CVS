@@ -8,6 +8,10 @@ mpimod.pcl
 mpi_sizeofs.f90
 mpi_base.f90
 mpif90model.h
+mpif90type.h
+typef90intf.c
+typef90realf.c
+typef90cmplxf.c
 .deps
 *.mod
 *.MOD

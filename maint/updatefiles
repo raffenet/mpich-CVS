@@ -253,6 +253,7 @@ if [ $do_bindings = "yes" ] ; then
     if [ $build_f90 = "yes" ] ; then
 	echo "Building Fortran 90 interface"
 	( cd src/binding/f90 && chmod a+x ./buildiface && ./buildiface )
+	( cd src/binding/f90 && ../f77/buildiface -infile=cf90t.h -deffile=cf90tdefs)
     fi
 
     if [ ! -s src/binding/cxx/mpicxx.h ] ; then 
