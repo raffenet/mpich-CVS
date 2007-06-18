@@ -493,29 +493,37 @@ class MPDSock(object):
         if readyToRecv:
             mpd_print(mpd_dbg_level,"readyToRecv");
             try:
-                while (1):
-                    try:
-                        pickledLen = self.sock.recv(8)
-                        # FIXME: Shouldn't this block until there is a
-                        # message unless it raises an exception.
-                        # Is no message an EOF, and in that case, 
-                        # do we really want to immediately delete
-                        # the corresponding entry?
-                        #if not pickledLen:
-			#    mpd_print(1,"continuing because recv failed")
-                        #    continue
-                        break
-                    except socket.error,errinfo:
-                        if errinfo[0] == EINTR:
-                            mpd_print(mpd_dbg_level,"Saw EINTR")
-                            pass
-			elif errinfo[0] == ECONNRESET:
-                            mpd_print(mpd_dbg_level,"Saw ECONNRESET, ignore (return null msg)")
-			    return msg;
-                        else:
-                            mpd_print_tb(1,"recv_dict_msg: sock.recv(8): errinfo=:%s:" % (errinfo))
-                            raise socket.error,errinfo
-                # end of while(1)
+                pickledLen = ''
+                tempRecvd = ''
+                lenLeft = 8
+                while lenLeft:
+                    while (1):
+                        try:
+                            tempRecvd = self.sock.recv(lenLeft)
+                            # FIXME: Shouldn't this block until there is a
+                            # message unless it raises an exception.
+                            # Is no message an EOF, and in that case, 
+                            # do we really want to immediately delete
+                            # the corresponding entry?
+                            #if not pickledLen:
+                            #    mpd_print(1,"continuing because recv failed")
+                            #    continue
+                            break
+                        except socket.error,errinfo:
+                            if errinfo[0] == EINTR:
+                                mpd_print(mpd_dbg_level,"Saw EINTR")
+                                pass
+                            elif errinfo[0] == ECONNRESET:
+                                mpd_print(mpd_dbg_level,"Saw ECONNRESET, ignore (return null msg)")
+                                return msg;
+                            else:
+                                mpd_print_tb(1,"recv_dict_msg: sock.recv(8): errinfo=:%s:" % (errinfo))
+                                raise socket.error,errinfo
+                    # end of while(1)
+                    if not tempRecvd:
+                         break
+                    pickledLen += tempRecvd
+                    lenLeft -= len(tempRecvd)
                 if not pickledLen:
                     mpd_print(mpd_dbg_level,"no pickeled len")
                 if pickledLen:
