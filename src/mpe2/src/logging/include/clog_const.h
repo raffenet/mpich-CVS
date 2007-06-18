@@ -5,6 +5,14 @@
 #if !defined( _CLOG_CONST )
 #define _CLOG_CONST
 
+/* On Windows define *_FILENO */
+#ifdef HAVE_WINDOWS_H
+	#include <stdio.h>
+	#define	STDOUT_FILENO	(_fileno( stdout ))
+	#define STDIN_FILENO	(_fileno( stdin ))
+	#define STDERR_FILENO	(_fileno( stderr ))
+#endif
+
 /*
    CLOG_FILE_TYPE determines default CLOG2 file extension, i.e. ".clog2"
    as well as the prefix for the local temporary clog2 file.
