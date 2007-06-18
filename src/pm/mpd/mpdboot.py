@@ -234,14 +234,17 @@ def mpdboot():
             except:
                 print 'unable to obtain IP for host:', oldhost
                 continue
-            keep = 1
+            uips = {}    # unique ips
             for ip in ips:
+                uips[ip] = 1
+            keep = 1
+            for ip in uips.keys():
                 if cachedIPs.has_key(ip):
                     keep = 0
-                else:
-                    cachedIPs[ip] = 1
+                    break
             if keep:
                 hostsAndInfo.append(hostAndInfo)
+                cachedIPs.update(uips)
     if len(hostsAndInfo) < totalnumToStart:    # one is local
         print 'totalnum=%d  numhosts=%d' % (totalnumToStart,len(hostsAndInfo))
         print 'there are not enough hosts on which to start all processes'
