@@ -288,6 +288,7 @@ EOF
       print *, $range, ",", $kind, ",", cisize( a(1), a(2) )
       end
 EOF
+	IFS=$saveIFS
         mylink='$F90 -o conftest$ac_exeext $F90FLAGS $LDFLAGS conftest.$ac_f90ext conftestc.o $LIBS >&AC_FD_CC'
         if AC_TRY_EVAL(mylink) && test -s conftest${ac_exeext} ; then
             ./conftest > conftest.out 2>&AC_FD_CC
@@ -307,6 +308,7 @@ EOF
 	    fi
         fi
         rm -f conftest.*
+        IFS=:
      done
      IFS=$saveIFS
      AC_MSG_RESULT($F90_INTEGER_MODEL_MAP)
