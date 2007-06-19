@@ -14,6 +14,7 @@
 #include <stdlib.h>
 
 #define MAXTESTS 32
+#define ERROR_MARGIN 1.0 /* FIXME: This number is pretty much randomly chosen */
 
 static int verbose = 0;
 
@@ -232,15 +233,15 @@ int main( int argc, char *argv[] )
 		t0Old = times[0][k-1] * 1.0e6;
 		t1Old = times[1][k-1] * 1.0e6;
 		t2Old = times[2][k-1] * 1.0e6;
-		if (t0 > (2+0.5) * t0Old) {
+		if (t0 > (2+ERROR_MARGIN) * t0Old) {
 		    nPerfErrors++;
 		    printf( "Irecv-Send:\t%d\t%12.2f\t%12.2f\n", len, t0Old, t0 );
 		}
-		if (t1 > (2+0.5) * t1Old) {
+		if (t1 > (2+ERROR_MARGIN) * t1Old) {
 		    nPerfErrors++;
 		    printf( "Sendrecv:\t%d\t%12.2f\t%12.2f\n", len, t1Old, t1 );
 		}
-		if (t2 > (2+0.5) * t2Old) {
+		if (t2 > (2+ERROR_MARGIN) * t2Old) {
 		    nPerfErrors++;
 		    printf( "Pingpong:\t%d\t%12.2f\t%12.2f\n", len, t2Old, t2 );
 		}
