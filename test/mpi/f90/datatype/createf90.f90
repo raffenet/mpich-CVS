@@ -9,6 +9,7 @@
         integer nints, nadds, ndtypes, combiner
         integer rank
         integer nparms(2), dummy(1)
+        integer (kind=MPI_ADDRESS_KIND) adummy(1)
         integer ntype1, nsize, ntype2
 !
 !       Test the Type_create_f90_xxx routines
@@ -41,7 +42,7 @@
         endif
         if (nints .eq. 1) then
            call mpi_type_get_contents( ntype1, 1, 0, 0, &
-                                       nparms, dummy, dummy, ierr )
+                                       nparms, adummy, dummy, ierr )
            if (nparms(1) .ne. 9) then
               errs = errs + 1
               print *, "parameter was ", nparms(1), " should be 9"
