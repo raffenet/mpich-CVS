@@ -1233,7 +1233,7 @@ int MPID_nem_newtcp_module_init_sm()
     /* Set the appropriate states */
     sc_state_info[CONN_STATE_TC_C_CNTING].sc_state_plfd_events    = POLLOUT | POLLIN;
     sc_state_info[CONN_STATE_TC_C_CNTD].sc_state_plfd_events      = POLLOUT | POLLIN;
-    sc_state_info[CONN_STATE_TC_C_RANKSENT].sc_state_plfd_events  = POLLOUT | POLLIN;
+    sc_state_info[CONN_STATE_TC_C_RANKSENT].sc_state_plfd_events  = POLLIN;
     sc_state_info[CONN_STATE_TA_C_CNTD].sc_state_plfd_events      = POLLOUT | POLLIN;
     sc_state_info[CONN_STATE_TA_C_RANKRCVD].sc_state_plfd_events  = POLLOUT | POLLIN;
     
