@@ -736,24 +736,28 @@ if test -s $srcdir/$slog2_dirname/configure ; then
     fi
 fi
 
-AC_ARG_ENABLE( threadlogging,
-[--enable-threadlogging             - Turn on/off the coarse-grained thread
-                                      support in MPE logging.  The default is
-                                      enable=yes.], ,
-enable_threadlogging=no )
-
+dnl The following statement is no longer true as of 6/24/2007,
+dnl a thread-specific MPE logging on/off switch has been added
+dnl to mpe_log_thread[.h/.c] and MPI logging wrappper library
+dnl has been updated accordingly.
+dnl
+dnl AC_ARG_ENABLE( threadlogging,
+dnl [--enable-threadlogging             - Turn on/off the coarse-grained thread
+dnl                                      support in MPE logging.  The default
+dnl                                      is enable=no.], ,
+dnl enable_threadlogging=no )
 dnl
 dnl When thread-logging is enabled in multi-thread environment,
-dnl safePMPI guard can't be used, i.e. global variables is_mpilog_on
-dnl and is_mpelog_on can't be used in coarse-grained thread support,
+dnl safePMPI guard can't be used, i.e. global variables is_mpelog_on
+dnl can't be used in coarse-grained thread support,
 dnl becasue these varaibles need to be thread-specific.  Otherwise
 dnl turn off logging on 1 thread would mean turning it off for all
 dnl threads.
 dnl
-if test "$enable_threadlogging" = "yes" ; then
-    enable_safePMPI=no
-    export enable_safePMPI
-fi
+dnl if test "$enable_threadlogging" = "yes" ; then
+dnl     enable_safePMPI=no
+dnl     export enable_safePMPI
+dnl fi
 
 AC_OUTPUT_COMMANDS( [
 if test ! -x ./sbin/mpeinstall -a -s ./sbin/mpeinstall ; then
