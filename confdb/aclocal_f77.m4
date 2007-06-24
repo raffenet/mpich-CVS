@@ -558,7 +558,7 @@ EOF
     save_IFS="$IFS"
     # Make sure that IFS includes a space, or the tests that run programs
     # may fail
-    IFS=" 
+    IFS=" ""
 "
     save_trial_LIBS="$trial_LIBS"
     trial_LIBS=""
@@ -625,7 +625,7 @@ $libs"
     fi
     # Discard options that are not available:
     # (IFS already saved above)
-    IFS=" 
+    IFS=" ""
 "
     save_trial_FLAGS="$trial_FLAGS"
     trial_FLAGS=""
@@ -763,7 +763,7 @@ EOF
     # Now, try to find some way to compile and link that program, looping 
     # over the possibilities of options and libraries
         save_IFS="$IFS"
-        IFS=" 
+        IFS=" ""
 "
         for libs in $trial_LIBS ; do
             if test -n "$pac_cv_prog_f77_cmdarg" ; then break ; fi
@@ -784,7 +784,7 @@ EOF
 			found_answer="yes"
 		    fi
                 fi
-	        IFS=" 
+	        IFS=" ""
 "
 		if test "$found_answer" = "yes" ; then
 	            AC_MSG_RESULT([yes])
