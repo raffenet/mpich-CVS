@@ -136,25 +136,25 @@ int MPI_Accumulate( void *origin_addr, int origin_count,
       Log the beginning and ending of the time spent in MPI_Accumulate calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ACCUMULATE_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Accumulate( origin_addr, origin_count,
                                origin_datatype, target_rank,
                                target_disp, target_count,
                                target_datatype, op, win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -172,22 +172,22 @@ int MPI_Alloc_mem( MPI_Aint size, MPI_Info info, void *baseptr )
       Log the beginning and ending of the time spent in MPI_Alloc_mem calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_ALLOC_MEM_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Alloc_mem( size, info, baseptr );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -205,22 +205,22 @@ int MPI_Free_mem( void *base )
       Log the beginning and ending of the time spent in MPI_Free_mem calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_FREE_MEM_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Free_mem( base );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -241,25 +241,25 @@ int MPI_Get( void *origin_addr, int origin_count,
       Log the beginning and ending of the time spent in MPI_Get calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_GET_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Get( origin_addr, origin_count,
                         origin_datatype, target_rank,
                         target_disp, target_count,
                         target_datatype, win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -280,25 +280,25 @@ int MPI_Put( void *origin_addr, int origin_count,
       Log the beginning and ending of the time spent in MPI_Put calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_PUT_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Put( origin_addr, origin_count,
                         origin_datatype, target_rank,
                         target_disp, target_count,
                         target_datatype, win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -316,22 +316,22 @@ int MPI_Win_complete( MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_complete calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_COMPLETE_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_complete( win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -350,22 +350,22 @@ int MPI_Win_create( void *base, MPI_Aint size, int disp_unit,
       Log the beginning and ending of the time spent in MPI_Win_create calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(comm,MPE_WIN_CREATE_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_create( base, size, disp_unit, info, comm, win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(comm)
   MPE_LOG_THREAD_UNLOCK
 
@@ -383,22 +383,22 @@ int MPI_Win_fence( int assert, MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_fence calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_FENCE_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_fence( assert, win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -416,22 +416,22 @@ int MPI_Win_free( MPI_Win *win )
       Log the beginning and ending of the time spent in MPI_Win_free calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_FREE_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_free( win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -449,22 +449,22 @@ int MPI_Win_get_group( MPI_Win win, MPI_Group *group )
       Log the beginning and ending of the time spent in MPI_Win_get_group calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_GET_GROUP_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_get_group( win, group );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -482,22 +482,22 @@ int MPI_Win_get_name( MPI_Win win, char *win_name, int *resultlen )
       Log the beginning and ending of the time spent in MPI_Win_get_name calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_GET_NAME_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_get_name( win, win_name, resultlen );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -516,22 +516,22 @@ int MPI_Win_lock( int lock_type, int rank, int assert, MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_lock calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_LOCK_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_lock( lock_type, rank, assert, win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -550,22 +550,22 @@ int MPI_Win_post( MPI_Group group, int assert, MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_post calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_POST_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_post( group, assert, win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -583,22 +583,22 @@ int MPI_Win_set_name( MPI_Win win, char *win_name )
       Log the beginning and ending of the time spent in MPI_Win_set_name calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_SET_NAME_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_set_name( win, win_name );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -616,22 +616,22 @@ int MPI_Win_start( MPI_Group group, int assert, MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_start calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_START_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_start( group, assert, win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -650,22 +650,22 @@ int MPI_Win_test( MPI_Win win, int *flag )
       Log the beginning and ending of the time spent in MPI_Win_test calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_TEST_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_test( win, flag );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -685,22 +685,22 @@ int MPI_Win_unlock( int rank, MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_unlock calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_UNLOCK_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_unlock( rank, win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
@@ -719,22 +719,22 @@ int MPI_Win_wait( MPI_Win win )
       Log the beginning and ending of the time spent in MPI_Win_wait calls.
 */
 
-  MPE_LOG_THREADID_GET
+  MPE_LOG_THREADSTM_GET
   MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_BEGIN(MPE_COMM_NULL,MPE_WIN_WAIT_ID)
+  MPE_LOG_THREAD_UNLOCK
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
 #endif
-  MPE_LOG_THREAD_UNLOCK
 
   returnVal = PMPI_Win_wait( win );
 
-  MPE_LOG_THREAD_LOCK
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_ON
 #endif
 
+  MPE_LOG_THREAD_LOCK
   MPE_LOG_STATE_END(MPE_COMM_NULL)
   MPE_LOG_THREAD_UNLOCK
 
