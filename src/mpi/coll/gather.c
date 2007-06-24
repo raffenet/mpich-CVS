@@ -58,6 +58,7 @@ int MPIR_Gather (
     int        mpi_errno = MPI_SUCCESS;
     int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
     int mask, sendtype_size, recvtype_size, src, dst, position;
+    int actual_recvcnt;
     int tmp_buf_size;
     void *tmp_buf=NULL;
     MPI_Status status;
@@ -193,10 +194,14 @@ int MPIR_Gather (
                     src = (src + root) % comm_size;
                     if ((rank == root) && (root == 0))
 		    {
+			actual_recvcnt = recvcnt * mask;
+			if ((2 * actual_recvcnt) > (comm_size * recvcnt))
+			    actual_recvcnt = ((comm_size * recvcnt) - actual_recvcnt);
+
                         /* root is 0. Receive directly into recvbuf */
                         mpi_errno = MPIC_Recv(((char *)recvbuf + 
                                                src*recvcnt*extent), 
-                                              recvcnt*(comm_size-src), recvtype, src,
+                                              actual_recvcnt, recvtype, src,
                                               MPIR_GATHER_TAG, comm, 
                                               &status);
 			/* --BEGIN ERROR HANDLING-- */
