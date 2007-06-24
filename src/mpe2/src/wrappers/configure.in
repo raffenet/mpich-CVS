@@ -137,8 +137,8 @@ AC_ARG_ENABLE( safePMPI,
                                      Turn off logging before making PMPI call.
                                      Turn on logging after PMPI call.  For
                                      non-MPICH2 (standalone build), the default
-                                     is enable=yes.  For MPICH2 build, the
-                                     default is enable=no.], ,
+                                     is enable=yes for non-MPICH2 build.  For
+                                     MPICH2 build, the default is enable=no.], ,
 enable_safePMPI=yes )
 
 AC_ARG_ENABLE( debugcheck,
