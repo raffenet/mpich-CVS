@@ -32,19 +32,9 @@
     const int l_stride = stride;				\
     unsigned long soffset, doffset;                             \
                                                                 \
-    if (nelms == 1) {						\
-        for (i=count;i!=0;i--) {				\
-            *l_dest++ = *l_src;					\
-            l_src = (type *) ((char *) l_src + l_stride);	\
-        }							\
-        dest = (char *) l_dest;                                 \
-        src = (char *) l_src;                                   \
-    }								\
-    else {							\
-        MPIDI_VEC_TO_BUF(src,dest,stride,type,nelms,count,soffset,doffset); \
-        dest = (char *) ((MPI_Aint) dest + doffset);            \
-        src = (char *) ((MPI_Aint) src + soffset);              \
-    }								\
+    MPIDI_VEC_TO_BUF(src,dest,stride,type,nelms,count,soffset,doffset); \
+    dest = (char *) ((MPI_Aint) dest + doffset);                \
+    src = (char *) ((MPI_Aint) src + soffset);                  \
 }
 
 #define MPIDI_COPY_TO_VEC(src,dest,stride,type,nelms,count)	\
@@ -54,19 +44,9 @@
     const int l_stride = stride;				\
     unsigned long soffset, doffset;                             \
                                                                 \
-    if (nelms == 1) {						\
-        for (i=count;i!=0;i--) {				\
-            *l_dest = *l_src++;					\
-            l_dest = (type *) ((char *) l_dest + l_stride);	\
-        }							\
-        dest = (char *) l_dest;                                 \
-        src = (char *) l_src;                                   \
-    }								\
-    else {							\
-        MPIDI_BUF_TO_VEC(src,dest,stride,type,nelms,count,soffset,doffset); \
-        dest = (char *) ((MPI_Aint) dest + doffset);            \
-        src = (char *) ((MPI_Aint) src + soffset);              \
-    }								\
+    MPIDI_BUF_TO_VEC(src,dest,stride,type,nelms,count,soffset,doffset); \
+    dest = (char *) ((MPI_Aint) dest + doffset);                \
+    src = (char *) ((MPI_Aint) src + soffset);                  \
 }
 
 int PREPEND_PREFIX(Segment_contig_m2m)(DLOOP_Offset *blocks_p,
