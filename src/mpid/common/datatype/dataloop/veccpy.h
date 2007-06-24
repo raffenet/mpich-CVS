@@ -144,14 +144,14 @@
         }							\
     }                                                           \
     else if (nelms == 2) {                                      \
-        for (i = total_count; i; i--) {			        \
+        for (i = total_count; i; i -= 2) {			\
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest = (type *) ((char *) l_dest + l_stride);	\
         }							\
     }                                                           \
     else if (nelms == 3) {                                      \
-        for (i = total_count; i; i--) {			        \
+        for (i = total_count; i; i -= 3) {			\
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -159,7 +159,7 @@
         }							\
     }                                                           \
     else if (nelms == 4) {                                      \
-        for (i = total_count; i; i--) {			        \
+        for (i = total_count; i; i -= 4) {			\
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -168,7 +168,7 @@
         }							\
     }                                                           \
     else if (nelms == 5) {                                      \
-        for (i = total_count; i; i--) {			        \
+        for (i = total_count; i; i -= 5) {			\
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -178,7 +178,7 @@
         }							\
     }                                                           \
     else if (nelms == 6) {                                      \
-        for (i = total_count; i; i--) {			        \
+        for (i = total_count; i; i -= 6) {			\
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -189,7 +189,7 @@
         }							\
     }                                                           \
     else if (nelms == 7) {                                      \
-        for (i = total_count; i; i--) {			        \
+        for (i = total_count; i; i -= 7) {			\
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -201,7 +201,7 @@
         }							\
     }                                                           \
     else if (nelms == 8) {                                      \
-        for (i = total_count; i; i--) {			        \
+        for (i = total_count; i; i -= 8) {			\
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
