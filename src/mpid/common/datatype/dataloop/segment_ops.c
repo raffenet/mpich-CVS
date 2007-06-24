@@ -114,10 +114,10 @@
     }                                                           \
     else {                                                      \
         i = total_count;                                        \
-        j = nelms;                                              \
         while (i) {                                             \
             tmp_src = l_src;                                    \
-            while (j > 8) {                                     \
+            j = nelms;                                          \
+            while (j >= 8) {                                    \
                 *l_dest++ = tmp_src[0];				\
                 *l_dest++ = tmp_src[1];				\
                 *l_dest++ = tmp_src[2];				\
@@ -230,10 +230,10 @@
     }                                                           \
     else {                                                      \
         i = total_count;                                        \
-        j = nelms;                                              \
         while (i) {                                             \
             tmp_dest = l_dest;                                  \
-            while (j > 8) {                                     \
+            j = nelms;                                          \
+            while (j >= 8) {                                    \
                 tmp_dest[0] = *l_src++;				\
                 tmp_dest[1] = *l_src++;				\
                 tmp_dest[2] = *l_src++;				\
