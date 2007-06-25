@@ -2,4 +2,4 @@ transp-datatype 2
 sendrecvl 2
 twovec 1
 dtpack 1
-non-zero-root 4
+non_zero_root 4
