@@ -34,9 +34,17 @@ void MPE_CallStack_iteratorInit( MPE_CallStack_t *cstk )
 {
     int    pipefds[2];
     /* Connect a pipe to the fd used in backtrace_symbols_fd(). */
+#ifdef HAVE_WINDOWS_H
+    /*FIXME: CreatePipe() --- windows */
+#else
     pipe( pipefds );
+#endif
     /* Set the writing end of the pipe non-blocking */
+#ifdef HAVE_WINDOWS_H
+    /*FIXME: Set write fd non-blocking */
+#else
     fcntl( pipefds[1], F_SETFL, O_NONBLOCK );
+#endif
     MPE_CallStack_print( cstk, pipefds[1] );
     /* Close the pipe so EOF is sent to the reading end of the pipe */
     close( pipefds[1] );
