@@ -6,6 +6,8 @@
 #define SIZE 100000
 #define ITER 100
 
+static int verbose = 0;
+
 int main(int argc, char* argv[])
 {
 	char *sbuf, *rbuf;
