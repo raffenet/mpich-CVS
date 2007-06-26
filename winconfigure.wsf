@@ -3748,6 +3748,10 @@ If f.FolderExists("src\mpe2") Then
 		fout.WriteLine("#define lseek _lseek")
 		fout.WriteLine("#define snprintf _snprintf")
 		fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
+		' Define *_FILENO -- defined in unistd.h in unix
+		fout.WriteLine("#define STDOUT_FILENO (_fileno( stdout ))")
+		fout.WriteLine("#define STDIN_FILENO (_fileno( stdin ))")
+		fout.WriteLine("#define STDERR_FILENO (_fileno( stderr ))")
 		Call WriteFooter(fout)
 		fout.Close()
 	Else
@@ -4735,6 +4739,11 @@ Function GenBuild()
 	mfile.WriteLine("gfortflags = /iface:cref /assume:underscore /c /names:lowercase")
 	mfile.WriteLine("sfortflags = /iface:stdcall /c /names:uppercase")
 	mfile.WriteLine("impl_cxxflags = $(cflags)")
+	mfile.WriteLine("mpe_cflags = \")
+	mfile.WriteLine(" /I ..\src\mpe2\include \")
+	mfile.WriteLine(" /I ..\src\mpe2\src\logging\include \")
+	mfile.WriteLine(" /I ..\src\mpe2\src\callstack \")
+	mfile.WriteLine(" /I ..\src\mpe2\src\callstack\include")
 	mfile.WriteLine
 	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""ib""")
 	mfile.WriteLine("!IFNDEF IB")
@@ -5347,10 +5356,13 @@ Function GenBuild()
 	mfile.WriteLine("# MPE")
 	mfile.WriteLine
 	mfile.WriteLine("{..\src\mpe2\src\logging\src}.c{$(MPE_OUTDIR)}.obj:")
-	mfile.WriteLine("    $(cc) $(cflags) /DMPE_EXPORTS /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /Fo""$(MPE_OUTDIR)\\"" /Fd""$(MPE_OUTDIR)\\"" $**")
+	mfile.WriteLine("    $(cc) $(cflags) $(mpe_cflags) /DMPE_EXPORTS /Fo""$(MPE_OUTDIR)\\"" /Fd""$(MPE_OUTDIR)\\"" $**")
+	mfile.WriteLine
+	mfile.WriteLine("{..\src\mpe2\src\callstack\src}.c{$(MPE_OUTDIR)}.obj:")
+	mfile.WriteLine("    $(cc) $(cflags) $(mpe_cflags) /DMPE_EXPORTS /Fo""$(MPE_OUTDIR)\\"" /Fd""$(MPE_OUTDIR)\\"" $**")
 	mfile.WriteLine
 	mfile.WriteLine("$(MPE_OUTDIR)\mpe_thread_win.obj: ..\src\util\thread\mpe_thread_win.c")
-	mfile.WriteLine("    $(cc) $(cflags) /DMPE_EXPORTS /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /Fo""$(MPE_OUTDIR)\\"" /Fd""$(MPE_OUTDIR)\\"" $**")
+	mfile.WriteLine("    $(cc) $(cflags) $(mpe_cflags) /DMPE_EXPORTS /Fo""$(MPE_OUTDIR)\\"" /Fd""$(MPE_OUTDIR)\\"" $**")
 	mfile.WriteLine
 	mfile.WriteLine("mpe_objs = \")
 	mfile.WriteLine("	$(MPE_OUTDIR)\clog.obj \")
@@ -5369,13 +5381,18 @@ Function GenBuild()
 	mfile.WriteLine("	$(MPE_OUTDIR)\clog_joiner.obj \")
 	mfile.WriteLine("	$(MPE_OUTDIR)\mpe_logf.obj \")
 	mfile.WriteLine("	$(MPE_OUTDIR)\mpe_thread_win.obj \")
+	mfile.WriteLine("	$(MPE_OUTDIR)\fancyprint.obj \")
+	mfile.WriteLine("	$(MPE_OUTDIR)\iterator.obj \")
 	mfile.WriteLine("	$(MPE_OUTDIR)\mpe_log.obj")
 	mfile.WriteLine
 	mfile.WriteLine("{..\src\mpe2\src\logging\src}.c{$(FMPE_OUTDIR)}.obj:")
-	mfile.WriteLine("    $(cc) $(cflags) /DMPE_EXPORTS /DF77_NAME_UPPER /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /Fo""$(FMPE_OUTDIR)\\"" /Fd""$(FMPE_OUTDIR)\\"" $**")
+	mfile.WriteLine("    $(cc) $(cflags) $(mpe_cflags) /DMPE_EXPORTS /DF77_NAME_UPPER /Fo""$(FMPE_OUTDIR)\\"" /Fd""$(FMPE_OUTDIR)\\"" $**")
+	mfile.WriteLine
+	mfile.WriteLine("{..\src\mpe2\src\callstack\src}.c{$(MPE_OUTDIR)}.obj:")
+	mfile.WriteLine("    $(cc) $(cflags) $(mpe_cflags) /DMPE_EXPORTS /Fo""$(MPE_OUTDIR)\\"" /Fd""$(MPE_OUTDIR)\\"" $**")
 	mfile.WriteLine
 	mfile.WriteLine("$(FMPE_OUTDIR)\mpe_thread_win.obj: ..\src\util\thread\mpe_thread_win.c")
-	mfile.WriteLine("    $(cc) $(cflags) /DMPE_EXPORTS /DF77_NAME_UPPER /I..\src\mpe2\include /I..\src\mpe2\src\logging\include /Fo""$(FMPE_OUTDIR)\\"" /Fd""$(FMPE_OUTDIR)\\"" $**")
+	mfile.WriteLine("    $(cc) $(cflags) $(mpe_cflags) /DMPE_EXPORTS /DF77_NAME_UPPER /Fo""$(FMPE_OUTDIR)\\"" /Fd""$(FMPE_OUTDIR)\\"" $**")
 	mfile.WriteLine
 	mfile.WriteLine("fmpe_objs = \")
 	mfile.WriteLine("	$(FMPE_OUTDIR)\clog.obj \")
@@ -5394,6 +5411,8 @@ Function GenBuild()
 	mfile.WriteLine("	$(FMPE_OUTDIR)\clog_joiner.obj \")
 	mfile.WriteLine("	$(FMPE_OUTDIR)\mpe_logf.obj \")
 	mfile.WriteLine("	$(FMPE_OUTDIR)\mpe_thread_win.obj \")
+	mfile.WriteLine("	$(MPE_OUTDIR)\fancyprint.obj \")
+	mfile.WriteLine("	$(MPE_OUTDIR)\iterator.obj \")
 	mfile.WriteLine("	$(FMPE_OUTDIR)\mpe_log.obj")
 	mfile.WriteLine
 	mfile.WriteLine("$(MPE_OUTDIR)\mpe$(D).dll: $(mpe_objs)")
