@@ -3885,6 +3885,21 @@ End If
 
 
 '
+' mpe_callstack_conf.h
+'
+If f.FileExists("src\mpe2\src\callstack\mpe_callstack_conf.h.in") Then
+	cEcho "Creating src\mpe2\src\callstack\mpe_callstack_conf.h"
+	Set fout = f.CreateTextFile("src\mpe2\src\callstack\mpe_callstack_conf.h")
+	Call WriteHeader(fout, "mpe_callstack_")
+	Call AddDefinitions(fout, "src\mpe2\src\callstack\mpe_callstack_conf.h.in", false)
+	fout.WriteLine("#define HAVE_WINDOWS_H 1")
+	Call WriteFooter(fout)
+	fout.Close()
+Else
+	cEcho "Skipping file: mpe_callstack_conf.h"
+End If
+
+'
 ' mpid_thread.h
 '
 If f.FileExists("src\mpid\common\thread\mpid_thread.h.in") Then
