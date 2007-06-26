@@ -3728,6 +3728,10 @@ If f.FolderExists("src\mpe2") Then
 		fout.WriteLine("#define lseek _lseek")
 		fout.WriteLine("#define snprintf _snprintf")
 		fout.WriteLine("#define OPEN( a , b , c ) _open( a , b | O_BINARY , c )")
+		' Define *_FILENO -- defined in unistd.h in unix
+		fout.WriteLine("#define STDOUT_FILENO (_fileno( stdout ))")
+		fout.WriteLine("#define STDIN_FILENO (_fileno( stdin ))")
+		fout.WriteLine("#define STDERR_FILENO (_fileno( stderr ))")
 		Call WriteFooter(fout)
 		fout.Close()
 		cEcho "Creating src\include\win64\mpe_logging_conf.h"
