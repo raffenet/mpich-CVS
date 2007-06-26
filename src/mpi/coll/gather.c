@@ -271,8 +271,6 @@ int MPIR_Gather (
         if ((rank == root) && (root != 0))
 	{
             /* reorder and copy from tmp_buf into recvbuf */
-            position = 0;
-
             if (sendbuf != MPI_IN_PLACE)
 	    {
                 MPIR_Localcopy(tmp_buf, nbytes*(comm_size-rank), MPI_BYTE, 
@@ -289,11 +287,9 @@ int MPIR_Gather (
             MPIR_Localcopy((char *) tmp_buf + nbytes*(comm_size-rank),
                            nbytes*rank, MPI_BYTE, recvbuf, 
                            recvcnt*rank, recvtype); 
-
-            MPIU_Free(tmp_buf);
         }
-        else if (relative_rank && !(relative_rank % 2))
-            MPIU_Free(tmp_buf);
+
+	if (tmp_buf) MPIU_Free(tmp_buf);
     }
     
 #ifdef MPID_HAS_HETERO
