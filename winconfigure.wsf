@@ -1331,6 +1331,18 @@ fin.Close()
 fout.Close()
 
 '
+' Generate mpich2info.h
+'
+cEcho "Creating src\include\mpich2info.h"
+set fout = f.CreateTextFile("src\include\mpich2info.h")
+set fin  = f.OpenTextFile("src\include\mpich2info.h.in")
+contents = fin.ReadAll()
+contents = ReplaceAts(contents, false, false)
+fout.Write(contents)
+fin.Close()
+fout.Close()
+
+'
 ' Generate mpe_log_thread.h
 '
 cEcho "Creating src\mpe2\src\logging\include\mpe_log_thread.h"
@@ -2327,6 +2339,29 @@ Function ReplaceAts( str, use_f77, b64 )
 				str = Replace(str, "@mpe_callstack_string_h@", "/* MPE CALLSTACK NOT IMPLEMENTED IN WINDOWS */")
 			Case "@mpe_callstack_unistd_h@"
 				str = Replace(str, "@mpe_callstack_unistd_h@", "/* MPE CALLSTACK NOT IMPLEMENTED IN WINDOWS */")
+			' Config options 
+			Case "@CONFIGURE_ARGS_CLEAN@"
+				str = Replace(str, "@CONFIGURE_ARGS_CLEAN@", "Check winconfigure.wsf for config options")
+			Case "@RELEASE_DATE@"
+				str = Replace(str, "@RELEASE_DATE@", Date)
+			Case "@DEVICE@"
+				str = Replace(str, "@DEVICE@", "ch3")
+			Case "@CC@ @CFLAGS@"
+				str = Replace(str, "@CC@", "cl.exe")
+				' FIXME: Not the complete list of CFLAGS --- only some listed
+				str = Replace(str, "@CFLAGS@", "/O2 /Ob1 /Oi /Oy /W4")
+			Case "@CXX@ @CXXFLAGS@"
+				str = Replace(str, "@CXX@", "cl.exe")
+				' FIXME: Not the complete list of CXXFLAGS --- only some listed
+				str = Replace(str, "@CXXFLAGS@", "/O2 /Ob1 /Oi /Oy /W4")
+			Case "@F77@ @FFLAGS@"
+				str = Replace(str, "@F77@", "ifort.exe")
+				' FIXME: Not the complete list of FFLAGS --- only some listed
+				str = Replace(str, "@FFLAGS@", "/names:lowercase /iface:cref /assume:underscore")
+			Case "@F90@ @F90FLAGS@"
+				str = Replace(str, "@F90@", "ifort.exe")
+				' FIXME: Not the complete list of F90FLAGS --- only some listed
+				str = Replace(str, "@F90FLAGS@", "/names:lowercase /iface:cref /assume:underscore")
 			Case Else
 			'	unhandled_ats = unhandled_ats & Match & vbNewLine
 			'	unhandled_ats_count = unhandled_ats_count + 1
@@ -4357,6 +4392,14 @@ Sub OutputLine(path, line)
 		line = Right(line, Len(line) - 13)
 		do_output = true
 	End If
+	If Left(line, 13) = "shmsources = " Then
+		line = Right(line, Len(line) - 13)
+		do_output = true
+	End If
+	If Left(line, 14) = "sshmsources = " Then
+		line = Right(line, Len(line) - 14)
+		do_output = true
+	End If
 	If do_output Then
 		'WScript.Echo line
 		line = Replace(line, "	", " ")
@@ -5051,8 +5094,12 @@ Function GenBuild()
 	mfile.WriteLine
 	outdir = "SHM_OUTDIR"
 	CreateRules f.GetFolder("src\mpid\ch3\channels\shm"), trimlength
+	CreateRules f.GetFolder("src\mpid\ch3\channels\shm\src"), trimlength
+	CreateRules f.GetFolder("src\mpid\common\locks"), trimlength
 	CreateRules f.GetFolder("src\mpid\ch3\util\shmbase"), trimlength
 	CreateObjs "ch3shm", f.GetFolder("src\mpid\ch3\channels\shm"), trimlength, true, false
+	CreateObjs "ch3shm", f.GetFolder("src\mpid\ch3\channels\shm\src"), trimlength, false, false
+	CreateObjs "ch3shm", f.GetFolder("src\mpid\common\locks"), trimlength, false, false
 	CreateObjs "ch3shm", f.GetFolder("src\mpid\ch3\util\shmbase"), trimlength, false, true
 
 	mfile.WriteLine
