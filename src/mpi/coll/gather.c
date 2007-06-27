@@ -64,6 +64,7 @@ int MPIR_Gather (
     MPI_Status status;
     MPI_Aint   extent=0;            /* Datatype extent */
     MPI_Comm comm;
+    int i;
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -121,41 +122,20 @@ int MPIR_Gather (
                     return mpi_errno;
                 }
 		/* --END ERROR HANDLING-- */
+	    }
 
-                if (sendbuf != MPI_IN_PLACE)
-		{
-                    /* copy root's sendbuf into tmpbuf just so that it is
-                       easier to unpack everything later into the recv_buf */
-                    mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
-                                               tmp_buf, nbytes, MPI_BYTE);
-		    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			return mpi_errno;
-		    }
-		    /* --END ERROR HANDLING-- */
-                }
-                curr_cnt = nbytes;
-            }
-            else
+	    if (sendbuf != MPI_IN_PLACE)
 	    {
-                /* root is 0. no tmp_buf needed at root. */
-                /* copy root's sendbuf into recvbuf */
-                if (sendbuf != MPI_IN_PLACE)
+		mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
+					   ((char *) recvbuf + extent*recvcnt*rank), recvcnt, recvtype);
+		/* --BEGIN ERROR HANDLING-- */
+		if (mpi_errno)
 		{
-                    mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
-                                               recvbuf, recvcnt, recvtype);
-		    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			return mpi_errno;
-		    }
-		    /* --END ERROR HANDLING-- */
-                }
-                curr_cnt = recvcnt;
-            }          
+		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
+	    }
         }
         else if (!(relative_rank % 2))
 	{
@@ -180,8 +160,8 @@ int MPIR_Gather (
 		return mpi_errno;
 	    }
 	    /* --END ERROR HANDLING-- */
-            curr_cnt = nbytes;
         }
+	curr_cnt = nbytes;
         
         mask = 0x1;
         while (mask < comm_size)
@@ -271,19 +251,10 @@ int MPIR_Gather (
         if ((rank == root) && (root != 0))
 	{
             /* reorder and copy from tmp_buf into recvbuf */
-            if (sendbuf != MPI_IN_PLACE)
-	    {
-                MPIR_Localcopy(tmp_buf, nbytes*(comm_size-rank), MPI_BYTE, 
-                               ((char *) recvbuf + extent*recvcnt*rank),
-                               recvcnt*(comm_size-rank), recvtype);
-            }
-            else
-	    {
-                MPIR_Localcopy((char *) tmp_buf + nbytes,
-                               nbytes*(comm_size-rank-1), MPI_BYTE,  
-                               ((char *) recvbuf + extent*recvcnt*(rank+1)),
-                               recvcnt*(comm_size-rank-1), recvtype);
-            }
+	    MPIR_Localcopy((char *) tmp_buf + nbytes,
+			   nbytes*(comm_size-rank-1), MPI_BYTE,  
+			   ((char *) recvbuf + extent*recvcnt*(rank+1)),
+			   recvcnt*(comm_size-rank-1), recvtype);
             MPIR_Localcopy((char *) tmp_buf + nbytes*(comm_size-rank),
                            nbytes*rank, MPI_BYTE, recvbuf, 
                            recvcnt*rank, recvtype); 
