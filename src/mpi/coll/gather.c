@@ -108,7 +108,7 @@ int MPIR_Gather (
 
 	/* Find the accurate size of the temporary buffer needed */
 	for (mask = 1; mask < comm_size; mask <<= 1);
-	diff = --mask - comm_size + 1;
+	diff = mask-- - comm_size;
 
 	/* Setup temporary buffer size needed by assuming a balanced tree */
 	for (tmp_buf_size = 1; mask; mask >>= 1)
@@ -190,9 +190,10 @@ int MPIR_Gather (
                     src = (src + root) % comm_size;
                     if ((rank == root) && (root == 0))
 		    {
-			actual_recvcnt = recvcnt * mask;
-			if ((2 * actual_recvcnt) > (comm_size * recvcnt))
-			    actual_recvcnt = ((comm_size * recvcnt) - actual_recvcnt);
+			actual_recvcnt = mask;
+			if ((2 * actual_recvcnt) > comm_size)
+			    actual_recvcnt = comm_size - actual_recvcnt;
+			actual_recvcnt *= recvcnt; /* We are receiving as recv datatypes */
 
                         /* root is 0. Receive directly into recvbuf */
                         mpi_errno = MPIC_Recv(((char *)recvbuf + 
@@ -210,10 +211,19 @@ int MPIR_Gather (
                     }
                     else
 		    {
+			int relative_src;
+
+			/* Estimate the amount of data that is going to come in */
+			actual_recvcnt = mask;
+			relative_src = ((src - root) < 0) ? (src - root + comm_size) : (src - root);
+			if (relative_src + mask > comm_size)
+			    actual_recvcnt -= (relative_src + mask - comm_size);
+			actual_recvcnt *= nbytes; /* We are receiving as bytes */
+
                         /* intermediate nodes or nonzero root. store in
                            tmp_buf */
                         mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt), 
-                                              tmp_buf_size-curr_cnt, MPI_BYTE, src,
+                                              actual_recvcnt, MPI_BYTE, src,
                                               MPIR_GATHER_TAG, comm, 
                                               &status);
 			/* --BEGIN ERROR HANDLING-- */
@@ -223,10 +233,8 @@ int MPIR_Gather (
 			    return mpi_errno;
 			}
 			/* --END ERROR HANDLING-- */
-                        /* the recv size is larger than what may be sent in
-                           some cases. query amount of data actually received */
-                        NMPI_Get_count(&status, MPI_BYTE, &recv_size);
-                        curr_cnt += recv_size;
+
+			curr_cnt += actual_recvcnt;
                     }
                 }
             }
