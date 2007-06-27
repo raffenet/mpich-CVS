@@ -59,12 +59,14 @@ int MPIR_Gather (
     int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
     int mask, sendtype_size, recvtype_size, src, dst, position;
     int actual_recvcnt;
-    int tmp_buf_size, diff;
+    int tmp_buf_size, diff, i;
     void *tmp_buf=NULL;
     MPI_Status status;
     MPI_Aint   extent=0;            /* Datatype extent */
     MPI_Comm comm;
-    int i;
+    MPI_Request reqarray[2];
+    MPI_Status starray[2];
+    int reqs;
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -164,7 +166,7 @@ int MPIR_Gather (
 		/* --END ERROR HANDLING-- */
 	    }
         }
-	else if (tmp_buf_size)
+	else if (tmp_buf_size && (nbytes < MPIR_GATHER_VSMALL_MSG))
 	{
             /* copy from sendbuf into tmp_buf */
             mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
@@ -196,18 +198,39 @@ int MPIR_Gather (
 			actual_recvcnt *= recvcnt; /* We are receiving as recv datatypes */
 
                         /* root is 0. Receive directly into recvbuf */
-                        mpi_errno = MPIC_Recv(((char *)recvbuf + 
-                                               src*recvcnt*extent), 
-                                              actual_recvcnt, recvtype, src,
-                                              MPIR_GATHER_TAG, comm, 
-                                              &status);
-			/* --BEGIN ERROR HANDLING-- */
-                        if (mpi_errno)
-			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			    return mpi_errno;
+			if (nbytes < MPIR_GATHER_VSMALL_MSG) {
+			    mpi_errno = MPIC_Recv(((char *)recvbuf +
+						   src*recvcnt*extent),
+						  actual_recvcnt, recvtype, src,
+						  MPIR_GATHER_TAG, comm,
+						  &status);
 			}
-			/* --END ERROR HANDLING-- */
+			else {
+			    reqs = 1;
+			    mpi_errno = MPIC_Irecv(((char *)recvbuf + 
+						    src*recvcnt*extent), 
+						   recvcnt, recvtype, src,
+						   MPIR_GATHER_TAG, comm, 
+						   &reqarray[0]);
+			    if (actual_recvcnt != recvcnt) { /* If not from a leaf node */
+				mpi_errno = MPIC_Irecv(((char *)recvbuf + 
+							(src+1)*recvcnt*extent), 
+						       actual_recvcnt - recvcnt, recvtype, src,
+						       MPIR_GATHER_TAG, comm, 
+						       &reqarray[1]);
+				reqs++;
+			    }
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
+
+			    mpi_errno = NMPI_Waitall(reqs, reqarray, starray);
+			    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+			}
                     }
                     else
 		    {
@@ -222,18 +245,37 @@ int MPIR_Gather (
 
                         /* intermediate nodes or nonzero root. store in
                            tmp_buf */
-                        mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt), 
-                                              actual_recvcnt, MPI_BYTE, src,
-                                              MPIR_GATHER_TAG, comm, 
-                                              &status);
-			/* --BEGIN ERROR HANDLING-- */
-                        if (mpi_errno)
-			{
-			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			    return mpi_errno;
+			if (nbytes < MPIR_GATHER_VSMALL_MSG) {
+			    mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt),
+						  actual_recvcnt, MPI_BYTE, src,
+						  MPIR_GATHER_TAG, comm,
+						  &status);
 			}
-			/* --END ERROR HANDLING-- */
+			else {
+			    reqs = 1;
+			    mpi_errno = MPIC_Irecv(((char *)tmp_buf + curr_cnt), 
+						   nbytes, MPI_BYTE, src,
+						   MPIR_GATHER_TAG, comm, 
+						   &reqarray[0]);
+			    if (actual_recvcnt != nbytes) { /* If not from a leaf node */
+				mpi_errno = MPIC_Irecv(((char *)tmp_buf + curr_cnt + nbytes), 
+						       actual_recvcnt - nbytes, MPI_BYTE, src,
+						       MPIR_GATHER_TAG, comm, 
+						       &reqarray[1]);
+				reqs++;
+			    }
+			    /* --BEGIN ERROR HANDLING-- */
+			    if (mpi_errno)
+			    {
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+				return mpi_errno;
+			    }
+			    /* --END ERROR HANDLING-- */
 
+			    mpi_errno = NMPI_Waitall(reqs, reqarray, starray);
+			    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
+			}
 			curr_cnt += actual_recvcnt;
                     }
                 }
@@ -257,15 +299,27 @@ int MPIR_Gather (
                 }
                 else
 		{
-                    mpi_errno = MPIC_Send(tmp_buf, curr_cnt, MPI_BYTE, dst,
-                                          MPIR_GATHER_TAG, comm); 
-		    /* --BEGIN ERROR HANDLING-- */
-                    if (mpi_errno)
-		    {
-			mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-			return mpi_errno;
+		    if (nbytes < MPIR_GATHER_VSMALL_MSG) {
+			mpi_errno = MPIC_Send(tmp_buf, curr_cnt, MPI_BYTE, dst,
+					      MPIR_GATHER_TAG, comm);
 		    }
-		    /* --END ERROR HANDLING-- */
+		    else {
+			mpi_errno = MPIC_Isend(sendbuf, sendcnt, sendtype, dst,
+					       MPIR_GATHER_TAG, comm, &reqarray[0]);
+			mpi_errno = MPIC_Isend(tmp_buf + nbytes, curr_cnt - nbytes, MPI_BYTE, dst,
+					       MPIR_GATHER_TAG, comm, &reqarray[1]);
+
+			/* --BEGIN ERROR HANDLING-- */
+			if (mpi_errno)
+			{
+			    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
+			    return mpi_errno;
+			}
+			/* --END ERROR HANDLING-- */
+
+			mpi_errno = NMPI_Waitall(2, reqarray, starray);
+			if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+		    }
                 }
                 break;
             }
@@ -394,6 +448,7 @@ int MPIR_Gather (
     }
 #endif /* MPID_HAS_HETERO */
 
+ fn_fail:
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     

@@ -3360,6 +3360,7 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
 #define MPIR_ALLGATHER_LONG_MSG       524288
 #define MPIR_REDUCE_SHORT_MSG         2048
 #define MPIR_ALLREDUCE_SHORT_MSG      2048
+#define MPIR_GATHER_VSMALL_MSG        1024
 #define MPIR_SCATTER_SHORT_MSG        2048  /* for intercommunicator scatter */
 #define MPIR_GATHER_SHORT_MSG         2048  /* for intercommunicator scatter */
 
