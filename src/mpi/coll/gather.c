@@ -136,14 +136,17 @@ int MPIR_Gather (
 	else tmp_buf_size *= nbytes;
 
 	if (tmp_buf_size) {
-	    tmp_buf = MPIU_Malloc(tmp_buf_size);
-	    /* --BEGIN ERROR HANDLING-- */
-	    if (!tmp_buf)
-	    {
-		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-		return mpi_errno;
+	    if ((rank == root) && !root) tmp_buf_size = 0;
+	    else {
+		tmp_buf = MPIU_Malloc(tmp_buf_size);
+		/* --BEGIN ERROR HANDLING-- */
+		if (!tmp_buf)
+		{
+		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+		    return mpi_errno;
+		}
+		/* --END ERROR HANDLING-- */
 	    }
-	    /* --END ERROR HANDLING-- */
 	}
 
         if (rank == root)
