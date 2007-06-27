@@ -59,7 +59,7 @@ int MPIR_Gather (
     int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
     int mask, sendtype_size, recvtype_size, src, dst, position;
     int actual_recvcnt;
-    int tmp_buf_size;
+    int tmp_buf_size, diff;
     void *tmp_buf=NULL;
     MPI_Status status;
     MPI_Aint   extent=0;            /* Datatype extent */
@@ -82,8 +82,8 @@ int MPIR_Gather (
 
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
-    
-/* Use binomial tree algorithm. */
+
+    /* Use binomial tree algorithm. */
     
     relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
     
@@ -106,24 +106,48 @@ int MPIR_Gather (
             nbytes = sendtype_size * sendcnt;
         }
 
-        if (rank == root)
-	{
-            if (root != 0)
-	    {
-                /* allocate temporary buffer to receive data because it
-                   will not be in the right order. We will need to
-                   reorder it into the recv_buf. */
-		tmp_buf_size = nbytes*comm_size;
-                tmp_buf = MPIU_Malloc(tmp_buf_size);
-		/* --BEGIN ERROR HANDLING-- */
-                if (!tmp_buf)
-		{
-                    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                    return mpi_errno;
-                }
-		/* --END ERROR HANDLING-- */
+	/* Find the accurate size of the temporary buffer needed */
+	for (mask = 1; mask < comm_size; mask <<= 1);
+	diff = --mask - comm_size + 1;
+
+	/* Setup temporary buffer size needed by assuming a balanced tree */
+	for (tmp_buf_size = 1; mask; mask >>= 1)
+	    if (!(relative_rank & mask)) {
+	        tmp_buf_size = mask + 1;
+		break;
 	    }
 
+	/* If my sub-tree is unbalanced, reduce my count by diff */
+	do {
+	    if (relative_rank & 1) break;
+
+	    mask = 1;
+	    while (((mask | relative_rank) != relative_rank) && (mask < comm_size))
+		mask <<= 1;
+
+	    if ((relative_rank | (mask - 1)) < comm_size) break;
+	    tmp_buf_size -= diff;
+	} while (0);
+
+	/* If there is only one element, we'll directly send it from
+	 * the send buffer. We won't need the temporary buffer in this
+	 * case. */
+	if (tmp_buf_size == 1) tmp_buf_size = 0;
+	else tmp_buf_size *= nbytes;
+
+	if (tmp_buf_size) {
+	    tmp_buf = MPIU_Malloc(tmp_buf_size);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (!tmp_buf)
+	    {
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+		return mpi_errno;
+	    }
+	    /* --END ERROR HANDLING-- */
+	}
+
+        if (rank == root)
+	{
 	    if (sendbuf != MPI_IN_PLACE)
 	    {
 		mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
@@ -137,19 +161,8 @@ int MPIR_Gather (
 		/* --END ERROR HANDLING-- */
 	    }
         }
-        else if (!(relative_rank % 2))
+	else if (tmp_buf_size)
 	{
-            /* allocate temporary buffer for nodes other than leaf
-               nodes. max size needed is (nbytes*comm_size)/2. */
-	    tmp_buf_size = (nbytes*comm_size)/2;
-            tmp_buf = MPIU_Malloc(tmp_buf_size);
-	    /* --BEGIN ERROR HANDLING-- */
-            if (!tmp_buf)
-	    {
-                mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-                return mpi_errno;
-            }
-	    /* --END ERROR HANDLING-- */
             /* copy from sendbuf into tmp_buf */
             mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
                                        tmp_buf, nbytes, MPI_BYTE);
@@ -218,7 +231,7 @@ int MPIR_Gather (
 	    {
                 dst = relative_rank ^ mask;
                 dst = (dst + root) % comm_size;
-                if (relative_rank % 2)
+		if (!tmp_buf_size)
 		{
                     /* leaf nodes send directly from sendbuf */
                     mpi_errno = MPIC_Send(sendbuf, sendcnt, sendtype, dst,
