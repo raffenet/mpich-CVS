@@ -306,7 +306,7 @@ int MPIR_Gather (
 		    else {
 			mpi_errno = MPIC_Isend(sendbuf, sendcnt, sendtype, dst,
 					       MPIR_GATHER_TAG, comm, &reqarray[0]);
-			mpi_errno = MPIC_Isend(tmp_buf + nbytes, curr_cnt - nbytes, MPI_BYTE, dst,
+			mpi_errno = MPIC_Isend(((char*) tmp_buf + nbytes), curr_cnt - nbytes, MPI_BYTE, dst,
 					       MPIR_GATHER_TAG, comm, &reqarray[1]);
 
 			/* --BEGIN ERROR HANDLING-- */
