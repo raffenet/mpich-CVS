@@ -72,6 +72,7 @@
 #define NMPI_Type_get_true_extent MPI_Type_get_true_extent
 #define NMPI_Group_translate_ranks MPI_Group_translate_ranks
 #define NMPI_Type_create_indexed_block MPI_Type_create_indexed_block
+#define NMPI_Type_create_struct MPI_Type_create_struct
 #define NMPI_Wtime MPI_Wtime 
 #define NMPI_Info_get_nkeys MPI_Info_get_nkeys
 #define NMPI_Info_get_nthkey MPI_Info_get_nthkey
@@ -143,6 +144,7 @@
 #define NMPI_Type_get_true_extent PMPI_Type_get_true_extent
 #define NMPI_Group_translate_ranks PMPI_Group_translate_ranks
 #define NMPI_Type_create_indexed_block PMPI_Type_create_indexed_block
+#define NMPI_Type_create_struct PMPI_Type_create_struct
 #define NMPI_Wtime PMPI_Wtime
 #define NMPI_Info_get_nkeys PMPI_Info_get_nkeys
 #define NMPI_Info_get_nthkey PMPI_Info_get_nthkey
