@@ -57,16 +57,18 @@ int MPIR_Gather (
     int        comm_size, rank;
     int        mpi_errno = MPI_SUCCESS;
     int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
-    int mask, sendtype_size, recvtype_size, src, dst, position;
+    int mask, sendtype_size, recvtype_size, src, dst, position, relative_src;
     int actual_recvcnt;
     int tmp_buf_size, diff, i;
     void *tmp_buf=NULL;
     MPI_Status status;
     MPI_Aint   extent=0;            /* Datatype extent */
     MPI_Comm comm;
-    MPI_Request reqarray[2];
-    MPI_Status starray[2];
-    int reqs;
+    int count;
+    int blocks[2];
+    int displs[2];
+    MPI_Aint struct_displs[2];
+    MPI_Datatype types[2], tmp_type;
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -91,7 +93,7 @@ int MPIR_Gather (
     
     if (rank == root) 
         MPID_Datatype_get_extent_macro(recvtype, extent);
-    
+
     if (is_homogeneous)
     {
 
@@ -187,44 +189,15 @@ int MPIR_Gather (
 			    actual_recvcnt = comm_size - actual_recvcnt;
 			actual_recvcnt *= recvcnt; /* We are receiving as recv datatypes */
 
-                        /* root is 0. Receive directly into recvbuf */
-			if (nbytes < MPIR_GATHER_VSMALL_MSG) {
-			    /* Small messages are packed and sent as a
-			     * single message */
-			    mpi_errno = MPIC_Recv(((char *)recvbuf +
-						   src*recvcnt*extent),
-						  actual_recvcnt, recvtype, src,
+			/* root is 0. Receive directly into recvbuf */
+			mpi_errno = MPIC_Recv(((char *)recvbuf +
+					       src*recvcnt*extent),
+					      actual_recvcnt, recvtype, src,
 						  MPIR_GATHER_TAG, comm,
-						  &status);
-			    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-			}
-			else {
-			    /* Large messages are sent as two
-			     * non-contiguous messages */
-			    reqs = 1;
-			    mpi_errno = MPIC_Irecv(((char *)recvbuf + 
-						    src*recvcnt*extent), 
-						   recvcnt, recvtype, src,
-						   MPIR_GATHER_TAG, comm, 
-						   &reqarray[0]);
-			    if (actual_recvcnt != recvcnt) { /* If not from a leaf node */
-				mpi_errno = MPIC_Irecv(((char *)recvbuf + 
-							(src+1)*recvcnt*extent), 
-						       actual_recvcnt - recvcnt, recvtype, src,
-						       MPIR_GATHER_TAG, comm, 
-						       &reqarray[1]);
-				reqs++;
-			    }
-			    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-
-			    mpi_errno = NMPI_Waitall(reqs, reqarray, starray);
-			    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-			}
+					      &status);
                     }
                     else
 		    {
-			int relative_src;
-
 			/* Estimate the amount of data that is going to come in */
 			actual_recvcnt = mask;
 			relative_src = ((src - root) < 0) ? (src - root + comm_size) : (src - root);
@@ -234,34 +207,13 @@ int MPIR_Gather (
 
                         /* intermediate nodes or nonzero root. store in
                            tmp_buf */
-			if (nbytes < MPIR_GATHER_VSMALL_MSG) {
-			    mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt),
-						  actual_recvcnt, MPI_BYTE, src,
-						  MPIR_GATHER_TAG, comm,
-						  &status);
-			    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-			}
-			else {
-			    reqs = 1;
-			    mpi_errno = MPIC_Irecv(((char *)tmp_buf + curr_cnt), 
-						   nbytes, MPI_BYTE, src,
-						   MPIR_GATHER_TAG, comm, 
-						   &reqarray[0]);
-			    if (actual_recvcnt != nbytes) { /* If not from a leaf node */
-				mpi_errno = MPIC_Irecv(((char *)tmp_buf + curr_cnt + nbytes), 
-						       actual_recvcnt - nbytes, MPI_BYTE, src,
-						       MPIR_GATHER_TAG, comm, 
-						       &reqarray[1]);
-				reqs++;
-			    }
-			    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-
-			    mpi_errno = NMPI_Waitall(reqs, reqarray, starray);
-			    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-
-			}
+			mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt),
+					      actual_recvcnt, MPI_BYTE, src,
+					      MPIR_GATHER_TAG, comm,
+					      &status);
 			curr_cnt += actual_recvcnt;
                     }
+		    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
                 }
             }
             else
@@ -272,29 +224,33 @@ int MPIR_Gather (
 		{
                     /* leaf nodes send directly from sendbuf */
                     mpi_errno = MPIC_Send(sendbuf, sendcnt, sendtype, dst,
-                                          MPIR_GATHER_TAG, comm); 
-		    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+                                          MPIR_GATHER_TAG, comm);
                 }
                 else
 		{
 		    if (nbytes < MPIR_GATHER_VSMALL_MSG) {
 			mpi_errno = MPIC_Send(tmp_buf, curr_cnt, MPI_BYTE, dst,
 					      MPIR_GATHER_TAG, comm);
-			if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 		    }
 		    else {
-			mpi_errno = MPIC_Isend(sendbuf, sendcnt, sendtype, dst,
-					       MPIR_GATHER_TAG, comm, &reqarray[0]);
-			if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+			blocks[0] = sendcnt;
+			struct_displs[0] = (MPI_Aint) sendbuf;
+			types[0] = sendtype;
+			blocks[1] = curr_cnt - nbytes;
+			struct_displs[1] = (MPI_Aint) ((char*) tmp_buf + nbytes);
+			types[1] = MPI_BYTE;
 
-			mpi_errno = MPIC_Isend(((char*) tmp_buf + nbytes), curr_cnt - nbytes, MPI_BYTE, dst,
-					       MPIR_GATHER_TAG, comm, &reqarray[1]);
-			if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+			NMPI_Type_create_struct(2, blocks, struct_displs, types, &tmp_type);
+			NMPI_Type_commit(&tmp_type);
 
-			mpi_errno = NMPI_Waitall(2, reqarray, starray);
-			if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+			mpi_errno = MPIC_Send(MPI_BOTTOM, 1, tmp_type, dst,
+					      MPIR_GATHER_TAG, comm);
+
+			NMPI_Type_free(&tmp_type);
 		    }
                 }
+		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
                 break;
             }
             mask <<= 1;
