@@ -58,7 +58,7 @@ int MPIR_Gather (
     int        mpi_errno = MPI_SUCCESS;
     int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
     int mask, sendtype_size, recvtype_size, src, dst, position, relative_src;
-    int actual_recvcnt;
+    int recvblks;
     int tmp_buf_size, diff, i;
     void *tmp_buf=NULL;
     MPI_Status status;
@@ -134,6 +134,10 @@ int MPIR_Gather (
 	    tmp_buf_size -= diff;
 	} while (0);
 
+	if (rank == root)
+	    if ((!root) || (nbytes >= MPIR_GATHER_VSMALL_MSG))
+		tmp_buf_size = 0;
+
 	/* If there is only one element, we'll directly send it from
 	 * the send buffer. We won't need the temporary buffer in this
 	 * case. */
@@ -141,17 +145,14 @@ int MPIR_Gather (
 	else tmp_buf_size *= nbytes;
 
 	if (tmp_buf_size) {
-	    if ((rank == root) && !root) tmp_buf_size = 0;
-	    else {
-		tmp_buf = MPIU_Malloc(tmp_buf_size);
-		/* --BEGIN ERROR HANDLING-- */
-		if (!tmp_buf)
-		{
-		    mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
-		    return mpi_errno;
-		}
-		/* --END ERROR HANDLING-- */
+	    tmp_buf = MPIU_Malloc(tmp_buf_size);
+	    /* --BEGIN ERROR HANDLING-- */
+	    if (!tmp_buf)
+	    {
+		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0 );
+		return mpi_errno;
 	    }
+	    /* --END ERROR HANDLING-- */
 	}
 
 
@@ -182,36 +183,69 @@ int MPIR_Gather (
                 if (src < comm_size)
 		{
                     src = (src + root) % comm_size;
-                    if ((rank == root) && (root == 0))
+                    if (rank == root)
 		    {
-			actual_recvcnt = mask;
-			if ((2 * actual_recvcnt) > comm_size)
-			    actual_recvcnt = comm_size - actual_recvcnt;
-			actual_recvcnt *= recvcnt; /* We are receiving as recv datatypes */
+			recvblks = mask;
+			if ((2 * recvblks) > comm_size)
+			    recvblks = comm_size - recvblks;
 
-			/* root is 0. Receive directly into recvbuf */
-			mpi_errno = MPIC_Recv(((char *)recvbuf +
-					       src*recvcnt*extent),
-					      actual_recvcnt, recvtype, src,
+			if ((rank + mask + recvblks) <= comm_size) {
+			    /* If the data contiguously fits into the
+			     * receive buffer, place it directly. This
+			     * should cover the case where the root is
+			     * rank 0. */
+			    mpi_errno = MPIC_Recv(((char *)recvbuf +
+						   (rank+mask)*recvcnt*extent),
+						  recvblks * recvcnt, recvtype, src,
 						  MPIR_GATHER_TAG, comm,
-					      &status);
-                    }
+						  &status);
+			}
+			else if (((rank + mask) % comm_size) <
+				 ((rank + mask + recvblks) % comm_size)) {
+			    /* The incoming data has to be received in
+			     * a contiguous buffer. */
+			    mpi_errno = MPIC_Recv(((char *)recvbuf +
+						   (((rank + mask) % comm_size)*recvcnt*extent)),
+						  recvblks * recvcnt, recvtype, src,
+						  MPIR_GATHER_TAG, comm,
+						  &status);
+			}
+			else if (nbytes < MPIR_GATHER_VSMALL_MSG) {
+			    mpi_errno = MPIC_Recv(((char *)tmp_buf +
+						   src*recvcnt*extent),
+						  recvblks * recvcnt, recvtype, src,
+						  MPIR_GATHER_TAG, comm,
+						  &status);
+			}
+			else {
+			    blocks[0] = recvcnt * (comm_size - root - mask);
+			    displs[0] = recvcnt * (root + mask);
+			    blocks[1] = (recvcnt * recvblks) - blocks[0];
+			    displs[1] = 0;
+			    
+			    NMPI_Type_indexed(2, blocks, displs, recvtype, &tmp_type);
+			    NMPI_Type_commit(&tmp_type);
+			    
+			    mpi_errno = MPIC_Recv(recvbuf, 1, tmp_type, src,
+						  MPIR_GATHER_TAG, comm, &status);
+
+			    NMPI_Type_free(&tmp_type);
+			}
+		    }
                     else
 		    {
 			/* Estimate the amount of data that is going to come in */
-			actual_recvcnt = mask;
+			recvblks = mask;
 			relative_src = ((src - root) < 0) ? (src - root + comm_size) : (src - root);
 			if (relative_src + mask > comm_size)
-			    actual_recvcnt -= (relative_src + mask - comm_size);
-			actual_recvcnt *= nbytes; /* We are receiving as bytes */
+			    recvblks -= (relative_src + mask - comm_size);
 
-                        /* intermediate nodes or nonzero root. store in
-                           tmp_buf */
+                        /* intermediate nodes store in tmp_buf */
 			mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt),
-					      actual_recvcnt, MPI_BYTE, src,
+					      recvblks * nbytes, MPI_BYTE, src,
 					      MPIR_GATHER_TAG, comm,
 					      &status);
-			curr_cnt += actual_recvcnt;
+			curr_cnt += (recvblks * nbytes);
                     }
 		    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
                 }
@@ -255,8 +289,8 @@ int MPIR_Gather (
             }
             mask <<= 1;
         }
-        
-        if ((rank == root) && (root != 0))
+
+        if ((rank == root) && (root != 0) && (nbytes < MPIR_GATHER_VSMALL_MSG))
 	{
             /* reorder and copy from tmp_buf into recvbuf */
 	    MPIR_Localcopy((char *) tmp_buf + nbytes,
