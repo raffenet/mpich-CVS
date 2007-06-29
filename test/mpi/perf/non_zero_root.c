@@ -6,7 +6,7 @@
 #define SIZE 100000
 #define ITER 1000
 
-#define ERROR_MARGIN 1.0
+#define ERROR_MARGIN 0.5
 
 static int verbose = 0;
 
