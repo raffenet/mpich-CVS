@@ -135,9 +135,8 @@ int MPIR_Gather (
 	    tmp_buf_size -= diff;
 	} while (0);
 
-	if (rank == root)
-	    if ((!root) || (nbytes >= MPIR_GATHER_VSMALL_MSG))
-		tmp_buf_size = 0;
+	if ((rank == root) && (!root || (nbytes >= MPIR_GATHER_VSMALL_MSG)))
+	    tmp_buf_size = 0;
 
 	/* If there is only one element, we'll directly send it from
 	 * the send buffer. We won't need the temporary buffer in this
