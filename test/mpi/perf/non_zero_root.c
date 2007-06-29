@@ -4,7 +4,9 @@
 #include <sys/time.h>
 
 #define SIZE 100000
-#define ITER 100
+#define ITER 1000
+
+#define ERROR_MARGIN 1.0
 
 static int verbose = 0;
 
@@ -46,10 +48,15 @@ int main(int argc, char* argv[])
 	t2 = MPI_Wtime();
 	ts = (t2-t1)/ITER;
 
+	if (rank == 1)
+		MPI_Send(&ts, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+	if (rank == 0)
+		MPI_Recv(&ts, 1, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, &status);
+
 	/* Print out the results */
 	if (!rank) {
-		if ((t / ts) > 1.1) { /* If the difference is more than 10%, it's an error */
-			printf("%.3f\t%.3f\n", 1000000.0 * t, 1000000.0 * ts);
+		if ((ts / t) > (1 + ERROR_MARGIN)) { /* If the difference is more than 10%, it's an error */
+			printf("%.3f\t%.3f\n", 1000000.0 * ts, 1000000.0 * t);
 			printf("Too much difference in performance\n");
 		}
 		else printf(" No Errors\n");
