@@ -69,6 +69,7 @@ int MPIR_Gather (
     int displs[2];
     MPI_Aint struct_displs[2];
     MPI_Datatype types[2], tmp_type;
+    int copy_offset, copy_blks = 0;
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -183,27 +184,20 @@ int MPIR_Gather (
                 if (src < comm_size)
 		{
                     src = (src + root) % comm_size;
-                    if (rank == root)
+
+		    if (rank == root)
 		    {
 			recvblks = mask;
 			if ((2 * recvblks) > comm_size)
 			    recvblks = comm_size - recvblks;
 
-			if ((rank + mask + recvblks) <= comm_size) {
+			if ((rank + mask + recvblks == comm_size) ||
+			    (((rank + mask) % comm_size) <
+			     ((rank + mask + recvblks) % comm_size))) {
 			    /* If the data contiguously fits into the
 			     * receive buffer, place it directly. This
 			     * should cover the case where the root is
 			     * rank 0. */
-			    mpi_errno = MPIC_Recv(((char *)recvbuf +
-						   (rank+mask)*recvcnt*extent),
-						  recvblks * recvcnt, recvtype, src,
-						  MPIR_GATHER_TAG, comm,
-						  &status);
-			}
-			else if (((rank + mask) % comm_size) <
-				 ((rank + mask + recvblks) % comm_size)) {
-			    /* The incoming data has to be received in
-			     * a contiguous buffer. */
 			    mpi_errno = MPIC_Recv(((char *)recvbuf +
 						   (((rank + mask) % comm_size)*recvcnt*extent)),
 						  recvblks * recvcnt, recvtype, src,
@@ -211,11 +205,10 @@ int MPIR_Gather (
 						  &status);
 			}
 			else if (nbytes < MPIR_GATHER_VSMALL_MSG) {
-			    mpi_errno = MPIC_Recv(((char *)tmp_buf +
-						   src*recvcnt*extent),
-						  recvblks * recvcnt, recvtype, src,
-						  MPIR_GATHER_TAG, comm,
-						  &status);
+			    mpi_errno = MPIC_Recv(tmp_buf, recvblks * nbytes, MPI_BYTE,
+						  src, MPIR_GATHER_TAG, comm, &status);
+			    copy_offset = rank + mask;
+			    copy_blks = recvblks;
 			}
 			else {
 			    blocks[0] = recvcnt * (comm_size - root - mask);
@@ -232,7 +225,7 @@ int MPIR_Gather (
 			    NMPI_Type_free(&tmp_type);
 			}
 		    }
-                    else
+                    else /* Intermediate nodes store in temporary buffer */
 		    {
 			/* Estimate the amount of data that is going to come in */
 			recvblks = mask;
@@ -240,8 +233,7 @@ int MPIR_Gather (
 			if (relative_src + mask > comm_size)
 			    recvblks -= (relative_src + mask - comm_size);
 
-                        /* intermediate nodes store in tmp_buf */
-			mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt),
+			mpi_errno = MPIC_Recv(((char *)tmp_buf + mask * nbytes),
 					      recvblks * nbytes, MPI_BYTE, src,
 					      MPIR_GATHER_TAG, comm,
 					      &status);
@@ -254,35 +246,33 @@ int MPIR_Gather (
 	    {
                 dst = relative_rank ^ mask;
                 dst = (dst + root) % comm_size;
+
 		if (!tmp_buf_size)
 		{
                     /* leaf nodes send directly from sendbuf */
                     mpi_errno = MPIC_Send(sendbuf, sendcnt, sendtype, dst,
                                           MPIR_GATHER_TAG, comm);
                 }
-                else
-		{
-		    if (nbytes < MPIR_GATHER_VSMALL_MSG) {
-			mpi_errno = MPIC_Send(tmp_buf, curr_cnt, MPI_BYTE, dst,
-					      MPIR_GATHER_TAG, comm);
-		    }
-		    else {
-			blocks[0] = sendcnt;
-			struct_displs[0] = (MPI_Aint) sendbuf;
-			types[0] = sendtype;
-			blocks[1] = curr_cnt - nbytes;
-			struct_displs[1] = (MPI_Aint) ((char*) tmp_buf + nbytes);
-			types[1] = MPI_BYTE;
+                else if (nbytes < MPIR_GATHER_VSMALL_MSG) {
+		    mpi_errno = MPIC_Send(tmp_buf, curr_cnt, MPI_BYTE, dst,
+					  MPIR_GATHER_TAG, comm);
+		}
+		else {
+		    blocks[0] = sendcnt;
+		    struct_displs[0] = (MPI_Aint) sendbuf;
+		    types[0] = sendtype;
+		    blocks[1] = curr_cnt - nbytes;
+		    struct_displs[1] = (MPI_Aint) ((char*) tmp_buf + nbytes);
+		    types[1] = MPI_BYTE;
 
-			NMPI_Type_create_struct(2, blocks, struct_displs, types, &tmp_type);
-			NMPI_Type_commit(&tmp_type);
+		    NMPI_Type_create_struct(2, blocks, struct_displs, types, &tmp_type);
+		    NMPI_Type_commit(&tmp_type);
 
-			mpi_errno = MPIC_Send(MPI_BOTTOM, 1, tmp_type, dst,
-					      MPIR_GATHER_TAG, comm);
+		    mpi_errno = MPIC_Send(MPI_BOTTOM, 1, tmp_type, dst,
+					  MPIR_GATHER_TAG, comm);
 
-			NMPI_Type_free(&tmp_type);
-		    }
-                }
+		    NMPI_Type_free(&tmp_type);
+		}
 		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
                 break;
@@ -290,16 +280,17 @@ int MPIR_Gather (
             mask <<= 1;
         }
 
-        if ((rank == root) && (root != 0) && (nbytes < MPIR_GATHER_VSMALL_MSG))
+        if ((rank == root) && root && (nbytes < MPIR_GATHER_VSMALL_MSG) && copy_blks)
 	{
             /* reorder and copy from tmp_buf into recvbuf */
-	    MPIR_Localcopy((char *) tmp_buf + nbytes,
-			   nbytes*(comm_size-rank-1), MPI_BYTE,  
-			   ((char *) recvbuf + extent*recvcnt*(rank+1)),
-			   recvcnt*(comm_size-rank-1), recvtype);
-            MPIR_Localcopy((char *) tmp_buf + nbytes*(comm_size-rank),
-                           nbytes*rank, MPI_BYTE, recvbuf, 
-                           recvcnt*rank, recvtype); 
+	    MPIR_Localcopy(tmp_buf,
+			   nbytes * (comm_size - copy_offset), MPI_BYTE,  
+			   ((char *) recvbuf + extent * recvcnt * copy_offset),
+			   recvcnt * (comm_size - copy_offset), recvtype);
+	    MPIR_Localcopy((char *) tmp_buf + nbytes * (comm_size - copy_offset),
+			   nbytes * (copy_blks - comm_size + copy_offset), MPI_BYTE,  
+			   recvbuf,
+			   recvcnt * (copy_blks - comm_size + copy_offset), recvtype);
         }
 
 	if (tmp_buf) MPIU_Free(tmp_buf);
