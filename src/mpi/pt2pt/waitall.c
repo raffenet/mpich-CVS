@@ -75,11 +75,9 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
     MPID_Request * request_ptr_array[MPID_REQUEST_PTR_ARRAY_SIZE];
     MPID_Request ** request_ptrs = request_ptr_array;
     MPI_Status * status_ptr;
-    void ** state_ptrs = NULL;
-    MPIX_Grequest_wait_function *wait_fn;
     MPID_Progress_state progress_state;
-    int i, j;
-    int n_completed, n_native, n_greq, n_classes;
+    int i;
+    int n_completed, n_native=0;
     int active_flag;
     int rc;
     int mpi_errno = MPI_SUCCESS;
@@ -163,46 +161,9 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
     
     MPID_Progress_start(&progress_state);
 
-    state_ptrs = malloc(sizeof(void*)*count);
     for(;;)
     {
-	for (i=0, j=0, n_classes=1, n_native=0, n_greq=0; i< count; i++)
-	{
-	    if(request_ptrs[i] == NULL) continue;
-            if(*request_ptrs[i]->cc_ptr != 0)
-	    {
-	        if (request_ptrs[i]->kind == MPID_UREQUEST)
-		{
-		    n_greq += 1;
-		    wait_fn = request_ptrs[i]->wait_fn;
-		    state_ptrs[j] = request_ptrs[i]->grequest_extra_state;
-		    j++;
-		    if (i+1 < count) {
-		        if (request_ptrs[i]->greq_class != 
-					request_ptrs[i+1]->greq_class)
-			    n_classes += 1;
-		    }
-		} else {
-		    n_native += 1;
-		}
-	    }
-	}
-	/* might be able to wait on multiple greqs */
-	/* wait on multiple greqs outside of the iterative loop */
-	/* means we need to rebuild state_ptrs each time */
-	/* maybe resolve greq class and call wait_fn that way */
-	if (j > 0 && n_classes == 1 && wait_fn != NULL) {
-	    (wait_fn)(j, state_ptrs, 0, &(array_of_statuses[i]));
-	} else {
-	    for (i = 0; i< count; i++)
-	    {
-		if (request_ptrs[i]->kind == MPID_UREQUEST && 
-				*request_ptrs[i]->cc_ptr != 0) {
-		    (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, &(array_of_statuses[i]));
-		}
-	    }
-	}
-
+	MPIR_Grequest_progress_poke(count, request_ptrs, array_of_statuses);
 	for (i = 0; i < count; i++)
 	{
 	    if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
@@ -253,6 +214,15 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 	    break;
 	}
 
+	for (i=0; i++; i<count) {
+	    if (request_ptrs[i] != NULL && 
+			    request_ptrs[i]->kind != MPID_UREQUEST) 
+	    {
+		n_native=1;
+		break;
+	    }
+	}
+		    
 	if (n_native > 0) {
 	    mpi_errno = MPID_Progress_wait(&progress_state);
 	    if (mpi_errno != MPI_SUCCESS)
@@ -273,8 +243,6 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
     { 
 	MPIU_CHKLMEM_FREEALL();
     }
-
-    if (state_ptrs != NULL) free (state_ptrs);
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITALL);
     MPIU_THREAD_SINGLE_CS_EXIT("pt2pt");
