@@ -21,7 +21,7 @@ MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 # MPI implementation: used to turn on/off of certain feature
 MPI_IMPL             = @MPI_IMPL@
 # MPE header files that are needed by endusers
-MPE_HEADERS          = "mpe_log_thread.h"
+MPE_HEADERS          = ""
 
 all: build_include build_lib_bin build_etc linktest_all
 

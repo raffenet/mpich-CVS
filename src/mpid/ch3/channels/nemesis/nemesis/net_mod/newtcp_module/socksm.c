@@ -21,12 +21,12 @@ struct {
     freenode_t *head, *tail;
 } freeq = {NULL, NULL};
 
-static int g_tbl_size = 0;
+int g_tbl_size = 0; //DARIUS
 static int g_tbl_capacity = CONN_PLFD_TBL_INIT_SIZE;
 static int g_tbl_grow_size = CONN_PLFD_TBL_GROW_SIZE;
 
 static sockconn_t *g_sc_tbl = NULL;
-static pollfd_t *g_plfd_tbl = NULL;
+pollfd_t *g_plfd_tbl = NULL; //DARIUS
 
 sockconn_t g_lstn_sc;
 pollfd_t g_lstn_plfd;
@@ -661,6 +661,7 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
     sockconn_t *sc = NULL;
     int mpi_errno = MPI_SUCCESS;
 
+
 /*     FIXME check whether a (different/new) error has to be reported stating the VC is  */
 /*      already disconnected. */
     if (((MPIDI_CH3I_VC *)vc->channel_private)->state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED)
@@ -676,6 +677,8 @@ int MPID_nem_newtcp_module_disconnect (struct MPIDI_VC *const vc)
 /*              No need to finish negotiations to move to CONN_STATE_TS_COMMRDY state. */
 /*              Just close the connection from the current state ignoring the outstanding */
 /*              negotiation messages. */
+            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "MPID_nem_newtcp_module_disconnect(): changing to "
+                  "quiescent from %s", CONN_STATE_STR[sc->state.cstate]));
             CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
             break;
         case CONN_STATE_TS_COMMRDY:
@@ -709,12 +712,15 @@ static int state_tc_c_cnting_handler(pollfd_t *const plfd, sockconn_t *const sc)
     int mpi_errno = MPI_SUCCESS;
     MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t stat;
    
+    MPIDI_FUNC_ENTER(FUNCNAME);
     stat = MPID_nem_newtcp_module_check_sock_status(plfd);
 
     if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_CONNECTED) {
         CHANGE_STATE(sc, CONN_STATE_TC_C_CNTD);
     }
     else if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF) {
+        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_tc_c_cnting_handler(): changing to "
+              "quiescent"));
         CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
         /* FIXME: retry 'n' number of retries before signalling an error to VC layer. */
     }
@@ -731,6 +737,7 @@ static int state_tc_c_cnting_handler(pollfd_t *const plfd, sockconn_t *const sc)
         */
     }
  fn_exit:
+    MPIDI_FUNC_EXIT(FUNCNAME);
     return mpi_errno;
  fn_fail:
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
@@ -746,9 +753,12 @@ static int state_tc_c_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
 
+    MPIDI_FUNC_ENTER(FUNCNAME);
     MPIU_Assert(is_valid_state(sc));
 
     if (sc->pending_event == EVENT_DISCONNECT || found_better_sc(sc, NULL)) {
+        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_tc_c_cntd_handler(): changing to "
+              "quiescent"));
         CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
         goto fn_exit;
     }
@@ -771,6 +781,7 @@ static int state_tc_c_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
         /* Remain in the same state */
     }
  fn_exit:
+    MPIDI_FUNC_EXIT(FUNCNAME);
     return mpi_errno;
  fn_fail:
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
@@ -790,6 +801,8 @@ static int state_c_ranksent_handler(pollfd_t *const plfd, sockconn_t *const sc)
     if (IS_READABLE(plfd)) {
         mpi_errno = recv_cmd_pkt(sc->fd, &pkt_type);
         if (mpi_errno != MPI_SUCCESS) {
+            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_c_ranksent_handler() 1: changing to "
+              "quiescent.. "));
             CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
         }
         else {
@@ -802,6 +815,8 @@ static int state_c_ranksent_handler(pollfd_t *const plfd, sockconn_t *const sc)
                 MPID_nem_newtcp_module_conn_est (sc->vc);
             }
             else { /* pkt_type must be MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK */
+                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_c_ranksent_handler() 2: changing to "
+                   "quiescent"));
                 CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
             }
         }    
@@ -824,8 +839,11 @@ static int state_l_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
     int mpi_errno = MPI_SUCCESS;
     MPID_NEM_NEWTCP_MODULE_SOCK_STATUS_t stat;
 
+    MPIDI_FUNC_ENTER(FUNCNAME);
     stat = MPID_nem_newtcp_module_check_sock_status(plfd);
     if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF) {
+        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_l_cntd_handler() 1: changing to "
+            "quiescent"));
         CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
         goto fn_exit;
     }
@@ -835,6 +853,8 @@ static int state_l_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
             CHANGE_STATE(sc, CONN_STATE_TA_C_RANKRCVD);
         }
         else {
+            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_l_cntd_handler() 2: changing to "
+               "quiescent"));
             CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
         }
     }
@@ -843,6 +863,7 @@ static int state_l_cntd_handler(pollfd_t *const plfd, sockconn_t *const sc)
     }
 
  fn_exit:
+    MPIDI_FUNC_EXIT(FUNCNAME);
     return mpi_errno;
  fn_fail:
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
@@ -883,8 +904,11 @@ static int state_l_rankrcvd_handler(pollfd_t *const plfd, sockconn_t *const sc)
     sockconn_t *fnd_sc;
     int snd_nak = FALSE;
 
+    MPIDI_FUNC_ENTER(FUNCNAME);
     stat = MPID_nem_newtcp_module_check_sock_status(plfd);
     if (stat == MPID_NEM_NEWTCP_MODULE_SOCK_ERROR_EOF) {
+        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_l_rankrcvd_handler() 1: changing to "
+            "quiescent"));
         CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
         goto fn_exit;
     }
@@ -897,6 +921,8 @@ static int state_l_rankrcvd_handler(pollfd_t *const plfd, sockconn_t *const sc)
     if (IS_WRITEABLE(plfd)) {
         if (snd_nak) {
             if (send_cmd_pkt(sc->fd, MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK) == MPI_SUCCESS) {
+                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_l_rankrcvd_handler() 2: changing to "
+                  "quiescent"));
                 CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
             }
         }
@@ -909,6 +935,7 @@ static int state_l_rankrcvd_handler(pollfd_t *const plfd, sockconn_t *const sc)
         }
     }
  fn_exit:
+    MPIDI_FUNC_EXIT(FUNCNAME);
     return mpi_errno;
  fn_fail:
     MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
@@ -974,6 +1001,8 @@ static int state_d_reqsent_handler(pollfd_t *const plfd, sockconn_t *const sc)
     if (IS_READABLE(plfd)) {
         mpi_errno = recv_cmd_pkt(sc->fd, &pkt_type);
         if (mpi_errno != MPI_SUCCESS) {
+            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_d_reqsent_handler() 1: changing to "
+                "quiescent"));
             CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
         }
         else {
@@ -981,6 +1010,8 @@ static int state_d_reqsent_handler(pollfd_t *const plfd, sockconn_t *const sc)
                         pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_ACK);
             if (pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_REQ || 
                 pkt_type == MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_ACK) {
+                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_d_reqsent_handler() 2: changing to "
+                    "quiescent"));
                 CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
             }
         }
@@ -1002,6 +1033,8 @@ static int state_d_reqrcvd_handler(pollfd_t *const plfd, sockconn_t *const sc)
 
     if (IS_WRITEABLE(plfd)) {
         if (send_cmd_pkt(sc->fd, MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_ACK) == MPI_SUCCESS) {
+            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_d_reqrcvd_handler(): changing to "
+                "quiescent"));
             CHANGE_STATE(sc, CONN_STATE_TS_D_QUIESCENT);
         }
     }
@@ -1072,7 +1105,7 @@ int MPID_nem_newtcp_module_init_sm()
     /* Set the appropriate states */
     sc_state_info[CONN_STATE_TC_C_CNTING].sc_state_plfd_events = POLLOUT | POLLIN;
     sc_state_info[CONN_STATE_TC_C_CNTD].sc_state_plfd_events = POLLOUT | POLLIN;
-    sc_state_info[CONN_STATE_TC_C_RANKSENT].sc_state_plfd_events = POLLOUT | POLLIN;
+    sc_state_info[CONN_STATE_TC_C_RANKSENT].sc_state_plfd_events = POLLIN;
     sc_state_info[CONN_STATE_TA_C_CNTD].sc_state_plfd_events = POLLOUT | POLLIN;
     sc_state_info[CONN_STATE_TA_C_RANKRCVD].sc_state_plfd_events = POLLOUT | POLLIN;
     sc_state_info[CONN_STATE_TS_COMMRDY].sc_state_plfd_events = POLLIN;
@@ -1148,11 +1181,11 @@ int MPID_nem_newtcp_module_connpoll()
 
         if (it_plfd->fd != CONN_INVALID_FD && it_plfd->revents != 0)
         {
-          /* FIXME@san  Uncomment and test
+          /* FIXME@san  Uncomment and test */
             MPIU_Assert ((it_plfd->revents & POLLHUP) == 0);
             MPIU_Assert ((it_plfd->revents & POLLERR) == 0);
             MPIU_Assert ((it_plfd->revents & POLLNVAL) == 0);
-            */
+            
 
             mpi_errno = it_sc->handler(it_plfd, it_sc);
             if (mpi_errno) MPIU_ERR_POP (mpi_errno); 

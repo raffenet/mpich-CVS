@@ -50,9 +50,11 @@ C Initialize the buffer
          enddo
          call mpi_win_fence( MPI_MODE_NOPRECEDE, win, ierr )
 C         
-         call mpi_put( buf(1,1), nrows, MPI_INTEGER, left, ncols+1, 
+         aint = ncols+1
+         call mpi_put( buf(1,1), nrows, MPI_INTEGER, left, aint, 
      &                 nrows, MPI_INTEGER, win, ierr )
-         call mpi_put( buf(1,ncols), nrows, MPI_INTEGER, right, 0, 
+         aint = 0
+         call mpi_put( buf(1,ncols), nrows, MPI_INTEGER, right, aint, 
      &                 nrows, MPI_INTEGER, win, ierr )
 C         
          call mpi_win_fence( MPI_MODE_NOSTORE + MPI_MODE_NOPUT + 

@@ -558,7 +558,7 @@ EOF
     save_IFS="$IFS"
     # Make sure that IFS includes a space, or the tests that run programs
     # may fail
-    IFS=" 
+    IFS=" ""
 "
     save_trial_LIBS="$trial_LIBS"
     trial_LIBS=""
@@ -625,7 +625,7 @@ $libs"
     fi
     # Discard options that are not available:
     # (IFS already saved above)
-    IFS=" 
+    IFS=" ""
 "
     save_trial_FLAGS="$trial_FLAGS"
     trial_FLAGS=""
@@ -763,7 +763,7 @@ EOF
     # Now, try to find some way to compile and link that program, looping 
     # over the possibilities of options and libraries
         save_IFS="$IFS"
-        IFS=" 
+        IFS=" ""
 "
         for libs in $trial_LIBS ; do
             if test -n "$pac_cv_prog_f77_cmdarg" ; then break ; fi
@@ -784,7 +784,7 @@ EOF
 			found_answer="yes"
 		    fi
                 fi
-	        IFS=" 
+	        IFS=" ""
 "
 		if test "$found_answer" = "yes" ; then
 	            AC_MSG_RESULT([yes])
@@ -1311,10 +1311,10 @@ AC_DEFUN([PAC_PROG_F77_AND_C_STDIO_LIBS],[
     confname=conf1_
     case "$pac_cv_prog_f77_name_mangle" in
     "lower underscore")       confname=conf1_ ;;
-    lower)                    confname=conf1  ;;
     "upper stdcall")          confname=CONF1  ;;
     upper)                    confname=CONF1  ;;
-    "lower doubleunderscore") confname=conf1  ;;
+    "lower doubleunderscore") confname=conf1_ ;;
+    lower)                    confname=conf1  ;;
     "mixed underscore")       confname=conf1_ ;;
     mixed)                    confname=conf1  ;;
     esac
@@ -1348,6 +1348,11 @@ EOF
          tmpcmd='${F77-f77} $FFLAGS -o conftest conftest.f conftestc.o -lSystemStubs 1>&AC_FD_CC'
          if AC_TRY_EVAL(tmpcmd) && test -x conftest ; then
              pac_cv_prog_f77_and_c_stdio_libs="-lSystemStubs"
+	 else 
+	     echo "configure: failed program was:" >&AC_FD_CC
+	     cat conftestc.c >&AC_FD_CC 
+	     echo "configure: with Fortran 77 program:" >&AC_FD_CC
+	     cat conftest.f >&AC_FD_CC
          fi
     fi
 
@@ -1357,4 +1362,51 @@ if test "$pac_cv_prog_f77_and_c_stdio_libs" != none -a \
         "$pac_cv_prog_f77_and_c_stdio_libs" != unknown ; then
     F77_OTHER_LIBS="$F77_OTHER_LIBS $pac_cv_prog_f77_and_c_stdio_libs"    
 fi
+])
+dnl
+dnl Check that the FLIBS determined by AC_F77_LIBRARY_LDFLAGS is valid.
+dnl That macro (at least as of autoconf 2.59) attempted to parse the output
+dnl of the compiler when asked to be verbose; in the case of the Fujitsu
+dnl frt Fortran compiler, it included files that frt looked for and then
+dnl discarded because they did not exist.
+AC_DEFUN([PAC_PROG_F77_FLIBS_VALID],[
+    pac_cv_f77_flibs_valid=unknown
+    AC_MSG_CHECKING([whether $F77 accepts the FLIBS found by autoconf])
+    AC_LANG_SAVE
+    AC_LANG_FORTRAN77
+dnl We can't use TRY_LINK, because it wants a routine name, not a 
+dnl declaration.  The following is the body of TRY_LINK, slightly modified.
+cat > conftest.$ac_ext <<EOF
+       program main
+       end
+EOF
+    if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeext}; then
+      pac_cv_f77_flibs_valid=yes
+    else
+      echo "configure: failed program was:" >&AC_FD_CC
+      cat conftest.$ac_ext >&AC_FD_CC
+      pac_cv_f77_flibs_valid=no
+    fi
+AC_MSG_RESULT($pac_cv_f77_flibs_valid)
+if test $pac_cv_f77_flibs_valid = no ; then
+    # See which ones *are* valid
+    AC_MSG_CHECKING([for valid entries in FLIBS])
+    goodFLIBS=""
+    saveFLIBS=$FLIBS
+    FLIBS=""
+    for arg in $saveFLIBS ; do
+      FLIBS="$goodFLIBS $arg"
+      if AC_TRY_EVAL(ac_link) && test -s conftest${ac_exeext}; then
+          goodFLIBS=$FLIBS
+      else
+        echo "configure: failed program was:" >&AC_FD_CC
+        cat conftest.$ac_ext >&AC_FD_CC
+      fi
+      done
+    FLIBS=$goodFLIBS
+    AC_MSG_RESULT($FLIBS)
+fi
+#
+rm -f conftest*
+AC_LANG_RESTORE
 ])

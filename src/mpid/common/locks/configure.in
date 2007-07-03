@@ -48,7 +48,8 @@ if test "$HAVE_SPARC_INLINE_PROCESS_LOCKS" = "yes" ; then
     # always reach all of the necessary files (I saw failures in ch3_progress.c
     # where the inline file was not in the Makefile) and (a) adds the inline
     # where it should not be, such as in mpicc.
-    AC_MSG_ERROR([Use of inline process locks is not supported.  Please volunteer to fix this code])
+    CFLAGS="$CFLAGS $LOCKCFLAGS"
+dnl     AC_MSG_ERROR([Use of inline process locks is not supported.  Please volunteer to fix this code])
 fi
 
 AC_SUBST(AR)

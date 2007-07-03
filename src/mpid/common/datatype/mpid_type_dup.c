@@ -36,20 +36,6 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	/* create a new type and commit it. */
 	mpi_errno = MPID_Type_contiguous(1, oldtype, newtype);
 	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-
-	MPID_Datatype_get_ptr(*newtype, new_dtp);
-	mpi_errno = MPID_Datatype_set_contents(new_dtp,
-					       MPI_COMBINER_DUP,
-					       0 /* ints */,
-					       0 /* aints */,
-					       1 /* types */,
-					       NULL,
-					       NULL,
-					       &oldtype);
-	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-
-	mpi_errno = MPID_Type_commit(newtype);
-	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }	
     }
     else {
       	/* allocate new datatype object and handle */

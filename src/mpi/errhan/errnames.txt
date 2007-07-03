@@ -151,6 +151,16 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **f90typetoomany:Too many requests for unnamed, predefined f90 types
 **f90typetoomany %s %d:Too many requests for unnamed, predefined f90 %s \
  types; no more than %d allowed.
+**f90typeintnone: No integer type with the requested range is available
+**f90typeintnone %d: No integer type with %d digits of range is avaiable
+**f90typerealnone: No real type with the requested range and/or precision \
+ is available
+**f90typerealnone %d %d: No real type with both %d digits of precision \
+ and an exponent range of %d is available
+**f90typecomplexnone: No complex type with the requested range and/or \
+ precision is available
+**f90typecomplexnone %d %d: No complex type with both %d digits of precision \
+ and an exponent range of %d is available
 #
 **noConnInfoToString:No ConnInfoToString routine defined for this process group
 #

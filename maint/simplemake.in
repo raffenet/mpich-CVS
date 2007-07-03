@@ -1488,11 +1488,17 @@ sub DefaultRules {
 
 	# The following does not always work correctly.  There may be 
 	# problem in handling jumps between directories
-	my $topdir = &GetPathToParent( $curdir, $last_config_dir );
- 	print "last config dir = $last_config_dir, topdir = $topdir\n" if $debug_confdir;
+	my $real_last_config_dir = $last_config_dir;
+	if (defined($makefile_configdir)) {
+	    $real_last_config_dir = $makefile_configdir;
+	    print "Replacing last config dir with $real_last_config_dir\n";
+	}
+	
+	my $topdir = &GetPathToParent( $curdir, $real_last_config_dir );
+ 	print "last config dir = $real_last_config_dir, topdir = $topdir\n" if $debug_confdir;
  	if ($topdir eq "") {	
  	    $topdir = ".";
- 	}		
+ 	}
 
 	# We need to use the enclosing configure, not always the top-level
 	# configure.  Thus, we need to keep track of the directory of the
@@ -1505,16 +1511,18 @@ sub DefaultRules {
 	# about ignoring a failing step.
 
 	$ignore_step = "-";
+
 	if ($topdir ne ".") {
 	    print FD "\t-cd $topdir && \\$newline";
 	    $ignore_step = "";
 	}
 	$relcurdir = $curdir;
-	if ($last_config_dir) {
-	    my $quoted_dir = quotemeta $last_config_dir;
+	if ($real_last_config_dir) {
+	    my $quoted_dir = quotemeta $real_last_config_dir;
 	    $relcurdir =~ s/^$quoted_dir//;
 	}
 	print STDOUT "curdir is $curdir and relcurdir is $relcurdir\n" if $debug_confdir;
+
 	print FD "\t${ignore_step}if [ -x config.status ] ; then CONFIG_FILES=${relcurdir}Makefile CONFIG_HEADERS= \${SHELL} ./config.status ; fi$newline";
 	print FD $makeBlockSep;
     }
@@ -3116,7 +3124,6 @@ sub TargetPrograms {
 	}
 	$ruleline .= " \${LIBS}";
 	&print_make_longline( FD, $ruleline );
-#	&print_make_longline( FD, "\t$progrules{$pgmsrctype{$pgm}} -o $pgm $pgmobjs $pgmlibs{$pgm} $pgm_ldadd{$pgm} \${LIBS}" );
     }
 
 }

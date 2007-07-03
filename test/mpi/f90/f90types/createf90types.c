@@ -62,10 +62,10 @@ static int checkType( const char str[], int p, int r, int f90kind,
 		    printf( "Returned %d integer values, 1 expected\n", 
 			    nints );
 		}
-		if (parms[0] != r) {
+		if (parms[0] != p) {
 		    errs++;
-		    printf( "Returned (r=%d); expected (r=%d)\n",
-			    parms[0], r );
+		    printf( "Returned (p=%d); expected (p=%d)\n",
+			    parms[0], p );
 		}
 		break;
 	    default:

@@ -285,7 +285,7 @@ extern char *strdup( const char * );
     /* CHKPMEM_REGISTER is used for memory allocated within another routine */
 
 /* Memory used and freed within the current scopy (alloca if feasible) */
-/* FIXME: Where is USE_ALLOCA defined? */
+/* Configure with --enable-alloca to set USE_ALLOCA */
 #if defined(HAVE_ALLOCA) && defined(USE_ALLOCA)
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
@@ -320,11 +320,37 @@ if (pointer_) { \
     { while (mpiu_chklmem_stk_sp_ > 0) {\
        MPIU_Free( mpiu_chklmem_stk_[--mpiu_chklmem_stk_sp_] ); } }
 #endif /* HAVE_ALLOCA */
-
 #define MPIU_CHKLMEM_MALLOC(pointer_,type_,nbytes_,rc_,name_) \
     MPIU_CHKLMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_)
 #define MPIU_CHKLMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_) \
     MPIU_CHKLMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,goto fn_fail)
+
+/* In some cases, we need to allocate large amounts of memory. This can
+   be a problem if alloca is used, as the available stack space may be small.
+   This is the same approach for the temporary memory as is used when alloca
+   is not available. */
+#define MPIU_CHKLBIGMEM_DECL(n_) \
+ void *(mpiu_chklbigmem_stk_[n_]);\
+ int mpiu_chklbigmem_stk_sp_=0;\
+ MPIU_AssertDecl(const int mpiu_chklbigmem_stk_sz_=n_)
+
+#define MPIU_CHKLBIGMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
+{pointer_ = (type_)MPIU_Malloc(nbytes_); \
+if (pointer_) { \
+    MPIU_Assert(mpiu_chklbigmem_stk_sp_<mpiu_chklbigmem_stk_sz_);\
+    mpiu_chklbigmem_stk_[mpiu_chklbigmem_stk_sp_++] = pointer_;\
+} else {\
+    MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
+    stmt_;\
+}}
+#define MPIU_CHKLBIGMEM_FREEALL() \
+    { while (mpiu_chklbigmem_stk_sp_ > 0) {\
+       MPIU_Free( mpiu_chklbigmem_stk_[--mpiu_chklbigmem_stk_sp_] ); } }
+
+#define MPIU_CHKLBIGMEM_MALLOC(pointer_,type_,nbytes_,rc_,name_) \
+    MPIU_CHKLBIGMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_)
+#define MPIU_CHKLBIGMEM_MALLOC_ORJUMP(pointer_,type_,nbytes_,rc_,name_) \
+    MPIU_CHKLBIGMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,goto fn_fail)
 
 /* Persistent memory that we may want to recover if something goes wrong */
 #define MPIU_CHKPMEM_DECL(n_) \

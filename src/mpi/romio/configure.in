@@ -454,6 +454,7 @@ if test -n "$arch_rs6000"; then
     longlongsize=${longlongsize:-8} 
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+    MPI_OFFSET_KIND_VAL=8
 fi    
 #
 
@@ -499,6 +500,7 @@ if test -n "$arch_SX4" ; then
     fi
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+    MPI_OFFSET_KIND_VAL=8
 fi
 #
 if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
@@ -542,6 +544,7 @@ if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
 
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+    MPI_OFFSET_KIND_VAL=8
     if test "$CC" != "gcc" ; then
         ROMIO_TCFLAGS="-Ae"
     fi
@@ -558,6 +561,7 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
 
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+    MPI_OFFSET_KIND_VAL=8
     ROMIO_LIBLIST="$ROMIO_LIBLIST -laio"
 fi    
 #
@@ -583,6 +587,7 @@ if test -n "$arch_CRAY" ; then
 
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+    MPI_OFFSET_KIND_VAL=8
 fi
 #
 if test -n "$arch_sgi" ; then
@@ -674,6 +679,7 @@ if test -n "$arch_IRIX"; then
    AC_DEFINE(IRIX,1,[Define if IRIX])
    MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
    MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
+   MPI_OFFSET_KIND_VAL=8
 fi
 
 AC_HAVE_FUNCS(memalign)
@@ -781,6 +787,7 @@ fi
 if test -n "$OFFSET_KIND" -a "A$MPI_OFFSET_KIND1" = "A!" ; then 
   MPI_OFFSET_KIND1="        INTEGER MPI_OFFSET_KIND"
   MPI_OFFSET_KIND2="        PARAMETER (MPI_OFFSET_KIND=$OFFSET_KIND)"
+  MPI_OFFSET_KIND_VAL=$OFFSET_KIND
 else
  if test "$FORTRAN_MPI_OFFSET" = "integer*8" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 && test $NOF90 = 0 ; then
    PAC_MPI_OFFSET_KIND
@@ -809,13 +816,13 @@ EOF
     rm -f conftest*
     AC_MSG_RESULT($ac_cv_f77_offset_type_works)
 
-    if test "$ac_cv_f77_offset_type_works" != "yes" ; then
+    if test "$ac_cv_f77_offset_type_works" != "yes" -a -n "$MPI_OFFSET_KIND_VAL"; then
         AC_MSG_CHECKING([whether we can use KIND with the selected F77 compiler $F77])
         ac_cv_f77_allows_offset_kind=no
         rm -f conftest*
         cat >conftest.f <<EOF
         program main
-        integer (kind=$MPI_OFFSET_KIND) j
+        integer (kind=$MPI_OFFSET_KIND_VAL) j
         end
 EOF
         if $F77 -o conftest conftest.f >>config.log 2>&1 && test -x conftest ; then
@@ -824,7 +831,7 @@ EOF
         rm -f conftest*
         AC_MSG_RESULT($ac_cv_f77_allows_offset_kind)
         if test "$ac_cv_f77_allows_offset_kind" ; then
-             FORTRAN_MPI_OFFSET="integer (kind=$MPI_OFFSET_KIND)"
+             FORTRAN_MPI_OFFSET="integer (kind=$MPI_OFFSET_KIND_VAL)"
         else
              AC_MSG_WARN([Could not find a way to declare an integer type corresponding to MPI_Offset in Fortran.])
         fi

@@ -159,6 +159,45 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     
     MPID_VCR_Dup(&pg->vct[pg_rank], &comm->vcr[0]);
 
+    /* Currently, mpidpre.h always defines MPID_NEEDS_ICOMM_WORLD. */
+#ifdef MPID_NEEDS_ICOMM_WORLD
+    /*
+     * Initialize the MPIR_ICOMM_WORLD object (an internal, private version
+     * of MPI_COMM_WORLD) 
+     */
+    comm = MPIR_Process.icomm_world;
+
+    comm->rank        = pg_rank;
+    comm->remote_size = pg_size;
+    comm->local_size  = pg_size;
+#if 0    
+    mpi_errno = MPID_VCRT_Create(comm->remote_size, &comm->vcrt);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**dev|vcrt_create", 
+			     "**dev|vcrt_create %s", "MPI_COMM_WORLD");
+    }
+    
+    mpi_errno = MPID_VCRT_Get_ptr(comm->vcrt, &comm->vcr);
+    if (mpi_errno != MPI_SUCCESS)
+    {
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**dev|vcrt_get_ptr", 
+			     "dev|vcrt_get_ptr %s", "MPI_COMM_WORLD");
+    }
+    
+    /* Initialize the connection table on COMM_WORLD from the process group's
+       connection table */
+    for (p = 0; p < pg_size; p++)
+    {
+	MPID_VCR_Dup(&pg->vct[p], &comm->vcr[p]);
+    }
+#endif
+    MPID_VCRT_Add_ref( MPIR_Process.comm_world->vcrt );
+    comm->vcrt = MPIR_Process.comm_world->vcrt;
+    comm->vcr  = MPIR_Process.comm_world->vcr;
+    
+    MPID_Dev_comm_create_hook (comm);
+#endif
     
     /*
      * If this process group was spawned by a MPI application, then

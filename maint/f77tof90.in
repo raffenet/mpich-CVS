@@ -24,10 +24,10 @@ $newline = "\n";
 		    'iooffset' => 'integer (kind=MPI_OFFSET_KIND) offset',
 		    'type1aint' => 'integer (kind=MPI_ADDRESS_KIND) asize', 
 		    'typeaints' => 'integer (kind=MPI_ADDRESS_KIND) asize, asizev(max_asizev)', 
-		    '../attr/attraints' => 'integer (kind=MPI_ADDRESS_KIND) extrastate, valin, valout, val',
+		    'attr1aints' => 'integer (kind=MPI_ADDRESS_KIND) extrastate, valin, valout, val',
 		    'attraints' => 'integer (kind=MPI_ADDRESS_KIND) extrastate, valin, valout, val',
 		    'addsize' => 'integer (kind=MPI_ADDRESS_KIND) aint',
-                    '../rma/addsize' => 'integer (kind=MPI_ADDRESS_KIND) aint',
+                    'add1size' => 'integer (kind=MPI_ADDRESS_KIND) aint',
 	    );
 
 %excludePrograms = ();

@@ -81,7 +81,7 @@ fi
 
 AC_ARG_WITH(gm, [--with-gm=path - specify path where gm include directory and lib directory can be found],
 if test "${with_gm}" != "yes" -a "${with_gm}" != "no" ; then
-    LDFLAGS="$LDFLAGS -L${with_gm}/lib -L${with_gm}/lib64"
+    LDFLAGS="$LDFLAGS -L${with_gm}/lib64 -L${with_gm}/lib"
     CPPFLAGS="$CPPFLAGS -I${with_gm}/include"
 fi,)
 AC_ARG_WITH(gm-include, [--with-gm-include=path - specify path to gm include directory],
@@ -104,7 +104,7 @@ fi;
 
 AC_ARG_WITH(ib, [--with-ib=path - specify path where InfiniBand include directory and lib directory can be found],
 if test "${with_ib}" != "yes" -a "${with_ib}" != "no" ; then
-    LDFLAGS="$LDFLAGS -L${with_ib}/lib -L${with_ib}/lib64"
+    LDFLAGS="$LDFLAGS -L${with_ib}/lib64 -L${with_ib}/lib"
     CPPFLAGS="$CPPFLAGS -I${with_ib}/include -I${with_ib}/include/infiniband"
 fi,)
 AC_ARG_WITH(ib-include, [--with-ib-include=path - specify path to InfiniBand include directory],
@@ -127,7 +127,7 @@ fi;
 
 AC_ARG_WITH(mx, [--with-mx=path - specify path where mx include directory and lib directory can be found],
 if test "${with_mx}" != "yes" -a "${with_mx}" != "no" ; then
-    LDFLAGS="$LDFLAGS -L${with_mx}/lib"
+    LDFLAGS="$LDFLAGS -L${with_mx}/lib64 -L${with_mx}/lib"
     CPPFLAGS="$CPPFLAGS -I${with_mx}/include"
 fi,)
 AC_ARG_WITH(mx-include, [--with-mx-include=path - specify path to mx include directory],
@@ -152,7 +152,7 @@ fi;
 
 AC_ARG_WITH(elan, [--with-elan=path - specify path where elan include directory and lib directory can be found],
 if test "${with_elan}" != "yes" -a "${with_elan}" != "no" ; then
-    LDFLAGS="$LDFLAGS -L${with_elan}/lib"
+    LDFLAGS="$LDFLAGS -L${with_elan}/lib64 -L${with_elan}/lib"
     CPPFLAGS="$CPPFLAGS -I${with_elan}/include"	
 fi,)
 AC_ARG_WITH(elan-include, [--with-elan-include=path - specify path to elan include directory],
@@ -182,7 +182,7 @@ fi;
 
 AC_ARG_WITH(sctp, [--with-sctp=path - specify path where sctp include directory and lib directory can be found],
 if test "${with_sctp}" != "yes" -a "${with_sctp}" != "no" ; then
-    LDFLAGS="$LDFLAGS -L${with_sctp}/lib"
+    LDFLAGS="$LDFLAGS -L${with_sctp}/lib64 -L${with_sctp}/lib"
     CPPFLAGS="$CPPFLAGS -I${with_sctp}/include"
 fi,)
 AC_ARG_WITH(sctp-include, [--with-sctp-include=path - specify path to sctp include directory],
@@ -328,6 +328,9 @@ pac_cv_have_haddr_list=yes,pac_cv_have_haddr_list=no)])
 if test "$pac_cv_have_haddr_list" = "yes" ; then
     AC_DEFINE(HAVE_H_ADDR_LIST,1,[Define if struct hostent contains h_addr_list])
 fi
+
+# Check for memory atomic instructions
+PAC_C_MEMATOMIC
 
 AC_SUBST(device_name)
 AC_SUBST(channel_name)

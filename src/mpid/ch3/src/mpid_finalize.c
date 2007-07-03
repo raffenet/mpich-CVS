@@ -86,16 +86,28 @@ int MPID_Finalize(void)
      * Barrier or an independent communicator that is not used by any
      * other (user) routine.
      */
+#ifdef MPID_NEEDS_ICOMM_WORLD
     MPIU_THREADPRIV_GET;
     MPIR_Nest_incr();
-    mpi_errno = NMPI_Barrier(MPI_COMM_WORLD);
+    mpi_errno = NMPI_Barrier(MPIR_ICOMM_WORLD); 
     MPIR_Nest_decr();
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+#endif
 
     mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_self->vcrt,0);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
+
+#ifdef MPID_NEEDS_ICOMM_WORLD
+    MPID_Dev_comm_destroy_hook(MPIR_Process.icomm_world);
+
+    mpi_errno = MPID_VCRT_Release(MPIR_Process.icomm_world->vcrt,0);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+    MPID_Dev_comm_destroy_hook(MPIR_Process.icomm_world);
+#endif
 
     MPID_Dev_comm_destroy_hook(MPIR_Process.comm_world);
 

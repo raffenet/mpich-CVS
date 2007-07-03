@@ -104,7 +104,7 @@
         enddo
 
 !
-         if (errs == 0) then
+         if (errs .eq. 0) then
             print*,' No Errors'
          else
             print*,'**',errs,' errors found.'

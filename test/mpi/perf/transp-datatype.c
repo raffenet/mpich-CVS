@@ -95,14 +95,13 @@ int main(int argc, char* argv[])
 
     /* Print out the results */
     if (myrank == 1) {
-	printf( "%f\t%f\t%f\n", t, ts, tst );
-	fflush(stdout);
 	/* if t and tst are too different, then there is a performance
 	   problem in the handling of the datatypes */
 	
 	if (t > 2 * tst) {
 	    errs ++;
 	    fprintf( stderr, "Transpose time with datatypes is more than twice time without datatypes\n" );
+	    fprintf( stderr, "%f\t%f\t%f\n", t, ts, tst );
 	}
 	if (errs) {
 	    printf( " Found %d errors\n", errs );

@@ -31,6 +31,7 @@ scancel_SOURCES      = scancel.c
 scancel2_SOURCES     = scancel2.c
 rcancel_SOURCES      = rcancel.c
 pscancel_SOURCES     = pscancel.c
+sendflood_SOURCES    = sendflood.c
 sendrecv1_SOURCES    = sendrecv1.c
 sendrecv2_SOURCES    = sendrecv2.c
 sendrecv3_SOURCES    = sendrecv3.c

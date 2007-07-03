@@ -17,12 +17,6 @@
 #include <unistd.h>
 #endif
 
-#include "clog_const.h"
-#include "clog_mem.h"
-#include "clog_uuid.h"
-#include "clog_commset.h"
-#include "clog_util.h"
-
 #if !defined( CLOG_NOMPI )
 
 #if !defined( HAVE_PMPI_COMM_CREATE_KEYVAL )
@@ -41,7 +35,18 @@
 #define PMPI_Comm_get_attr PMPI_Attr_get
 #endif
 
-#endif
+#else
+#include "mpi_null.h"
+#endif /* Endof if !defined( CLOG_NOMPI ) */
+
+
+#include "clog_const.h"
+#include "clog_util.h"
+#include "clog_mem.h"
+#include "clog_uuid.h"
+#include "clog_commset.h"
+
+
 
 CLOG_CommSet_t* CLOG_CommSet_create( void )
 {
@@ -50,21 +55,25 @@ CLOG_CommSet_t* CLOG_CommSet_create( void )
 
     commset = (CLOG_CommSet_t *) MALLOC( sizeof(CLOG_CommSet_t) );
     if ( commset == NULL ) {
-        fprintf( stderr, __FILE__":CLOG_CommSet_create() - MALLOC() fails.\n" );
+        fprintf( stderr, __FILE__":CLOG_CommSet_create() - \n"
+                         "\tMALLOC() fails for CLOG_CommSet_t!\n" );
         fflush( stderr );
         return NULL;
     }
 
     /* LID_key Initialized to 'unallocated' */
-#if !defined( CLOG_NOMPI )
     commset->LID_key   = MPI_KEYVAL_INVALID;
-#else
-    commset->LID_key   = 0;
-#endif
     commset->max       = CLOG_COMM_TABLE_INCRE;
     commset->count     = 0;
     table_size         = commset->max * sizeof(CLOG_CommIDs_t);
     commset->table     = (CLOG_CommIDs_t *) MALLOC( table_size );
+    if ( commset->table == NULL ) {
+        FREE( commset );
+        fprintf( stderr, __FILE__":CLOG_CommSet_create() - \n"
+                         "\tMALLOC() fails for CLOG_CommSet_t.table[]!\n" );
+        fflush( stderr );
+        return NULL;
+    }
 
     return commset;
 }
@@ -77,9 +86,8 @@ void CLOG_CommSet_free( CLOG_CommSet_t **comm_handle )
     if ( commset != NULL ) {
         if ( commset->table != NULL )
             FREE( commset->table );
-#if !defined( CLOG_NOMPI )
-        PMPI_Comm_free_keyval( &(commset->LID_key) );
-#endif
+        if ( commset->LID_key != MPI_KEYVAL_INVALID )
+            PMPI_Comm_free_keyval( &(commset->LID_key) );
         FREE( commset );
     }
     *comm_handle = NULL;
@@ -158,11 +166,7 @@ CLOG_CommIDs_t* CLOG_CommSet_add_new_GID(       CLOG_CommSet_t *commset,
     CLOG_Uuid_copy( commgid, commIDs->global_ID );
 
     /* Set the Comm field's */
-#if !defined( CLOG_NOMPI )
     commIDs->comm        = MPI_COMM_NULL;
-#else
-    commIDs->comm        = 0;
-#endif
     commIDs->comm_rank   = -1;
 
     return commIDs;
@@ -231,7 +235,6 @@ CLOG_BOOL_T CLOG_CommSet_sync_IDs(       CLOG_CommSet_t *parent_commset,
 
 
 
-#if !defined( CLOG_NOMPI )
 /*
    CLOG_CommSet_init() should only be called if MPI is involved.
 */
@@ -533,7 +536,6 @@ void CLOG_CommSet_merge( CLOG_CommSet_t *commset )
 
     PMPI_Barrier( MPI_COMM_WORLD );
 }
-#endif
 
 static void CLOG_CommRec_swap_bytes( char *commrec )
 {

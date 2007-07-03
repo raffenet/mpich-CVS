@@ -38,8 +38,8 @@ later, in the section "Alternative configurations".
 
     - A C compiler (gcc is sufficient)
 
-    - A Fortran compiler if Fortran applications are to be used (g77 is
-      sufficient) 
+    - A Fortran compiler if Fortran applications are to be used
+      (g77 or gfortran is sufficient) 
 
     - A C++ compiler for the C++ MPI bindings (g++ is sufficient)
 
@@ -58,6 +58,10 @@ later, in the section "Alternative configurations".
     Configure will check for these prerequisites and try to work around
     deficiencies if possible.  (If you don't have Fortran, you will
     still be able to use MPICH2, just not with Fortran applications.)
+
+    Also, you need to know what shell you are using since different shell
+    has different command syntax. Command "echo $SHELL" prints out the
+    current shell used by your terminal program.
 
 2.  Unpack the tar file and go to the top level directory:
 
@@ -80,26 +84,45 @@ later, in the section "Alternative configurations".
 
 4.  Configure MPICH2, specifying the installation directory:
 
-      ./configure -prefix=/home/you/mpich2-install |& tee configure.log
+    for csh and tcsh:
 
-    (On sh and its derivatives, use "2>&1 | tee configure.log" instead
-    of "|& tee configure.log").  Other configure options are described
-    below.  You might also prefer to do a VPATH build (see below).
-    Check the configure.log file to make sure everything went will.
-    Problems should be self-explanatory, but if not, sent
-    configure.log to mpich2-maint@mcs.anl.gov.
+      ./configure --prefix=/home/you/mpich2-install |& tee c.txt
+
+    for bash and sh:
+
+      ./configure --prefix=/home/you/mpich2-install 2>&1 | tee c.txt
+
+    Bourne-like shells, sh and bash, accept "2>&1 |".  Csh-like shell,
+    csh and tcsh, accept "|&".  File c.txt is used to store all messages
+    generated configure command and is useful for diagnosis if something
+    goes wrong.  Other configure options are described below.  You might
+    also prefer to do a VPATH build (see below).  Check the c.txt file
+    to make sure everything went will.  Problems should be self-explanatory,
+    but if not, sent c.txt to mpich2-maint@mcs.anl.gov.
 
 5.  Build MPICH2:
 
-      make |& tee make.log
+    for csh and tcsh:
+
+      make |& tee m.txt
+
+    for bash and sh:
+
+      make 2>&1 | tee m.txt
 
     This step should succeed if there were no problems with the
-    preceding step.  Check make.log.  If there were problems, send
-    make.log to mpich2-maint@mcs.anl.gov.
+    preceding step.  Check file m.txt.  If there were problems, send
+    m.txt to mpich2-maint@mcs.anl.gov.
 
 6.  Install the MPICH2 commands:
 
-      make install |& tee install.log
+    for csh and tcsh:
+
+      make install |& tee mi.txt
+
+    for bash and sh:
+
+      make install 2>&1 | tee mi.txt
 
     This step collects all required executables and scripts in the bin
     subdirectory of the directory specified by the prefix argument to
@@ -113,7 +136,7 @@ later, in the section "Alternative configurations".
 
     for bash and sh:
   
-      export PATH=/home/you/mpich2-install/bin:$PATH
+      PATH=/home/you/mpich2-install/bin:$PATH ; export PATH
 
     Check that everything is in order at this point by doing 
 
@@ -316,7 +339,7 @@ alternatives with
    ./configure --help
 
 in the mpich2 directory.  The alternatives described below are
-configured by adding arguments to the configure step
+configured by adding arguments to the configure step.
 
 
 Alternative Process Managers

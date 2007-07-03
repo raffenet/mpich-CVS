@@ -221,7 +221,7 @@ static MPID_Request* create_request(MPID_IOV * iov, int iov_count, int iov_offse
     if (iov_offset == 0)
     {
 	MPIU_Assert(iov[0].MPID_IOV_LEN == sizeof(MPIDI_CH3_Pkt_t));
-	sreq->ch.pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
+	sreq->ch.pkt = (union MPIDI_CH3_Pkt *) iov[0].MPID_IOV_BUF;
 	sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) &sreq->ch.pkt;
     }
     sreq->dev.iov[iov_offset].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) sreq->dev.iov[iov_offset].MPID_IOV_BUF + nb);

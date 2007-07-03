@@ -4701,10 +4701,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\mpi\romio\common\dataloop\dataloop.c"
 				>
 				<FileConfiguration
@@ -5031,6 +5027,14 @@
 						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop_create.c"
+				>
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\common\dataloop\dataloop_create.c"
@@ -5361,7 +5365,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop_create.c"
+				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop_create_blockindexed.c"
 				>
 			</File>
 			<File
@@ -5691,10 +5695,6 @@
 						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop_create_blockindexed.c"
-				>
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\common\dataloop\dataloop_create_contig.c"
@@ -6029,6 +6029,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop_create_indexed.c"
+				>
+				<FileConfiguration
+					Name="ch3sockRelease|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						DisableLanguageExtensions="false"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\src\mpi\romio\common\dataloop\dataloop_create_indexed.c"
 				>
 				<FileConfiguration
@@ -6357,22 +6369,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop_create_indexed.c"
-				>
-				<FileConfiguration
-					Name="ch3sockRelease|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						DisableLanguageExtensions="false"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop_create_pairtype.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\mpi\romio\common\dataloop\dataloop_create_pairtype.c"
 				>
 				<FileConfiguration
@@ -6699,6 +6695,10 @@
 						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop_create_pairtype.c"
+				>
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\common\dataloop\dataloop_create_struct.c"
@@ -7033,6 +7033,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop_create_vector.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\mpi\romio\common\dataloop\dataloop_create_vector.c"
 				>
 				<FileConfiguration
@@ -7359,10 +7363,6 @@
 						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\src\mpid\common\datatype\dataloop\dataloop_create_vector.c"
-				>
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\mpi-io\delete.c"
@@ -10473,10 +10473,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\mpid\common\datatype\dataloop\segment.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\mpi\romio\common\dataloop\segment.c"
 				>
 				<FileConfiguration
@@ -10805,16 +10801,8 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\src\mpid\common\datatype\dataloop\segment_ops.c"
+				RelativePath=".\src\mpid\common\datatype\dataloop\segment.c"
 				>
-				<FileConfiguration
-					Name="ch3sockRelease|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ShowIncludes="true"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\common\dataloop\segment_ops.c"
@@ -10871,7 +10859,7 @@
 						Name="VCCLCompilerTool"
 						ObjectFile="$(IntDir)\$(InputName)1.obj"
 						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
-						ShowIncludes="true"
+						ShowIncludes="false"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -11146,6 +11134,18 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\src\mpid\common\datatype\dataloop\segment_ops.c"
+				>
+				<FileConfiguration
+					Name="ch3sockRelease|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ShowIncludes="false"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\src\mpi\pt2pt\send.c"
 				>
 			</File>
@@ -11211,6 +11211,10 @@
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\adio\common\strfns.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\dataloop\subarray_support.c"
 				>
 			</File>
 			<File
@@ -11542,10 +11546,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\src\mpid\common\datatype\dataloop\subarray_support.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\mpi\pt2pt\test.c"
 				>
 			</File>
@@ -11703,10 +11703,6 @@
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\type_vector.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\mpid\common\datatype\dataloop\typesize_support.c"
 				>
 			</File>
 			<File
@@ -12036,6 +12032,10 @@
 						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\dataloop\typesize_support.c"
+				>
 			</File>
 			<File
 				RelativePath=".\src\mpi\datatype\typeutil.c"
