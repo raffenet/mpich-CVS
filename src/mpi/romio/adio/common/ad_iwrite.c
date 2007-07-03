@@ -244,13 +244,14 @@ int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
 int ADIOI_GEN_aio_wait_fn(int count, void ** array_of_states, 
 		double timeout, MPI_Status *status)
 {
-	struct aiocb **cblist;
+	const struct aiocb **cblist;
+
 	ADIOI_AIO_Request **aio_reqlist;
 	int i;
 
 	aio_reqlist = (ADIOI_AIO_Request **)array_of_states;
 
-	cblist = (struct aiocb**) calloc(count, sizeof(struct aiocb*));
+	cblist = (const struct aiocb**) calloc(count, sizeof(struct aiocb*));
 
 	for (i=0; i< count; i++)
 	{
@@ -274,6 +275,8 @@ int ADIOI_GEN_aio_wait_fn(int count, void ** array_of_states,
 			/* TODO: need to handle error conditions somehow*/
 		}
 	} /* TODO: also need to handle errors here  */
+
+	if (cblist != NULL) free(cblist);
 }
 
 int ADIOI_GEN_aio_query_fn(void *extra_state, MPI_Status *status) 
