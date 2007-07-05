@@ -142,35 +142,13 @@ int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 
     if (err == -1) {
 	if (errno == EAGAIN) {
-        /* exceeded the max. no. of outstanding requests.
-           complete all previous async. requests and try again. */
-
-	    /*ADIOI_Complete_async(&error_code);
-	    if (error_code != MPI_SUCCESS) return -EIO;
-	    */
-
-	    while (err == -1 && errno == EAGAIN) {
-
-#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
-		if (wr) err = aio_write(aiocbp);
-		else err = aio_read(aiocbp);
-#else
-		/* Broken IBM interface */
-		if (wr) err = aio_write(fd_sys, aiocbp);
-		else err = aio_read(fd_sys, aiocbp);
-#endif
-
-		if (err == -1 && errno == EAGAIN) {
-		    /* sleep and try again */
-		    sleep(1);
-		}
-		else if (err == -1) {
-		    /* real error */
-		    return -errno;
-		}
-	    }
-        }
-	else {
+	    /* exceeded the max. no. of outstanding requests.
+	    treat this as a blocking request and return.  */
+	    ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
+			offset, NULL, &error_code);  
+	    MPIO_Completed_request_create(&fd, &error_code, request);
+	    return 0;
+	} else {
 	    return -errno;
 	}
     }
