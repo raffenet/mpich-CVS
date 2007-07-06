@@ -82,9 +82,15 @@ static void fake_an_open(PVFS_fs_id fs_id, char *pvfs_name, int access_mode,
             }
 
             /* Perform file creation */
+#ifdef HAVE_PVFS2_CREATE_WITHOUT_LAYOUT
             ret = PVFS_sys_create(resp_getparent.basename, 
 		    resp_getparent.parent_ref, attribs, 
 		    &(pvfs2_fs->credentials), dist, &resp_create); 
+#else 
+            ret = PVFS_sys_create(resp_getparent.basename, 
+		    resp_getparent.parent_ref, attribs, 
+		    &(pvfs2_fs->credentials), dist, NULL, &resp_create); 
+#endif
 
 	    /* if many creates are happening in this directory, the earlier
 	     * sys_lookup may have returned ENOENT, but the sys_create could
