@@ -183,6 +183,17 @@ PAC_UPDATE_BASE_CACHE
 # CPPFLAGS
 CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
 
+dnl Note that once dependencies are enabled, we always try to
+dnl update the dependencies (that is usually the desired behavior)
+dnl    find . -type d -exec sh -c '(cd {} && grep MAKE_DEPEND_C Makefile >/dev/null 2>&1 && ( test -d .deps || mkdir .deps ) && touch .deps/alldeps )' \;
+dnl We only apply this to src, as that is the only directory that 
+dnl contains the source files for MPICH2; this avoids running through the
+dnl test directories, for example.
+AC_OUTPUT_COMMANDS([if grep 'dependencies:' Makefile >/dev/null 2>&1 ; then
+    echo "Updating dependency directories .deps" 
+    find . -type d -print | sed -e 's%\(.*\)%(cd \1 \&\& grep MAKE_DEPEND_C Makefile >/dev/null 2>\&1 \&\& ( test -d .deps || mkdir .deps) \&\& touch .deps/alldeps)%g' | sh
+fi])
+
 AC_OUTPUT(Makefile)
 
 PAC_SUBDIR_CACHE_CLEANUP
