@@ -139,6 +139,14 @@ cd ..
 rm -rf .tmp
 #
 # Build the ch3 shmbase support code and link it into the ch3-shm dll
+#
+# Build the ch3 shmbase support code and link it into the ch3-sock dll
+if [ ! -d ../util ] ; then
+    mkdir ../util
+fi
+if [ ! -d ../../util/shmbase ] ; then
+    mkdir ../../util/shmbase
+fi
 (\
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I../../channels/shm/include" ; \
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/ch3/channels/shm/include" ; \
