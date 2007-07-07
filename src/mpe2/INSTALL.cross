@@ -171,7 +171,7 @@ we want to run multiple processes job in the "installcheck-all".
     instructions for BlueGeneLight (BG/L)
     -------------------------------------
 
-    **** Cross-spec build ****
+    **** Cross-Spec build ****
     mkdir <build_spec_dir>
     cd <build_spec_dir>
     <mpe2_src_dir>/cross_spec/configure  CC=blrts_xlc F77=blrts_xlf         \
@@ -205,6 +205,63 @@ we want to run multiple processes job in the "installcheck-all".
     make install
     make installcheck
 
+
+    instructions for Cray X1E (Phoenix)
+    ----------------------------------
+
+    On the i686 linux cross-compiling frontend (robin)
+
+    **** Cross-Spec build ****
+    mkdir <build_spec_dir>
+    cd <build_spec_dir>
+    <mpe2_src_dir>/cross_spec/configure CC=cc F77="ftn -s real64 -dp"         \
+                                        MPI_CC=cc MPI_F77="ftn -s real64 -dp" \
+                                        --host=craynv-cray-unicosmp3.0.X      \
+                                        --build=i686-pc-linux-gnu
+    make
+
+    # Now create a cross_tests.cmd as follows:
+    cat > cross_tests.cmd <<EOF
+#!/bin/sh
+#PBS -l walltime=5:00,mppe=1
+#PBS -j oe
+#PBS -m abe
+#PBS -A xxxxx
+
+# job starts in home directory, cd to the submission directory
+cd ${PBS_O_WORKDIR}
+
+echo "running cross_cc"
+aprun -n 1 ./cross_cc
+
+echo "running cross_f2c"
+aprun -n 1 ./cross_f2c
+
+EOF
+
+    qsub cross_tests.cmd
+    # After the job is done, then run cross_env on the front-end
+    ./cross_env
+
+
+    Now make sure that java (SUN or IBM's jdk) is in your path.
+
+    **** MPE2 build ****
+    mkdir <build_mpe2_for_backend>
+    cd <build_mpe2_for_backend>
+    <mpe2_src_dir>/configure --prefix=<mpe2_install_dir>                       \
+                             --host=craynv-cray-unicosmp3.0.X                  \
+                             --build=i686-pc-linux-gnu                         \
+                             --with-cross-spec=<build_spec_dir>/cross_spec.txt \
+                             --disable-misc --disable-graphics                 \
+                             --disable-threadlogging
+
+    --disable-threadlogging disables the pthread logging support since Cray
+    backend does not seem to support pthread calls.
+
+    make
+    make install
+    make installcheck
 
 
 
@@ -269,7 +326,7 @@ cicc -I${MPICH_INSTALL_DIR}/include -L${MPICH_INSTALL_DIR}/lib $@ <-lmpi>
     make install PREFIX=${MPE_INSTALL_DIR}
 
 
-For Cray X1E MPI implementation: cross-compilation at a linux front-end
+For Cray X1E MPI implementation: cross-compilation at a linux front-end(robin)
 (e.g. phoenix at Oak Ridge)
 
     ${MPE_SRC_DIR}/configure                                              \
