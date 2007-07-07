@@ -3875,6 +3875,7 @@ EOF
             PAC_PROG_F90_INT_KIND(simpleintkind,${pac_cv_f77_sizeof_integer})
             if test "$simpleintkind" = "-1" ; then
 	        # Wild guess; probably means that Fortran 90 is not available
+		AC_MSG_WARN([Unable to determine Fortran 90 KIND values for either address-sized integers or offset-sized integers.  Using 4 in that case.])
                 simpleintkind=4
             fi
             if test "$ADDRESS_KIND" = "-1" ; then
@@ -3892,6 +3893,17 @@ EOF
     fi
     if test -z "$OFFSET_KIND" ; then
         OFFSET_KIND=0
+    fi
+    # Note, however, that zero value are (in all practical case) invalid 
+    # for Fortran 90, and indicate a failure.  Test and fail if Fortran 90
+    # enabled.
+    if test "$enable_f90" = "yes" ; then
+        if test "$ADDRESS_KIND" -le 0 -o "$OFFSET_KIND" -le 0 ; then
+	    AC_MSG_ERROR([Unable to determine Fortran integer kinds for MPI types.  If you do not need Fortran 90, add --disable-f90 to the configure options.  If you need Fortran 90, please send the output of configure and the file config.log to mpich2-maint@mcs.anl.gov .])
+	    # If the above is converted to a warning, you need to change 
+	    # enable_f90 and remote f90 from the bindings
+	    enable_f90=no
+        fi
     fi
     AC_SUBST(ADDRESS_KIND)
     AC_SUBST(OFFSET_KIND)
