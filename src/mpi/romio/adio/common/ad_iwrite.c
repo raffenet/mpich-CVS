@@ -21,6 +21,7 @@
 #endif
 
 #include "../../mpi-io/mpioimpl.h"
+#include "../../mpi-io/mpioprof.h"
 #include "mpiu_greq.h"
 /* Workaround for incomplete set of definitions if __REDIRECT is not 
    defined and large file support is used in aio.h */

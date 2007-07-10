@@ -169,6 +169,25 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
     /* --END ERROR HANDLING-- */
 }
 
+/* -- Begin Profiling Symbol Block for routine MPIX_Grequest_class_create*/
+#if defined(HAVE_PRAGMA_WEAK)
+#pragma weak MPIX_Grequest_class_create = PMPIX_Grequest_class_create
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#pragma _HP_SECONDARY_DEF PMPIX_Grequest_class_create MPIX_Grequest_class_create
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#pragma _CRI duplicate MPIX_Grequest_class_create as PMPIX_Grequest_class_create
+#endif
+/* -- End Profiling Symbol Block */
+
+/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
+   the MPI routines */
+#ifndef MPICH_MPI_FROM_PMPI
+#undef MPIX_Grequest_class_create
+#define MPIX_Grequest_class_create PMPIX_Grequest_class_create
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPIX_Grequest_class_create
 /* extensions for Generalized Request redesign paper */
 int MPIX_Grequest_class_create(MPI_Grequest_query_function *query_fn,
 		               MPI_Grequest_free_function *free_fn,
@@ -222,6 +241,26 @@ fn_fail:
     /* --END ERROR HANDLING-- */
 }
 
+/* -- Begin Profiling Symbol Block for routine MPIX_Grequest_class_allocate */
+#if defined(HAVE_PRAGMA_WEAK)
+#pragma weak MPIX_Grequest_class_allocate = PMPIX_Grequest_class_allocate
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#pragma _HP_SECONDARY_DEF PMPI_Grequest_class_allocate MPIX_Grequest_class_allocate
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#pragma _CRI duplicate MPIX_Grequest_class_allocate as PMPIX_Grequest_class_allocate
+#endif
+/* -- End Profiling Symbol Block */
+
+/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
+   the MPI routines */
+#ifndef MPICH_MPI_FROM_PMPI
+#undef MPIX_Grequest_class_allocate
+#define MPIX_Grequest_class_allocate PMPIX_Grequest_class_allocate
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPIX_Grequest_class_allocate
+
 int MPIX_Grequest_class_allocate(MPIX_Grequest_class greq_class, 
 		                void *extra_state, 
 				MPI_Request *request)
@@ -244,6 +283,26 @@ int MPIX_Grequest_class_allocate(MPIX_Grequest_class greq_class,
 	}
 	return mpi_errno;
 }
+
+/* -- Begin Profiling Symbol Block for routine MPIX_Grequest_start */
+#if defined(HAVE_PRAGMA_WEAK)
+#pragma weak MPIX_Grequest_start = PMPIX_Grequest_start
+#elif defined(HAVE_PRAGMA_HP_SEC_DEF)
+#pragma _HP_SECONDARY_DEF PMPI_Grequest_start MPIX_Grequest_start
+#elif defined(HAVE_PRAGMA_CRI_DUP)
+#pragma _CRI duplicate MPIX_Grequest_start as PMPIX_Grequest_start
+#endif
+/* -- End Profiling Symbol Block */
+
+/* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
+   the MPI routines */
+#ifndef MPICH_MPI_FROM_PMPI
+#undef MPIX_Grequest_start
+#define MPIX_Grequest_start PMPIX_Grequest_start
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPIX_Grequest_start
 
 int MPIX_Grequest_start( MPI_Grequest_query_function *query_fn, 
 			MPI_Grequest_free_function *free_fn, 

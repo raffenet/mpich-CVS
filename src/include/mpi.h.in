@@ -996,11 +996,6 @@ int PMPI_Grequest_complete(MPI_Request);
 int PMPI_Grequest_start(MPI_Grequest_query_function *, 
                        MPI_Grequest_free_function *, 
                        MPI_Grequest_cancel_function *, void *, MPI_Request *);
-int PMPIX_Grequest_start(MPI_Grequest_query_function *, 
-                       MPI_Grequest_free_function *, 
-                       MPI_Grequest_cancel_function *, 
-		       MPIX_Grequest_poll_function *,
-		       MPIX_Grequest_wait_function *, void *, MPI_Request *);
 int PMPI_Init_thread(int *, char ***, int, int *);
 int PMPI_Is_thread_main(int *);
 int PMPI_Query_thread(int *);
@@ -1140,6 +1135,13 @@ int MPIX_Grequest_start(MPI_Grequest_query_function *,
                        MPI_Grequest_cancel_function *, 
 		       MPIX_Grequest_poll_function *,
 		       MPIX_Grequest_wait_function *, void *, MPI_Request *);
+#if !defined(MPI_BUILD_PROFILING)
+int PMPIX_Grequest_start(MPI_Grequest_query_function *, 
+                       MPI_Grequest_free_function *, 
+                       MPI_Grequest_cancel_function *, 
+		       MPIX_Grequest_poll_function *,
+		       MPIX_Grequest_wait_function *, void *, MPI_Request *);
+#endif
 /* END: non-standard but public extensions to MPI */
 
 #endif
