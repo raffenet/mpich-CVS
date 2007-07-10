@@ -574,6 +574,10 @@ launched is m1 + m2 + m3 + ... mn.
 Specify a network mapped drive to create on the hosts before launching the 
 processes.  The mapping will be removed when the processes exit.  This option
 can be specified multiple times.
+\item \texttt{-mapall}
+Specify that all network mapped drives created by the user executing mpiexec
+command will be created on hosts before launching the processes. The mappings
+will be removed when the processes exit. 
 \item \texttt{-dir drive:$\backslash$my$\backslash$working$\backslash$directory}
 Specify the working directory for the processes.
 \item \texttt{-wdir drive:$\backslash$my$\backslash$working$\backslash$directory}
