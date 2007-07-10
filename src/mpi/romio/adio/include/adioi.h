@@ -184,13 +184,13 @@ struct ADIOI_Fns_struct {
 #define ADIOI_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ADIOI_MAX(a, b) ((a) > (b) ? (a) : (b))
 
-#define ADIOI_PREALLOC_BUFSZ      4194304    /* buffer size used to 
+#define ADIOI_PREALLOC_BUFSZ      16777216    /* buffer size used to 
                                                 preallocate disk space */
 
 
 /* default values for some hints */
-    /* buffer size for collective I/O = 4MB */
-#define ADIOI_CB_BUFFER_SIZE_DFLT         "4194304"
+    /* buffer size for collective I/O = 16 MB */
+#define ADIOI_CB_BUFFER_SIZE_DFLT         "16777216"
     /* buffer size for data sieving in independent reads = 4MB */
 #define ADIOI_IND_RD_BUFFER_SIZE_DFLT     "4194304"
     /* buffer size for data sieving in independent writes = 512KB. default is
