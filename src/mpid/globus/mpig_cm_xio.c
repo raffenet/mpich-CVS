@@ -7,6 +7,9 @@
  */
 
 #include "mpidimpl.h"
+
+#if defined(HAVE_GLOBUS_XIO_MODULE)
+
 #include "globus_dc.h"
 #include "globus_xio_tcp_driver.h"
 
@@ -55,9 +58,12 @@
 /**********************************************************************************************************************************
 				      BEGIN MISCELLANEOUS MACROS, PROTOTYPES, AND VARIABLES
 **********************************************************************************************************************************/
-MPIG_STATIC globus_mutex_t mpig_cm_xio_mutex;
+MPIG_STATIC mpig_mutex_t mpig_cm_xio_mutex;
 MPIG_STATIC int mpig_cm_xio_methods_active = 0;
 
+MPIG_STATIC mpig_pe_info_t mpig_cm_xio_pe_info;
+
+MPIG_STATIC int mpig_cm_xio_tcp_buf_size = 0;
 
 static int mpig_cm_xio_module_init(void);
 
@@ -66,19 +72,19 @@ static int mpig_cm_xio_module_finalize(void);
 static const char * mpig_cm_xio_msg_type_get_string(mpig_cm_xio_msg_type_t msg_type);
 
 
-#define mpig_cm_xio_mutex_construct()	globus_mutex_init(&mpig_cm_xio_mutex, NULL)
-#define mpig_cm_xio_mutex_destruct()	globus_mutex_destroy(&mpig_cm_xio_mutex)
+#define mpig_cm_xio_mutex_construct()	mpig_mutex_construct(&mpig_cm_xio_mutex)
+#define mpig_cm_xio_mutex_destruct()	mpig_mutex_construct(&mpig_cm_xio_mutex)
 #define mpig_cm_xio_mutex_lock()					\
 {									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS,			\
 		       "cm_xio global mutex - acquiring mutex"));	\
-    globus_mutex_lock(&mpig_cm_xio_mutex);				\
+    mpig_mutex_lock(&mpig_cm_xio_mutex);				\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS,			\
 		       "cm_xio local data - mutex acquired"));		\
 }
 #define mpig_cm_xio_mutex_unlock()					\
 {									\
-    globus_mutex_unlock(&mpig_cm_xio_mutex);				\
+    mpig_mutex_unlock(&mpig_cm_xio_mutex);				\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS,			\
 		       "cm_xio global mutex - mutex released"));	\
 }
@@ -133,10 +139,63 @@ static int mpig_cm_xio_module_init(void)
 	/* initialize the vc tracking list */
 	mpig_cm_xio_vc_list_init();
     
-        /* initialize the request completion queue */
+	/* attempt to get the user specified TCP buffer size */
+	if (mpig_cm_xio_tcp_buf_size == 0)
+	{
+	    char * env_str;
+	    long size;
+
+	     env_str = globus_libc_getenv("MPIG_TCP_BUFFER_SIZE");
+	     if (env_str == NULL)
+	     {
+		 /* if the MPIg TCP buffer size environment variable was not set, then check the MPICH-G2 environment variable to
+		    maintain backwards compatability. */
+		 env_str = globus_libc_getenv("MPICH_GLOBUS2_TCP_BUFFER_SIZE");
+	     }
+	     
+	     if (env_str != NULL)
+	     {
+		 size = (int) strtol(env_str, NULL, 0);
+		 if (size == 0 && errno == EINVAL)
+		 {
+		     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|tcp_buf_size_invalid",
+			 "**globus|tcp_buf_size_invalid %s", env_str);
+		 }
+		 else if (size < 0)
+		 {
+		     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|tcp_buf_size_neg",
+			 "**globus|tcp_buf_size_neg %s", env_str);
+		 }
+		 else if (size >= INT_MAX)
+		 {
+		     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|tcp_buf_size_overflow",
+			 "**globus|tcp_buf_size_overflow %s", env_str);
+		 }
+
+		 mpig_cm_xio_tcp_buf_size = (int) size;
+	     }
+	}
+
+	/* initialize the request completion queue */
         mpi_errno = mpig_cm_xio_rcq_init();
 	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_init");
 
+	/* initialize the XIO CM progress engine info structure and register the CM with the progress engine */
+	mpig_cm_xio_pe_info.active_ops = 0;
+#       if defined(MPIG_THREADED)
+	{
+	    mpig_cm_xio_pe_info.polling_required = FALSE;
+	}
+#	else
+	{
+	    mpig_cm_xio_pe_info.polling_required = TRUE;
+	}
+#	endif
+	mpig_pe_register_cm(&mpig_cm_xio_pe_info);
+
+	/* initialize the data structures used to handle blocking probes */
+	mpig_cm_xio_probe_init();
+	
 	/* activate globus XIO module */
 	grc = globus_module_activate(GLOBUS_XIO_MODULE);
 	MPIU_ERR_CHKANDJUMP1((grc), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate", "**globus|module_activate %s", "XIO");
@@ -184,6 +243,12 @@ static int mpig_cm_xio_module_finalize(void)
 	MPIU_ERR_CHKANDSTMT2((grc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|module_deactivate",
 	    "**globus|module_deactivate %s %s", "XIO", globus_error_print_chain(globus_error_peek(grc)));
 
+	/* clean up the data structures used to handle blocking probes */
+	mpig_cm_xio_probe_finalize();
+	
+	/* inform the progress engine tha the XIO CM is no longer active */
+	mpig_pe_unregister_cm(&mpig_cm_xio_pe_info);
+	
 	/* shutdown the vc tracking list */
 	mpig_cm_xio_vc_list_finalize();
     
@@ -214,19 +279,39 @@ static int mpig_cm_xio_module_finalize(void)
 /**********************************************************************************************************************************
 				    BEGIN COMMUNICATION MODULE PROGRESS ENGINE API FUNCTIONS
 **********************************************************************************************************************************/
+#define mpig_cm_xio_pe_start_op()		\
+{						\
+    mpig_cm_xio_pe_info.active_ops += 1;	\
+    mpig_pe_start_op();				\
+}
+
+#define mpig_cm_xio_pe_end_op(req_)												\
+{																\
+    /* if the request was posted as a receive any source, then do not decrement the XIO active op count since it was never	\
+       incremented */														\
+    if (mpig_request_get_rank(req_) != MPI_ANY_SOURCE)										\
+    {																\
+	mpig_cm_xio_pe_info.active_ops -= 1;											\
+	mpig_pe_end_op();													\
+    }																\
+    else															\
+    {																\
+	mpig_pe_end_ras_op();													\
+    }																\
+}
+
 /*
  * <mpi_errno> mpig_cm_xio_pe_wait([IN/OUT] state)
  *
- * XXX: this should be rolled together with the rcq_wait so that multiple requests can be completed in a single call.  also,
- * mpig_cm_xio_pe_start() should be used to eliminate returns everytime a message is receive just in case the application
- * might be calling MPI_Probe().  It would likely be better for progress_start() to clear the wakeup_pending flag, but it will
- * come at the cost of an extra lock/unlock on the RCQ mutex.
+ * FIXME: this should be rolled together with the rcq_wait and rcq_test so that multiple requests can be completed in a single
+ * call without having to reacquire the RCQ mutex for each request completion.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_pe_wait
 int mpig_cm_xio_pe_wait(struct MPID_Progress_state * state)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    bool_t blocking;
     MPID_Request * req;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_pe_wait);
@@ -236,19 +321,30 @@ int mpig_cm_xio_pe_wait(struct MPID_Progress_state * state)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_pe_wait);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
-    mpi_errno = mpig_cm_xio_rcq_deq_wait(&req);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_wait");
+     if (mpig_pe_cm_has_active_ops(&mpig_cm_xio_pe_info))
+     {
+	blocking = (mpig_pe_cm_owns_all_active_ops(&mpig_cm_xio_pe_info) && mpig_pe_op_has_completed(state) == FALSE);
+	if (blocking)
+	{
+	    mpi_errno = mpig_cm_xio_rcq_deq_wait(&req);
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_wait");
+	}
+	else
+	{
+	    mpi_errno = mpig_cm_xio_rcq_deq_test(&req);
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");
+	}
 
-    if (req != NULL)
-    {
-	mpig_request_complete(req);
-    }
-    else
-    {
-	mpig_pe_notify_unexp_recv();
-    }
-    
-  
+	while (req != NULL)
+	{
+	    mpig_cm_xio_pe_end_op(req);
+	    mpig_request_complete(req);
+
+	    mpi_errno = mpig_cm_xio_rcq_deq_test(&req);
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");
+	}
+     }
+     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_pe_wait);
@@ -266,6 +362,9 @@ int mpig_cm_xio_pe_wait(struct MPID_Progress_state * state)
 
 /*
  * <mpi_errno> mpig_cm_xio_pe_test(void)
+ *
+ * FIXME: this should be rolled together with the rcq_test so that multiple requests can be completed in a single call without
+ * having to reacquire the RCQ mutex for each request completion.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_pe_test
@@ -281,12 +380,18 @@ int mpig_cm_xio_pe_test(void)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_pe_test);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
+    globus_poll_nonblocking();
+    
     mpi_errno = mpig_cm_xio_rcq_deq_test(&req);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");
 
-    if (req != NULL)
+    while (req != NULL)
     {
+	mpig_cm_xio_pe_end_op(req);
 	mpig_request_complete(req);
+	
+	mpi_errno = mpig_cm_xio_rcq_deq_test(&req);
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");
     }
 
   fn_return:
@@ -395,3 +500,6 @@ static const char * mpig_cm_xio_msg_type_get_string(mpig_cm_xio_msg_type_t msg_t
 /**********************************************************************************************************************************
 					       END MISCELLANEOUS HELPER FUNCTIONS
 **********************************************************************************************************************************/
+
+#endif /* defined(HAVE_GLOBUS_XIO_MODULE) */
+

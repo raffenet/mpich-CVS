@@ -8,6 +8,8 @@
 
 MPIG_SOURCE_DIR=@MPIG_SOURCE_DIR@
 MPIG_BUILD_DIR=@MPIG_BUILD_DIR@
+MPIG_VMPI_PREMAIN_CC_LIB=@MPIG_VMPI_PREMAIN_CC_LIB@
+MPIG_VMPI_PREMAIN_CXX_LIB=@MPIG_VMPI_PREMAIN_CXX_LIB@
 
 #
 # add top-level include directory
@@ -17,8 +19,45 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 #
 # list of header files that all sources depend upon
 #
-HEADERS = mpidconf.h mpidpre.h mpidimpl.h mpidpost.h \
-          mpig_cm_vmpi.h mpig_cm_self.h mpig_cm_xio.h mpig_cm_other.h
+HEADERS =			\
+    mpidconf.h.in		\
+    mpiddefs.h.in		\
+    mpidimpl.h			\
+    mpidpost.h			\
+    mpidpre.h			\
+    mpig_cm_other.h		\
+    mpig_cm_self.h		\
+    mpig_cm_vmpi.h		\
+    mpig_cm_xio.h		\
+    mpig_vmpi.h			\
+
+#
+# targets that must be handled in a special way
+#
+mpig_vmpi.c: mpig_vmpi.h mpidconf.h
+
+mpig_vmpi.o: mpig_vmpi.c
+	$(CC) -c -I . -I${top_srcdir} $<
+
+mpig_vmpi.lo: mpig_vmpi.c mpig_vmpi.h mpidconf.h
+	$(CC_SHL) -c -I . -I${top_srcdir} $< -o _s$*.o
+	@mv -f _s$*.o $*.lo
+
+all-local: $(MPIG_VMPI_PREMAIN_CC_LIB) $(MPIG_VMPI_PREMAIN_CXX_LIB)
+
+libmpig_vmpi_premain_cc.a: mpig_vmpi_premain_cc.o
+	${AR} cr $@ $?
+	${RANLIB} $@
+
+libmpig_vmpi_premain_cxx.a: mpig_vmpi_premain_cxx.o
+	${AR} cr $@ $?
+	${RANLIB} $@
+
+mpig_vmpi_premain_cc.o: mpig_vmpi_premain.c mpig_vmpi.h mpidconf.h
+	$(CC) -c -I . -I${top_srcdir} $< -o $@
+
+mpig_vmpi_premain_cxx.o: mpig_vmpi_premain.c mpig_vmpi.h mpidconf.h
+	$(CXX) -c -I . -I${top_srcdir} $< -o $@
 
 #
 # list of file to compile and include in the MPICH2 library
@@ -33,68 +72,87 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpig_bc.c			\
     mpig_cm_other.c		\
     mpig_cm_self.c		\
-    mpig_cm_vmpi.c		\
     mpig_cm_xio.c		\
+    mpig_cm_vmpi.c		\
     mpig_comm.c			\
     mpig_misc.c			\
     mpig_pg.c			\
     mpig_pm.c			\
     mpig_pm_gk.c		\
+    mpig_pm_vmpi.c		\
     mpig_pm_ws.c		\
     mpig_recvq.c		\
     mpig_request.c		\
     mpig_topology.c		\
     mpig_vmpi.c			\
 
-
-mpig_vmpi.o: mpig_vmpi.c mpig_vmpi.h mpidconf.h
-	$(CC) -c -I . -I${top_srcdir} $<
-
-
 #
 # install device compiler scripts, and  modify the previously installed MPICH2 compiler scripts to use the installed
 # device scripts
 #
-install_BIN = mpich2-globus-cc mpiexec
-optinstall_BIN = mpich2-globus-cxx mpich2-globus-f77 mpich2-globus-f90
+install_BIN = mpiexec
+install_BIN = mpich2-grid-cc mpiexec
+optinstall_ETC = mpich2-grid-cc-insure-psrc
+optinstall_BIN = mpich2-grid-cxx
+optinstall_ETC = mpich2-grid-cxx-insure-psrc
+optinstall_BIN = mpich2-grid-f77
+optinstall_BIN = mpich2-grid-f90
 install_INCLUDE = ../../include/mpiddefs.h
+optinstall_LIB = libmpig_vmpi_premain_cc.a
+optinstall_LIB = libmpig_vmpi_premain_cxx.a
 
-install-local:
+install-postamble:
 	@# XXX: The file permissions are assumed to be 755 for the compilers scripts and 644 for the configuration files.  This
-	@#      seemed reasonable given that those are those are the values used by autoconf 2.59.
-	@echo "Updating the paths in the MPICH2 compiler scripts" ; \
-	for f in mpicc mpicxx mpif77 mpif90 ; do \
-	    ff=${bindir}/$${f} ; \
-	    if test -f $${ff} ; then \
-	        mv $${ff} $${ff}.orig ; \
-	        sed -e "s!${MPIG_BUILD_DIR}!${bindir}!" $${ff}.orig >$${ff} ; \
-	        chmod 755 $${ff} ; \
-	        rm -f $${ff}.orig ; \
+	@#      seemed reasonable given that those are the values used by autoconf 2.59.
+	@for c in cc cxx f77 f90 ; do \
+	    cn=mpi$${c} ; \
+	    cf=${bindir}/$${cn} ; \
+	    if test -f $${cf} ; then \
+		echo "Updating the paths in the MPICH2 compiler script $${cn}" ; \
+	        mv $${cf} $${cf}.orig ; \
+	        sed -e "s,${MPIG_BUILD_DIR}/mpich2-grid-$${c}-insure-psrc,${sysconfdir}/mpich2-grid-$${c}-insure-psrc," \
+		    -e "s,${MPIG_BUILD_DIR},${bindir}," $${cf}.orig >$${cf} ; \
+	        chmod 755 $${cf} ; \
+	        rm -f $${cf}.orig ; \
 	    fi ; \
-	    ff=${sysconfdir}/$${f}.conf ; \
-	    if test -f $${ff} ; then \
-	        mv $${ff} $${ff}.orig ; \
-	        sed -e "s!${MPIG_BUILD_DIR}!${bindir}!" $${ff}.orig >$${ff} ; \
-	        chmod 644 $${ff} ; \
-	        rm -f $${ff}.orig ; \
+	    cn=mpi$${c} ; \
+	    cf=${sysconfdir}/$${cn}.conf ; \
+	    if test -f $${cf} ; then \
+		echo "Updating the paths in the MPICH2 configuration file $${cn}" ; \
+	        mv $${cf} $${cf}.orig ; \
+	        sed -e "s,${MPIG_BUILD_DIR}/mpich2-grid-$${c}-insure-psrc,${sysconfdir}/mpich2-grid-$${c}-insure-psrc," \
+		    -e "s,${MPIG_BUILD_DIR},${bindir}," $${cf}.orig >$${cf} ; \
+	        chmod 644 $${cf} ; \
+	        rm -f $${cf}.orig ; \
 	    fi ; \
 	done
+	@if test -n "$(MPIG_VMPI_PREMAIN_CC_LIB)" ; then \
+	    for c in cc cxx ; do \
+		cn=mpich2-grid-$${c} ; \
+	        cf=${bindir}/$${cn} ; \
+		premain_lib=libmpig_vmpi_premain_$${c}.a ; \
+	        if test -f $${cf} ; then \
+		    echo "Updating the paths in the MPIg compiler script $${cn}" ; \
+	            mv $${cf} $${cf}.orig ; \
+	            sed -e 's,^\(MPIG_VMPI_PREMAIN_LIB\)=.*,\1="'"${libdir}/$${premain_lib}"'",' $${cf}.orig >$${cf} ; \
+	            chmod 755 $${cf} ; \
+	            rm -f $${cf}.orig ; \
+	        fi ; \
+	    done ; \
+	fi
 
-#
 # Other directories in which simplemake should translate the Makefile.sm to a Makefile.in
-#
 OTHER_DIRS = examples
 
 #
 # clean up files created by configure
 #
 distclean-local:
-	-rm -f globus-settings.mk
-	-rm -f mpich2-globus-cc
-	-rm -f mpich2-globus-cxx
-	-rm -f mpich2-globus-f77
-	-rm -f mpich2-globus-f90
-	-rm -f mpich2-globus-settings
+	-rm -f mpich2-grid-cc
+	-rm -f mpich2-grid-cxx
+	-rm -f mpich2-grid-f77
+	-rm -f mpich2-grid-f90
+	-rm -f mpich2-grid-settings
 	-rm -f mpidconf.h
 	-rm -f mpiexec
 
@@ -112,16 +170,25 @@ describe_states.txt: FORCE_TARGET
 	    sort -u | awk '{print $$1, $$1}' | sed -e 's/ MPID_STATE_/ /' -e 's/ MPID_\([A-Z]\)\([A-Z_]*\)/ MPID_\1\L\2/' \
 	    >${MPIG_SOURCE_DIR}/describe_states.txt
 
-globus-errnames.txt: FORCE_TARGET
-	sed -e '/^\*\*\(globus|[^ :]*\):\1/ d' -e '/^\*\*\(globus|[^ :]*\) \([^:]*\):\1 -- \2/ d' \
-	    ${master_top_srcdir}/src/mpi/errhan/errnames.txt >.errnames-$$$$.txt ; \
-	if test $$? -eq 0 ; then \
-	    grep '"\*\*[^"]*"' ${MPIG_SOURCE_DIR}/*.[chi] | sed -e 's/[^"]*\("\*\*[^"]*"\)/\1/g' -e 's/""/"\n"/' | \
-	        sed -e 's/"\*\*\([^"]*\)".*$$/**\1:\1/' -e 's/\(:[A-Za-z0-9_|]* \)%/\1-- %/' | \
-	        grep -h '\*\*globus|' .errnames-$$$$.txt - | sort -t ':' +0 -1 -u >globus-errnames.txt ; \
-	fi ; \
-	rm .errnames-$$$$.txt
+# grid-errnames.txt: FORCE_TARGET
+# 	sed -e '/^\*\*\(globus|[^ :]*\):\1/ d' -e '/^\*\*\(globus|[^ :]*\) \([^:]*\):\1 -- \2/ d' \
+# 	    ${MPIG_SOURCE_DIR}/errnames.txt >.errnames-$$$$.txt ; \
+# 	if test $$? -eq 0 ; then \
+# 	    grep '"\*\*[^"]*"' ${MPIG_SOURCE_DIR}/*.[chi] | sed -e 's/[^"]*\("\*\*[^"]*"\)/\1/g' -e 's/""/"\n"/' | \
+# 	        sed -e 's/"\*\*\([^"]*\)".*$$/**\1:\1/' -e 's/\(:[A-Za-z0-9_|]* \)%/\1-- %/' | \
+# 	        grep -h '\*\*globus|' .errnames-$$$$.txt - | sort -t ':' +0 -1 -u >grid-errnames.txt ; \
+# 	fi ; \
+# 	rm .errnames-$$$$.txt
 
+grid-errnames.txt: FORCE_TARGET
+	grep '"\*\*[^"]*"' ${MPIG_SOURCE_DIR}/*.[chi] | \
+	    sed -e 's/[^"]*\("\*\*[^"]*"\)/\1/g' -e 's/""/"\n"/' | \
+	    sed -e 's/"\*\*\([^"]*\)".*$$/**\1:\1/' -e 's/\(:[A-Za-z0-9_|]* \)%/\1-- %/' | \
+	    grep -h '\*\*globus|' ${MPIG_SOURCE_DIR}/errnames.txt - | \
+	    sort -t ':' +0 -1 -u >.errnames-$$$$.txt ; \
+	if test $$? -eq 0 ; then \
+	    mv .errnames-$$$$.txt ${MPIG_SOURCE_DIR}/errnames.txt ; \
+	fi
 #
 # add new symbols to the symbol renaming header file.
 #
@@ -152,3 +219,16 @@ mpig_symbol_map.txt: FORCE_TARGET
 	    rm .mpig_symbol_map_$$$$.out ; \
 	fi ; \
 	rm .mpig_nm_$$$$.out
+
+check-vmpi-libs: FORCE_TARGET
+	objects='Comm\|Datatype\|Errhandler\|Group\|File\|Info\|Keyval\|Op\|Request\|Win'; \
+	fields='mem\|builtin\|direct'; \
+	files="${top_builddir}/lib/lib${MPILIBNAME}.a" ; \
+	if test -n "${PMPILIBNAME}" -a "${PMPILIBNAME}" != "${MPILIBNAME}" -a -f "${top_builddir}/lib/lib${PMPILIBNAME}.a" ; then \
+	    files="$${files} ${top_builddir}/lib/lib${PMPILIBNAME}.a" ; \
+	fi ; \
+	nm $${files} | sed -e '/.*[ABCDGIRSTVW] [A-Za-z0-9_]*$$/! d' \
+	        -e 's/.*[ABCDGIRSTVW\] \([A-Za-z0-9_]*\)$$/\1/' \
+	        -e '/.*_$$/ d' -e '/^[Mm][Pp][Ii][Gg]_/ d' -e '/_MPIG$$/ d' \
+	        -e 's/MPID_\('"$$objects"'\)_\('"$$fields"'\)/@SKIP MPID_\1_\2 MPIG_\1_\2/' \
+	        -e '/^@SKIP /! s/\(^.*$$\)/\1 \1_MPIG/' -e 's/^@SKIP //'

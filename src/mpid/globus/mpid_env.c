@@ -10,6 +10,12 @@
 #if defined(HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
+#if defined(HAVE_LIMITS_H)
+#include <limits.h>
+#endif
+#if defined(HAVE_STDINT_H)
+#include <stdint.h>
+#endif
 
 mpig_process_t mpig_process = {NULL, "(unknown)", -1, -1, -1, -1};
 
@@ -19,10 +25,12 @@ MPIG_STATIC mpig_cm_t * const mpig_cm_table_array[] =
 {
     &mpig_cm_self,
     &mpig_cm_vmpi,
+#if TRUE && defined(HAVE_GLOBUS_XIO_MODULE)
     &mpig_cm_xio_net_san,
     &mpig_cm_xio_net_lan,
     &mpig_cm_xio_net_wan,
     &mpig_cm_xio_net_default,
+#endif    
     &mpig_cm_other,
     NULL
 };
@@ -40,17 +48,16 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_bc_t bc;
+    char * lan_id = NULL;
     mpig_bc_t * bcs = NULL;
     mpig_pg_t * pg = NULL;
     bool_t pg_committed;
     const char * pg_id = NULL;
-    char * lan_id = NULL;
     bool_t pg_locked = FALSE;
     int pg_rank;
     int pg_size;
     MPID_Comm * comm;
     int n;
-    globus_result_t grc;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_INIT);
 
@@ -58,6 +65,19 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_INIT);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "entering: requested=%d", requested));
+    
+    /* if vendor MPI is to be used, then initialize it */
+#   if defined(MPIG_VMPI)
+    {
+	int vrc;
+
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "initializing vendor MPI"));
+
+	/* initialize the vendor MPI module */
+	vrc = mpig_vmpi_init(argc, argv);
+	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Init", &mpi_errno);
+    }
+#   endif
     
     /* initialize the device's process information structure */
     mpig_process_mutex_construct();
@@ -69,7 +89,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	/* get the name of the machine on which the local process is running */
 #       if defined(HAVE_GETHOSTNAME)
 	{
-	    if(gethostname(mpig_process.my_hostname, (size_t) MPIG_PROCESSOR_NAME_SIZE) != 0)
+	    if(gethostname(mpig_process.my_hostname, (size_t) MPI_MAX_PROCESSOR_NAME) != 0)
 	    {
 		mpig_process.my_hostname[0] = '\0';
 	    }
@@ -86,12 +106,20 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     MPIR_Process.attrs.tag_ub = INT_MAX;
 
     /* activate globus modules */
-    globus_module_set_args(argc, argv);
+#   if defined(HAVE_GLOBUS_COMMON_MODULE)
+    {
+	globus_result_t grc;
+	
+	globus_module_set_args(argc, argv);
     
-    grc = globus_module_activate(GLOBUS_COMMON_MODULE);
-    MPIU_ERR_CHKANDJUMP2((grc), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate", "**globus|module_activate %s %s", "common",
-	globus_error_print_chain(globus_error_peek(grc)));
-
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3, "activating globus common module"));
+	grc = globus_module_activate(GLOBUS_COMMON_MODULE);
+	MPIU_ERR_CHKANDJUMP2((grc), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate", "**globus|module_activate %s %s",
+	    "common", globus_error_print_chain(globus_error_peek(grc)));
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3, "globus common module activated"));
+    }
+#   endif
+    
     /* initialize the request allocator module */
     mpig_request_alloc_init();
     
@@ -100,20 +128,29 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_init");
     
     /* initialize the process management module which interfaces with globus */
-    mpi_errno = mpig_pm_init();
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3, "initializing process management module"));
+    mpi_errno = mpig_pm_init(argc, argv);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_init");
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3, "processes management module initialized"));
 
     /* initialize the process group tracking subsystem */
     mpi_errno = mpig_pg_init();
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**dev|pg_init");
 
-    /* initialize the communication modules */
+    /* initialize the communication methods */
     for (n = 0; n < mpig_cm_table_num_entries; n++)
     {
 	mpig_cm_t * const cm = mpig_cm_table[n];
+	
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "initializing communication method: cm=" MPIG_PTR_FMT
+	    ", cm_name", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
+
 	mpi_errno = mpig_cm_get_vtable(cm)->init(cm, argc, argv);
 	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm|init", "**globus|cm|init %s",
 	    mpig_cm_get_name(cm));
+
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "communication method initialization complete: cm="
+	    MPIG_PTR_FMT ", cm_name", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
     }
 
     /* create and populate the buiness card with contact information from the communication modules */
@@ -131,25 +168,30 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     }
 
     /* add the LAN identification string to the business card (if one is defined) */
-    lan_id = globus_libc_getenv("GLOBUS_LAN_ID");
+    lan_id = getenv("MPIG_LAN_ID");
+    if (lan_id == NULL)
+    {
+        lan_id = getenv("GLOBUS_LAN_ID");
+    }
     if (lan_id != NULL)
     {
-	mpi_errno = mpig_bc_add_contact(&bc, "GLOBUS_LAN_ID", lan_id);
+	mpi_errno = mpig_bc_add_contact(&bc, "MPIG_LAN_ID", lan_id);
 	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-	"**globus|bc_add_contact %s", "CM_XIO_LAN_ID");
+	    "**globus|bc_add_contact %s", "MPIG_LAN_ID");
     }
     
     /* use the process management module to exchange the businesses cards and obtian information about the process group. */
     mpi_errno = mpig_pm_exchange_business_cards(&bc, &bcs);
+    mpig_bc_destruct(&bc);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_xchg");
-
+    
     mpig_pm_get_pg_id(&pg_id);
     mpig_pm_get_pg_size(&pg_size);
     mpig_pm_get_pg_rank(&pg_rank);
     mpig_pm_get_app_num(&bcs[pg_rank], &MPIR_Process.attrs.appnum);
 
-    /* start timer for usage statistics */
-    gettimeofday(&mpig_process.start_time, NULL);
+    /* initialize the usage statistics module */
+    mpig_usage_init();
     
     /* place a copy of the process group information in the process structure */
     mpig_process.my_pg_id = MPIU_Strdup(pg_id);
@@ -240,6 +282,10 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	mpi_errno = mpig_topology_init();
 	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|topology_init");
 	
+	/* initialize the communicator tracking module */
+	mpi_errno = mpig_comm_init();
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|comm_init");
+	
 	/* initialize the MPI_COMM_WORLD object */
 	comm = MPIR_Process.comm_world;
 
@@ -265,7 +311,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 		mpig_vc_inc_ref_count(vc, &vc_was_inuse);
 		/* The VC reference should always be greater than zero before the increment since the PG module holds a reference
 		   to it until the PG is committed */
-		MPIU_Assert(vc_was_inuse == TRUE);
+		MPIU_Assert(vc_was_inuse);
 	    }
 	    mpig_vc_mutex_unlock(vc);
 	}
@@ -297,7 +343,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	    mpig_vc_inc_ref_count(vc, &vc_was_inuse);
 	    /* The VC reference should always be greater than zero before the increment since the PG module holds a reference
 	       to it until the PG is committed */
-	    MPIU_Assert(vc_was_inuse == TRUE);
+	    MPIU_Assert(vc_was_inuse);
 	}
 	mpig_vc_mutex_unlock(vc);
 
@@ -382,7 +428,6 @@ int MPID_Finalize()
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int n;
     int mrc;
-    globus_result_t grc;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 
@@ -393,18 +438,24 @@ int MPID_Finalize()
 
     mpig_usage_finalize();
 
+    /* MPIR_Comm_free() is never called for MPI_COMM_WORLD and MPI_COMM_SELF, so the reference count is decremented and
+       mpig_comm_free_hook() is called here to release the application reference to the predefined (builtin) communicators */
+    MPIU_Object_release_ref(MPIR_Process.comm_world, &n);
+    MPIU_Object_release_ref(MPIR_Process.comm_self, &n);
+    mpig_comm_free_hook(MPIR_Process.comm_world);
+    mpig_comm_free_hook(MPIR_Process.comm_self);
+
     /*
-     * wait for all posted operations to complete on all communications
+     * shutdown the communicator tracking module, waiting for all posted operations to complete on all communicators
      *
      * NOTE: applications that leave receive operation(s) unsatisfied will hang!  such an application is erroneous, and can be
      * corrected by canceling any such operations before calling MPI_Finalize().
      */
-    mrc = mpig_comm_list_wait_empty();
-    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|comm_list_wait_empty");
+    mrc = mpig_comm_finalize();
+    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|comm_finalize");
     
-    /* release the virtual connection reference tables for MPI_COMM_WORLD and MPI_COMM_SELF.  NOTE: the destruction of the device
-       data structures in the builtin communicators occurs in mpig_comm_list_wait_empty(), so there is no need to call
-       mpig_comm_destruct() here. */
+    /* release the virtual connection reference tables allocated in MPID_Init() and associated with MPI_COMM_WORLD and
+       MPI_COMM_SELF */
     MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
     MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
     MPIR_Process.comm_world->vcrt = NULL;
@@ -444,25 +495,44 @@ int MPID_Finalize()
     mpig_request_alloc_finalize();
     
     /* deactivate globus modules */
-    grc = globus_module_deactivate(GLOBUS_COMMON_MODULE);
-    MPIU_ERR_CHKANDJUMP1((grc), mpi_errno, MPI_ERR_OTHER, "**globus|module_deactivate", "**globus|module_deactivate %s", "common");
+#   if defined(HAVE_GLOBUS_COMMON_MODULE)
+    {
+	globus_result_t grc;
+	
+	grc = globus_module_deactivate(GLOBUS_COMMON_MODULE);
+	MPIU_ERR_CHKANDSTMT1((grc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|module_deactivate",
+	    "**globus|module_deactivate %s", "common");
+    }
+#   endif
 
-    if (mpi_errno) goto fn_fail;
-    
     /* destroy the device's process information structure */
     MPIU_Free(mpig_process.my_pg_id);
     mpig_process_mutex_destruct();
 
-   fn_return:
+    MPIU_Assert(mpig_pe_active_ops_count == 0);
+    
+    /* shutdown the vendor MPI module */
+#   if defined(MPIG_VMPI)
+    {
+	int vrc;
+	
+	vrc = mpig_vmpi_finalize();
+	MPIG_ERR_VMPI_CHKANDSTMT(vrc, "MPI_Finalize", &mpi_errno, {;});
+    }
+#   endif
+
+    /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
     return mpi_errno;
 
+#if 0    
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    MPID_Abort(NULL, mpi_errno, 255, "ERROR: MPID_Finalize was about to return a nonzero error code");
+    /* MPID_Abort(NULL, mpi_errno, 255, "ERROR: MPID_Finalize was about to return a nonzero error code"); */
     goto fn_return;
     /* --END ERROR HANDLING-- */
+#endif
 }
 /* MPID_Finalize() */
 
@@ -481,7 +551,7 @@ int MPID_Abort(MPID_Comm * const comm, const int mpi_errno, const int exit_code,
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_ABORT);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "entering: comm=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT
-		       ", exit_code=%d, error_msg=%s", (MPIG_PTR_CAST) comm, mpi_errno, exit_code, MPIG_STR_VAL(error_msg)));
+		       ", exit_code=%d, error_msg=%s", MPIG_PTR_CAST(comm), mpi_errno, exit_code, MPIG_STR_VAL(error_msg)));
 
     fflush(stdout);
     fflush(stderr);
@@ -668,14 +738,13 @@ int MPID_Get_universe_size(int  * universe_size)
 int MPID_GPID_Get(MPID_Comm * comm, int rank, int gpid[])
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    mpig_vc_t * vc;
+    const mpig_vc_t * const vc = mpig_comm_get_remote_vc(comm, rank);
     int mpi_errno = MPI_SUCCESS;
 
     MPIG_UNUSED_VAR(fcname);
-
-    mpig_comm_get_vc(comm, rank, &vc);
+    
     gpid[0] = 0;
-    gpid[1] = vc->pg_rank;
+    gpid[1] = mpig_vc_get_pg_rank(vc);
 
     return mpi_errno;
 }

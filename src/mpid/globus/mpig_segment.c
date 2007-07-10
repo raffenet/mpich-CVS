@@ -1,17 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-
-/*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
 /*
  * Globus device code:          Copyright 2005 Northern Illinois University
- * Borrowed MPICH-G2 code:      Copyright 2000 Argonne National Laboratory 
- *                                  and Northern Illinois University
+ * Borrowed MPICH-G2 code:      Copyright 2000 Argonne National Laboratory and Northern Illinois University
  * Borrowed MPICH2 device code: Copyright 2001 Argonne National Laboratory
  *
  * XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
  */
+
 
 /*
  * This file contains the integration of MPICH2 segment (i.e., DATA LOOP) 

@@ -21,33 +21,77 @@
 #include "mpidconf.h"
 #include "mpiallstates.h"
 
+#if defined(HAVE_ERRNO_H)
+#include <errno.h>
+#endif
+
 /* include common tools provided by Globus */
+#if defined(HAVE_GLOBUS_COMMON_MODULE)
 #include "globus_common.h"
+#endif
+#if defined(HAVE_GLOBUS_DC_MODULE)
+#include "globus_dc.h"
+#endif
 
 /* miscellaneous core types */
 #if !defined(HAVE_BOOL_T)
 typedef int bool_t;
 #endif
-typedef TYPEOF_MPIG_ALIGNED_T mpig_aligned_t;
 
-/* NOTE: the values ofTRUE and FALSE must match the values set in mpig_vmpi.c */
+/* miscellaneous macros */
+#define MPIG_QUOTE(a_) MPIG_QUOTE2(a_)
+#define MPIG_QUOTE2(a_) #a_
+
+#define MPIG_UNUSED_ARG(arg_) {(void) arg_;}
+#define MPIG_UNUSED_VAR(var_) {(void) var_;}
+
+#define MPIG_BOOL_STR(b_) ((b_) ? "TRUE" : "FALSE")
+#define MPIG_ENDIAN_STR(e_) (((e_) == MPIG_ENDIAN_LITTLE) ? "little" : (((e_) == MPIG_ENDIAN_BIG) ? "big" : "unknown"))
+
+#define MPIG_MIN(a_, b_) ((a_) <= (b_) ? (a_) : (b_))
+#define MPIG_MAX(a_, b_) ((a_) >= (b_) ? (a_) : (b_))
+
+#define MPIG_INVALID_PTR ((void *) -1)
+
+/* NOTE: the values of TRUE and FALSE must match the values set in mpig_vmpi.c */
 #undef FALSE
 #define FALSE 0
 #undef TRUE
 #define TRUE 1
 
+/* settings for inlining functions */
+#if defined(HAVE_C_INLINE)
+#if defined(__GNUC__)
+#define MPIG_INLINE_FUNCS 1
+#define MPIG_INLINE_HDECL extern inline
+#define MPIG_INLINE_HDEF extern inline  /* for functions defined in header files */
+#define MPIG_INLINE inline              /* for functions defined in source files */
+#else /* !defined(__GNUC__) --> C99? */
+#define MPIG_INLINE_FUNCS 1
+#define MPIG_INLINE_HDECL inline
+#define MPIG_INLINE_HDEF inline
+#define MPIG_INLINE inline
+#endif /* end if/else __GNUC__ */
+#else
+#define MPIG_INLINE_HDECL
+#undef MPIG_INLINE_HDEF
+#define MPIG_INLINE
+#endif /* end if/else defined(HAVE_C_INLINE) */
+
+
 /* declare the existence of MPICH2 and MPIG structures that cannot be defined util later */
 struct MPID_Comm;
+struct MPID_Datatype;
 struct MPID_Request;
 struct MPID_Progress_state;
 struct mpig_cm;
 struct mpig_bc;
 struct mpig_pg;
 struct mpig_vc;
+struct mpig_msg_op_params;
+struct mpig_recvq_ras_op;
 
 /* macros to make printing values of types that vary with the platform a little easier */
-#define MPIG_HANDLE_FMT "0x%08x"    /* format of an MPICH2 object handle; assumed to be at most 32-bits */
-#define MPIG_ERRNO_FMT "0x%08x"	    /* format of an MPI error code; assumed to be at most 32-bits */
 #define MPIG_HANDLE_VAL(object_) (((object_) != NULL) ? (object_)->handle : 0)
 #define MPIG_STR_VAL(str_) ((str_) != NULL ? (str_) : "(null)")
 
@@ -57,6 +101,93 @@ struct mpig_vc;
 #else
 #define MPIG_CHECK_ERRORS FALSE
 #endif
+
+
+/**********************************************************************************************************************************
+                                               BEGIN BASIC DATA STRUCTURES SECTON
+**********************************************************************************************************************************/
+typedef struct mpig_genq_entry
+{
+    void * value;
+    struct mpig_genq_entry * prev;
+    struct mpig_genq_entry * next;
+}
+mpig_genq_entry_t;
+
+typedef struct mpig_genq
+{
+    mpig_genq_entry_t * head;
+    mpig_genq_entry_t * tail;
+}
+mpig_genq_t;
+/**********************************************************************************************************************************
+                                                END BASIC DATA STRUCTURES SECTON
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+					       BEGIN DEVICE THREAD SUPPORT SECTION
+**********************************************************************************************************************************/
+#include "mpig_thread.i"
+
+#define mpig_thread_get_id() ((unsigned long) mpig_thread_self())
+
+#define MPID_REQUIRES_THREAD_SAFETY
+typedef mpig_mutex_t MPID_Thread_mutex_t;
+
+#define MPID_Thread_mutex_create(mutex_, mpi_errno_p_)	\
+{							\
+    if (mpig_mutex_construct((mutex_)) != 0)		\
+    {							\
+	*(mpi_errno_p_) = MPI_ERR_OTHER;		\
+    }							\
+}
+
+#define MPID_Thread_mutex_destroy(mutex_, mpi_errno_p_)	\
+{							\
+    if (mpig_mutex_destroy((mutex_) != 0)		\
+    {							\
+	*(mpi_errno_p_) = MPI_ERR_OTHER;		\
+    }							\
+}
+
+#define MPID_Thread_mutex_lock(mutex_)	\
+{					\
+    mpig_mutex_lock(mutex_);		\
+}
+
+#define MPID_Thread_mutex_unlock(mutex_)	\
+{						\
+    mpig_mutex_unlock(mutex_);			\
+}
+/**********************************************************************************************************************************
+						END DEVICE THREAD SUPPORT SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+                                                       BEGIN UUID SECTION
+**********************************************************************************************************************************/
+#if defined(HAVE_UUID_GENERATE) && defined(HAVE_UUID_UNPARSE) && defined(HAVE_UUID_UUID_H)
+
+#include <uuid/uuid.h>
+#define MPIG_UUID_MAX_STR_LEN 36
+typedef struct {uuid_t uuid;} mpig_uuid_t;
+
+#elif defined (HAVE_GLOBUS_COMMON_MODULE)
+
+#define MPIG_UUID_MAX_STR_LEN GLOBUS_UUID_TEXTLEN
+typedef globus_uuid_t mpig_uuid_t;
+
+#else
+
+#define MPIG_UUID_MAX_STR_LEN (MPI_MAX_PROCESSOR_NAME+10)
+typedef struct {char str[MPIG_UUID_MAX_STR_LEN+1];} mpig_uuid_t;
+
+#endif
+/**********************************************************************************************************************************
+                                                        END UUID SECTION
+**********************************************************************************************************************************/
 
 
 /**********************************************************************************************************************************
@@ -284,7 +415,7 @@ mpig_cm_t;
 /**********************************************************************************************************************************
 						   BEGIN COMMUNICATOR SECTION
 **********************************************************************************************************************************/
-#define MPIG_COMM_NUM_CONTEXTS 2
+#define MPIG_COMM_NUM_CONTEXTS 4
 
 /* set of processes which will have to talk together at a given level */
 typedef struct mpig_comm_set
@@ -309,9 +440,8 @@ typedef struct mpig_comm
     
     /* data structures for tracking active communicators to prevent MPID_Finalize from returning before all outstanding
        communication has completed. */
-    bool_t user_ref;
-    struct MPID_Comm * active_list_prev;
-    struct MPID_Comm * active_list_next;
+    bool_t app_ref;
+    mpig_genq_entry_t active_list;
 }
 mpig_comm_t;
 
@@ -460,7 +590,7 @@ mpig_request_type_t;
 
 typedef void (*mpig_request_cm_destruct_fn_t)(struct MPID_Request * req);
 
-typedef globus_mutex_t mpig_request_mutex_t;
+typedef mpig_mutex_t mpig_request_mutex_t;
 
 #define MPIG_REQUEST_DEV_DECL													\
     struct mpig_request														\
@@ -476,13 +606,13 @@ typedef globus_mutex_t mpig_request_mutex_t;
 	int tag;														\
 	int ctx;														\
 																\
-	/* user buffer */													\
+	/* application buffer */												\
 	void * buf;														\
 	int cnt;														\
 	MPI_Datatype dt;													\
 																\
 	/* pointer to datatype for reference counting purposes.  the datatype must be kept alive until the request is complete, \
-	   even if the user were to free it. */											\
+	   even if the application were to free it. */										\
 	struct MPID_Datatype * dtp;												\
 																\
 	/* handle of an associated remote request.  among other things, this information allows a remote cancel send handler to \
@@ -496,9 +626,51 @@ typedef globus_mutex_t mpig_request_mutex_t;
 	/* the virtual connection used to satisfy this request */								\
 	mpig_vc_t * vc;														\
 																\
+	/* pointer to recvq receive-any-source operation object handing the pending unregister of the vendor MPI request */	\
+	struct mpig_recvq_ras_op * recvq_unreg_ras_op;										\
+																\
 	/* pointer allowing the request to be inserted into any number of lists/queues */					\
 	struct MPID_Request * next;												\
     } dev;
+
+/* FIXME: the defintion of MPIG_REQUEST_CMS_DECL should be generated by configure based on a list of communication modules. */
+#if !defined(MPIG_REQUEST_CMS_SELF_DECL)
+#define MPIG_REQUEST_CMS_SELF_DECL
+#else
+#undef MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#define MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#endif
+#if !defined(MPIG_REQUEST_CMS_VMPI_DECL)
+#define MPIG_REQUEST_CMS_VMPI_DECL
+#else
+#undef MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#define MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#endif
+#if !defined(MPIG_REQUEST_CMS_XIO_DECL)
+#define MPIG_REQUEST_CMS_XIO_DECL
+#else
+#undef MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#define MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#endif
+#if !defined(MPIG_REQUEST_CMS_OTHER_DECL)
+#define MPIG_REQUEST_CMS_OTHER_DECL
+#else
+#undef MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#define MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#endif
+
+#if defined(MPIG_REQUEST_CMS_DECL_UNION_DEFINED)
+#define MPIG_REQUEST_CMS_DECL		\
+    union				\
+    {					\
+	MPIG_REQUEST_CMS_SELF_DECL	\
+	MPIG_REQUEST_CMS_VMPI_DECL	\
+	MPIG_REQUEST_CMS_XIO_DECL	\
+	MPIG_REQUEST_CMS_OTHER_DECL	\
+    } cms;
+#else
+#define MPIG_REQUEST_CMS_DECL
+#endif
 
 /* FIXME: the defintion of MPIG_REQUEST_CMU_DECL should be generated by configure based on a list of communication modules. */
 #if !defined(MPIG_REQUEST_CMU_SELF_DECL)
@@ -541,6 +713,7 @@ typedef globus_mutex_t mpig_request_mutex_t;
 
 #define MPID_DEV_REQUEST_DECL	\
     MPIG_REQUEST_DEV_DECL	\
+    MPIG_REQUEST_CMS_DECL	\
     MPIG_REQUEST_CMU_DECL
 /**********************************************************************************************************************************
 						       END REQUEST SECTION
@@ -548,98 +721,26 @@ typedef globus_mutex_t mpig_request_mutex_t;
 
 
 /**********************************************************************************************************************************
-						   BEGIN PROCESS DATA SECTION
+						      BEGIN STATUS SECTION
 **********************************************************************************************************************************/
-/*
- * The value 128 is returned by the echomaxprocname target in src/mpid/globus/Makefile.sm.  If the value is modified here, it
- * also needs to be modified in Makefile.sm.
- */
-#if !defined(MPIG_PROCESSOR_NAME_SIZE)
-#define MPIG_PROCESSOR_NAME_SIZE 128
-#endif
-
-/* FIXME: the defintion of MPIG_PROCESS_CMS_DECL should be generated by configure based on a list of communication modules. */
-#if !defined(MPIG_PROCESS_CMS_SELF_DECL)
-#define MPIG_PROCESS_CMS_SELF_DECL
-#else
-#undef MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
-#define MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
-#endif
-#if !defined(MPIG_PROCESS_CMS_VMPI_DECL)
-#define MPIG_PROCESS_CMS_VMPI_DECL
-#else
-#undef MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
-#define MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
-#endif
-#if !defined(MPIG_PROCESS_CMS_XIO_DECL)
-#define MPIG_PROCESS_CMS_XIO_DECL
-#else
-#undef MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
-#define MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
-#endif
-#if !defined(MPIG_PROCESS_CMS_OTHER_DECL)
-#define MPIG_PROCESS_CMS_OTHER_DECL
-#else
-#undef MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
-#define MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED
-#endif
-
-#if defined(MPIG_PROCESS_CMS_DECL_STRUCT_DEFINED)
-#define MPIG_PROCESS_CMS_DECL		\
-    struct				\
-    {					\
-	MPIG_PROCESS_CMS_SELF_DECL	\
-	MPIG_PROCESS_CMS_VMPI_DECL	\
-	MPIG_PROCESS_CMS_XIO_DECL	\
-	MPIG_PROCESS_CMS_OTHER_DECL	\
-    } cms;
-#else
-#define MPIG_PROCESS_CMS_DECL
-#endif
-
-/* define useful names for  function counting */
-#define MPIG_FUNC_CNT_FIRST MPID_STATE_MPI_ABORT
-#define MPIG_FUNC_CNT_LAST MPID_STATE_MPI_WTIME
-#define MPIG_FUNC_CNT_NUMFUNCS (MPIG_FUNC_CNT_LAST - MPIG_FUNC_CNT_FIRST + 1)
-
-typedef struct mpig_process
-{
-    /*
-     * pointer to the the process group to which this process belongs, the size of the process group, and the rank of the
-     * processs within the process group.  in addition, the size of the subjob to which this process belongs, and the rank of the
-     * process within the subjob.
-     *
-     * NOTE: DONT NOT REORDER THESE FIELDS AS A STATIC INITIALIZER IN mpid_env.c SETS THEM BASED ON THEIR ORDER!
-     */
-    struct mpig_pg * my_pg;
-    const char * my_pg_id;
-    int my_pg_size;
-    int my_pg_rank;
-
-    int my_sj_size;
-    int my_sj_rank;
-
-    /* process id and hostname associated with the local process */
-    char my_hostname[MPIG_PROCESSOR_NAME_SIZE];
-    pid_t my_pid;
-
-    /* mutex to protect and insure coherence of data in the process structure */
-    globus_mutex_t mutex;
-
-    MPIG_PROCESS_CMS_DECL
-    
-    /* usage stats tracking vars */
-    struct timeval start_time;
-    int64_t nbytes_sent;
-    int64_t vendor_nbytes_sent;
-    
-    int function_count[MPIG_FUNC_CNT_NUMFUNCS];
+#if defined(HAVE_GLOBUS_DC_MODULE)
+#define MPID_DEV_STATUS_SET_EMPTY_HOOK(status_)		\
+{							\
+    (status_)->mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL;	\
 }
-mpig_process_t;
 
-extern mpig_process_t mpig_process;
+#define MPID_DEV_STATUS_SET_PROC_NULL_HOOK(status_)	\
+{							\
+    (status_)->mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL;	\
+}
+
+#define MPID_DEV_REQUEST_EXTRACT_STATUS_HOOK(req_, status_)	\
+{								\
+    (status_)->mpig_dc_format = (req_)->status.mpig_dc_format;	\
+}
+#endif
 /**********************************************************************************************************************************
-						    END PROCESS DATA SECTION
+						       END STATUS SECTION
 **********************************************************************************************************************************/
 
 
@@ -671,9 +772,15 @@ typedef struct mpig_iov
 }
 mpig_iov_t;
 
-#define MPIG_IOV_DECL(iov_var_name_, entries_)							\
-    mpig_aligned_t iov_var_name_[(sizeof(mpig_iov_t) + ((entries_) - 1) * sizeof(MPID_IOV) +	\
-	sizeof(mpig_aligned_t) - 1) / sizeof(mpig_aligned_t)]
+#define MPIG_IOV_DECL(iov_var_name_, entries_)	\
+    struct					\
+    {						\
+	int max_entries;			\
+	int free_entry;				\
+	int cur_entry;				\
+	size_t num_bytes;			\
+	MPID_IOV iov[entries_];			\
+    } iov_var_name_[1]
 /**********************************************************************************************************************************
 						     END I/O VECTOR SECTION
 **********************************************************************************************************************************/
@@ -690,8 +797,14 @@ typedef struct mpig_databuf
 }
 mpig_databuf_t;
 
-#define MPIG_DATABUF_DECL(dbuf_var_name_, size_) \
-    mpig_databuf_t dbuf_var_name_[(sizeof(mpig_databuf_t) + (size_) + sizeof(mpig_databuf_t) - 1) / sizeof(mpig_databuf_t)]
+#define MPIG_DATABUF_DECL(dbuf_var_name_, size_)	\
+    struct						\
+    {							\
+	MPIU_Size_t size;				\
+	MPIU_Size_t eod;				\
+	MPIU_Size_t pos;				\
+	char data[size_];				\
+    } dbuf_var_name_[1]
 /**********************************************************************************************************************************
 						     END DATA BUFFER SECTION
 **********************************************************************************************************************************/
@@ -704,8 +817,8 @@ typedef struct mpig_bc
 {
     char * str_begin;
     char * str_end;
-    int str_size;
-    int str_left;
+    size_t str_size;
+    size_t str_left;
 }
 mpig_bc_t;
 /**********************************************************************************************************************************
@@ -740,6 +853,11 @@ typedef int (*mpig_vc_adi3_recv_fn_t)(void * buf, int cnt, MPI_Datatype dt, int 
 typedef int (*mpig_vc_adi3_irecv_fn_t)(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, struct MPID_Comm * comm,
     int ctxoff, struct MPID_Request ** reqp);
 
+typedef int (*mpig_vc_adi3_probe_fn_t)(int rank, int tag, struct MPID_Comm * comm, int ctxoff, MPI_Status * status);
+
+typedef int (*mpig_vc_adi3_iprobe_fn_t)(int rank, int tag, struct MPID_Comm * comm, int ctxoff, int * found_p,
+    MPI_Status * status);
+
 typedef int (*mpig_vc_adi3_cancel_recv_fn_t)(struct MPID_Request * rreq);
 	     
 typedef int (*mpig_vc_adi3_cancel_send_fn_t)(struct MPID_Request * sreq);
@@ -764,6 +882,8 @@ typedef struct mpig_vc_vtable
     mpig_vc_adi3_issend_fn_t		adi3_issend;
     mpig_vc_adi3_recv_fn_t		adi3_recv;
     mpig_vc_adi3_irecv_fn_t		adi3_irecv;
+    mpig_vc_adi3_probe_fn_t		adi3_probe;
+    mpig_vc_adi3_iprobe_fn_t		adi3_iprobe;
     mpig_vc_adi3_cancel_recv_fn_t	adi3_cancel_recv;
     mpig_vc_adi3_cancel_send_fn_t	adi3_cancel_send;
     mpig_vc_recv_any_source_fn_t	recv_any_source;
@@ -839,25 +959,25 @@ mpig_vc_vtable_t;
 #define MPIG_VC_CMS_OTHER_DECL
 #endif
 
-#define MPIG_VC_CMS_DECL									\
-    struct											\
-    {												\
-	/* contact information successfully initialized */					\
-	bool_t ci_initialized;									\
-												\
-	/* topology information */								\
-	int topology_num_levels;								\
-	unsigned topology_levels;								\
-	char * lan_id;										\
-	int app_num;										\
-												\
-	MPIG_VC_CMS_SELF_DECL									\
-	MPIG_VC_CMS_VMPI_DECL									\
-	MPIG_VC_CMS_XIO_DECL									\
-	MPIG_VC_CMS_OTHER_DECL									\
+#define MPIG_VC_CMS_DECL					\
+    struct							\
+    {								\
+	/* contact information successfully initialized */	\
+	bool_t ci_initialized;					\
+								\
+	/* topology information */				\
+	int topology_num_levels;				\
+	unsigned topology_levels;				\
+	int app_num;						\
+	char * lan_id;						\
+								\
+	MPIG_VC_CMS_SELF_DECL					\
+	MPIG_VC_CMS_VMPI_DECL					\
+	MPIG_VC_CMS_XIO_DECL					\
+	MPIG_VC_CMS_OTHER_DECL					\
     } cms;
 
-typedef globus_mutex_t mpig_vc_mutex_t;
+typedef mpig_mutex_t mpig_vc_mutex_t;
 
 typedef struct mpig_vc
 {
@@ -920,7 +1040,7 @@ typedef struct mpig_vc * MPID_VCR;
 /**********************************************************************************************************************************
 						   BEGIN PROCESS GROUP SECTION
 **********************************************************************************************************************************/
-typedef globus_mutex_t mpig_pg_mutex_t;
+typedef mpig_mutex_t mpig_pg_mutex_t;
 
 typedef struct mpig_pg
 {
@@ -1015,18 +1135,52 @@ mpig_pe_state_t;
 #define MPID_PROGRESS_STATE_DECL	\
     mpig_pe_state_t dev;		\
     MPIG_PE_STATE_CMS_DECL
+
+typedef struct mpig_pe_info
+{
+    int active_ops;		/* number of active operations */
+    bool_t polling_required;	/* polling is required for the CM to make progress on avtive operations */
+}
+mpig_pe_info_t;
 /**********************************************************************************************************************************
 						   END PROGRESS ENGINE SECTION
 **********************************************************************************************************************************/
 
 
 /**********************************************************************************************************************************
-					       BEGIN DEVICE THREAD SUPPORT SECTION
+						       BEGIN PT2PT SECTION
 **********************************************************************************************************************************/
-#define MPID_REQUIRES_THREAD_SAFETY
-typedef globus_mutex_t MPID_Thread_mutex_t;
+typedef struct mpig_msg_op_params
+{
+    void * buf;
+    int cnt;
+    MPI_Datatype dt;
+    int rank;
+    int tag;
+    struct MPID_Comm * comm;
+    int ctxoff;
+}
+mpig_msg_op_params_t;
 /**********************************************************************************************************************************
-						END DEVICE THREAD SUPPORT SECTION
+							END PT2PT SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+						   BEGIN RECEIVE QUEUE SECTION
+**********************************************************************************************************************************/
+typedef struct mpig_recvq_ras_op
+{
+    struct MPID_Request * req;
+    bool_t complete;
+    bool_t cancelled;
+    bool_t cond_in_use;
+    mpig_cond_t cond;
+    mpig_genq_entry_t q_entry;
+}
+mpig_recvq_ras_op_t;
+/**********************************************************************************************************************************
+						    END RECEIVE QUEUE SECTION
 **********************************************************************************************************************************/
 
 
@@ -1043,8 +1197,8 @@ typedef globus_mutex_t MPID_Thread_mutex_t;
 /* include the macros that set the enter/exit macros to call MPIR_ENTER/EXIT_FUNC */
 #include "mpifunclog.h"
 
-#elif defined(USE_DEBUG_LOGING)
-/* if the MPICH layer debugging has been enabled, then enable the device layer debugging as well */
+#elif FALSE && defined(USE_DBG_LOGGING)
+/* XXX: if the MPICH layer debugging has been enabled, then enable the device layer debugging as well? */
 #define MPIG_DEBUG
 #endif
 /**********************************************************************************************************************************

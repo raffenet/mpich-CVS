@@ -17,7 +17,7 @@ MPIU_Object_alloc_t MPID_Request_mem =
     0, 0, 0, 0, MPID_REQUEST, sizeof(MPID_Request), MPID_Request_direct, MPID_REQUEST_PREALLOC
 };
 
-globus_mutex_t mpig_request_alloc_mutex;
+mpig_mutex_t mpig_request_alloc_mutex;
 
 #undef FUNCNAME
 #define FUNCNAME mpig_request_alloc_init
@@ -32,7 +32,7 @@ void mpig_request_alloc_init()
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_REQ,
 		       "entering"));
 
-    globus_mutex_init(&mpig_request_alloc_mutex, NULL);
+    mpig_mutex_construct(&mpig_request_alloc_mutex);
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_REQ,
 		       "exiting"));
@@ -54,7 +54,7 @@ void mpig_request_alloc_finalize()
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_REQ,
 		       "entering"));
 
-    globus_mutex_destroy(&mpig_request_alloc_mutex);
+    mpig_mutex_destruct(&mpig_request_alloc_mutex);
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_REQ,
 		       "exiting"));
@@ -91,7 +91,7 @@ MPID_Request * mpig_request_create()
     }
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_REQ,
-		       "exiting: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, MPIG_HANDLE_VAL(req), (MPIG_PTR_CAST) req));
+		       "exiting: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, MPIG_HANDLE_VAL(req), MPIG_PTR_CAST(req)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_request_create);
     return req;
 }
@@ -109,7 +109,7 @@ void mpig_request_destroy(MPID_Request * req)
     
     MPIG_FUNC_ENTER(MPID_STATE_MPID_REQUEST_DESTROY);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_REQ,
-		       "entering: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, req->handle, (MPIG_PTR_CAST) req));
+		       "entering: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, req->handle, MPIG_PTR_CAST(req)));
 
     MPIU_Assert(HANDLE_GET_MPI_KIND((req)->handle) == MPID_REQUEST);
     MPIU_Assert((req)->ref_count == 0);
@@ -120,7 +120,7 @@ void mpig_request_destroy(MPID_Request * req)
     mpig_request_free(req);
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_REQ,
-		       "exiting: reqp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) req));
+		       "exiting: reqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(req)));
     MPIG_FUNC_EXIT(MPID_STATE_MPID_REQUEST_DESTROY);
 }
 /* mpig_request_destroy() */

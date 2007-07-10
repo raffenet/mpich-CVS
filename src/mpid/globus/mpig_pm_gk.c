@@ -9,22 +9,94 @@
 /*
  * This file contains an implementation of process management routines that interface with the Globus 2.x DUROC/GRAM service.
  */
+
 #include "mpidimpl.h"
 
+#if defined(HAVE_GLOBUS_DUROC_MODULE)
 
 /* define MPIG_PM_GK_ENABLE_DEBUG to force early initialization of the debug logging subsystem.  see comments in
    mpig_pm_gk_init(). */
 #undef MPIG_PM_GK_ENABLE_DEBUG
-
-
-#if defined(MPIG_GLOBUS_DUROC_INSTALLED)
 
 #include "globus_duroc_runtime.h"
 #include "globus_duroc_bootstrap.h"
 #include "globus_gram_client.h"
 #include "globus_gram_myjob.h"
 
-/* inter-subjob and intra-subjob message tags */
+
+/*
+ * prototypes and data structures exposing the "gatekeeper" process management class
+ */
+static int mpig_pm_gk_init(int * argc, char *** argv, mpig_pm_t * pm, bool_t * my_pm_p);
+
+static int mpig_pm_gk_finalize(mpig_pm_t * pm);
+
+static int mpig_pm_gk_abort(mpig_pm_t * pm, int exit_code);
+
+static int mpig_pm_gk_exchange_business_cards(mpig_pm_t * pm, mpig_bc_t * bc, mpig_bc_t ** bcs_p);
+
+static int mpig_pm_gk_free_business_cards(mpig_pm_t * pm, mpig_bc_t * bcs);
+
+static int mpig_pm_gk_get_pg_size(mpig_pm_t * pm, int * pg_size);
+
+static int mpig_pm_gk_get_pg_rank(mpig_pm_t * pm, int * pg_rank);
+
+static int mpig_pm_gk_get_pg_id(mpig_pm_t * pm, const char ** pg_id_p);
+
+static int mpig_pm_gk_get_app_num(mpig_pm_t * pm, const mpig_bc_t * bc, int * app_num);
+
+MPIG_STATIC mpig_pm_vtable_t mpig_pm_gk_vtable =
+{
+    mpig_pm_gk_init,
+    mpig_pm_gk_finalize,
+    mpig_pm_gk_abort,
+    mpig_pm_gk_exchange_business_cards,
+    mpig_pm_gk_free_business_cards,
+    mpig_pm_gk_get_pg_size,
+    mpig_pm_gk_get_pg_rank,
+    mpig_pm_gk_get_pg_id,
+    mpig_pm_gk_get_app_num,
+    mpig_pm_vtable_last_entry
+};
+
+mpig_pm_t mpig_pm_gk =
+{
+    "gatekeeper",
+    &mpig_pm_gk_vtable
+};
+
+
+/*
+ * prototypes for internal routines
+ */
+static void mpig_pm_gk_force_exit(void);
+
+static int mpig_pm_gk_get_topology(int my_sj_rank, int my_sj_size, int * pg_size, int * pg_rank, int * sj_num, int * sj_index,
+    int ** sj_addrs);
+
+static int mpig_pm_gk_distribute_byte_array(int pg_size, int pg_rank, int sj_num, int my_sj_size, int my_sj_rank, 
+    const int * sj_duroc_addrs, const globus_byte_t * in_buf, int in_buf_len, globus_byte_t ** out_bufs, int * out_bufs_lens);
+
+static int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * rbuf, int * nbufs_p, globus_byte_t ** out_bufs,
+    int * out_bufs_lens);
+
+#if !defined(MPIG_VMPI)
+static int mpig_pm_gk_intra_subjob_send(int dest, const char * tag_base, int nbytes, const globus_byte_t * buf);
+
+static int mpig_pm_gk_intra_subjob_receive(const char * tag_base, int * nbytes, globus_byte_t ** buf);
+
+static int mpig_pm_gk_intra_subjob_bcast(int my_sj_size, int my_sj_rank, const char * tag_base, int * nbytes,
+    globus_byte_t ** buf);
+
+/* nbytes and buf are relevant only on the subjob master */
+static int mpig_pm_gk_intra_subjob_gather(int my_sj_size, int my_sj_rank, const globus_byte_t * in_buf, int in_buf_len,
+    const char * tag_base, int * nbytes, globus_byte_t ** buf);
+#endif
+
+
+/*
+ * inter-subjob and intra-subjob message tags
+ */
 #define MPIG_PM_GK_TAG_MAX_SIZE	64
 
 #define MPIG_PM_GK_TAG_SJ_MASTER_TO_PG_MASTER_TOPOLOGY	"sjm2pgm-t"
@@ -36,6 +108,9 @@
 #define MPIG_PM_GK_TAG_SJ_MASTER_TO_SJ_SLAVE_DATA	"sjm2sjs-d"
 
 
+/*
+ * internal data and state
+ */
 MPIG_STATIC enum
 {
     MPIG_PM_GK_STATE_UNINITIALIZED = 0,
@@ -74,7 +149,7 @@ MPIG_STATIC int * mpig_pm_gk_sj_addrs = NULL;
 
 #if defined(MPIG_VMPI)
 /* a duplicate of MPIG_VMPI_COMM_WORLD to be used by this module */
-MPIG_STATIC mpig_vmpi_comm_t mpig_pm_gk_vmpi_cw = MPIG_VMPI_COMM_INITIALIZER;				
+MPIG_STATIC mpig_vmpi_comm_t mpig_pm_gk_vmpi_cw;
 
 /* the size of MPIG_VMPI_COMM_WORLD, and the rank of the lcoal process within MPIG_VMPI_COMM_WORLD */
 MPIG_STATIC int mpig_pm_gk_vmpi_cw_size = -1;
@@ -85,34 +160,12 @@ MPIG_STATIC int mpig_pm_gk_vmpi_root = -1;
 #endif
 
 
-MPIG_STATIC int mpig_pm_gk_get_topology(int my_sj_rank, int my_sj_size, int * pg_size, int * pg_rank, int * sj_num, int * sj_index,
-    int ** sj_addrs);
-
-MPIG_STATIC int mpig_pm_gk_distribute_byte_array(int pg_size, int pg_rank, int sj_num, int my_sj_size, int my_sj_rank, 
-    const int * sj_duroc_addrs, const globus_byte_t * in_buf, int in_buf_len, globus_byte_t ** out_bufs, int * out_bufs_lens);
-
-MPIG_STATIC int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * rbuf, int * nbufs_p, globus_byte_t ** out_bufs,
-    int * out_bufs_lens);
-
-#if !defined(MPIG_VMPI)
-MPIG_STATIC int mpig_pm_gk_intra_subjob_send(int dest, const char * tag_base, int nbytes, const globus_byte_t * buf);
-
-MPIG_STATIC int mpig_pm_gk_intra_subjob_receive(const char * tag_base, int * nbytes, globus_byte_t ** buf);
-
-MPIG_STATIC int mpig_pm_gk_intra_subjob_bcast(int my_sj_size, int my_sj_rank, const char * tag_base, int * nbytes,
-    globus_byte_t ** buf);
-
-/* nbytes and buf are relevant only on the subjob master */
-MPIG_STATIC int mpig_pm_gk_intra_subjob_gather(int my_sj_size, int my_sj_rank, const globus_byte_t * in_buf, int in_buf_len,
-    const char * tag_base, int * nbytes, globus_byte_t ** buf);
-#endif
-
 /*
  * mpig_pm_gk_init()
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_init
-int mpig_pm_gk_init(void)
+int mpig_pm_gk_init(int * argc, char *** argv, mpig_pm_t * const pm, bool_t * const my_pm_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     enum
@@ -127,36 +180,41 @@ int mpig_pm_gk_init(void)
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_init);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(argc);
+    MPIG_UNUSED_ARG(argv);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    /* first verify that the pre-WS version of GRAM is being used.  if it is not, let the calling routine know that this PM
-       module is not compatable with the mechanism used to start the job. */
+    /* first verify that the pre-WS version of GRAM was used to start the job.  if it is not, let the calling routine know that
+       this PM module is not compatable with the mechanism used to start the job. */
     mpig_pm_gk_sj_contact_str = globus_libc_getenv("GLOBUS_GRAM_JOB_CONTACT");
     if (mpig_pm_gk_sj_contact_str == NULL)
     {
-	/* XXX: *activated_p = FALSE; */
+	*my_pm_p = FALSE;
 	goto fn_return;
     }
 
-    /* XXX: *activated_p = TRUE; */
-
     /* XXX: move as much error checking as possible to mpig_pm.c */
     MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
-    
+
     /* activate the duroc runtime module, and wait for all other processes to startup */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "activating duroc runtime module"));
     grc = globus_module_activate(GLOBUS_DUROC_RUNTIME_MODULE);
     MPIU_ERR_CHKANDJUMP2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
 	"**globus|module_activate %s %s", "DUROC runtime", globus_error_print_chain(globus_error_peek(grc)));
     func_state = FUNC_STATE_DUROC_INIT;
     
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "entering duroc barrier"));
     globus_duroc_runtime_barrier();
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "exiting duroc barrier"));
 
     /* the duroc bootstrap module uses nexus and keeps nexus activated during the entire computation.  unfornately, by default, a
        substantial number of error messages are output by nexus when a remote process terminates unexpectedly.  furthermore,
        nexus_fatal is called causing the local process to terminate.  by registering null error handlers with nexus, we prevent
        the extraneous error messages and prevent our process from terminating unexpectedly. */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "activating nexus module"));
     grc = globus_module_activate(GLOBUS_NEXUS_MODULE);
     MPIU_ERR_CHKANDJUMP2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
 	"**globus|module_activate %s %s", "Nexus", globus_error_print_chain(globus_error_peek(grc)));
@@ -165,6 +223,7 @@ int mpig_pm_gk_init(void)
     nexus_enable_fault_tolerance (NULL, NULL);
     
     /* get the topology info, including the process group size and the rank of this process in that group */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "getting subjob size and rank from duroc"));
     grc = globus_duroc_runtime_intra_subjob_size(&mpig_pm_gk_my_sj_size);
     MPIU_ERR_CHKANDJUMP((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_sjsize");
 	
@@ -174,39 +233,38 @@ int mpig_pm_gk_init(void)
 #   if defined(MPIG_VMPI)
     {
 	int vrc;
-	int * argc;
-	char *** argv;
-	int ranks[2];
+	int send_ranks[2];
+	int recv_ranks[2];
 
-	globus_module_get_args(&argc, &argv);
-
-	/* initialize the vendor MPI module */
-	vrc = mpig_vmpi_init(argc, argv);
-	MPIU_ERR_CHKANDJUMP((vrc), mpi_errno, MPI_ERR_OTHER, "**globus|vmpi_init");
-	
+	/* NOTE: this routine assumes that the vendor MPI has already been initialized */
+    
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "getting size and rank from vendor MPI"));
 	vrc = mpig_vmpi_comm_size(MPIG_VMPI_COMM_WORLD, &mpig_pm_gk_vmpi_cw_size);
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Comm_size", &mpi_errno);
 	
 	vrc = mpig_vmpi_comm_rank(MPIG_VMPI_COMM_WORLD, &mpig_pm_gk_vmpi_cw_rank);
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Comm_rank", &mpi_errno);
 
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "creating a duplicate of MPI_COMM_WORLD"));
 	vrc = mpig_vmpi_comm_dup(MPIG_VMPI_COMM_WORLD, &mpig_pm_gk_vmpi_cw);
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Comm_dup", &mpi_errno);
 	
 	MPIU_Assert(mpig_pm_gk_my_sj_size == mpig_pm_gk_vmpi_cw_size);
 	
-	ranks[0] = mpig_pm_gk_my_sj_rank;
-	ranks[1] = mpig_pm_gk_vmpi_cw_rank;
+	send_ranks[0] = mpig_pm_gk_my_sj_rank;
+	send_ranks[1] = mpig_pm_gk_vmpi_cw_rank;
 
-	vrc = mpig_vmpi_allreduce(ranks, MPIG_VMPI_IN_PLACE, 1, MPIG_VMPI_2INT, MPIG_VMPI_MINLOC, &mpig_pm_gk_vmpi_cw);
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "performing allreduce to determine subjob leader"));
+	vrc = mpig_vmpi_allreduce(send_ranks, recv_ranks, 1, MPIG_VMPI_2INT, MPIG_VMPI_MINLOC, mpig_pm_gk_vmpi_cw);
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Allreduce", &mpi_errno);
 
-	MPIU_Assert(ranks[0] == 0);
-	mpig_pm_gk_vmpi_root = ranks[1];
+	MPIU_Assert(recv_ranks[0] == 0);
+	mpig_pm_gk_vmpi_root = recv_ranks[1];
     }
 #   endif
 
     /* gather information about the topology of the job and the addresses that allow the subjob masters to talk */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "gather topology information"));
     mpi_errno = mpig_pm_gk_get_topology(mpig_pm_gk_my_sj_size, mpig_pm_gk_my_sj_rank, &mpig_pm_gk_pg_size, &mpig_pm_gk_pg_rank,
 	&mpig_pm_gk_sj_num, &mpig_pm_gk_my_sj_index, &mpig_pm_gk_sj_addrs);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_topology");
@@ -229,6 +287,9 @@ int mpig_pm_gk_init(void)
 	mpig_debug_init();
     }
 #   endif
+
+    *my_pm_p = TRUE;
+
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_init);
@@ -261,7 +322,7 @@ int mpig_pm_gk_init(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_finalize
-int mpig_pm_gk_finalize(void)
+int mpig_pm_gk_finalize(mpig_pm_t * const pm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     globus_result_t grc;
@@ -269,6 +330,7 @@ int mpig_pm_gk_finalize(void)
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_finalize);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_finalize);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -278,16 +340,13 @@ int mpig_pm_gk_finalize(void)
     
     mpig_pm_gk_state = MPIG_PM_GK_STATE_FINALIZED;
 
-    /* shutdown the vendor MPI module */
+    /* release the communicator used for vendor MPI communication */
 #   if defined(MPIG_VMPI)
     {
 	int vrc;
 	
 	vrc = mpig_vmpi_comm_free(&mpig_pm_gk_vmpi_cw);
-	MPIG_ERR_VMPI_CHKANDSTMT(vrc, "MPI_Comm_dup", {;}, &mpi_errno);
-	
-	vrc = mpig_vmpi_finalize();
-	MPIG_ERR_VMPI_CHKANDSTMT(vrc, "MPI_Finalize", {;}, &mpi_errno);
+	MPIG_ERR_VMPI_CHKANDSTMT(vrc, "MPI_Comm_dup", &mpi_errno, {;});
     }
 #   endif
 
@@ -319,7 +378,7 @@ int mpig_pm_gk_finalize(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_abort
-int mpig_pm_gk_abort(int exit_code)
+int mpig_pm_gk_abort(mpig_pm_t * const pm, int exit_code)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int n;
@@ -328,10 +387,25 @@ int mpig_pm_gk_abort(int exit_code)
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_abort);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_abort);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
+    /* BIG-UGLY-HACK: DUROC deactivates all of its dependent modules during an atexit handler, including globus_gram_myjob and
+       globus_mp.  during the deactivation of globus_gram_myjob, the vendor MPI is called to free a communicator allocated during
+       the activation of that module.  if the vendor MPI_Abort() calls exit(), then the result is a vendor MPI routine being
+       called within that MPI_Abort().  we have observed this very situation, and instead of abort the program hung.  to solve
+       this problem, we push a routine that calls _exit onto the atexit stack, insuring the process will exit before reaching any
+       of the Globus atexit routines that might attempt to call the vendor MPI routines.  This is really a terrible thing to do
+       since any atexit handlers set by the application or other runtime systems (like Insure++) will never be called, but there
+       is not much else we can do. */
+#   if defined(MPIG_VMPI)
+    {
+	atexit(mpig_pm_gk_force_exit);
+    }
+#   endif
+    
     if (mpig_pm_gk_use_system_abort)
     {
 	MPIU_Internal_error_printf("mpig_pm_gk_abort() called with MPIG_USE_SYSTEM_ABORT set.  calling abort().\n");
@@ -373,7 +447,8 @@ int mpig_pm_gk_abort(int exit_code)
 #   if defined(MPIG_VMPI)
     {
 	int vrc;
-	vrc = mpig_vmpi_abort(&mpig_pm_gk_vmpi_cw, exit_code);
+
+	vrc = mpig_vmpi_abort(mpig_pm_gk_vmpi_cw, exit_code);
 	MPIU_Internal_error_printf("WARNING: %s: failed to cancel the local (my) subjob using the vendor MPI_Abort() function.  "
 	    "Attempting to cancel the local subjob using the GRAM cancel function.\n", fcname);
     }
@@ -404,7 +479,7 @@ int mpig_pm_gk_abort(int exit_code)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_exchange_business_cards
-int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const bcs_ptr)
+int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const bc, mpig_bc_t ** const bcs_ptr)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIU_CHKLMEM_DECL(2);
@@ -420,9 +495,10 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_exchange_business_cards);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_exchange_business_cards);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) bc));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bc=" MPIG_PTR_FMT, MPIG_PTR_CAST(bc)));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
@@ -430,13 +506,15 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
     /* if this process is the process group master, then create a process group id and add it to the business card */
     if (mpig_pm_gk_pg_rank == 0)
     {
-	globus_uuid_t uuid;
-	globus_result_t grc;
-	
-	grc = globus_uuid_create(&uuid);
-	MPIU_ERR_CHKANDSTMT((grc), mpi_errno, MPI_ERR_OTHER, {errors++; goto end_create_pg_id_block;}, "**globus|pm_pg_id_create");
+	mpig_uuid_t uuid;
+        char uuid_str[MPIG_UUID_MAX_STR_LEN + 1];
+        
+	mpi_errno = mpig_uuid_generate(&uuid);
+	MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {errors++; goto end_create_pg_id_block;},
+            "**globus|pm_pg_id_create");
 
-	mpi_errno = mpig_bc_add_contact(bc, "PM_GK_PG_ID", uuid.text);
+        mpig_uuid_unparse(&uuid, uuid_str);
+	mpi_errno = mpig_bc_add_contact(bc, "PM_GK_PG_ID", uuid_str);
 	MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER,  {errors++; goto end_create_pg_id_block;},
 	    "**globus|bc_add_contact", "**globus|bc_add_contact %s", "PM_GK_PG_ID");
 
@@ -608,7 +686,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
   fn_return:
     MPIU_CHKLMEM_FREEALL();
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM,
-		       "exiting: bcs=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) *bcs_ptr, mpi_errno));
+	"exiting: bcs=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(*bcs_ptr), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pm_gk_exchange_business_cards);
     return mpi_errno;
 
@@ -627,7 +705,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_free_business_cards
-int mpig_pm_gk_free_business_cards(mpig_bc_t * const bcs)
+int mpig_pm_gk_free_business_cards(mpig_pm_t * const pm, mpig_bc_t * const bcs)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int p;
@@ -635,9 +713,10 @@ int mpig_pm_gk_free_business_cards(mpig_bc_t * const bcs)
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_free_business_cards);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_free_business_cards);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bcs=" MPIG_PTR_FMT, (MPIG_PTR_CAST) bcs));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bcs=" MPIG_PTR_FMT, MPIG_PTR_CAST(bcs)));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
@@ -666,13 +745,14 @@ int mpig_pm_gk_free_business_cards(mpig_bc_t * const bcs)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_pg_size
-int mpig_pm_gk_get_pg_size(int * const pg_size)
+int mpig_pm_gk_get_pg_size(mpig_pm_t * const pm, int * const pg_size)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_get_pg_size);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_size);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -701,13 +781,14 @@ int mpig_pm_gk_get_pg_size(int * const pg_size)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_pg_rank
-int mpig_pm_gk_get_pg_rank(int * const pg_rank)
+int mpig_pm_gk_get_pg_rank(mpig_pm_t * const pm, int * const pg_rank)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_get_pg_rank);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_rank);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -736,13 +817,14 @@ int mpig_pm_gk_get_pg_rank(int * const pg_rank)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_pg_id
-int mpig_pm_gk_get_pg_id(const char ** const pg_id)
+int mpig_pm_gk_get_pg_id(mpig_pm_t * const pm, const char ** const pg_id)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_get_pg_id);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_id);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -771,7 +853,7 @@ int mpig_pm_gk_get_pg_id(const char ** const pg_id)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_app_num
-int mpig_pm_gk_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
+int mpig_pm_gk_get_app_num(mpig_pm_t * const pm, const mpig_bc_t * const bc, int * const app_num_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     char * app_num_str = NULL;
@@ -782,6 +864,7 @@ int mpig_pm_gk_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
     MPIG_STATE_DECL(MPID_STATE_mpig_pm_gk_get_app_num);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_app_num);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
@@ -817,6 +900,19 @@ int mpig_pm_gk_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
 
 
 /*
+ * void mpig_pm_gk_force_exit(void)
+ *
+ * force the program to exit without calling any of the atexit handlers.
+ *
+ */
+static void mpig_pm_gk_force_exit(void)
+{
+    _exit(0);
+}
+/* mpig_pm_gk_force_exit() */
+
+
+/*
  * mpig_gm_gk_get_topology(my_sj_size, my_sj_rank, pg_size, pg_rank, sj_num, my_rsl_index, sj_addrs)
  *
  * NOTE: this routine _MUST_ be called by _EVERY_ process, each supplying my_sj_rank and my_sj_size.  the subjob master is the
@@ -838,7 +934,7 @@ int mpig_pm_gk_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_get_topology
-MPIG_STATIC int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * const pg_size, int * const my_pg_rank,
+static int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * const pg_size, int * const my_pg_rank,
     int * const sj_num, int * const my_rsl_index, int ** const sj_duroc_addrs)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -870,7 +966,7 @@ MPIG_STATIC int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * co
 	    /* this algorithm assumes that process zero in the subjob is the same as process zero in the vendor MPI_COMM_WORLD.
 	       this is a reasonable assumption since mpig_pm_gk_init() sets the subjob rank using the rank from the vendor
 	       MPI_COMM_WORLD. */
-	    vrc = mpig_vmpi_bcast((void *) v, 4, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root, &mpig_pm_gk_vmpi_cw);
+	    vrc = mpig_vmpi_bcast((void *) v, 4, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root, mpig_pm_gk_vmpi_cw);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
 
 	    /*
@@ -1068,7 +1164,7 @@ MPIG_STATIC int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * co
 
 	    MPIU_Assert(mpig_pm_gk_vmpi_root == mpig_pm_gk_vmpi_cw_rank);
 	    
-	    vrc = mpig_vmpi_bcast(v, 4, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root, &mpig_pm_gk_vmpi_cw);
+	    vrc = mpig_vmpi_bcast(v, 4, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root, mpig_pm_gk_vmpi_cw);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
 
 	    *my_pg_rank = sj_pg_rank + mpig_pm_gk_vmpi_cw_rank;
@@ -1108,7 +1204,7 @@ MPIG_STATIC int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * co
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_distribute_byte_array
-MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg_rank, const int sj_num, const int my_sj_size,
+static int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg_rank, const int sj_num, const int my_sj_size,
     const int my_sj_rank, const int * const sj_duroc_addrs, const globus_byte_t * const in_buf, const int in_buf_len,
     globus_byte_t ** const out_bufs, int * const out_bufs_lens)
 {
@@ -1146,11 +1242,11 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 	    int vrc;
 
 	    vrc = mpig_vmpi_gather(&in_buf_len, 1, MPIG_VMPI_INT, (void *) NULL, 1, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root,
-		&mpig_pm_gk_vmpi_cw);
+		mpig_pm_gk_vmpi_cw);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Gather", &mpi_errno);
 
 	    vrc = mpig_vmpi_gatherv((char *) in_buf, in_buf_len, MPIG_VMPI_BYTE, (void *) NULL, (int *) NULL, (int *) NULL,
-		MPIG_VMPI_BYTE, mpig_pm_gk_vmpi_root, &mpig_pm_gk_vmpi_cw);
+		MPIG_VMPI_BYTE, mpig_pm_gk_vmpi_root, mpig_pm_gk_vmpi_cw);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Gatherv", &mpi_errno);
         }
 #       else /* !defined(MPIG_VMPI) */
@@ -1200,12 +1296,12 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 		int bsize;
 		int vrc;
 
-		vrc = mpig_vmpi_bcast(&bsize, 1, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root, &mpig_pm_gk_vmpi_cw);
+		vrc = mpig_vmpi_bcast(&bsize, 1, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root, mpig_pm_gk_vmpi_cw);
 		MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
 
 		MPIU_CHKPMEM_MALLOC(rbuf, globus_byte_t *, bsize, mpi_errno, "buffer for receiving intra-subjob data");
 
-		vrc = mpig_vmpi_bcast((void *) rbuf, bsize, MPIG_VMPI_BYTE, mpig_pm_gk_vmpi_root, &mpig_pm_gk_vmpi_cw);
+		vrc = mpig_vmpi_bcast((void *) rbuf, bsize, MPIG_VMPI_BYTE, mpig_pm_gk_vmpi_root, mpig_pm_gk_vmpi_cw);
 		MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
 	    }
 #           else /* !defined(MPIG_VMPI) */
@@ -1251,7 +1347,7 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 
 	    /* acquire the size of the byte arrays arriving from the slave processes in my subjob */
 	    vrc = mpig_vmpi_gather(&in_buf_len, 1, MPIG_VMPI_INT, rcounts, 1, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root,
-		&mpig_pm_gk_vmpi_cw);
+		mpig_pm_gk_vmpi_cw);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Gather", &mpi_errno);
 
 	    /* compute the buffer displacement for the byte arrays arriving from each process */
@@ -1269,7 +1365,7 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 	    MPIU_CHKLMEM_MALLOC(msg_buf, globus_byte_t *, my_sj_buf_len, mpi_errno, "temp buffer for subjob data");
 
 	    vrc = mpig_vmpi_gatherv((void *) in_buf, in_buf_len, MPIG_VMPI_BYTE, msg_buf, rcounts, displs, MPIG_VMPI_BYTE,
-		mpig_pm_gk_vmpi_root, &mpig_pm_gk_vmpi_cw);
+		mpig_pm_gk_vmpi_root, mpig_pm_gk_vmpi_cw);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Gatherv", &mpi_errno);
 
 	    /* construct the header for a message containing the data for my subjob so that it may be sent to the process group
@@ -1333,11 +1429,11 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 	    int vrc;
 
 	    /* send the size of my subjob's data buffer holding the byte arrays of all processes in the subjob */
-	    vrc = mpig_vmpi_bcast(&my_sj_buf_len, 1, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root, &mpig_pm_gk_vmpi_cw);
+	    vrc = mpig_vmpi_bcast(&my_sj_buf_len, 1, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root, mpig_pm_gk_vmpi_cw);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
 
 	    /* broadcast the subjob data buffer to all processes in the subjob */
-	    vrc = mpig_vmpi_bcast(my_sj_buf, my_sj_buf_len, MPIG_VMPI_BYTE, mpig_pm_gk_vmpi_root, &mpig_pm_gk_vmpi_cw);
+	    vrc = mpig_vmpi_bcast(my_sj_buf, my_sj_buf_len, MPIG_VMPI_BYTE, mpig_pm_gk_vmpi_root, mpig_pm_gk_vmpi_cw);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
 	}
 #       else
@@ -1381,10 +1477,10 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 	    {
 		int vrc;
 
-		vrc = mpig_vmpi_bcast(&sj_buf_len, 1, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root, &mpig_pm_gk_vmpi_cw);
+		vrc = mpig_vmpi_bcast(&sj_buf_len, 1, MPIG_VMPI_INT, mpig_pm_gk_vmpi_root, mpig_pm_gk_vmpi_cw);
 		MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
 
-		vrc = mpig_vmpi_bcast(sj_buf, sj_buf_len, MPIG_VMPI_BYTE, mpig_pm_gk_vmpi_root, &mpig_pm_gk_vmpi_cw);
+		vrc = mpig_vmpi_bcast(sj_buf, sj_buf_len, MPIG_VMPI_BYTE, mpig_pm_gk_vmpi_root, mpig_pm_gk_vmpi_cw);
 		MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
 	    }
 #           else
@@ -1425,7 +1521,7 @@ MPIG_STATIC int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg
 
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_extract_byte_arrays
-MPIG_STATIC int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * const rbuf, int * const nbufs_p /* optional */,
+static int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * const rbuf, int * const nbufs_p /* optional */,
     globus_byte_t ** const out_bufs,
     int * out_buf_lens)
 {
@@ -1494,7 +1590,7 @@ MPIG_STATIC int mpig_pm_gk_extract_byte_arrays(const globus_byte_t * const rbuf,
 #if !defined(MPIG_VMPI)
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_intra_subjob_send
-MPIG_STATIC int mpig_pm_gk_intra_subjob_send(const int dest, const char * const tag_base, const int nbytes,
+static int mpig_pm_gk_intra_subjob_send(const int dest, const char * const tag_base, const int nbytes,
     const globus_byte_t * const buf)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -1572,7 +1668,7 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_send(const int dest, const char * const 
 
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_intra_subjob_receive
-MPIG_STATIC int mpig_pm_gk_intra_subjob_receive(const char * const tag_base, int * const rcvd_nbytes, globus_byte_t ** const buf)
+static int mpig_pm_gk_intra_subjob_receive(const char * const tag_base, int * const rcvd_nbytes, globus_byte_t ** const buf)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     char tag_buf[MPIG_PM_GK_TAG_MAX_SIZE];
@@ -1722,7 +1818,7 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_receive(const char * const tag_base, int
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_intra_subjob_bcast
-MPIG_STATIC int mpig_pm_gk_intra_subjob_bcast(const int my_sj_size, const int my_sj_rank, const char * const tag_base,
+static int mpig_pm_gk_intra_subjob_bcast(const int my_sj_size, const int my_sj_rank, const char * const tag_base,
     int * rcvd_nbytes, globus_byte_t ** buf)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -1792,7 +1888,7 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_bcast(const int my_sj_size, const int my
 
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_gk_intra_subjob_gather
-MPIG_STATIC int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int my_sj_rank, const globus_byte_t * in_buf,
+static int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int my_sj_rank, const globus_byte_t * in_buf,
     const int in_buf_len, const char * const tag_base, int * const rcvd_nbytes, globus_byte_t ** const buf)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -1891,4 +1987,12 @@ MPIG_STATIC int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int m
 
 #endif /* !defined(MPIG_VMPI) */
 
-#endif /*# defined(MPIG_GLOBUS_DUROC_INSTALLED) */
+#else /* !defined(HAVE_GLOBUS_DUROC_MODULE) */
+
+mpig_pm_t mpig_pm_gk =
+{
+    "gatekeeper",
+    NULL
+};
+
+#endif /* if/else defined(HAVE_GLOBUS_DUROC_MODULE) */

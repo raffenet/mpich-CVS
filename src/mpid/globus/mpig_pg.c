@@ -8,11 +8,11 @@
 
 #include "mpidimpl.h"
 
-MPIG_STATIC globus_mutex_t mpig_pg_global_mutex;
+MPIG_STATIC mpig_mutex_t mpig_pg_global_mutex;
 
 MPIG_STATIC mpig_pg_t * mpig_pg_list_head = NULL;
 MPIG_STATIC mpig_pg_t * mpig_pg_list_tail = NULL;
-MPIG_STATIC globus_cond_t mpig_pg_list_cond;
+MPIG_STATIC mpig_cond_t mpig_pg_list_cond;
 
 /* Local process ID counter for assigning a local ID to each virtual connection.  A local ID is necessary for the MPI_Group
    routines, implemented at the MPICH layer, to function properly.  MT-NOTE: in a multithreaded environment, acquiring a new lpid
@@ -28,17 +28,17 @@ static void mpig_pg_destroy(mpig_pg_t * pg);
 
 
 /* mutex macros */
-#define mpig_pg_global_mutex_construct()	globus_mutex_init(&mpig_pg_global_mutex, NULL)
-#define mpig_pg_global_mutex_destruct()		globus_mutex_destroy(&mpig_pg_global_mutex)
+#define mpig_pg_global_mutex_construct()	mpig_mutex_construct(&mpig_pg_global_mutex)
+#define mpig_pg_global_mutex_destruct()		mpig_mutex_destruct(&mpig_pg_global_mutex)
 #define mpig_pg_global_mutex_lock()									\
 {													\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG, "PG Global - acquiring mutex"));	\
-    globus_mutex_lock(&mpig_pg_global_mutex);								\
+    mpig_mutex_lock(&mpig_pg_global_mutex);								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG, "PG Global - mutex acquired"));	\
 }
 #define mpig_pg_global_mutex_unlock()									\
 {													\
-    globus_mutex_unlock(&mpig_pg_global_mutex);								\
+    mpig_mutex_unlock(&mpig_pg_global_mutex);								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG, "PG Global - mutex released"));	\
 }
 #define mpig_pg_global_mutex_lock_conditional(cond_)	{if (cond_) mpig_pg_global_mutex_lock();}
@@ -62,7 +62,7 @@ int mpig_pg_init(void)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering"));
 
     mpig_pg_global_mutex_construct();
-    globus_cond_init(&mpig_pg_list_cond, NULL);
+    mpig_cond_construct(&mpig_pg_list_cond);
     
     /*  fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
@@ -93,12 +93,14 @@ int mpig_pg_finalize(void)
     {
 	while(mpig_pg_list_head != NULL)
 	{
-	    globus_cond_wait(&mpig_pg_list_cond, &mpig_pg_global_mutex);
+	    mpig_cond_wait(&mpig_pg_list_cond, &mpig_pg_global_mutex);
 	}
     }
     mpig_pg_global_mutex_unlock();
 
-    globus_cond_destroy(&mpig_pg_list_cond);
+    mpig_pg_list_head = MPIG_INVALID_PTR;
+    
+    mpig_cond_destruct(&mpig_pg_list_cond);
     mpig_pg_global_mutex_destruct();
     
     /* fn_return: */
@@ -146,18 +148,17 @@ int mpig_pg_acquire_ref(const char * const pg_id, const int pg_size, const bool_
 	/* attempt to find PG in the list of active process groups */
 	*pg_p = NULL;
 	pg = mpig_pg_list_head;
-	while (pg != NULL)
+	while (*pg_p == NULL && pg != NULL)
 	{
 	    if (mpig_pg_compare_ids(pg_id, pg->id) == 0)
 	    {
 		*pg_p = pg;
-		break;
 	    }
 	    
 	    pg = pg->next;
 	}
 
-	if (pg == NULL)
+	if (*pg_p == NULL)
 	{
 	    /* no matching process group was found, so create a new one */
 	    mpi_errno = mpig_pg_create(pg_id, pg_size, pg_p);
@@ -184,7 +185,7 @@ int mpig_pg_acquire_ref(const char * const pg_id, const int pg_size, const bool_
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: pg_id=%s, pg_size=%d, pg=" MPIG_PTR_FMT
-	", mpi_errno=" MPIG_ERRNO_FMT, pg_id, pg_size, (MPIG_PTR_CAST) pg, mpi_errno));
+	", mpi_errno=" MPIG_ERRNO_FMT, pg_id, pg_size, MPIG_PTR_CAST(pg), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_acquire_ref);
     return mpi_errno;
     
@@ -226,7 +227,7 @@ void mpig_pg_commit(mpig_pg_t * const pg)
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_commit);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering: pg=" MPIG_PTR_FMT, MPIG_PTR_CAST(pg)));
     
     mpig_pg_mutex_lock(pg);
     {
@@ -273,7 +274,7 @@ void mpig_pg_commit(mpig_pg_t * const pg)
     }
     
     /* fn_return: */
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: pg=" MPIG_PTR_FMT, MPIG_PTR_CAST(pg)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_commit);
     return;
 }
@@ -298,7 +299,7 @@ void mpig_pg_release_ref(mpig_pg_t * const pg)
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_release_ref);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "entering: pg=" MPIG_PTR_FMT, MPIG_PTR_CAST(pg)));
     
     mpig_pg_mutex_lock(pg);
     {
@@ -307,12 +308,12 @@ void mpig_pg_release_ref(mpig_pg_t * const pg)
 	if (pg_inuse == FALSE)
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PG | MPIG_DEBUG_LEVEL_COUNT, "pg ref count is zero; destroying the pg: pg="
-		MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
+		MPIG_PTR_FMT, MPIG_PTR_CAST(pg)));
 	}
 	else
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PG | MPIG_DEBUG_LEVEL_COUNT, "pg still active: pg=" MPIG_PTR_FMT
-		", ref_count=%d", (MPIG_PTR_CAST) pg, pg->ref_count));
+		", ref_count=%d", MPIG_PTR_CAST(pg), pg->ref_count));
 	}
     }
     mpig_pg_mutex_unlock(pg);
@@ -327,7 +328,7 @@ void mpig_pg_release_ref(mpig_pg_t * const pg)
     }
     
     /* fn_return: */
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: pg=" MPIG_PTR_FMT, MPIG_PTR_CAST(pg)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_release_ref);
     return;
 }
@@ -402,7 +403,7 @@ static int mpig_pg_create(const char * const pg_id, const int pg_size, mpig_pg_t
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG, "exiting: pg_id=%s, pg_size=%d, pg=" MPIG_PTR_FMT
-	", mpi_errno=" MPIG_ERRNO_FMT, pg_id, pg_size, (MPIG_PTR_CAST) pg, mpi_errno));
+	", mpi_errno=" MPIG_ERRNO_FMT, pg_id, pg_size, MPIG_PTR_CAST(pg), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_create);
     return mpi_errno;
     
@@ -436,36 +437,34 @@ static void mpig_pg_destroy(mpig_pg_t * const pg)
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pg_destroy);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
-		       "entering: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
+		       "entering: pg=" MPIG_PTR_FMT, MPIG_PTR_CAST(pg)));
     
     /*
      * remove the PG object from the process group list
      */
     pg_prev = NULL;
     pg_cur = mpig_pg_list_head;
-    while(pg_cur != NULL)
+    while(pg_cur != pg && pg_cur != NULL)
     {
-	if (pg_cur == pg)
-	{
-	    if (pg_prev != NULL)
-	    {
-		pg_prev->next = pg->next;
-	    }
-	    else
-	    {
-		mpig_pg_list_head = pg->next;
-	    }
-	    
-	    if (mpig_pg_list_tail == pg)
-	    {
-		mpig_pg_list_tail = pg_prev;
-	    }
-	    
-	    break;
-	}
-
 	pg_prev = pg_cur;
 	pg_cur = pg_cur->next;
+    }
+
+    if (pg_cur == pg)
+    {
+	if (pg_prev != NULL)
+	{
+	    pg_prev->next = pg->next;
+	}
+	else
+	{
+	    mpig_pg_list_head = pg->next;
+	}
+	    
+	if (mpig_pg_list_tail == pg)
+	{
+	    mpig_pg_list_tail = pg_prev;
+	}
     }
 
     MPIU_Assertp(pg_cur != NULL);
@@ -482,17 +481,17 @@ static void mpig_pg_destroy(mpig_pg_t * const pg)
      * destroy the PG object
      */
     MPIU_Free(pg->id);
-    pg->id = NULL;
-    pg->size = 0;
-    pg->ref_count = 0;
+    pg->id = MPIG_INVALID_PTR;
+    pg->size = -1;
+    pg->ref_count = -1;
     mpig_pg_mutex_destruct(pg);
     MPIU_Free(pg);
 
-    globus_cond_signal(&mpig_pg_list_cond);
+    mpig_cond_signal(&mpig_pg_list_cond);
 
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PG,
-		       "exiting: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) pg));
+		       "exiting: pg=" MPIG_PTR_FMT, MPIG_PTR_CAST(pg)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_pg_destroy);
     return;
 }
