@@ -384,10 +384,6 @@ extern MPIU_DLL_SPEC MPI_Fint * MPI_F_STATUSES_IGNORE;
 typedef int (MPI_Grequest_cancel_function)(void *, int); 
 typedef int (MPI_Grequest_free_function)(void *); 
 typedef int (MPI_Grequest_query_function)(void *, MPI_Status *); 
-typedef int (MPIX_Grequest_poll_function)(void *, MPI_Status *);
-typedef int (MPIX_Grequest_wait_function)(int, void **, double, MPI_Status *);
-
-typedef int MPIX_Grequest_class;
 
 /* MPI's error classes */
 #define MPI_SUCCESS          0      /* Successful return code */
@@ -700,22 +696,6 @@ int MPI_Grequest_complete(MPI_Request);
 int MPI_Grequest_start(MPI_Grequest_query_function *, 
                        MPI_Grequest_free_function *, 
                        MPI_Grequest_cancel_function *, void *, MPI_Request *);
-int MPIX_Grequest_class_create(MPI_Grequest_query_function *, 
-                       MPI_Grequest_free_function *, 
-                       MPI_Grequest_cancel_function *, 
-		       MPIX_Grequest_poll_function *,
-		       MPIX_Grequest_wait_function *, 
-		       MPIX_Grequest_class *);
-
-int MPIX_Grequest_class_allocate(MPIX_Grequest_class,
-		       void *,
-		       MPI_Request *);
-
-int MPIX_Grequest_start(MPI_Grequest_query_function *, 
-                       MPI_Grequest_free_function *, 
-                       MPI_Grequest_cancel_function *, 
-		       MPIX_Grequest_poll_function *,
-		       MPIX_Grequest_wait_function *, void *, MPI_Request *);
 int MPI_Init_thread(int *, char ***, int, int *);
 int MPI_Is_thread_main(int *);
 int MPI_Query_thread(int *);
@@ -1135,5 +1115,31 @@ int PMPI_Win_set_errhandler(MPI_Win, MPI_Errhandler);
 @INCLUDE_MPICXX_H@
 #endif 
 #endif
+
+/* BEGIN: non-standard but public extensions to MPI */
+
+/* Generalized requests extensions as proposed in "Extending the MPI-2
+ * Generalized Request Interface" */
+typedef int (MPIX_Grequest_poll_function)(void *, MPI_Status *);
+typedef int (MPIX_Grequest_wait_function)(int, void **, double, MPI_Status *);
+
+typedef int MPIX_Grequest_class;
+int MPIX_Grequest_class_create(MPI_Grequest_query_function *, 
+                       MPI_Grequest_free_function *, 
+                       MPI_Grequest_cancel_function *, 
+		       MPIX_Grequest_poll_function *,
+		       MPIX_Grequest_wait_function *, 
+		       MPIX_Grequest_class *);
+
+int MPIX_Grequest_class_allocate(MPIX_Grequest_class,
+		       void *,
+		       MPI_Request *);
+
+int MPIX_Grequest_start(MPI_Grequest_query_function *, 
+                       MPI_Grequest_free_function *, 
+                       MPI_Grequest_cancel_function *, 
+		       MPIX_Grequest_poll_function *,
+		       MPIX_Grequest_wait_function *, void *, MPI_Request *);
+/* END: non-standard but public extensions to MPI */
 
 #endif
