@@ -1219,6 +1219,8 @@ with MPI_Alloc_mem.
 **mpi_grequest_complete %R:MPI_Grequest_complete(%R) failed
 **mpi_grequest_start:MPI_Grequest_start failed
 **mpi_grequest_start %p %p %p %p %p:MPI_Grequest_start(query_fn=%p, free_fn=%p, cancel_fn=%p, extra_state=%p, request=%p) failed
+**mpix_grequest_class_create: MPIX_Grequest_class_create failed
+**mpix_grequest_class_create %p %p %p %p %p:MPIX_Grequest_class_create(query_fn=%p, free_fn=%p, cancel_fn=%p, %poll_fn=%p, wait_fn=%p) failed
 **mpi_init_thread:MPI_Init_thread failed
 **mpi_init_thread %p %p %d %p:MPI_Init_thread(argc_p=%p, argv_p=%p, required=%d, provided=%p)
 **mpi_is_thread_main:MPI_Is_thread_main failed
