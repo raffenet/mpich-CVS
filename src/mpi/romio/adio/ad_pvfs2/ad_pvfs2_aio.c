@@ -146,7 +146,6 @@ int ADIOI_PVFS2_aio_free_fn(void *extra_state)
     ADIOI_AIO_Request *aio_req;
     aio_req = (ADIOI_AIO_Request*)extra_state;
 
-    ADIOI_Free(aio_req->aiocbp);
     ADIOI_Free(aio_req);
 
     return MPI_SUCCESS;
