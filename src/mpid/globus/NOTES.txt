@@ -1,3 +1,19 @@
+* run autoconf on Intel test suite and push changes to configure out to TG machines
+
+* fix mpig_cm_vmpi_unregister_recv_any_source(), etc. so that single-thread builds work again
+
+* export topology discover informtion to fortran applications
+
+* no need to add MPI_ANY_SOURCE requests to the recvq when the communicator only contains VMPI processes
+
+* no need to post MPI_ANY_SOURCE requests to VMPI when the communicator only contains non-VMPI processes
+
+* fix XIO CM so that pe_wait() does not block when mpig_pe_wait_can_block() is FALSE
+
+* add configure test to extract the vendor MPI_VERSION and MPI_SUBVERSION.  use this information to determine expected
+  functionality that cannot be determined by runtime configure tests.
+
+
 ===================================================================================================================================
 						TO DO FOR FIRST OFFICIAL RELEASE
 ===================================================================================================================================

@@ -7,7 +7,10 @@
  */
 
 #include "mpidimpl.h"
+
+#if defined(HAVE_GLOBUS_USAGE_MODULE)
 #include "globus_usage.h"
+#endif
 
 /**********************************************************************************************************************************
 						 BEGIN DEBUGGING OUTPUT SECTION
@@ -19,21 +22,20 @@ globus_debug_handle_t mpig_debug_handle = {0, 0, NULL, GLOBUS_FALSE, GLOBUS_FALS
 time_t mpig_debug_start_tv_sec = 0;
 
 
-#define MPIG_UPPERCASE_STR(str_)	\
-{					\
-    char * tmp__;			\
-					\
-    tmp__ = (str_);			\
-    while(*tmp__ != '\0')		\
-    {					\
-	if (islower(*tmp__))		\
-	{				\
-	    *tmp__ = toupper(*tmp__);	\
-	}				\
-	tmp__++;			\
-    }					\
+#define MPIG_UPPERCASE_STR(str_)						\
+{										\
+    char * MPIG_UPPERCASE_STR_tmp__;						\
+										\
+    MPIG_UPPERCASE_STR_tmp__ = (str_);						\
+    while(*MPIG_UPPERCASE_STR_tmp__ != '\0')					\
+    {										\
+	if (islower(*MPIG_UPPERCASE_STR_tmp__))					\
+	{									\
+	    *MPIG_UPPERCASE_STR_tmp__ = toupper(*MPIG_UPPERCASE_STR_tmp__);	\
+	}									\
+	MPIG_UPPERCASE_STR_tmp__++;						\
+    }										\
 }
-
 
 void mpig_debug_init(void)
 {
@@ -48,29 +50,41 @@ void mpig_debug_init(void)
 
     if (initialized) goto fn_return;
     
-    levels = globus_libc_getenv("MPIG_DEBUG_LEVELS");
+    levels = getenv("MPIG_DEBUG_LEVELS");
     if (levels == NULL || strlen(levels) == 0) goto fn_return;
     levels_uc = MPIU_Strdup(levels);
     MPIG_UPPERCASE_STR(levels_uc);
-    
-    file_basename = globus_libc_getenv("MPIG_DEBUG_FILE_BASENAME");
-    if (file_basename != NULL)
+
+    file_basename = getenv("MPIG_DEBUG_FILE_BASENAME");
+    if (file_basename != NULL || getenv("MPIG_DEBUG_STDOUT") != NULL)
     {
-	MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "%s-%s-%d.log",
-		      file_basename, mpig_process.my_pg_id, mpig_process.my_pg_rank);
-	setenv("MPICH_DBG_FILENAME", settings, TRUE);
-	
-	MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "ERROR|%s,#%s-%s-%d.log,0",
-		      levels_uc, file_basename, mpig_process.my_pg_id, mpig_process.my_pg_rank);
+	if (mpig_process.my_pg_rank >= 0)
+	{
+	    MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "%s-%s-%d.log",
+		file_basename, mpig_process.my_pg_id, mpig_process.my_pg_rank);
+	    setenv("MPICH_DBG_FILENAME", settings, TRUE);
+	    
+	    MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "ERROR|%s,#%s-%s-%d.log,0",
+		levels_uc, file_basename, mpig_process.my_pg_id, mpig_process.my_pg_rank);
+	}
+	else
+	{
+	    const int pid = (int) getpid();
+	    
+	    MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "%s-%d.log", file_basename, pid);
+	    setenv("MPICH_DBG_FILENAME", settings, TRUE);
+	    
+	    MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "ERROR|%s,#%s-%d.log,0", levels_uc, file_basename, pid);
+	}
     }
     else
     {
 	/* send debugging output to stderr */
-	setenv("MPICH_DBG_FILENAME", "-stderr-", TRUE);
+	setenv("MPICH_DBG_FILENAME", "-stdout-", TRUE);
 	MPIU_Snprintf(settings, MPIG_DEBUG_TMPSTR_SIZE, "ERROR|%s,,0", levels_uc);
     }
     
-    timed_levels = globus_libc_getenv("MPIG_DEBUG_TIMED_LEVELS");
+    timed_levels = getenv("MPIG_DEBUG_TIMED_LEVELS");
     if (timed_levels != NULL)
     {
 	const int len = strlen(settings);
@@ -84,6 +98,10 @@ void mpig_debug_init(void)
 
     globus_module_setenv("MPIG_DEBUG_GLOBUS_DEBUG_SETTINGS", settings);
     globus_debug_init("MPIG_DEBUG_GLOBUS_DEBUG_SETTINGS", MPIG_DEBUG_LEVEL_NAMES, &mpig_debug_handle);
+    if (file_basename == NULL)
+    {
+	mpig_debug_handle.file = stdout;
+    }
 
     MPIU_Free(levels_uc);
     if (timed_levels != NULL) MPIU_Free(timed_levels_uc);
@@ -95,58 +113,81 @@ void mpig_debug_init(void)
     gettimeofday(&tv, NULL);
     mpig_debug_start_tv_sec = tv.tv_sec;
 
+    /* BIG-HACK: force MPICH1-p4 debugging output into the MPIG logging file */
+#   if defined(MPIG_VMPI_IS_MPICH_P4)
+    {
+	if (mpig_debug_handle.levels)
+	{
+	    extern FILE *MPID_TRACE_FILE;
+	    extern FILE *MPID_DEBUG_FILE;
+	    extern int MPID_UseDebugFile;
+	    extern int MPID_DebugFlag;
+    
+	    extern int  p4_debug_level;
+	    extern FILE * p4_debug_file;
+	
+	    MPID_TRACE_FILE = mpig_debug_handle.file;
+	    MPID_DEBUG_FILE = mpig_debug_handle.file;
+	    MPID_UseDebugFile = 1;
+	    MPID_DebugFlag = 1;
+	    p4_debug_level = 99;
+	    p4_debug_file = mpig_debug_handle.file;
+	}
+    }
+#   endif
+    
     initialized = TRUE;
 
   fn_return:
     return;
 }
-/* mpig_debug_init */
+/* end mpig_debug_init() */
 
 #if defined(MPIG_DEBUG_REPORT_PGID)
+#define mpig_debug_uvfprintf_macro(fp_, levels_, filename_, funcname_, line_, fmt_, ap_)					\
+{																\
+    char mpig_debug_uvfprintf_lfmt__[MPIG_DEBUG_TMPSTR_SIZE];									\
+																\
+    if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)									\
+    {																\
+	MPIU_Snprintf(mpig_debug_uvfprintf_lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgid=%s:pgrank=%d:tid=%lu] %s(l=%d): %s\n",	\
+	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_), (fmt_));		\
+	vfprintf((fp_), mpig_debug_uvfprintf_lfmt__, (ap_));									\
+    }																\
+    else															\
+    {																\
+	struct timeval mpig_debug_uvfprintf_tv__;										\
+																\
+	gettimeofday(&mpig_debug_uvfprintf_tv__, NULL);										\
+	mpig_debug_uvfprintf_tv__.tv_sec -= mpig_debug_start_tv_sec;								\
+	MPIU_Snprintf(mpig_debug_uvfprintf_lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgid=%s:pgrank=%d:tid=%lu] "			\
+	    "%s(l=%d:t=%lu.%.6lu): %s\n", mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_),	\
+	    (line_), mpig_debug_uvfprintf_tv__.tv_sec, mpig_debug_uvfprintf_tv__.tv_usec, (fmt_));				\
+	vfprintf((fp_), mpig_debug_uvfprintf_lfmt__, (ap_));									\
+    }																\
+}
+#else
 #define mpig_debug_uvfprintf_macro(fp_, levels_, filename_, funcname_, line_, fmt_, ap_)				\
 {															\
-    char lfmt__[MPIG_DEBUG_TMPSTR_SIZE];										\
+    char mpig_debug_uvfprintf_lfmt__[MPIG_DEBUG_TMPSTR_SIZE];								\
 															\
     if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)								\
     {															\
-	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgid=%s:pgrank=%d:tid=%lu] %s(l=%d): %s\n",			\
-	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_), (fmt_));	\
-	vfprintf((fp_), lfmt__, (ap_));											\
+	MPIU_Snprintf(mpig_debug_uvfprintf_lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgrank=%d:tid=%lu] %s(l=%d): %s\n",	\
+	    mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_), (fmt_));				\
+	vfprintf((fp_), mpig_debug_uvfprintf_lfmt__, (ap_));								\
     }															\
     else														\
     {															\
-	struct timeval tv__;												\
+	struct timeval mpig_debug_uvfprintf_tv__;									\
 															\
-	gettimeofday(&tv__, NULL);											\
-	tv__.tv_sec -= mpig_debug_start_tv_sec;										\
-	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgid=%s:pgrank=%d:tid=%lu] %s(l=%d:t=%lu.%.6lu): %s\n",		\
-	    mpig_process.my_pg_id, mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_),			\
-	    tv__.tv_sec, tv__.tv_usec, (fmt_));										\
-	vfprintf((fp_), lfmt__, (ap_));											\
+	gettimeofday(&mpig_debug_uvfprintf_tv__, NULL);									\
+	mpig_debug_uvfprintf_tv__.tv_sec -= mpig_debug_start_tv_sec;							\
+	MPIU_Snprintf(mpig_debug_uvfprintf_lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgrank=%d:tid=%lu] "			\
+	    "%s(l=%d:t=%lu.%.6lu): %s\n", mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_),		\
+	    mpig_debug_uvfprintf_tv__.tv_sec, mpig_debug_uvfprintf_tv__.tv_usec, (fmt_));				\
+	vfprintf((fp_), mpig_debug_uvfprintf_lfmt__, (ap_));								\
     }															\
-}
-#else
-#define mpig_debug_uvfprintf_macro(fp_, levels_, filename_, funcname_, line_, fmt_, ap_)		\
-{													\
-    char lfmt__[MPIG_DEBUG_TMPSTR_SIZE];								\
-													\
-    if (((levels_) & mpig_debug_handle.timestamp_levels) == 0)						\
-    {													\
-	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgrank=%d:tid=%lu] %s(l=%d): %s\n",		\
-	    mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_), (fmt_));		\
-	vfprintf((fp_), lfmt__, (ap_));									\
-    }													\
-    else												\
-    {													\
-	struct timeval tv__;										\
-													\
-	gettimeofday(&tv__, NULL);									\
-	tv__.tv_sec -= mpig_debug_start_tv_sec;								\
-	MPIU_Snprintf(lfmt__, MPIG_DEBUG_TMPSTR_SIZE, "[pgrank=%d:tid=%lu] %s(l=%d:t=%lu.%.6lu): %s\n",	\
-	    mpig_process.my_pg_rank, mpig_thread_get_id(), (funcname_), (line_),			\
-	    tv__.tv_sec, tv__.tv_usec, (fmt_));								\
-	vfprintf((fp_), lfmt__, (ap_));									\
-    }													\
 }
 #endif
 
@@ -168,14 +209,14 @@ void mpig_debug_uprintf_fn(unsigned levels, const char * filename, const char * 
 
 #else /* the compiler does not support variadic macros */
 
-globus_thread_once_t mpig_debug_create_state_key_once = GLOBUS_THREAD_ONCE_INIT;
-globus_thread_key_t mpig_debug_state_key;
+mpig_thread_once_t mpig_debug_create_state_key_once = MPIG_THREAD_ONCE_INIT;
+mpig_thread_key_t mpig_debug_state_key;
 
 MPIG_STATIC void mpig_debug_destroy_state(void * state);
 
 void mpig_debug_create_state_key(void)
 {
-    globus_thread_key_create(&mpig_debug_state_key, mpig_debug_destroy_state);
+    mpig_thread_key_create(&mpig_debug_state_key, mpig_debug_destroy_state);
 }
 
 MPIG_STATIC void mpig_debug_destroy_state(void * state)
@@ -204,8 +245,7 @@ void mpig_debug_printf_fn(unsigned levels, const char * fmt, ...)
 	va_end(l_ap);
     }
 }
-/* mpig_debug_printf_fn() */
-
+/* end mpig_debug_printf_fn() */
 
 #undef FUNCNAME
 #define FUNCNAME mpig_debug_uprintf_fn
@@ -226,8 +266,7 @@ void mpig_debug_uprintf_fn(unsigned levels, const char * fmt, ...)
     mpig_debug_uvfprintf_macro(fp, levels, filename, funcname, line, fmt, l_ap);
     va_end(l_ap);
 }
-/* mpig_debug_uprintf_fn() */
-
+/* end mpig_debug_uprintf_fn() */
 
 #undef FUNCNAME
 #define FUNCNAME mpig_debug_old_util_printf_fn
@@ -244,17 +283,39 @@ void mpig_debug_old_util_printf_fn(const char * fmt, ...)
 
     mpig_debug_retrieve_state(&filename, &funcname, &line);
     
-    if (MPIG_DEBUG_LEVEL_MPI & mpig_debug_handle.levels)
+    if (MPIG_DEBUG_LEVEL_MPICH2 & mpig_debug_handle.levels)
     {
 	va_start(l_ap, fmt);
-	mpig_debug_uvfprintf_macro(fp, MPIG_DEBUG_LEVEL_MPI, filename, funcname, line, fmt, l_ap);
+	mpig_debug_uvfprintf_macro(fp, MPIG_DEBUG_LEVEL_MPICH2, filename, funcname, line, fmt, l_ap);
 	va_end(l_ap);
     }
 }
-/* mpig_debug_old_util_printf_fn() */
+/* end mpig_debug_old_util_printf_fn() */
 #endif /* if variadic macros, else no variadic macros */
-
 #endif /* defined(MPIG_DEBUG) */
+
+#undef FUNCNAME
+#define FUNCNAME mpig_debug_app_printf_fn
+void mpig_debug_app_printf(const char * const filename, const char * const funcname, const int line, const char * const fmt, ...)
+{
+#   if defined(MPIG_DEBUG)
+    {
+	const char fcname[] = MPIG_QUOTE(FUNCNAME);
+	FILE * fp = (mpig_debug_handle.file != NULL) ? mpig_debug_handle.file : stderr;
+	va_list l_ap;
+
+	MPIG_UNUSED_VAR(fcname);
+
+	if (MPIG_DEBUG_LEVEL_APP & mpig_debug_handle.levels)
+	{
+	    va_start(l_ap, fmt);
+	    mpig_debug_uvfprintf_macro(fp, MPIG_DEBUG_LEVEL_APP, filename, funcname, line, fmt, l_ap);
+	    va_end(l_ap);
+	}
+    }
+#   endif
+}
+/* end mpig_debug_app_printf() */
 /**********************************************************************************************************************************
 						  END DEBUGGING OUTPUT SECTION
 **********************************************************************************************************************************/
@@ -268,7 +329,6 @@ void mpig_debug_old_util_printf_fn(const char * fmt, ...)
     MPIU_Assert(MPID_Datatype_get_basic_id(dt_) < MPIG_DATATYPE_MAX_BASIC_TYPES);	\
     (cmap_)[MPID_Datatype_get_basic_id(dt_)] = (ctype_);				\
 }
-
 
 /*
  * <mpi_errno> mpig_datatype_set_my_bc([IN/MOD] bc)
@@ -293,8 +353,8 @@ int mpig_datatype_set_my_bc(mpig_bc_t * const bc)
     MPIG_STATE_DECL(MPID_STATE_mpig_datatype_set_my_bc);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_datatype_set_my_bc);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA, "entering: bc=" MPIG_PTR_FMT,
-	(MPIG_PTR_CAST) bc));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DT, "entering: bc=" MPIG_PTR_FMT,
+	MPIG_PTR_CAST(bc)));
 
     mpig_pg_mutex_lock(mpig_process.my_pg);
     {
@@ -325,8 +385,8 @@ int mpig_datatype_set_my_bc(mpig_bc_t * const bc)
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_cmap_to_bc");
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA, "exiting: bc=" MPIG_PTR_FMT
-	", mpi_errno=" MPIG_ERRNO_FMT,  (MPIG_PTR_CAST) bc, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DT, "exiting: bc=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT,  MPIG_PTR_CAST(bc), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_datatype_set_my_bc);
     return mpi_errno;
 
@@ -335,8 +395,7 @@ int mpig_datatype_set_my_bc(mpig_bc_t * const bc)
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_datatype_set_my_bc() */
-
+/* end mpig_datatype_set_my_bc() */
 
 /*
  * <mpi_errno> mpig_datatype_process_bc([IN] bc, [IN/MOD] vc)
@@ -363,8 +422,8 @@ int mpig_datatype_process_bc(const mpig_bc_t * const bc, mpig_vc_t * const vc)
     MPIG_STATE_DECL(MPID_STATE_mpig_datatype_process_bc);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_datatype_process_bc);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA, "entering: bc=" MPIG_PTR_FMT
-	"vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) bc, (MPIG_PTR_CAST) vc));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DT, "entering: bc=" MPIG_PTR_FMT
+	"vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(bc), MPIG_PTR_CAST(vc)));
 
     mpi_errno = mpig_bc_get_contact(bc, "DATATYPE_CMAP", &cmap_str, &found);
     MPIU_ERR_CHKANDJUMP2((mpi_errno || found == FALSE), mpi_errno, MPI_ERR_INTERN, "**globus|datatype_bc_to_cmap",
@@ -385,8 +444,8 @@ int mpig_datatype_process_bc(const mpig_bc_t * const bc, mpig_vc_t * const vc)
     
   fn_return:
     if (cmap_str != NULL) mpig_bc_free_contact(cmap_str);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DATA, "exiting: bc=" MPIG_PTR_FMT
-	"vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) bc, (MPIG_PTR_CAST) vc, mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DT, "exiting: bc=" MPIG_PTR_FMT
+	"vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(bc), MPIG_PTR_CAST(vc), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_datatype_process_bc);
     return mpi_errno;
 
@@ -395,8 +454,7 @@ int mpig_datatype_process_bc(const mpig_bc_t * const bc, mpig_vc_t * const vc)
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_datatype_process_bc() */
-
+/* end mpig_datatype_process_bc() */
 /**********************************************************************************************************************************
 					     END MPI->C DATATYPE MAPPING SECTION
 **********************************************************************************************************************************/
@@ -430,7 +488,7 @@ MPIU_Size_t mpig_iov_unpack_fn(const void * const buf, const MPIU_Size_t buf_siz
     MPIG_FUNC_ENTER(MPID_STATE_mpig_iov_unpack_fn);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA,
 		       "entering: buf=" MPIG_PTR_FMT ", size=" MPIG_SIZE_FMT ", iov=" MPIG_PTR_FMT,
-		       (MPIG_PTR_CAST) buf, buf_size, (MPIG_PTR_CAST) iov));
+		       MPIG_PTR_CAST(buf), buf_size, MPIG_PTR_CAST(iov)));
     
     while (nbytes > 0 && iov->cur_entry < iov->free_entry)
     {
@@ -483,11 +541,11 @@ MPIU_Size_t mpig_iov_unpack_fn(const void * const buf, const MPIU_Size_t buf_siz
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA,
 		       "exiting: buf=" MPIG_PTR_FMT ", size=" MPIG_SIZE_FMT ", iov=" MPIG_PTR_FMT ", unpacked="
-		       MPIG_SIZE_FMT, (MPIG_PTR_CAST) buf, buf_size, (MPIG_PTR_CAST) iov, buf_size - nbytes));
+		       MPIG_SIZE_FMT, MPIG_PTR_CAST(buf), buf_size, MPIG_PTR_CAST(iov), buf_size - nbytes));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_iov_unpack_fn);
     return buf_size - nbytes;
 }
-/* mpig_iov_unpack_fn() */
+/* end mpig_iov_unpack_fn() */
 /**********************************************************************************************************************************
 						     END I/O VECTOR ROUTINES
 **********************************************************************************************************************************/
@@ -514,7 +572,7 @@ int mpig_databuf_create(const MPIU_Size_t size, mpig_databuf_t ** const dbufp)
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_databuf_create);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "entering: dbufp=" MPIG_PTR_FMT ", size=" MPIG_SIZE_FMT,
-		       (MPIG_PTR_CAST) dbufp, size));
+		       MPIG_PTR_CAST(dbufp), size));
     
     dbuf = (mpig_databuf_t *) MPIU_Malloc(sizeof(mpig_databuf_t) + size);
     MPIU_ERR_CHKANDJUMP1((dbuf == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "intermediate data buffer");
@@ -525,7 +583,7 @@ int mpig_databuf_create(const MPIU_Size_t size, mpig_databuf_t ** const dbufp)
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: dbufp=" MPIG_PTR_FMT ", dbuf=" MPIG_PTR_FMT
-	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) dbufp, (MPIG_PTR_CAST) dbuf, mpi_errno));
+	", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(dbufp), MPIG_PTR_CAST(dbuf), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_databuf_create);
     return mpi_errno;
 
@@ -534,7 +592,7 @@ int mpig_databuf_create(const MPIU_Size_t size, mpig_databuf_t ** const dbufp)
     goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-
+/* end mpig_databuf_create() */
 
 /*
  * void mpig_databuf_destroy([IN/MOD] dbuf)
@@ -551,17 +609,18 @@ void mpig_databuf_destroy(mpig_databuf_t * const dbuf)
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_databuf_destroy);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF,
-		       "entering: dbuf=" MPIG_PTR_FMT, (MPIG_PTR_CAST) dbuf));
+		       "entering: dbuf=" MPIG_PTR_FMT, MPIG_PTR_CAST(dbuf)));
 
     mpig_databuf_destruct(dbuf);
     MPIU_Free(dbuf);
 
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF,
-		       "exiting: dbuf=" MPIG_PTR_FMT, (MPIG_PTR_CAST) dbuf));
+		       "exiting: dbuf=" MPIG_PTR_FMT, MPIG_PTR_CAST(dbuf)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_databuf_destroy);
     return;
 }
+/* end mpig_databuf_destroy() */
 /**********************************************************************************************************************************
 					       END DATA BUFFER MANAGEMENT ROUTINES
 **********************************************************************************************************************************/
@@ -597,13 +656,13 @@ int mpig_strspace_grow(mpig_strspace_t * const space, const size_t growth)
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_strspace_grow);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "entering: space=" MPIG_PTR_FMT ", growth="
-	MPIG_SIZE_FMT, (MPIG_PTR_CAST) space, growth));
+	MPIG_SIZE_FMT, MPIG_PTR_CAST(space), growth));
     
     new_base = (char *) MPIU_Realloc(space->base, space->size + growth);
     if (new_base == NULL)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATABUF, "ERROR: unable to grow string space: space="
-	    MPIG_PTR_FMT ", growth=" MPIG_SIZE_FMT ", total=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) space, growth, space->size + growth));
+	    MPIG_PTR_FMT ", growth=" MPIG_SIZE_FMT ", total=" MPIG_SIZE_FMT, MPIG_PTR_CAST(space), growth, space->size + growth));
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "string space object");
 	goto fn_fail;
     }
@@ -612,7 +671,7 @@ int mpig_strspace_grow(mpig_strspace_t * const space, const size_t growth)
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", mpi_errno="
-	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) space, mpi_errno));
+	MPIG_ERRNO_FMT, MPIG_PTR_CAST(space), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_strspace_grow);
     return mpi_errno;
 
@@ -621,8 +680,7 @@ int mpig_strspace_grow(mpig_strspace_t * const space, const size_t growth)
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_strspace_grow() */
-
+/* end mpig_strspace_grow() */
 
 #undef FUNCNAME
 #define FUNCNAME mpig_strspace_add_element
@@ -637,7 +695,7 @@ int mpig_strspace_add_element(mpig_strspace_t * const space, const char * const 
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_strspace_add_element);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", growth=" MPIG_SIZE_FMT,
-	(MPIG_PTR_CAST) space, growth));
+	MPIG_PTR_CAST(space), growth));
     
     do
     {
@@ -656,7 +714,7 @@ int mpig_strspace_add_element(mpig_strspace_t * const space, const char * const 
 	    if (mpi_errno)
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATABUF, "ERROR: growth of string space failed: "
-		    "space=" MPIG_PTR_FMT ", growth=" MPIG_SIZE_FMT ", total=" MPIG_SIZE_FMT, (MPIG_PTR_CAST) space, growth,
+		    "space=" MPIG_PTR_FMT ", growth=" MPIG_SIZE_FMT ", total=" MPIG_SIZE_FMT, MPIG_PTR_CAST(space), growth,
 		    mpig_strspace_get_size(space) + growth));
 		MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "more string space");
 		goto fn_fail;
@@ -667,7 +725,7 @@ int mpig_strspace_add_element(mpig_strspace_t * const space, const char * const 
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", mpi_errno="
-	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) space, mpi_errno));
+	MPIG_ERRNO_FMT, MPIG_PTR_CAST(space), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_strspace_add_element);
     return mpi_errno;
 
@@ -676,8 +734,7 @@ int mpig_strspace_add_element(mpig_strspace_t * const space, const char * const 
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_strspace_add_element() */
-
+/* end mpig_strspace_add_element() */
 
 #undef FUNCNAME
 #define FUNCNAME mpig_strspace_extract_next_element
@@ -695,7 +752,7 @@ int mpig_strspace_extract_next_element(mpig_strspace_t * const space, const size
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_strspace_extract_next_element);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", growth=" MPIG_SIZE_FMT,
-	(MPIG_PTR_CAST) space, growth));
+	MPIG_PTR_CAST(space), growth));
     
     out_size = growth;
     out_str = (char *) MPIU_Malloc(out_size);
@@ -746,7 +803,7 @@ int mpig_strspace_extract_next_element(mpig_strspace_t * const space, const size
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", mpi_errno="
-	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) space, mpi_errno));
+	MPIG_ERRNO_FMT, MPIG_PTR_CAST(space), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_strspace_extract_next_element);
     return mpi_errno;
 
@@ -755,9 +812,7 @@ int mpig_strspace_extract_next_element(mpig_strspace_t * const space, const size
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_strspace_extract_next_element() */
-
-
+/* end mpig_strspace_extract_next_element() */
 
 #undef FUNCNAME
 #define FUNCNAME mpig_strspace_import_string
@@ -771,7 +826,7 @@ int mpig_strspace_import_string(mpig_strspace_t * space, const char * str)
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_strspace_import_string);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT, (MPIG_PTR_CAST) space));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT, MPIG_PTR_CAST(space)));
 
     space_str = MPIU_Strdup(str);
     MPIU_ERR_CHKANDJUMP1((space_str == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "imported string");
@@ -784,7 +839,7 @@ int mpig_strspace_import_string(mpig_strspace_t * space, const char * str)
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATABUF, "exiting: space=" MPIG_PTR_FMT ", mpi_errno="
-	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) space, mpi_errno));
+	MPIG_ERRNO_FMT, MPIG_PTR_CAST(space), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_strspace_import_string);
     return mpi_errno;
 
@@ -793,9 +848,7 @@ int mpig_strspace_import_string(mpig_strspace_t * space, const char * str)
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_strspace_import_string() */
-
-
+/* end mpig_strspace_import_string() */
 /**********************************************************************************************************************************
 						    END STRING SPACE ROUTINES
 **********************************************************************************************************************************/
@@ -835,15 +888,15 @@ char * mpig_cm_vtable_last_entry(int foo, float bar, const short * baz, char bif
 						END COMMUNICATION MODULE ROUTINES
 **********************************************************************************************************************************/
 
+
 /**********************************************************************************************************************************
-					       BEGIN USAGE STAT ROUTINES
+                                                    BEGIN USAGE STAT ROUTINES
 **********************************************************************************************************************************/
-
-
 /*
  *  base64 encode a string, string may not be null terminated
  *
  */
+#if defined(HAVE_GLOBUS_USAGE_MODULE)
 static void
 mpig_usage_base64_encode(
     const unsigned char *               inbuf,
@@ -853,10 +906,9 @@ mpig_usage_base64_encode(
 {
     int                                 i;
     int                                 j;
-    unsigned char                       c;
+    unsigned char                       c = 0;
     char                                padding = '=';
-    const char *                              base64_charset =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const char *                        base64_charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     for (i=0,j=0; i < in_len; i++)
     {
@@ -897,7 +949,7 @@ mpig_usage_base64_encode(
 
     return;
 }
-
+#endif
 
 /*
  * void mpig_usage_finalize(none)
@@ -909,168 +961,187 @@ mpig_usage_base64_encode(
 
 
 #undef FUNCNAME
+#define FUNCNAME mpig_usage_init
+void mpig_usage_init(void)
+{
+#   if defined(HAVE_GLOBUS_USAGE_MODULE)
+    {
+	/* start timer for usage statistics */
+	gettimeofday(&mpig_process.start_time, NULL);
+    }
+#   endif
+}
+
+#undef FUNCNAME
 #define FUNCNAME mpig_usage_finalize
 void mpig_usage_finalize(void)
 {
-    globus_usage_stats_handle_t mpig_usage_handle;
-    int rc;
-    globus_result_t result;
-    struct timeval end_time;
-    int64_t * total_nbytes;
-    int64_t * total_nbytesv;
-    int i;
-    char ver_b[32];
-    char start_b[32];
-    char end_b[32];
-    char nprocs_b[32];
-    char test_b[32];
-    char nbytesv_b[32];
-    char nbytes_b[32];
-    unsigned char fnmap_b[4096];
-    int fnmap_b_len;
-    unsigned char fnmap[MPIG_FUNC_CNT_NUMFUNCS * 2 * sizeof(int)];
-    unsigned char * ptr;
-    int total_function_count[MPIG_FUNC_CNT_NUMFUNCS] = { 0 };
+#   if defined(HAVE_GLOBUS_USAGE_MODULE)
+    {
+	globus_usage_stats_handle_t mpig_usage_handle;
+	int rc;
+	globus_result_t result;
+	struct timeval end_time;
+	int64_t * total_nbytes = 0;
+	int64_t * total_nbytesv = 0;
+	int i;
+	char ver_b[32];
+	char start_b[32];
+	char end_b[32];
+	char nprocs_b[32];
+	char test_b[32];
+	char nbytesv_b[32];
+	char nbytes_b[32];
+	unsigned char fnmap_b[4096];
+	int fnmap_b_len;
+	unsigned char fnmap[MPIG_FUNC_CNT_NUMFUNCS * 2 * sizeof(int)];
+	unsigned char * ptr;
+	int total_function_count[MPIG_FUNC_CNT_NUMFUNCS] = { 0 };
 
  
-    if(mpig_process.my_pg_rank == 0)
-    {
+	if(mpig_process.my_pg_rank == 0)
+	{
         
-        total_nbytes = (int64_t *) 
-            MPIU_Malloc(mpig_process.my_pg_size * sizeof(int64_t));
-        total_nbytesv = (int64_t *) 
-            MPIU_Malloc(mpig_process.my_pg_size * sizeof(int64_t));
-    }
+	    total_nbytes = (int64_t *) MPIU_Malloc(mpig_process.my_pg_size * sizeof(int64_t));
+	    total_nbytesv = (int64_t *) MPIU_Malloc(mpig_process.my_pg_size * sizeof(int64_t));
+	}
 
-    MPIR_Nest_incr();
-    NMPI_Gather(
-        &mpig_process.nbytes_sent, sizeof(int64_t), MPI_BYTE, 
-        total_nbytes, sizeof(int64_t), MPI_BYTE, 
-        0, MPI_COMM_WORLD);
+	MPIR_Nest_incr();
+	{
+	    NMPI_Gather(&mpig_process.nbytes_sent, sizeof(int64_t), MPI_BYTE, total_nbytes, sizeof(int64_t), MPI_BYTE,
+		0, MPI_COMM_WORLD);
 
-    NMPI_Gather(
-        &mpig_process.vendor_nbytes_sent, sizeof(int64_t), MPI_BYTE, 
-        total_nbytesv, sizeof(int64_t), MPI_BYTE, 
-        0, MPI_COMM_WORLD);
+	    NMPI_Gather(&mpig_process.vmpi_nbytes_sent, sizeof(int64_t), MPI_BYTE, total_nbytesv, sizeof(int64_t), MPI_BYTE,
+		0, MPI_COMM_WORLD);
 
-    NMPI_Reduce(
-        mpig_process.function_count, total_function_count, 
-        MPIG_FUNC_CNT_NUMFUNCS, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPIR_Nest_decr();
+	    NMPI_Reduce(mpig_process.function_count, total_function_count, MPIG_FUNC_CNT_NUMFUNCS, MPI_INT, MPI_SUM,
+		0, MPI_COMM_WORLD);
+	}
+	MPIR_Nest_decr();
 
-    if(mpig_process.my_pg_rank == 0)
-    {
-        int64_t x;
+	if(mpig_process.my_pg_rank == 0)
+	{
+	    int64_t x;
         
-        mpig_process.nbytes_sent = 0; 
-        for(i = 0; i < mpig_process.my_pg_size; i++)
-        {
-            mpig_dc_get_int64(
-                MPIG_MY_ENDIAN/*endianness_of(i)*/, &total_nbytes[i], &x);
-            mpig_process.nbytes_sent += x;
-        }
+	    mpig_process.nbytes_sent = 0; 
+	    for(i = 0; i < mpig_process.my_pg_size; i++)
+	    {
+		mpig_dc_get_int64(MPIG_MY_ENDIAN/*endianness_of(i)*/, &total_nbytes[i], &x);
+		mpig_process.nbytes_sent += x;
+	    }
 
-        mpig_process.vendor_nbytes_sent = 0; 
-        for(i = 0; i < mpig_process.my_pg_size; i++)
-        {
-            mpig_dc_get_int64(
-                MPIG_MY_ENDIAN/*endianness_of(i) */, &total_nbytesv[i], &x);
-            mpig_process.vendor_nbytes_sent += x;
-        }
+	    mpig_process.vmpi_nbytes_sent = 0; 
+	    for(i = 0; i < mpig_process.my_pg_size; i++)
+	    {
+		mpig_dc_get_int64(MPIG_MY_ENDIAN/*endianness_of(i) */, &total_nbytesv[i], &x);
+		mpig_process.vmpi_nbytes_sent += x;
+	    }
 
-        MPIU_Free(total_nbytes);
-        MPIU_Free(total_nbytesv);
+	    MPIU_Free(total_nbytes);
+	    MPIU_Free(total_nbytesv);
 
-        gettimeofday(&end_time, NULL);
+	    gettimeofday(&end_time, NULL);
         
-        rc = globus_module_activate(GLOBUS_USAGE_MODULE);
-        if(rc != 0)
-        {
-            goto err;
-        }
+	    rc = globus_module_activate(GLOBUS_USAGE_MODULE);
+	    if(rc != 0)
+	    {
+		goto err;
+	    }
         
-        result = globus_usage_stats_handle_init(
-            &mpig_usage_handle, 
-            MPIG_USAGE_ID, 
-            MPIG_USAGE_PACKET_VERSION, 
-            "mikelink.com:4811");      
-        if(result != GLOBUS_SUCCESS)
-        {
-            globus_module_deactivate(GLOBUS_USAGE_MODULE);
-            goto err;
-        }
+	    result = globus_usage_stats_handle_init(&mpig_usage_handle, MPIG_USAGE_ID, MPIG_USAGE_PACKET_VERSION,
+		"mikelink.com:4811");
+	    if(result != GLOBUS_SUCCESS)
+	    {
+		globus_module_deactivate(GLOBUS_USAGE_MODULE);
+		goto err;
+	    }
 
-        /* will need to encode these into our own buffer in order to fit
-        the function map */
+	    /* will need to encode these into our own buffer in order to fit
+	       the function map */
 
-        snprintf(ver_b, sizeof(ver_b), MPIG_MPICH2_VERSION);
-        snprintf(start_b, sizeof(start_b), "%d.%d", 
-            (int) mpig_process.start_time.tv_sec, (int) mpig_process.start_time.tv_usec);
-        snprintf(end_b, sizeof(end_b), "%d.%d", 
-            (int) end_time.tv_sec, (int) end_time.tv_usec);
-        snprintf(nprocs_b, sizeof(nprocs_b), "%d", 
-            mpig_process.my_pg_size);
-        snprintf(test_b, sizeof(test_b), "%s", 
-            getenv("MPIG_TEST") ? "1" : "0");
-        snprintf(nbytesv_b, sizeof(nbytesv_b), "%"GLOBUS_OFF_T_FORMAT, 
-            mpig_process.vendor_nbytes_sent);
-        snprintf(nbytes_b, sizeof(nbytes_b), "%"GLOBUS_OFF_T_FORMAT, 
-            mpig_process.nbytes_sent);
+	    snprintf(ver_b, sizeof(ver_b), MPIG_MPICH2_VERSION);
+	    snprintf(start_b, sizeof(start_b), "%d.%d", (int) mpig_process.start_time.tv_sec,
+		(int) mpig_process.start_time.tv_usec);
+	    snprintf(end_b, sizeof(end_b), "%d.%d", (int) end_time.tv_sec, (int) end_time.tv_usec);
+	    snprintf(nprocs_b, sizeof(nprocs_b), "%d", mpig_process.my_pg_size);
+	    snprintf(test_b, sizeof(test_b), "%s", getenv("MPIG_TEST") ? "1" : "0");
+	    snprintf(nbytesv_b, sizeof(nbytesv_b), "%"GLOBUS_OFF_T_FORMAT, mpig_process.vmpi_nbytes_sent);
+	    snprintf(nbytes_b, sizeof(nbytes_b), "%"GLOBUS_OFF_T_FORMAT, mpig_process.nbytes_sent);
         
         
-        /* write out the function counts, then base64 encode that buffer.
-         * max size of the binary buffer (8 bytes for each function) is about
-         * 1800 bytes, which gives ~2400 bytes in base64... We have about 1300
-         * bytes in the usage packet to play with, so we can handle ~120
-         * unique function calls.  If we can rely on the total count of 
-         * functions staying under 255 (currently 241), we can shave it down 
-         * to 6 bytes per function if needed, and then we'd be able to handle 
-         * ~160 different calls in a given app.  If we care about more than 
-         * that we'll need to get smarter with the encoding (compression)
-         * or just add binary support to the c usage lib.
-         */
+	    /* write out the function counts, then base64 encode that buffer.
+	     * max size of the binary buffer (8 bytes for each function) is about
+	     * 1800 bytes, which gives ~2400 bytes in base64... We have about 1300
+	     * bytes in the usage packet to play with, so we can handle ~120
+	     * unique function calls.  If we can rely on the total count of 
+	     * functions staying under 255 (currently 241), we can shave it down 
+	     * to 6 bytes per function if needed, and then we'd be able to handle 
+	     * ~160 different calls in a given app.  If we care about more than 
+	     * that we'll need to get smarter with the encoding (compression)
+	     * or just add binary support to the c usage lib.
+	     */
          
-        memset(fnmap, 0, sizeof(fnmap));
-        ptr = fnmap;
-        for(i = 0; i < MPIG_FUNC_CNT_NUMFUNCS; i++)
-        {
-            if(total_function_count[i] > 0)
-            {
-                memcpy(ptr, &i, sizeof(int));
-                ptr += sizeof(int);
-                memcpy(ptr, &total_function_count[i], sizeof(int));
-                ptr += sizeof(int);
-            }
-        }
+	    memset(fnmap, 0, sizeof(fnmap));
+	    ptr = fnmap;
+	    for(i = 0; i < MPIG_FUNC_CNT_NUMFUNCS; i++)
+	    {
+		if(total_function_count[i] > 0)
+		{
+		    memcpy(ptr, &i, sizeof(int));
+		    ptr += sizeof(int);
+		    memcpy(ptr, &total_function_count[i], sizeof(int));
+		    ptr += sizeof(int);
+		}
+	    }
 
-        mpig_usage_base64_encode(fnmap, ptr - fnmap, fnmap_b, &fnmap_b_len);
+	    mpig_usage_base64_encode(fnmap, ptr - fnmap, fnmap_b, &fnmap_b_len);
         
         
-        result = globus_usage_stats_send(
-            mpig_usage_handle,
-            8,
-            "MPICHVER", ver_b,
-            "START", start_b,
-            "END", end_b,
-            "NPROCS", nprocs_b,
-            "NBYTES", nbytes_b,
-            "NBYTESV", nbytesv_b,
-            "TEST", test_b,
-            "FNMAP", fnmap_b);
-        if(result != GLOBUS_SUCCESS)
-        {
-            /* debug output */
-        }
+	    result = globus_usage_stats_send(
+		mpig_usage_handle,
+		8,
+		"MPICHVER", ver_b,
+		"START", start_b,
+		"END", end_b,
+		"NPROCS", nprocs_b,
+		"NBYTES", nbytes_b,
+		"NBYTESV", nbytesv_b,
+		"TEST", test_b,
+		"FNMAP", fnmap_b);
+	    if(result != GLOBUS_SUCCESS)
+	    {
+		/* debug output */
+	    }
         
-        globus_usage_stats_handle_destroy(mpig_usage_handle);
+	    globus_usage_stats_handle_destroy(mpig_usage_handle);
     
-    }
-    return;
+	}
+	return;
         
-err:
-    return;
+      err:
+	return;
+    }
+#   endif
 }
 
 /**********************************************************************************************************************************
-						END USAGE STAT ROUTINES
+                                                     END USAGE STAT ROUTINES
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+                                               BEGIN BASIC DATA STRUCTURES SECTON
+**********************************************************************************************************************************/
+#include "mpig_bds_genq.i"
+/**********************************************************************************************************************************
+                                                END BASIC DATA STRUCTURES SECTON
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+                                                   BEGIN DEVICE THREADS SECTON
+**********************************************************************************************************************************/
+#include "mpig_thread.i"
+/**********************************************************************************************************************************
+                                                    END DEVICE THREADS SECTON
 **********************************************************************************************************************************/

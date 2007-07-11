@@ -24,14 +24,14 @@
 
 #define mpig_cm_xio_net_cm_destruct(cm_)					\
 {										\
-    (cm_)->cmu.xio.key_name = NULL;						\
+    (cm_)->cmu.xio.key_name = MPIG_INVALID_PTR;					\
     (cm_)->cmu.xio.topology_levels = 0;						\
     MPIU_Free((cm_)->cmu.xio.driver_name);					\
-    (cm_)->cmu.xio.driver_name = NULL;						\
+    (cm_)->cmu.xio.driver_name = MPIG_INVALID_PTR;				\
     /* NOTE: the contact string is allocated internally by globus, so it must	\
        be freed using globus_libc_free() instead of MPIU_Free(). */		\
-       globus_libc_free((cm_)->cmu.xio.contact_string);				\
-    (cm_)->cmu.xio.contact_string = NULL;					\
+    globus_libc_free((cm_)->cmu.xio.contact_string);				\
+    (cm_)->cmu.xio.contact_string = MPIG_INVALID_PTR;				\
     (cm_)->cmu.xio.available = FALSE;						\
 }
 
@@ -62,6 +62,8 @@ static int mpig_cm_xio_net_add_contact_info(mpig_cm_t * cm, mpig_bc_t * bc);
 
 static int mpig_cm_xio_net_construct_vc_contact_info(mpig_cm_t * cm, struct mpig_vc * vc);
 
+/* static void mpig_cm_xio_net_destruct_vc_contact_info(mpig_cm_t * cm, struct mpig_vc * vc); */
+
 static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * cm, struct mpig_vc * vc, bool_t * selected);
 
 static int mpig_cm_xio_net_get_vc_compatability(mpig_cm_t * cm, const mpig_vc_t * vc1, const mpig_vc_t * vc2,
@@ -77,7 +79,7 @@ MPIG_STATIC mpig_cm_vtable_t mpig_cm_xio_net_wan_vtable =
     mpig_cm_xio_net_finalize,
     mpig_cm_xio_net_add_contact_info,
     mpig_cm_xio_net_construct_vc_contact_info,
-    NULL, /* mpig_cm_xio_net_wan_destruct_vc_contact_info */
+    NULL, /* mpig_cm_xio_net_destruct_vc_contact_info, */
     mpig_cm_xio_net_select_comm_method,
     mpig_cm_xio_net_get_vc_compatability,
     mpig_cm_vtable_last_entry
@@ -96,7 +98,7 @@ MPIG_STATIC mpig_cm_vtable_t mpig_cm_xio_net_lan_vtable =
     mpig_cm_xio_net_finalize,
     mpig_cm_xio_net_add_contact_info,
     mpig_cm_xio_net_construct_vc_contact_info,
-    NULL, /* mpig_cm_xio_net_lan_destruct_vc_contact_info */
+    NULL, /* mpig_cm_xio_net_destruct_vc_contact_info, */
     mpig_cm_xio_net_select_comm_method,
     mpig_cm_xio_net_get_vc_compatability,
     mpig_cm_vtable_last_entry
@@ -115,7 +117,7 @@ MPIG_STATIC mpig_cm_vtable_t mpig_cm_xio_net_san_vtable =
     mpig_cm_xio_net_finalize,
     mpig_cm_xio_net_add_contact_info,
     mpig_cm_xio_net_construct_vc_contact_info,
-    NULL, /* mpig_cm_xio_net_san_destruct_vc_contact_info */
+    NULL, /* mpig_cm_xio_net_destruct_vc_contact_info, */
     mpig_cm_xio_net_select_comm_method,
     mpig_cm_xio_net_get_vc_compatability,
     mpig_cm_vtable_last_entry
@@ -134,7 +136,7 @@ MPIG_STATIC mpig_cm_vtable_t mpig_cm_xio_net_default_vtable =
     mpig_cm_xio_net_finalize,
     mpig_cm_xio_net_add_contact_info,
     mpig_cm_xio_net_construct_vc_contact_info,
-    NULL, /* mpig_cm_xio_net_default_destruct_vc_contact_info */
+    NULL, /* mpig_cm_xio_net_destruct_vc_contact_info, */
     mpig_cm_xio_net_select_comm_method,
     mpig_cm_xio_net_get_vc_compatability,
     mpig_cm_vtable_last_entry
@@ -170,7 +172,7 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "entering: cm=" MPIG_PTR_FMT
-	", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 
     /* intialize the XIO communication module if it hasn't already been initialized */
     mpi_errno = mpig_cm_xio_module_init();
@@ -189,7 +191,7 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
 	if (cm->cmu.xio.driver_name == NULL)
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM, "no driver specified; method disabled: cm=" MPIG_PTR_FMT ", cm_name=%s",
-		(MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+		MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	    goto fn_return;
 	}
     }
@@ -219,7 +221,7 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: "
-	    "cm=" MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_stack_init", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
+	    "cm=" MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_stack_init", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
 	    mpig_get_globus_error_msg(grc)));
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_init", "**globus|cm_xio|xio_stack_init %s",
 	    mpig_get_globus_error_msg(grc));
@@ -230,7 +232,7 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: cm="
-	    MPIG_PTR_FMT ", cm_name=%s, driver=%s, msg=%s", "globus_xio_driver_load", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
+	    MPIG_PTR_FMT ", cm_name=%s, driver=%s, msg=%s", "globus_xio_driver_load", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
 	    cm->cmu.xio.driver_name, mpig_get_globus_error_msg(grc)));
 	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_driver_load_transport",
 	    "**globus|cm_xio|xio_driver_load_transport %s %s", cm->cmu.xio.driver_name, mpig_get_globus_error_msg(grc));
@@ -241,7 +243,7 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: cm="
-	    MPIG_PTR_FMT ", cm_name=%s, driver=%s, msg=%s", "globus_xio_stack_push_driver", (MPIG_PTR_CAST) cm,
+	    MPIG_PTR_FMT ", cm_name=%s, driver=%s, msg=%s", "globus_xio_stack_push_driver", MPIG_PTR_CAST(cm),
 	    mpig_cm_get_name(cm), cm->cmu.xio.driver_name, mpig_get_globus_error_msg(grc)));
 	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_push_driver",
 	    "**globus|cm_xio|xio_stack_push_driver %s %s", cm->cmu.xio.driver_name, mpig_get_globus_error_msg(grc));
@@ -256,7 +258,7 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
 	if (grc)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: "
-		"cm=" MPIG_PTR_FMT ", cm_name=%s, driver=%s, msg=%s", "globus_xio_driver_load", (MPIG_PTR_CAST) cm,
+		"cm=" MPIG_PTR_FMT ", cm_name=%s, driver=%s, msg=%s", "globus_xio_driver_load", MPIG_PTR_CAST(cm),
 		mpig_cm_get_name(cm), "gsi", mpig_get_globus_error_msg(grc)));
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: driver=%s, msg=%s",
 		"globus_xio_driver_load", "gsi", mpig_get_globus_error_msg(grc)));
@@ -269,7 +271,7 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
 	if (grc)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: "
-		"cm=" MPIG_PTR_FMT ", cm_name=%s, driver=%s, msg=%s", "globus_xio_stack_push_driver", (MPIG_PTR_CAST) cm,
+		"cm=" MPIG_PTR_FMT ", cm_name=%s, driver=%s, msg=%s", "globus_xio_stack_push_driver", MPIG_PTR_CAST(cm),
 		mpig_cm_get_name(cm), "gsi", mpig_get_globus_error_msg(grc)));
 	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_push_driver",
 		"**globus|cm_xio|xio_stack_push_driver %s %s", "gsi", mpig_get_globus_error_msg(grc));
@@ -283,7 +285,7 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: cm="
-	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_attr_init", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
+	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_attr_init", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
 	    mpig_get_globus_error_msg(grc)));
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_attr_init", "**globus|cm_xio|xio_attr_init %s",
 	    mpig_get_globus_error_msg(grc));
@@ -297,7 +299,7 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
 	if (grc)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: "
-		"cm=" MPIG_PTR_FMT ", cm_name=%s, attr=%s, msg=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
+		"cm=" MPIG_PTR_FMT ", cm_name=%s, attr=%s, msg=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
 		"globus_xio_attr_cntl", "TCP_SET_NODELAY", mpig_get_globus_error_msg(grc)));
 	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_attr_cntl",
 		"**globus|cm_xio|xio_attr_cntl %s %s", "TCP_SET_NODELAY", mpig_get_globus_error_msg(grc));
@@ -322,12 +324,35 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
 #       endif
     }
 
+    if (mpig_cm_xio_tcp_buf_size > 0)
+    {
+	grc = globus_xio_attr_cntl(cm->cmu.xio.attrs, cm->cmu.xio.driver, GLOBUS_XIO_TCP_SET_SNDBUF, mpig_cm_xio_tcp_buf_size);
+	if (grc)
+	{   /* --BEGIN ERROR HANDLING-- */
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: attr=%s, msg=%s",
+		"globus_xio_attr_cntl", "TCP_SET_SNDBUF", mpig_get_globus_error_msg(grc)));
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_attr_cntl",
+		"**globus|cm_xio|xio_attr_cntl %s %s", "TCP_SET_SNDBUF", mpig_get_globus_error_msg(grc));
+	    goto error_set_attrs;
+	}   /* --END ERROR HANDLING-- */
+
+	grc = globus_xio_attr_cntl(cm->cmu.xio.attrs, cm->cmu.xio.driver, GLOBUS_XIO_TCP_SET_RCVBUF, mpig_cm_xio_tcp_buf_size);
+	if (grc)
+	{   /* --BEGIN ERROR HANDLING-- */
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: attr=%s, msg=%s",
+		"globus_xio_attr_cntl", "TCP_SET_RCVBUF", mpig_get_globus_error_msg(grc)));
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_attr_cntl",
+		"**globus|cm_xio|xio_attr_cntl %s %s", "TCP_SET_RCVBUF", mpig_get_globus_error_msg(grc));
+	    goto error_set_attrs;
+	}   /* --END ERROR HANDLING-- */
+    }
+    
     /* establish server to start listening for new connections */
     grc = globus_xio_server_create(&cm->cmu.xio.server, cm->cmu.xio.attrs, cm->cmu.xio.stack);
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: cm="
-	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_server_create", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
+	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_server_create", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
 	    mpig_get_globus_error_msg(grc)));
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|server_create",
 	    "**globus|cm_xio|server_create %s", mpig_get_globus_error_msg(grc));
@@ -338,7 +363,7 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: cm="
-	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_server_get_contact_string", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
+	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_server_get_contact_string", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
 	    mpig_get_globus_error_msg(grc)));
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|server_get_cs",
 	    "**globus|cm_xio|server_get_cs %s", mpig_get_globus_error_msg(grc));
@@ -349,7 +374,7 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
     if (mpi_errno)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: the server failed to "
-	    "register a new accept operation: cm=" MPIG_PTR_FMT ", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	    "register a new accept operation: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|server_listen",
 	    "**globus|cm_xio|server_listen %s %p", mpig_cm_get_name(cm), cm);
 	goto error_listen;
@@ -358,11 +383,11 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
     cm->cmu.xio.available = GLOBUS_TRUE;
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "communication method initialized and enabled; "
-	"server listening:  cm=" MPIG_PTR_FMT ", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	"server listening:  cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting: cm=" MPIG_PTR_FMT
-	", cm_name=%s, mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm), mpi_errno));
+	", cm_name=%s, mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_init);
     return mpi_errno;
 
@@ -395,30 +420,6 @@ static int mpig_cm_xio_net_init(mpig_cm_t * const cm, int * const argc_p, char *
 }
 /* mpig_cm_xio_net_init() */
 
-#   if XXX
-    {
-	grc = globus_xio_attr_cntl(cm->cmu.xio.attrs, cm->cmu.xio.driver, GLOBUS_XIO_TCP_SET_SNDBUF, buf_size);
-	if (grc)
-	{   /* --BEGIN ERROR HANDLING-- */
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: attr=%s, msg=%s",
-		"globus_xio_attr_cntl", "TCP_SET_SNDBUF", mpig_get_globus_error_msg(grc)));
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_attr_cntl",
-		"**globus|cm_xio|xio_attr_cntl %s %s", "TCP_SET_SNDBUF", mpig_get_globus_error_msg(grc));
-	    goto fn_fail;
-	}   /* --END ERROR HANDLING-- */
-
-	grc = globus_xio_attr_cntl(cm->cmu.xio.attrs, cm->cmu.xio.driver, GLOBUS_XIO_TCP_SET_RCVBUF, buf_size);
-	if (grc)
-	{   /* --BEGIN ERROR HANDLING-- */
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: attr=%s, msg=%s",
-		"globus_xio_attr_cntl", "TCP_SET_RCVBUF", mpig_get_globus_error_msg(grc)));
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_attr_cntl",
-		"**globus|cm_xio|xio_attr_cntl %s %s", "TCP_SET_RCVBUF", mpig_get_globus_error_msg(grc));
-	    goto fn_fail;
-	}   /* --END ERROR HANDLING-- */
-    }
-#    endif
-    
 
 /*
  * <mpi_errno> mpig_cm_xio_net_wan_init([IN/MOD] cm, [IN/OUT] argc_p, [IN/OUT] argv_p)
@@ -437,7 +438,7 @@ static int mpig_cm_xio_net_wan_init(mpig_cm_t * cm, int * argc_p, char *** argv_
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_wan_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "entering: cm=" MPIG_PTR_FMT
-	", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 
     mpig_cm_xio_net_cm_construct(cm);
     cm->cmu.xio.key_name = "XIO_WAN";
@@ -447,19 +448,16 @@ static int mpig_cm_xio_net_wan_init(mpig_cm_t * cm, int * argc_p, char *** argv_
     if (mpi_errno)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: initialization of the "
-	    "communication method failed: cm=" MPIG_PTR_FMT ", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	    "communication method failed: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|nets_init", "**globus|cm_xio|nets_init %p %s",
 	    cm, mpig_cm_get_name(cm));
 	goto fn_fail;
     }
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "initialization of the %s communication method succeeded: "
-	"cm=" MPIG_PTR_FMT ", cm_name, available=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
-	MPIG_BOOL_STR(cm->cmu.xio.available)));
-
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting: cmp=" MPIG_PTR_FMT
-	"cm=%s, mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm), mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting: cm=" MPIG_PTR_FMT
+	"cm_name=%s, available=%s, mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
+	MPIG_BOOL_STR(cm->cmu.xio.available), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_wan_init);
     return mpi_errno;
 
@@ -488,7 +486,7 @@ static int mpig_cm_xio_net_lan_init(mpig_cm_t * cm, int * argc_p, char *** argv_
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_lan_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "entering: cm=" MPIG_PTR_FMT
-	", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 
     mpig_cm_xio_net_cm_construct(cm);
     cm->cmu.xio.key_name = "XIO_LAN";
@@ -498,19 +496,16 @@ static int mpig_cm_xio_net_lan_init(mpig_cm_t * cm, int * argc_p, char *** argv_
     if (mpi_errno)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: initialization of the "
-	    "communication method failed: cm=" MPIG_PTR_FMT ", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	    "communication method failed: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|nets_init", "**globus|cm_xio|nets_init %p %s",
 	    cm, mpig_cm_get_name(cm));
 	goto fn_fail;
     }
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "initialization of the %s communication method succeeded: "
-	"cm=" MPIG_PTR_FMT ", cm_name, available=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
-	MPIG_BOOL_STR(cm->cmu.xio.available)));
-
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting: cmp=" MPIG_PTR_FMT
-	"cm=%s, mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm), mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting: cm=" MPIG_PTR_FMT
+	"cm_name=%s, available=%s, mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
+	MPIG_BOOL_STR(cm->cmu.xio.available), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_lan_init);
     return mpi_errno;
 
@@ -539,7 +534,7 @@ static int mpig_cm_xio_net_san_init(mpig_cm_t * cm, int * argc_p, char *** argv_
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_san_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "entering: cm=" MPIG_PTR_FMT
-	", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 
     mpig_cm_xio_net_cm_construct(cm);
     cm->cmu.xio.key_name = "XIO_SAN";
@@ -549,19 +544,16 @@ static int mpig_cm_xio_net_san_init(mpig_cm_t * cm, int * argc_p, char *** argv_
     if (mpi_errno)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: initialization of the "
-	    "communication method failed: cm=" MPIG_PTR_FMT ", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	    "communication method failed: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|nets_init", "**globus|cm_xio|nets_init %p %s",
 	    cm, mpig_cm_get_name(cm));
 	goto fn_fail;
     }
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "initialization of the %s communication method succeeded: "
-	"cm=" MPIG_PTR_FMT ", cm_name, available=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
-	MPIG_BOOL_STR(cm->cmu.xio.available)));
-
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting: cmp=" MPIG_PTR_FMT
-	"cm=%s, mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm), mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting: cm=" MPIG_PTR_FMT
+	"cm_name=%s, available=%s, mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
+	MPIG_BOOL_STR(cm->cmu.xio.available), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_san_init);
     return mpi_errno;
 
@@ -589,7 +581,7 @@ static int mpig_cm_xio_net_default_init(mpig_cm_t * cm, int * argc_p, char *** a
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_default_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "entering: cm=" MPIG_PTR_FMT
-	", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 
     mpig_cm_xio_net_cm_construct(cm);
     cm->cmu.xio.key_name = "XIO_DEFAULT";
@@ -600,19 +592,16 @@ static int mpig_cm_xio_net_default_init(mpig_cm_t * cm, int * argc_p, char *** a
     if (mpi_errno)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: initialization of the "
-	    "communication method failed: cm=" MPIG_PTR_FMT ", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	    "communication method failed: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|nets_init", "**globus|cm_xio|nets_init %p %s",
 	    cm, mpig_cm_get_name(cm));
 	goto fn_fail;
     }
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "initialization of the %s communication method succeeded: "
-	"cm=" MPIG_PTR_FMT ", cm_name, available=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
-	MPIG_BOOL_STR(cm->cmu.xio.available)));
-
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting: cmp=" MPIG_PTR_FMT
-	"cm=%s, mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm), mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting: cm=" MPIG_PTR_FMT
+	"cm_name=%s, available=%s, mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
+	MPIG_BOOL_STR(cm->cmu.xio.available), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_default_init);
     return mpi_errno;
 
@@ -643,12 +632,12 @@ static int mpig_cm_xio_net_finalize(mpig_cm_t * cm)
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_finalize);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM, "entering: cm=" MPIG_PTR_FMT ", cm_name=%s",
-	(MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 
     if (!cm->cmu.xio.available)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "XIO communication method not active; skipping finalize: "
-	    "cm=" MPIG_PTR_FMT "cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	    "cm=" MPIG_PTR_FMT "cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	goto fn_return;
     }
 
@@ -657,7 +646,7 @@ static int mpig_cm_xio_net_finalize(mpig_cm_t * cm)
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: cm="
-	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_server_close", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
+	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_server_close", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
 	    mpig_get_globus_error_msg(grc)));
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_close_server",
 	    "**globus|cm_xio|xio_close_server %s", mpig_get_globus_error_msg(grc));
@@ -688,7 +677,7 @@ static int mpig_cm_xio_net_finalize(mpig_cm_t * cm)
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: cm="
-	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_stack_destroy", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
+	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_stack_destroy", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
 	    mpig_get_globus_error_msg(grc)));
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_stack_destroy",
 	    "**globus|cm_xio|xio_stack_destroy %s", mpig_get_globus_error_msg(grc));
@@ -700,7 +689,7 @@ static int mpig_cm_xio_net_finalize(mpig_cm_t * cm)
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: cm="
-	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_driver_unload", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
+	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_driver_unload", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
 	    mpig_get_globus_error_msg(grc)));
 	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_driver_unload_transport",
 	    "**globus|cm_xio|xio_driver_destroy_unload_transport %s %s", cm->cmu.xio.driver_name, mpig_get_globus_error_msg(grc));
@@ -710,7 +699,7 @@ static int mpig_cm_xio_net_finalize(mpig_cm_t * cm)
     if (grc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: cm="
-	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_attr_destroy", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
+	    MPIG_PTR_FMT ", cm_name=%s, msg=%s", "globus_xio_attr_destroy", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
 	    mpig_get_globus_error_msg(grc)));
 	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|xio_attr_destroy",
 	    "**globus|cm_xio|xio_attr_destroy %s", mpig_get_globus_error_msg(grc));
@@ -729,7 +718,7 @@ static int mpig_cm_xio_net_finalize(mpig_cm_t * cm)
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM, "exiting: cmp=" MPIG_PTR_FMT "cm=%s, mpi_errno="
-	MPIG_ERRNO_FMT, (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm), mpi_errno));
+	MPIG_ERRNO_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_finalize);
     return mpi_errno;
 }
@@ -756,12 +745,12 @@ static int mpig_cm_xio_net_add_contact_info(mpig_cm_t * const cm, mpig_bc_t * co
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_add_contact_info);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "entering: cm=" MPIG_PTR_FMT
-	", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 
     if(cm->cmu.xio.available == FALSE)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "communication method disabled; skipping the addition of "
-	    "contact information: cm=" MPIG_PTR_FMT ", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	    "contact information: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	goto fn_return;
     }
     
@@ -800,7 +789,7 @@ static int mpig_cm_xio_net_add_contact_info(mpig_cm_t * const cm, mpig_bc_t * co
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: cm=" MPIG_PTR_FMT ", cm=%s, mpi_errno=" MPIG_ERRNO_FMT,
-	(MPIG_PTR_CAST) cm, mpig_cm_get_name(cm), mpi_errno));
+	MPIG_PTR_CAST(cm), mpig_cm_get_name(cm), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_add_contact_info);
     return mpi_errno;
 
@@ -831,19 +820,19 @@ static int mpig_cm_xio_net_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t *
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_construct_vc_contact_info);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "entering: cm=" MPIG_PTR_FMT
-	", cm_name=%s, vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm), (MPIG_PTR_CAST) vc));
+	", cm_name=%s, vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm), MPIG_PTR_CAST(vc)));
 
     if(cm->cmu.xio.available == FALSE)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "communication method disabled; skipping the construction "
-	    "of contact information: cm=" MPIG_PTR_FMT ", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	    "of contact information: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	goto fn_return;
     }
     
-    /* NOTE: none of the XIO contact information must persist independent of the CM selected to handle this VC.  as such, all of
-       the contact information for the XIO module is stored in the CM union; however, the CM must store information into that
-       union until it decides to claim responsibility for the VC.  therefore, all extraction of information from the business
-       card is done in mpig_cm_xio_select_comm_method(). */
+    /* NOTE: the XIO contact information is only used if the XIO CM is selected to handle the VC.  therefore, all such contact
+       information is stored in the CM union.  to prevent collisions with data from other CMs, the CM must not store information
+       into that union until it decides to claim responsibility for the VC.  thus, the extraction of this information from the
+       business card is performed in mpig_cm_xio_select_comm_method(). */
 
     /* set the topology information.  NOTE: this may seem a bit wacky since the WAN, LAN and SAN levels may be set even if the
        XIO module is not responsible for the VC; however, the topology information is defined such that a level set if it is
@@ -865,13 +854,12 @@ static int mpig_cm_xio_net_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t *
 		
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting:  cm=" MPIG_PTR_FMT
-	", cm_name=%s, vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
-	(MPIG_PTR_CAST) vc, mpi_errno));
+	", cm_name=%s, vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
+	MPIG_PTR_CAST(vc), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_construct_vc_contact_info);
     return mpi_errno;
 }
 /* mpig_cm_xio_net_construct_vc_contact_info() */
-
 
 
 /*
@@ -905,14 +893,14 @@ static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * 
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_select_comm_method);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "entering: cm=" MPIG_PTR_FMT
-	", cm_name=%s, vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm), (MPIG_PTR_CAST) vc));
+	", cm_name=%s, vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm), MPIG_PTR_CAST(vc)));
 
     *selected = FALSE;
     
     if(cm->cmu.xio.available == FALSE)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "communication method disabled; skipping the selection "
-	    "process: cm=" MPIG_PTR_FMT ", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	    "process: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	goto fn_return;
     }
     
@@ -921,7 +909,7 @@ static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * 
     if (levels_out == 0)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "communication method of remote VC is not compatible; "
-	    "skipping the selection process: cm=" MPIG_PTR_FMT ", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	    "skipping the selection process: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	goto fn_return;
     }
     
@@ -997,8 +985,8 @@ static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * 
     if (endian_str != NULL) mpig_bc_free_contact(endian_str);
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting:  cm=" MPIG_PTR_FMT
-	", cm_name=%s, vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm),
-	(MPIG_PTR_CAST) vc, mpi_errno));
+	", cm_name=%s, vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
+	MPIG_PTR_CAST(vc), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_select_comm_method);
     return mpi_errno;
 
@@ -1032,12 +1020,12 @@ static int mpig_cm_xio_net_get_vc_compatability(mpig_cm_t * const cm, const mpig
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_net_get_vc_compatability);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_in=0x%08x",
-	(MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, levels_in));
+	MPIG_PTR_CAST(vc1), MPIG_PTR_CAST(vc2), levels_in));
 
     if(cm->cmu.xio.available == FALSE)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "communication method disabled; skipping the compatilbity "
-	    "check: cm=" MPIG_PTR_FMT ", cm_name=%s", (MPIG_PTR_CAST) cm, mpig_cm_get_name(cm)));
+	    "check: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 	*levels_out = 0;
 	goto fn_return;
     }
@@ -1070,7 +1058,7 @@ static int mpig_cm_xio_net_get_vc_compatability(mpig_cm_t * const cm, const mpig
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT ", levels_out=0x%08x, "
-	"mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, *levels_out, mpi_errno));
+	"mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(vc1), MPIG_PTR_CAST(vc2), *levels_out, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_get_vc_compatability);
     return mpi_errno;
 }

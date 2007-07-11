@@ -9,11 +9,11 @@
 #if !defined(MPICH2_MPIDIMPL_H_INCLUDED)
 #define MPICH2_MPIDIMPL_H_INCLUDED
 
-
 #include "mpiimpl.h"
+
+#if defined(HAVE_GLOBUS_COMMON_MODULE)
 #include "globus_module.h"
-#include "globus_common.h"
-#include "globus_dc.h"
+#endif
 
 
 /*
@@ -33,34 +33,39 @@
 #endif
 
 
-#define MPIG_QUOTE(a_) MPIG_QUOTE2(a_)
-#define MPIG_QUOTE2(a_) #a_
-
-
-#define MPIG_BOOL_STR(b_) ((b_) ? "TRUE" : "FALSE")
-#define MPIG_ENDIAN_STR(e_) (((e_) == MPIG_ENDIAN_LITTLE) ? "little" : (((e_) == MPIG_ENDIAN_BIG) ? "big" : "unknown"))
-
-#define MPIG_MIN(a_, b_) ((a_) <= (b_) ? (a_) : (b_))
-#define MPIG_MAX(a_, b_) ((a_) >= (b_) ? (a_) : (b_))
-
-
+/*
+ * use MPIG_STATIC when declaring module specific (global) variables.  by using MPIG_STATIC, the variable will be exposed in the
+ * global scope for a debug build, allowing the value to be obtained at any time from within the debugger.
+ *
+ * NOTE: do not use MPIG_STATIC for static variables declared within a function!
+ */
 #if defined(MPIG_DEBUG)
 #define MPIG_STATIC
 #else
 #define MPIG_STATIC static
 #endif
 
-
-#define MPIG_UNUSED_ARG(arg_) {(void) arg_;}
-#define MPIG_UNUSED_VAR(var_) {(void) var_;}
-
+#if defined(MPIG_VMPI)
+#define MPIG_USING_VMPI (TRUE)
+#else
+#define MPIG_USING_VMPI (FALSE)
+#endif
 
 #if defined(HAVE_GETHOSTNAME) && defined(NEEDS_GETHOSTNAME_DECL) && !defined(gethostname)
 int gethostname(char *name, size_t len);
 # endif
 
 
+#if defined(HAVE_GLOBUS_COMMON_MODULE)
 #define mpig_get_globus_error_msg(grc_) (globus_error_print_chain(globus_error_peek(grc_)))
+#endif
+/**********************************************************************************************************************************
+						       BEGIN PT2PT SECTION
+**********************************************************************************************************************************/
+int mpig_adi3_cancel_recv(MPID_Request * rreq);
+/**********************************************************************************************************************************
+							END PT2PT SECTION
+**********************************************************************************************************************************/
 
 
 /**********************************************************************************************************************************
@@ -75,7 +80,7 @@ char * mpig_cm_vtable_last_entry(int foo, float bar, const short * baz, char bif
 
 #define mpig_cm_get_name(cm_) ((cm_)->name)
 
-#define mpig_cm_get_vtable(cm_) ((cm_)->vtable)
+#define mpig_cm_get_vtable(cm_) ((const mpig_cm_vtable_t *)((cm_)->vtable))
 /**********************************************************************************************************************************
 						END COMMUNICATION MODULE SECTION
 **********************************************************************************************************************************/
@@ -84,28 +89,26 @@ char * mpig_cm_vtable_last_entry(int foo, float bar, const short * baz, char bif
 /**********************************************************************************************************************************
 						   BEGIN COMMUNICATOR SECTION
 **********************************************************************************************************************************/
-int mpig_comm_list_wait_empty(void);
+int mpig_comm_init(void);
 
-#define mpig_comm_set_vc(comm_, rank_, vc_)	\
-{						\
-    (comm_)->vcr[(rank_)] = (vc_);		\
-}
-#define mpig_comm_get_vc(comm_, rank_, vc_p_)	\
-{						\
-    *(vc_p_) = (comm_)->vcr[(rank_)];		\
-}
+int mpig_comm_finalize(void);
 
-#define mpig_comm_get_my_vc(comm_, vc_p_)		\
+#define mpig_comm_set_local_vc(comm_, rank_, vc_)	\
 {							\
-    if ((comm_)->comm_kind == MPIR_INTRACOMM)		\
-    {							\
-	*(vc_p_) = (comm_)->vcr[(comm_)->rank];		\
-    }							\
-    else						\
-    {							\
-	*(vc_p_) = (comm_)->local_vcr[(comm_)->rank];	\
-    }							\
+    (comm_)->local_vcr[(rank_)] = (vc_);		\
 }
+
+#define mpig_comm_get_local_vc(comm_, rank_) ((comm_)->local_vcr[(rank_)])
+
+#define mpig_comm_set_remote_vc(comm_, rank_, vc_)	\
+{							\
+    (comm_)->vcr[(rank_)] = (vc_);			\
+}
+
+#define mpig_comm_get_remote_vc(comm_, rank_) ((comm_)->vcr[(rank_)])
+
+#define mpig_comm_get_my_vc(comm_) \
+    ((comm_)->comm_kind == MPID_INTRACOMM) ? ((comm_)->vcr[(comm_)->rank]) : ((comm_)->local_vcr[(comm_)->rank])
 /**********************************************************************************************************************************
 						    END COMMUNICATOR SECTION
 **********************************************************************************************************************************/
@@ -141,35 +144,35 @@ void mpig_datatype_get_my_ctype(const MPI_Datatype dt, mpig_ctype_t * ctype);
 
 #define mpig_datatype_get_src_ctype(/* mpig_vc_t ptr */ vc_, /* MPI_Datatype */ dt_, /* mpig_ctype_t ptr */ ctype_p_)	\
 {															\
-    int dt_id__;													\
+    int mpig_datatype_get_src_ctype_dt_id__;										\
 															\
     MPIU_Assert(HANDLE_GET_KIND(dt_) == MPI_KIND_BUILTIN && HANDLE_GET_MPI_KIND(dt_) == MPID_DATATYPE);			\
-    MPID_Datatype_get_basic_id(dt_, dt_id__);										\
-    MPIU_Assert(dt_id__ < MPIG_DATATYPE_MAX_BASIC_TYPES);								\
-    *(ctype_p_) = (mpig_ctype_t) (vc_)->dt_cmap[dt_id__];								\
+    MPID_Datatype_get_basic_id(dt_, mpig_datatype_get_src_ctype_dt_id__);						\
+    MPIU_Assert(mpig_datatype_get_src_ctype_dt_id__ < MPIG_DATATYPE_MAX_BASIC_TYPES);					\
+    *(ctype_p_) = (mpig_ctype_t) (vc_)->dt_cmap[mpig_datatype_get_src_ctype_dt_id__];					\
 }
 
-#define mpig_datatype_get_my_ctype(/* MPI_Datatype */ dt_, /* mpig_ctype_t ptr */ ctype_p_)	\
-{												\
-    const mpig_vc_t * vc__;									\
-												\
-    mpig_pg_get_vc(mpig_process.my_pg, mpig_process.my_pg_rank, &vc__);				\
-    mpig_datatype_get_src_ctype(vc__, (dt_), (ctype_p_));					\
+#define mpig_datatype_get_my_ctype(/* MPI_Datatype */ dt_, /* mpig_ctype_t ptr */ ctype_p_)		\
+{													\
+    const mpig_vc_t * mpig_datatype_get_my_ctype_vc__;							\
+													\
+    mpig_pg_get_vc(mpig_process.my_pg, mpig_process.my_pg_rank, &mpig_datatype_get_my_ctype_vc__);	\
+    mpig_datatype_get_src_ctype(mpig_datatype_get_my_ctype_vc__, (dt_), (ctype_p_));			\
 }
 
-#define mpig_datatype_get_size(dt_, dt_size_p_)			\
-{								\
-    if (HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN)		\
-    {								\
-	*(dt_size_p_) = MPID_Datatype_get_basic_size(dt_);	\
-    }								\
-    else							\
-    {								\
-	MPID_Datatype * dtp__;					\
-								\
-	MPID_Datatype_get_ptr((dt_), dtp__);			\
-	*(dt_size_p_) = dtp__->size;				\
-    }								\
+#define mpig_datatype_get_size(dt_, dt_size_p_)				\
+{									\
+    if (HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN)			\
+    {									\
+	*(dt_size_p_) = MPID_Datatype_get_basic_size(dt_);		\
+    }									\
+    else								\
+    {									\
+	MPID_Datatype * mpig_datatype_get_size_dtp__;			\
+									\
+	MPID_Datatype_get_ptr((dt_), mpig_datatype_get_size_dtp__);	\
+	*(dt_size_p_) = mpig_datatype_get_size_dtp__->size;		\
+    }									\
 }
 
 #define mpig_datatype_get_info(/* MPI_Datatype */ dt_, /* bool_t ptr */ dt_contig_, /* MPIU_Size_t ptr */ dt_size_,	\
@@ -181,20 +184,20 @@ void mpig_datatype_get_my_ctype(const MPI_Datatype dt, mpig_ctype_t * ctype);
 	*(dt_size_) = MPID_Datatype_get_basic_size(dt_);								\
         *(dt_nblks_) = 1;												\
         *(dt_true_lb_) = 0;												\
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "datatype - type=basic, dt_contig=%s, dt_size=" MPIG_SIZE_FMT		\
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "datatype - type=basic, dt_contig=%s, dt_size=" MPIG_SIZE_FMT		\
 			   ", dt_nblks=" MPIG_SIZE_FMT ", dt_true_lb=" MPIG_AINT_FMT, MPIG_BOOL_STR(*(dt_contig_)),	\
 			 (MPIU_Size_t) *(dt_size_), (MPIU_Size_t) *(dt_nblks_), (MPI_Aint) *(dt_true_lb_)));		\
     }															\
     else														\
     {															\
-	MPID_Datatype * dtp__;												\
+	MPID_Datatype * mpig_datatype_get_info_dtp__;									\
 															\
-	MPID_Datatype_get_ptr((dt_), dtp__);										\
-	*(dt_contig_) = dtp__->is_contig ? TRUE : FALSE;								\
-	*(dt_size_) = dtp__->size;											\
-	*(dt_nblks_) = dtp__->n_contig_blocks;										\
-        *(dt_true_lb_) = dtp__->true_lb;										\
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "datatype - type=user, dt_contig=%s, dt_size=" MPIG_SIZE_FMT		\
+	MPID_Datatype_get_ptr((dt_), mpig_datatype_get_info_dtp__);							\
+	*(dt_contig_) = mpig_datatype_get_info_dtp__->is_contig;							\
+	*(dt_size_) = mpig_datatype_get_info_dtp__->size;								\
+	*(dt_nblks_) = mpig_datatype_get_info_dtp__->n_contig_blocks;							\
+        *(dt_true_lb_) = mpig_datatype_get_info_dtp__->true_lb;								\
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "datatype - type=app, dt_contig=%s, dt_size=" MPIG_SIZE_FMT		\
 			   ", dt_nblks=" MPIG_SIZE_FMT ", dt_true_lb=" MPIG_AINT_FMT, MPIG_BOOL_STR(*(dt_contig_)),	\
 			 (MPIU_Size_t) *(dt_size_), (MPIU_Size_t) *(dt_nblks_), (MPI_Aint) *(dt_true_lb_)));		\
     }															\
@@ -212,7 +215,7 @@ void mpig_datatype_get_my_ctype(const MPI_Datatype dt, mpig_ctype_t * ctype);
  *
  * MT-NOTE: except for the the init and finalize routines, these request allocation routines are thread safe.
  */
-extern globus_mutex_t mpig_request_alloc_mutex;
+extern mpig_mutex_t mpig_request_alloc_mutex;
 
 void mpig_request_alloc_init(void);
 
@@ -221,11 +224,11 @@ void mpig_request_alloc_finalize(void);
 #define mpig_request_alloc(req_p_)				\
 {								\
     /* acquire a request from the object allocation pool */	\
-    globus_mutex_lock(&mpig_request_alloc_mutex);		\
+    mpig_mutex_lock(&mpig_request_alloc_mutex);			\
     {								\
 	*(req_p_) = MPIU_Handle_obj_alloc(&MPID_Request_mem);	\
     }								\
-    globus_mutex_unlock(&mpig_request_alloc_mutex);		\
+    mpig_mutex_unlock(&mpig_request_alloc_mutex);		\
 								\
     mpig_request_mutex_construct(*(req_p_));			\
 }
@@ -235,11 +238,11 @@ void mpig_request_alloc_finalize(void);
     mpig_request_mutex_destruct(req_);					\
 									\
     /* release the request back to the object allocation pool */	\
-    globus_mutex_lock(&mpig_request_alloc_mutex);			\
+    mpig_mutex_lock(&mpig_request_alloc_mutex);				\
     {									\
 	MPIU_Handle_obj_free(&MPID_Request_mem, (req_));		\
     }									\
-    globus_mutex_unlock(&mpig_request_alloc_mutex);			\
+    mpig_mutex_unlock(&mpig_request_alloc_mutex);			\
 }
 
 /*
@@ -268,8 +271,8 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 {															\
     mpig_request_i_set_envelope((req_), (rank_), (tag_), (ctx_));							\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_REQ, "request - set envelope: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT	\
-		     ", rank=%d, tag=%d, ctx=%d", (req_)->handle, (MPIG_PTR_CAST) (req_), (req_)->dev.rank,		\
-		     (req_)->dev.tag, (req_)->dev.ctx));								\
+	", rank=%d, tag=%d, ctx=%d", (req_)->handle, MPIG_PTR_CAST(req_), (req_)->dev.rank,				\
+	(req_)->dev.tag, (req_)->dev.ctx));										\
 }
 
 #define mpig_request_i_get_envelope(req_, rank_p_, tag_p_, ctx_p_)	\
@@ -283,9 +286,11 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 {															\
     mpig_request_i_get_envelope((req_), (rank_p_), (tag_p_), (ctx_p_));							\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_REQ, "request - get envelope: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT	\
-		     ", rank=%d, tag=%d, ctx=%d", (req_)->handle, (MPIG_PTR_CAST) (req_), (req_)->dev.rank,		\
-		     (req_)->dev.tag, (req_)->dev.ctx));								\
+	", rank=%d, tag=%d, ctx=%d", (req_)->handle, MPIG_PTR_CAST(req_), (req_)->dev.rank,				\
+	(req_)->dev.tag, (req_)->dev.ctx));										\
 }
+
+#define mpig_request_get_rank(req_) ((req_)->dev.rank)
 
 #define mpig_request_i_set_buffer(req_, buf_, cnt_, dt_)	\
 {								\
@@ -298,8 +303,8 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 {															\
     mpig_request_i_set_buffer((req_), (buf_), (cnt_), (dt_));								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_REQ, "request - set buffer: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT	\
-		       ", buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT, (req_)->handle, (MPIG_PTR_CAST) (req_),	\
-		      (MPIG_PTR_CAST) (req_)->dev.buf, (req_)->dev.cnt, (req_)->dev.dt));				\
+	", buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT, (req_)->handle, MPIG_PTR_CAST(req_),			\
+	MPIG_PTR_CAST((req_)->dev.buf), (req_)->dev.cnt, (req_)->dev.dt));						\
 }
 
 #define mpig_request_i_get_buffer(req_, buf_p_, cnt_p_, dt_p_)	\
@@ -313,8 +318,8 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 {															\
     mpig_request_i_get_buffer((req_), (buf_p_), (cnt_p_), (dt_p_));							\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_REQ, "request - get buffer: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT	\
-		       ", buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT, (req_)->handle, (MPIG_PTR_CAST) (req_),	\
-		     (MPIG_PTR_CAST) (req_)->dev.buf, (req_)->dev.cnt, (req_)->dev.dt));				\
+	", buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT, (req_)->handle, MPIG_PTR_CAST(req_),			\
+	MPIG_PTR_CAST((req_)->dev.buf), (req_)->dev.cnt, (req_)->dev.dt));						\
 }
 
 #define mpig_request_get_dt(req_) ((req_)->dev.dt)
@@ -328,7 +333,7 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 {															\
     mpig_request_i_set_remote_req_id((req_), (remote_req_id_));								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_REQ, "request - set remote req id: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT	\
-		     ", id=" MPIG_HANDLE_FMT, (req_)->handle, (MPIG_PTR_CAST) (req_), (req_)->dev.remote_req_id));	\
+	", id=" MPIG_HANDLE_FMT, (req_)->handle, MPIG_PTR_CAST(req_), (req_)->dev.remote_req_id));			\
 }
 
 #define mpig_request_get_remote_req_id(req_) ((req_)->dev.remote_req_id)
@@ -380,7 +385,7 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 {																\
     mpig_request_i_set_type((req_), (type_));											\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_REQ, "request - set request type: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT		\
-		       ", type=%s",(req_)->handle, (MPIG_PTR_CAST) (req_), mpig_request_type_get_string((req_)->dev.type)));	\
+	", type=%s",(req_)->handle, MPIG_PTR_CAST(req_), mpig_request_type_get_string((req_)->dev.type)));			\
 }
 
 #define mpig_request_i_set_vc(req_, vc_)	\
@@ -392,7 +397,7 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 {														\
     mpig_request_i_set_vc((req_), (vc_));									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_REQ, "request - set vc: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT	\
-		       ", vc=" MPIG_PTR_FMT, (req_)->handle, (MPIG_PTR_CAST) (req_), (MPIG_PTR_CAST) (vc_)));	\
+	", vc=" MPIG_PTR_FMT, (req_)->handle, MPIG_PTR_CAST(req_), MPIG_PTR_CAST(vc_)));			\
 }
 
 #define mpig_request_get_vc(req_) ((req_)->dev.vc)
@@ -405,21 +410,21 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 /*
  * thread safety and release consistency macros
  */
-#define mpig_request_mutex_construct(req_)	globus_mutex_init(&(req_)->dev.mutex, NULL)
-#define mpig_request_mutex_destruct(req_)	globus_mutex_destroy(&(req_)->dev.mutex)
+#define mpig_request_mutex_construct(req_)	mpig_mutex_construct(&(req_)->dev.mutex)
+#define mpig_request_mutex_destruct(req_)	mpig_mutex_destruct(&(req_)->dev.mutex)
 #define mpig_request_mutex_lock(req_)										\
 {														\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_REQ, "request - acquiring mutex: req="	\
-		       MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, (req_)->handle, (MPIG_PTR_CAST) (req_)));	\
-    globus_mutex_lock(&(req_)->dev.mutex);									\
+	MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, (req_)->handle, MPIG_PTR_CAST(req_)));				\
+    mpig_mutex_lock(&(req_)->dev.mutex);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_REQ, "request - mutex acquired: req="	\
-		       MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, (req_)->handle, (MPIG_PTR_CAST) (req_)));	\
+	MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, (req_)->handle, MPIG_PTR_CAST(req_)));				\
 }
 #define mpig_request_mutex_unlock(req_)										\
 {														\
-    globus_mutex_unlock(&(req_)->dev.mutex);									\
+    mpig_mutex_unlock(&(req_)->dev.mutex);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_REQ, "request - mutex released: req="	\
-		       MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, (req_)->handle, (MPIG_PTR_CAST) (req_)));	\
+	MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, (req_)->handle, MPIG_PTR_CAST(req_)));				\
 }
 
 #define mpig_request_mutex_lock_conditional(req_, cond_)	{if (cond_) mpig_request_mutex_lock(req_);}
@@ -454,7 +459,6 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
     (req_)->partner_request = NULL;						\
     MPIR_Status_set_empty(&(req_)->status);					\
     (req_)->status.MPI_ERROR = MPI_SUCCESS;					\
-    (req_)->status.mpig_dc_format = NEXUS_DC_FORMAT_UNKNOWN;			\
 										\
     /* set device fields */							\
     mpig_request_i_set_type((req_), MPIG_REQUEST_TYPE_UNDEFINED);		\
@@ -462,8 +466,9 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
     mpig_request_i_set_envelope((req_), MPI_PROC_NULL, MPI_ANY_TAG, -1);	\
     (req_)->dev.dtp = NULL;							\
     mpig_request_i_set_remote_req_id((req_), MPI_REQUEST_NULL);			\
-    (req_)->dev.cm_destruct = NULL;						\
+    (req_)->dev.cm_destruct = (mpig_request_cm_destruct_fn_t) NULL;		\
     mpig_request_i_set_vc((req_), NULL);					\
+    (req_)->dev.recvq_unreg_ras_op = NULL;					\
     (req_)->dev.next = NULL;							\
 }
 
@@ -477,7 +482,7 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
     if ((req_)->dev.cm_destruct != NULL)						\
     {											\
 	(req_)->dev.cm_destruct(req_);							\
-	(req_)->dev.cm_destruct = NULL;							\
+	(req_)->dev.cm_destruct = (mpig_request_cm_destruct_fn_t) MPIG_INVALID_PTR;	\
     }											\
 											\
     /* release and communicator and datatype objects associated with the request */	\
@@ -487,22 +492,22 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
     /* resset MPICH fields */								\
     mpig_request_i_set_ref_count((req_), 0);						\
     (req_)->kind = MPID_REQUEST_UNDEFINED;						\
-    (req_)->cc_ptr = NULL;								\
+    (req_)->cc_ptr = MPIG_INVALID_PTR;							\
     mpig_request_i_set_cc((req_), 0);							\
     /* (req_)->comm = NULL; -- cleared by mpig_request_release_comm() */		\
-    (req_)->partner_request = NULL;							\
+    (req_)->partner_request = MPIG_INVALID_PTR;						\
     MPIR_Status_set_empty(&(req_)->status);						\
     (req_)->status.MPI_ERROR = MPI_ERR_INTERN;						\
-    (req_)->status.mpig_dc_format = NEXUS_DC_FORMAT_UNKNOWN;				\
 											\
     /* reset device fields */								\
     mpig_request_i_set_type((req_), MPIG_REQUEST_TYPE_FIRST);				\
-    mpig_request_i_set_buffer((req_), NULL, 0, MPI_DATATYPE_NULL);			\
+    mpig_request_i_set_buffer((req_), MPIG_INVALID_PTR, -1, MPI_DATATYPE_NULL);		\
     mpig_request_i_set_envelope((req_), MPI_PROC_NULL, MPI_ANY_TAG, -1);		\
     /* (req_)->dev.dtp = NULL; -- cleared by mpig_request_release_dt() */		\
     mpig_request_i_set_remote_req_id((req_), MPI_REQUEST_NULL);				\
-    mpig_request_i_set_vc((req_), NULL);						\
-    (req_)->dev.next = NULL;								\
+    mpig_request_i_set_vc((req_), MPIG_INVALID_PTR);					\
+    (req_)->dev.recvq_unreg_ras_op = MPIG_INVALID_PTR;					\
+    (req_)->dev.next = MPIG_INVALID_PTR;						\
 }
 
 #define mpig_request_set_params(req_, kind_, type_, ref_cnt_, cc_, buf_, cnt_, dt_, rank_, tag_, ctx_, vc_)	\
@@ -573,12 +578,12 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
     mpig_request_add_dt_ref((rreq_), (dt_));									\
 }
 
-#define mpig_request_create_irreq(ref_cnt_, cc_, buf_, cnt_, dt_, rank_, tag_, ctx_, comm_, vc_, rreq_p_)		\
-{															\
-    mpig_request_alloc(rreq_p_);											\
-    MPIU_ERR_CHKANDJUMP1((*(rreq_p_) == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");	\
-    mpig_request_construct(*(rreq_p_));											\
-    mpig_request_construct_rreq(*(rreq_p_), (ref_cnt_), (cc_), (buf_), (cnt_), (dt_), (rank_), (tag_), (ctx_), (vc_));	\
+#define mpig_request_create_irreq(ref_cnt_, cc_, buf_, cnt_, dt_, rank_, tag_, ctx_, comm_, vc_, rreq_p_)			 \
+{																 \
+    mpig_request_alloc(rreq_p_);												 \
+    MPIU_ERR_CHKANDJUMP1((*(rreq_p_) == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "receive request");		 \
+    mpig_request_construct(*(rreq_p_));												 \
+    mpig_request_construct_irreq(*(rreq_p_), (ref_cnt_), (cc_), (buf_), (cnt_), (dt_), (rank_), (tag_), (ctx_), (comm_), (vc_)); \
 }
 
 #define mpig_request_create_prreq(ref_cnt_, cc_, buf_, cnt_, dt_, rank_, tag_, ctx_, comm_, rreq_p_)				 \
@@ -599,21 +604,18 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 /**********************************************************************************************************************************
 						   BEGIN PROCESS DATA SECTION
 **********************************************************************************************************************************/
-#define mpig_process_mutex_construct()	globus_mutex_init(&mpig_process.mutex, NULL)
-#define mpig_process_mutex_destruct()	globus_mutex_destroy(&mpig_process.mutex)
-#define mpig_process_mutex_lock()					\
-{									\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS,			\
-		       "process local data - acquiring mutex"));	\
-    globus_mutex_lock(&mpig_process.mutex);				\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS,			\
-		       "process local data - mutex acquired"));		\
+#define mpig_process_mutex_construct()	mpig_mutex_construct(&mpig_process.mutex)
+#define mpig_process_mutex_destruct()	mpig_mutex_destruct(&mpig_process.mutex)
+#define mpig_process_mutex_lock()								\
+{												\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS, "process local data - acquiring mutex"));	\
+    mpig_mutex_lock(&mpig_process.mutex);							\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS, "process local data - mutex acquired"));	\
 }
-#define mpig_process_mutex_unlock()					\
-{									\
-    globus_mutex_unlock(&mpig_process.mutex);				\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS,			\
-		       "process local data - mutex released"));		\
+#define mpig_process_mutex_unlock()								\
+{												\
+    mpig_mutex_unlock(&mpig_process.mutex);							\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS, "process local data - mutex released"));	\
 }
 /**********************************************************************************************************************************
 						    END PROCESS DATA SECTION
@@ -642,14 +644,14 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 #define mpig_dc_get_int64(endian_, buf_, data_p_) mpig_dc_get_uint64((endian_), (buf_), (data_p_))
 #define mpig_dc_getn_int64(endian_, buf_, data_, num_) mpig_dc_get_uint64((endian_), (buf_), (data_), (num_))
 
-#define mpig_dc_put_uint32(buf_, data_)				\
-{								\
-    unsigned char * buf__ = (unsigned char *)(buf_);		\
-    unsigned char * data__ = (unsigned char *) &(data_);	\
-    *(buf__)++ = *(data__)++;					\
-    *(buf__)++ = *(data__)++;					\
-    *(buf__)++ = *(data__)++;					\
-    *(buf__)++ = *(data__)++;					\
+#define mpig_dc_put_uint32(buf_, data_)					\
+{									\
+    unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
+    unsigned char * mpig_dc_data__ = (unsigned char *) &(data_);	\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
 }
 
 #define mpig_dc_putn_uint32(buf_, data_, num_)			\
@@ -657,62 +659,62 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
     memcpy((void *)(buf_), (void *)(data_), (num_) * 4);	\
 }
 
-#define mpig_dc_get_uint32(endian_, buf_, data_p_)			\
+#define mpig_dc_get_uint32(endian_, buf_, data_p_)				\
+{										\
+    if ((endian_) == MPIG_MY_ENDIAN)						\
+    {										\
+	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
+	unsigned char * mpig_dc_data_p__ = (unsigned char *)(data_p_);		\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+    }										\
+    else									\
+    {										\
+	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
+	unsigned char * mpig_dc_data_p__ = (unsigned char *)(data_p_) + 3;	\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+    }										\
+}
+
+#define mpig_dc_getn_uint32(endian_, buf_, data_, num_)			\
 {									\
     if ((endian_) == MPIG_MY_ENDIAN)					\
     {									\
-	unsigned char * buf__ = (unsigned char *)(buf_);		\
-	unsigned char * data_p__ = (unsigned char *)(data_p_);		\
-	*(data_p__)++ = *(buf__)++;					\
-	*(data_p__)++ = *(buf__)++;					\
-	*(data_p__)++ = *(buf__)++;					\
-	*(data_p__)++ = *(buf__)++;					\
+	memcpy((void *)(buf_), (void *)(data_), (num_) * 4);		\
     }									\
     else								\
     {									\
-	unsigned char * buf__ = (unsigned char *)(buf_);		\
-	unsigned char * data_p__ = (unsigned char *)(data_p_) + 3;	\
-	*(data_p__)-- = *(buf__)++;					\
-	*(data_p__)-- = *(buf__)++;					\
-	*(data_p__)-- = *(buf__)++;					\
-	*(data_p__)-- = *(buf__)++;					\
+	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);	\
+	unsigned char * mpig_dc_data__ = (unsigned char *)(data_) + 3;	\
+									\
+	for (n__ = 0; n__ < (num_); n__++)				\
+	{								\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    mpig_dc_data__ += 8;					\
+	}								\
     }									\
 }
 
-#define mpig_dc_getn_uint32(endian_, buf_, data_, num_)		\
-{								\
-    if ((endian_) == MPIG_MY_ENDIAN)				\
-    {								\
-	memcpy((void *)(buf_), (void *)(data_), (num_) * 4);	\
-    }								\
-    else							\
-    {								\
-	unsigned char * buf__ = (unsigned char *)(buf_);	\
-	unsigned char * data__ = (unsigned char *)(data_) + 3;	\
-								\
-	for (n__ = 0; n__ < (num_); n__++)			\
-	{							\
-	    *(data__)-- = *(buf__)++;				\
-	    *(data__)-- = *(buf__)++;				\
-	    *(data__)-- = *(buf__)++;				\
-	    *(data__)-- = *(buf__)++;				\
-	    data__ += 8;					\
-	}							\
-    }								\
-}
-
-#define mpig_dc_put_uint64(buf_, data_)				\
-{								\
-    unsigned char * buf__ = (unsigned char *)(buf_);		\
-    unsigned char * data__ = (unsigned char *) &(data_);	\
-    *(buf__)++ = *(data__)++;					\
-    *(buf__)++ = *(data__)++;					\
-    *(buf__)++ = *(data__)++;					\
-    *(buf__)++ = *(data__)++;					\
-    *(buf__)++ = *(data__)++;					\
-    *(buf__)++ = *(data__)++;					\
-    *(buf__)++ = *(data__)++;					\
-    *(buf__)++ = *(data__)++;					\
+#define mpig_dc_put_uint64(buf_, data_)					\
+{									\
+    unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
+    unsigned char * mpig_dc_data__ = (unsigned char *) &(data_);	\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
 }
 
 #define mpig_dc_putn_uint64(buf_, data_, num_)			\
@@ -720,62 +722,61 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
     memcpy((void *)(buf_), (void *)(data_), (num_) * 8);	\
 }
 
-#define mpig_dc_get_uint64(endian_, buf_, data_p_)			\
+#define mpig_dc_get_uint64(endian_, buf_, data_p_)				\
+{										\
+    if ((endian_) == MPIG_MY_ENDIAN)						\
+    {										\
+	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
+	unsigned char * mpig_dc_data_p__ = (unsigned char *)(data_p_);		\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
+    }										\
+    else									\
+    {										\
+	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
+	unsigned char * mpig_dc_data_p__ = (unsigned char *)(data_p_) + 7;	\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
+    }										\
+}
+
+#define mpig_dc_getn_uint64(endian_, buf_, data_, num_)			\
 {									\
     if ((endian_) == MPIG_MY_ENDIAN)					\
     {									\
-	unsigned char * buf__ = (unsigned char *)(buf_);		\
-	unsigned char * data_p__ = (unsigned char *)(data_p_);		\
-	*(data_p__)++ = *(buf__)++;					\
-	*(data_p__)++ = *(buf__)++;					\
-	*(data_p__)++ = *(buf__)++;					\
-	*(data_p__)++ = *(buf__)++;					\
-	*(data_p__)++ = *(buf__)++;					\
-	*(data_p__)++ = *(buf__)++;					\
-	*(data_p__)++ = *(buf__)++;					\
-	*(data_p__)++ = *(buf__)++;					\
+	memcpy((void *)(buf_), (void *)(data_), (num_) * 8);		\
     }									\
     else								\
     {									\
-	unsigned char * buf__ = (unsigned char *)(buf_);		\
-	unsigned char * data_p__ = (unsigned char *)(data_p_) + 7;	\
-	*(data_p__)-- = *(buf__)++;					\
-	*(data_p__)-- = *(buf__)++;					\
-	*(data_p__)-- = *(buf__)++;					\
-	*(data_p__)-- = *(buf__)++;					\
-	*(data_p__)-- = *(buf__)++;					\
-	*(data_p__)-- = *(buf__)++;					\
-	*(data_p__)-- = *(buf__)++;					\
-	*(data_p__)-- = *(buf__)++;					\
+	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);	\
+	unsigned char * mpig_dc_data__ = (unsigned char *)(data_p) + 7;	\
+									\
+	for (n__ = 0; n__ < (num_); n__++)				\
+	{								\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
+	    mpig_dc_data__ += 16;					\
+	}								\
     }									\
 }
-
-#define mpig_dc_getn_uint64(endian_, buf_, data_, num_)		\
-{								\
-    if ((endian_) == MPIG_MY_ENDIAN)				\
-    {								\
-	memcpy((void *)(buf_), (void *)(data_), (num_) * 8);	\
-    }								\
-    else							\
-    {								\
-	unsigned char * buf__ = (unsigned char *)(buf_);	\
-	unsigned char * data__ = (unsigned char *)(data_p) + 7;	\
-								\
-	for (n__ = 0; n__ < (num_); n__++)			\
-	{							\
-	    *(data__)-- = *(buf__)++;				\
-	    *(data__)-- = *(buf__)++;				\
-	    *(data__)-- = *(buf__)++;				\
-	    *(data__)-- = *(buf__)++;				\
-	    *(data__)-- = *(buf__)++;				\
-	    *(data__)-- = *(buf__)++;				\
-	    *(data__)-- = *(buf__)++;				\
-	    *(data__)-- = *(buf__)++;				\
-	    data__ += 16;					\
-	}							\
-    }								\
-}
-
 /**********************************************************************************************************************************
 						       END DATA CONVERSION
 **********************************************************************************************************************************/
@@ -805,14 +806,17 @@ MPIU_Size_t mpig_iov_unpack_fn(const void * buf, MPIU_Size_t buf_size, mpig_iov_
 
 #define mpig_iov_destruct(iov_)	\
 {				\
-    mpig_iov_nullify(iov_);	\
+    ((mpig_iov_t *)(iov_))->max_entries = -1;				\
+    ((mpig_iov_t *)(iov_))->free_entry = -1;				\
+    ((mpig_iov_t *)(iov_))->cur_entry = -1;				\
+    ((mpig_iov_t *)(iov_))->num_bytes = 0;				\
 }
 
 #define mpig_iov_reset(iov_, num_prealloc_entries_)			\
 {									\
-    ((mpig_iov_t *)(iov_))->num_bytes = 0;				\
     ((mpig_iov_t *)(iov_))->free_entry = (num_prealloc_entries_);	\
     ((mpig_iov_t *)(iov_))->cur_entry = 0;				\
+    ((mpig_iov_t *)(iov_))->num_bytes = 0;				\
 }
 
 #define mpig_iov_nullify(iov_)			\
@@ -820,7 +824,7 @@ MPIU_Size_t mpig_iov_unpack_fn(const void * buf, MPIU_Size_t buf_size, mpig_iov_
     ((mpig_iov_t *)(iov_))->max_entries = 0;	\
 }
 
-#define mpig_iov_is_null(iov_) ((((mpig_iov_t *)(iov_))->max_entries == 0) ? TRUE : FALSE)
+#define mpig_iov_is_null(iov_) (((mpig_iov_t *)(iov_))->max_entries == 0)
 
 #define mpig_iov_set_entry(iov_, entry_, buf_, bytes_)					\
 {											\
@@ -835,8 +839,8 @@ MPIU_Size_t mpig_iov_unpack_fn(const void * buf, MPIU_Size_t buf_size, mpig_iov_
     MPIU_Assert(((mpig_iov_t *)(iov_))->free_entry < ((mpig_iov_t *)(iov_))->max_entries);			\
     ((mpig_iov_t *)(iov_))->iov[((mpig_iov_t *)(iov_))->free_entry].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)(buf_);	\
     ((mpig_iov_t *)(iov_))->iov[((mpig_iov_t *)(iov_))->free_entry].MPID_IOV_LEN = (bytes_);			\
-    ((mpig_iov_t *)(iov_))->num_bytes += (bytes_);								\
     ((mpig_iov_t *)(iov_))->free_entry += 1;									\
+    ((mpig_iov_t *)(iov_))->num_bytes += (bytes_);								\
 }
 
 #define mpig_iov_inc_num_inuse_entries(iov_, n_)						\
@@ -935,9 +939,9 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
     ((mpig_databuf_t *)(dbuf_))->eod = (MPIU_Size_t)(val_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATABUF,										\
 	"databuf - set eod: databuf=" MPIG_PTR_FMT ", val=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", pos=" MPIG_SIZE_FMT	\
-	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (dbuf_), (MPIU_Size_t)(val_),	\
+	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, MPIG_PTR_CAST(dbuf_), (MPIU_Size_t)(val_),	\
 	((mpig_databuf_t *)(dbuf_))->size, ((mpig_databuf_t *)(dbuf_))->pos, ((mpig_databuf_t *)(dbuf_))->eod,			\
-	(MPIG_PTR_CAST) mpig_databuf_get_eod_ptr(dbuf_), (MPIG_PTR_CAST) mpig_databuf_get_pos_ptr(dbuf_)));			\
+	MPIG_PTR_CAST(mpig_databuf_get_eod_ptr(dbuf_)), MPIG_PTR_CAST(mpig_databuf_get_pos_ptr(dbuf_))));			\
 }
 
 #define mpig_databuf_inc_eod(dbuf_, val_)											\
@@ -946,9 +950,9 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
     ((mpig_databuf_t *)(dbuf_))->eod += (MPIU_Size_t)(val_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATABUF,										\
 	"databuf - inc eod: databuf=" MPIG_PTR_FMT ", val=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", pos=" MPIG_SIZE_FMT	\
-	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (dbuf_), (MPIU_Size_t)(val_),	\
+	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, MPIG_PTR_CAST(dbuf_), (MPIU_Size_t)(val_),	\
 	((mpig_databuf_t *)(dbuf_))->size, ((mpig_databuf_t *)(dbuf_))->pos, ((mpig_databuf_t *)(dbuf_))->eod,			\
-	(MPIG_PTR_CAST) mpig_databuf_get_eod_ptr(dbuf_), (MPIG_PTR_CAST) mpig_databuf_get_pos_ptr(dbuf_)));			\
+	MPIG_PTR_CAST(mpig_databuf_get_eod_ptr(dbuf_)), MPIG_PTR_CAST(mpig_databuf_get_pos_ptr(dbuf_))));			\
 }
 
 #define mpig_databuf_dec_eod(dbuf_, val_)											\
@@ -957,9 +961,9 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
     ((mpig_databuf_t *)(dbuf_))->eod -= (MPIU_Size_t)(val_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATABUF,										\
 	"databuf - dec eod: databuf=" MPIG_PTR_FMT ", val=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", pos=" MPIG_SIZE_FMT	\
-	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (dbuf_), (MPIU_Size_t)(val_),	\
+	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, MPIG_PTR_CAST(dbuf_), (MPIU_Size_t)(val_),	\
 	((mpig_databuf_t *)(dbuf_))->size, ((mpig_databuf_t *)(dbuf_))->pos, ((mpig_databuf_t *)(dbuf_))->eod,			\
-	(MPIG_PTR_CAST) mpig_databuf_get_eod_ptr(dbuf_), (MPIG_PTR_CAST) mpig_databuf_get_pos_ptr(dbuf_)));			\
+	MPIG_PTR_CAST(mpig_databuf_get_eod_ptr(dbuf_)), MPIG_PTR_CAST(mpig_databuf_get_pos_ptr(dbuf_))));			\
 }
 
 #define mpig_databuf_get_pos(dbuf_) (((mpig_databuf_t *)(dbuf_))->pos)
@@ -970,9 +974,9 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
     ((mpig_databuf_t *)(dbuf_))->pos = (MPIU_Size_t)(val_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATABUF,										\
 	"databuf - set pos: databuf=" MPIG_PTR_FMT ", val=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", pos=" MPIG_SIZE_FMT	\
-	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (dbuf_), (MPIU_Size_t)(val_),	\
+	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, MPIG_PTR_CAST(dbuf_), (MPIU_Size_t)(val_),	\
 	((mpig_databuf_t *)(dbuf_))->size, ((mpig_databuf_t *)(dbuf_))->pos, ((mpig_databuf_t *)(dbuf_))->eod,			\
-	(MPIG_PTR_CAST) mpig_databuf_get_eod_ptr(dbuf_), (MPIG_PTR_CAST) mpig_databuf_get_pos_ptr(dbuf_)));			\
+	MPIG_PTR_CAST(mpig_databuf_get_eod_ptr(dbuf_)), MPIG_PTR_CAST(mpig_databuf_get_pos_ptr(dbuf_))));			\
 }
 
 #define mpig_databuf_inc_pos(dbuf_, val_)											\
@@ -981,9 +985,9 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
     ((mpig_databuf_t *)(dbuf_))->pos += (MPIU_Size_t)(val_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATABUF,										\
 	"databuf - inc pos: databuf=" MPIG_PTR_FMT ", val=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", pos=" MPIG_SIZE_FMT	\
-	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (dbuf_), (MPIU_Size_t)(val_),	\
+	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, MPIG_PTR_CAST(dbuf_), (MPIU_Size_t)(val_),	\
 	((mpig_databuf_t *)(dbuf_))->size, ((mpig_databuf_t *)(dbuf_))->pos, ((mpig_databuf_t *)(dbuf_))->eod,			\
-	(MPIG_PTR_CAST) mpig_databuf_get_eod_ptr(dbuf_), (MPIG_PTR_CAST) mpig_databuf_get_pos_ptr(dbuf_)));			\
+	MPIG_PTR_CAST(mpig_databuf_get_eod_ptr(dbuf_)), MPIG_PTR_CAST(mpig_databuf_get_pos_ptr(dbuf_))));			\
 }
 
 #define mpig_databuf_dec_pos(dbuf_, val_)											\
@@ -992,9 +996,9 @@ void mpig_databuf_destroy(mpig_databuf_t * dbuf);
     ((mpig_databuf_t *)(dbuf_))->pos -= (MPIU_Size_t)(val_);									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATABUF,										\
 	"databuf - dec pos: databuf=" MPIG_PTR_FMT ", val=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", pos=" MPIG_SIZE_FMT	\
-	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (dbuf_), (MPIU_Size_t)(val_),	\
+	", eod=" MPIG_SIZE_FMT ", eodp=" MPIG_PTR_FMT ", posp=" MPIG_PTR_FMT, MPIG_PTR_CAST(dbuf_), (MPIU_Size_t)(val_),	\
 	((mpig_databuf_t *)(dbuf_))->size, ((mpig_databuf_t *)(dbuf_))->pos, ((mpig_databuf_t *)(dbuf_))->eod,			\
-	(MPIG_PTR_CAST) mpig_databuf_get_eod_ptr(dbuf_), (MPIG_PTR_CAST) mpig_databuf_get_pos_ptr(dbuf_)));			\
+	MPIG_PTR_CAST(mpig_databuf_get_eod_ptr(dbuf_)), MPIG_PTR_CAST(mpig_databuf_get_pos_ptr(dbuf_))));			\
 }
 
 #define mpig_databuf_get_remaining_bytes(dbuf_) (mpig_databuf_get_eod(dbuf_) - mpig_databuf_get_pos(dbuf_))
@@ -1033,13 +1037,13 @@ int mpig_strspace_extract_next_element(mpig_strspace_t * space, size_t growth, c
     (space_)->pos = 0;			\
 }
 
-#define mpig_strspace_destruct(space_)	\
-{					\
-    MPIU_Free((space_)->base);		\
-    (space_)->base = NULL;		\
-    (space_)->size = 0;			\
-    (space_)->eod = 0;			\
-    (space_)->pos = 0;			\
+#define mpig_strspace_destruct(space_)			\
+{							\
+    if ((space_)->base) MPIU_Free((space_)->base);	\
+    (space_)->base = MPIG_INVALID_PTR;			\
+    (space_)->size = 0;					\
+    (space_)->eod = 0;					\
+    (space_)->pos = 0;					\
 }
 
 #define mpig_strspace_reset(space_)	\
@@ -1142,13 +1146,13 @@ int mpig_bc_deserialize_object(const char *, mpig_bc_t * bc);
     (bc_)->str_left = 0;	\
 }
 
-#define mpig_bc_destruct(bc_)		\
-{					\
-    MPIU_Free((bc_)->str_begin);	\
-    (bc_)->str_begin = NULL;		\
-    (bc_)->str_end = NULL;		\
-    (bc_)->str_size = 0;		\
-    (bc_)->str_left = 0;		\
+#define mpig_bc_destruct(bc_)				\
+{							\
+    if ((bc_)->str_begin) MPIU_Free((bc_)->str_begin);	\
+    (bc_)->str_begin = MPIG_INVALID_PTR;		\
+    (bc_)->str_end = MPIG_INVALID_PTR;			\
+    (bc_)->str_size = 0;				\
+    (bc_)->str_left = 0;				\
 }
 /**********************************************************************************************************************************
 						    END BUSINESS CARD SECTION
@@ -1195,8 +1199,8 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
     (vc_)->cms.ci_initialized = FALSE;			\
     (vc_)->cms.topology_num_levels = -1;		\
     (vc_)->cms.topology_levels = 0;			\
-    (vc_)->cms.lan_id = NULL;				\
     (vc_)->cms.app_num = -1;				\
+    (vc_)->cms.lan_id = NULL;				\
     (vc_)->lpid = -1;					\
 }
 
@@ -1209,15 +1213,15 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
     mpig_vc_destruct_contact_info(vc_);					\
     mpig_vc_i_set_ref_count((vc_), 0);					\
     mpig_vc_set_initialized((vc_), FALSE);				\
-    mpig_vc_set_cm((vc_), NULL);					\
-    mpig_vc_set_vtable((vc_), NULL);					\
-    mpig_vc_set_pg_info((vc_), NULL, -1);				\
+    mpig_vc_set_cm((vc_), MPIG_INVALID_PTR);				\
+    mpig_vc_set_vtable((vc_), MPIG_INVALID_PTR);			\
+    mpig_vc_set_pg_info((vc_), MPIG_INVALID_PTR, -1);			\
     mpig_bc_destruct(mpig_vc_get_bc(vc_));				\
     (vc_)->cms.ci_initialized = FALSE;					\
     (vc_)->cms.topology_num_levels = -1;				\
     (vc_)->cms.topology_levels = 0;					\
-    (vc_)->cms.lan_id = NULL;						\
     (vc_)->cms.app_num = -1;						\
+    (vc_)->cms.lan_id = MPIG_INVALID_PTR;				\
     (vc_)->lpid = -1;							\
     mpig_vc_mutex_destruct(vc_);					\
 }
@@ -1237,16 +1241,16 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
 {														\
     mpig_vc_i_set_ref_count((vc_), (ref_count_));								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC,						\
-	"VC - set ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (vc_), (vc_)->ref_count));	\
+	"VC - set ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", MPIG_PTR_CAST(vc_), (vc_)->ref_count));	\
 }
 
 #define mpig_vc_inc_ref_count(vc_, was_inuse_p_)									\
 {															\
     if ((vc_)->vtable->vc_inc_ref_count == NULL)									\
     {															\
-	*(was_inuse_p_) = ((vc_)->ref_count++) ? TRUE : FALSE;								\
+	*(was_inuse_p_) = ((vc_)->ref_count++);										\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC,						\
-	    "VC - increment ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (vc_), (vc_)->ref_count));	\
+	    "VC - increment ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", MPIG_PTR_CAST(vc_), (vc_)->ref_count));	\
     }															\
     else														\
     {															\
@@ -1258,9 +1262,9 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
 {															\
     if ((vc_)->vtable->vc_dec_ref_count == NULL)									\
     {															\
-	*(is_inuse_p_) = (--(vc_)->ref_count) ? TRUE : FALSE;								\
+	*(is_inuse_p_) = (--(vc_)->ref_count);										\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_VC,						\
-	    "VC - decrement ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (vc_), (vc_)->ref_count));	\
+	    "VC - decrement ref count: vc=" MPIG_PTR_FMT ", ref_count=%d", MPIG_PTR_CAST(vc_), (vc_)->ref_count));	\
     }															\
     else														\
     {															\
@@ -1302,7 +1306,7 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
     (vc_)->vtable = (vtable_);			\
 }
 
-#define mpig_vc_get_vtable(vc_, func_) ((vc_)->vtable)
+#define mpig_vc_get_vtable(vc_, func_) ((const mpig_vc_vtable_t *)((vc_)->vtable))
 
 #define mpig_vc_set_pg_info(vc_, pg_, pg_rank_)	\
 {						\
@@ -1320,26 +1324,26 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
 
 #define mpig_vc_get_topology_levels(vc_) ((vc_)->cms.topology_levels)
 
-#define mpig_vc_get_lan_id(vc_) ((const char *)((vc_)->cms.lan_id))
-
 #define mpig_vc_get_app_num(vc_) ((vc_)->cms.app_num)
 
+#define mpig_vc_get_lan_id(vc_) ((vc_)->cms.lan_id)
+
 /* Thread safety and release consistency macros */
-#define mpig_vc_mutex_construct(vc_)	globus_mutex_init(&(vc_)->mutex, NULL)
-#define mpig_vc_mutex_destruct(vc_)	globus_mutex_destroy(&(vc_)->mutex)
-#define mpig_vc_mutex_lock(vc_)									\
-{												\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,				\
-		       "VC - acquiring mutex: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (vc_)));	\
-    globus_mutex_lock(&(vc_)->mutex);								\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,				\
-		       "VC - mutex acquired: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (vc_)));	\
+#define mpig_vc_mutex_construct(vc_)	mpig_mutex_construct(&(vc_)->mutex)
+#define mpig_vc_mutex_destruct(vc_)	mpig_mutex_destruct(&(vc_)->mutex)
+#define mpig_vc_mutex_lock(vc_)						\
+{									\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,	\
+	"VC - acquiring mutex: vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc_)));	\
+    mpig_mutex_lock(&(vc_)->mutex);					\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,	\
+	"VC - mutex acquired: vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc_)));	\
 }
-#define mpig_vc_mutex_unlock(vc_)								\
-{												\
-    globus_mutex_unlock(&(vc_)->mutex);								\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,				\
-		       "VC - mutex released: vc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (vc_)));	\
+#define mpig_vc_mutex_unlock(vc_)					\
+{									\
+    mpig_mutex_unlock(&(vc_)->mutex);					\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,	\
+	"VC - mutex released: vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc_)));	\
 }
 
 #define mpig_vc_mutex_lock_conditional(vc_, cond_)	{if (cond_) mpig_vc_mutex_lock(vc_);}
@@ -1360,7 +1364,7 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
  */
 typedef struct mpig_vcrt
 {
-    globus_mutex_t mutex;
+    mpig_mutex_t mutex;
 
     /* number of references to this object */
     int ref_count;
@@ -1388,21 +1392,21 @@ int mpig_vcrt_deserialize_object(char * str, mpig_vcrt_t ** vcrt_p);
 #define mpig_vcrt_size(vcrt_) ((vcrt_)->size)
 
 /* Thread safety and release consistency macros */
-#define mpig_vcrt_mutex_construct(vcrt_)	globus_mutex_init(&(vcrt_)->mutex, NULL)
-#define mpig_vcrt_mutex_destruct(vcrt_)		globus_mutex_destroy(&(vcrt_)->mutex)
-#define mpig_vcrt_mutex_lock(vcrt_)								\
-{												\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,				\
-		       "VCRT - acquiring mutex: vcrt=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (vcrt_)));	\
-    globus_mutex_lock(&(vcrt_)->mutex);								\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,				\
-		       "VCRT - mutex acquired: vcrt=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (vcrt_)));	\
+#define mpig_vcrt_mutex_construct(vcrt_)	mpig_mutex_construct(&(vcrt_)->mutex)
+#define mpig_vcrt_mutex_destruct(vcrt_)		mpig_mutex_destruct(&(vcrt_)->mutex)
+#define mpig_vcrt_mutex_lock(vcrt_)						\
+{										\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,		\
+    "VCRT - acquiring mutex: vcrt=" MPIG_PTR_FMT, MPIG_PTR_CAST(vcrt_)));	\
+    mpig_mutex_lock(&(vcrt_)->mutex);						\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,		\
+	"VCRT - mutex acquired: vcrt=" MPIG_PTR_FMT, MPIG_PTR_CAST(vcrt_)));	\
 }
-#define mpig_vcrt_mutex_unlock(vcrt_)								\
-{												\
-    globus_mutex_unlock(&(vcrt_)->mutex);							\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,				\
-		       "VCRT - mutex released: vcrt=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (vcrt_)));	\
+#define mpig_vcrt_mutex_unlock(vcrt_)						\
+{										\
+    mpig_mutex_unlock(&(vcrt_)->mutex);						\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_VC,		\
+	"VCRT - mutex released: vcrt=" MPIG_PTR_FMT, MPIG_PTR_CAST(vcrt_)));	\
 }
 
 #define mpig_vcrt_mutex_lock_conditional(vcrt_, cond_)	    {if (cond_) mpig_vcrt_mutex_lock(vcrt_);}
@@ -1438,15 +1442,15 @@ void mpig_pg_commit(mpig_pg_t * pg);
 {															\
     (pg_)->ref_count++;													\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_PG,							\
-	"PG - increment ref count: pg=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (pg_), (pg_)->ref_count));	\
+	"PG - increment ref count: pg=" MPIG_PTR_FMT ", ref_count=%d", MPIG_PTR_CAST(pg_), (pg_)->ref_count));		\
 }
 
 
 #define mpig_pg_dec_ref_count(pg_, is_inuse_p_)										\
 {															\
-    *(is_inuse_p_) = (--(pg_)->ref_count) ? TRUE : FALSE;								\
+    *(is_inuse_p_) = (--(pg_)->ref_count);										\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_PG,							\
-	"PG - decrement ref count: pg=" MPIG_PTR_FMT ", ref_count=%d", (MPIG_PTR_CAST) (pg_), (pg_)->ref_count));	\
+	"PG - decrement ref count: pg=" MPIG_PTR_FMT ", ref_count=%d", MPIG_PTR_CAST(pg_), (pg_)->ref_count));		\
 }
 
 /*
@@ -1491,21 +1495,21 @@ void mpig_pg_commit(mpig_pg_t * pg);
 /*
  * thread saftey and release consistency macros
  */
-#define mpig_pg_mutex_construct(pg_)	globus_mutex_init(&(pg_)->mutex, NULL)
-#define mpig_pg_mutex_destruct(pg_)     globus_mutex_destroy(&(pg_)->mutex)
-#define mpig_pg_mutex_lock(pg_)									\
-{												\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG,				\
-		       "PG - acquiring mutex: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (pg_)));	\
-    globus_mutex_lock(&(pg_)->mutex);								\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG,				\
-		       "PG - mutex acquired: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (pg_)));	\
+#define mpig_pg_mutex_construct(pg_)	mpig_mutex_construct(&(pg_)->mutex)
+#define mpig_pg_mutex_destruct(pg_)     mpig_mutex_destruct(&(pg_)->mutex)
+#define mpig_pg_mutex_lock(pg_)						\
+{									\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG,	\
+	"PG - acquiring mutex: pg=" MPIG_PTR_FMT, MPIG_PTR_CAST(pg_)));	\
+    mpig_mutex_lock(&(pg_)->mutex);					\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG,	\
+	"PG - mutex acquired: pg=" MPIG_PTR_FMT, MPIG_PTR_CAST(pg_)));	\
 }
-#define mpig_pg_mutex_unlock(pg_)								\
-{												\
-    globus_mutex_unlock(&(pg_)->mutex);								\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG,				\
-		       "PG - mutex released: pg=" MPIG_PTR_FMT, (MPIG_PTR_CAST) (pg_)));	\
+#define mpig_pg_mutex_unlock(pg_)					\
+{									\
+    mpig_mutex_unlock(&(pg_)->mutex);					\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_THREADS | MPIG_DEBUG_LEVEL_PG,	\
+	"PG - mutex released: pg=" MPIG_PTR_FMT, MPIG_PTR_CAST(pg_)));	\
 }
 #define mpig_pg_mutex_lock_conditional(pg_, cond_)	{if (cond_) mpig_pg_mutex_lock(pg_);}
 #define mpig_pg_mutex_unlock_conditional(pg_, cond_)	{if (cond_) mpig_pg_mutex_unlock(pg_);}
@@ -1533,17 +1537,43 @@ int mpig_recvq_init(void);
 
 int mpig_recvq_finalize(void);
 
-struct MPID_Request * mpig_recvq_find_unexp(int rank, int tag, int ctx);
+int mpig_recvq_find_unexp_and_extract_status(int rank, int tag, MPID_Comm * comm, int ctx, bool_t * found_p,
+    MPI_Status * status);
 
-struct MPID_Request * mpig_recvq_deq_unexp(int rank, int tag, int ctx, MPI_Request sreq_id);
+struct MPID_Request * mpig_recvq_find_unexp_and_deq(int rank, int tag, int ctx, MPI_Request sreq_id);
 
 bool_t mpig_recvq_deq_unexp_rreq(struct MPID_Request * rreq);
 
-bool_t mpig_recvq_deq_posted_rreq(struct MPID_Request * rreq);
+int mpig_recvq_cancel_posted_rreq(struct MPID_Request * rreq, bool_t * cancelled_p);
 
-struct MPID_Request * mpig_recvq_deq_unexp_or_enq_posted(int rank, int tag, int ctx, int * found_p);
+int mpig_recvq_deq_unexp_or_enq_posted(int rank, int tag, int ctx, const mpig_msg_op_params_t * recv_any_source_params,
+    int * found_p, MPID_Request ** rreq_p);
 
-struct MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(int rank, int tag, int ctx, int * found_p);
+int mpig_recvq_deq_posted_or_enq_unexp(mpig_vc_t * vc, int rank, int tag, int ctx, int * found_p, MPID_Request ** rreq_p);
+
+#if defined(MPIG_VMPI)
+bool_t mpig_recvq_deq_posted_ras_req(struct MPID_Request * rreq, bool_t vcancelled);
+
+int mpig_recvq_unregister_ras_vreqs(void);
+
+#define mpig_recvq_ras_op_signal_complete(ras_op_)	\
+{							\
+    (ras_op_)->complete = TRUE;				\
+    if ((ras_op_)->cond_in_use)				\
+    {							\
+	mpig_cond_signal(&(ras_op_)->cond);		\
+    }							\
+}
+
+#define mpig_recvq_ras_op_get_rreq(ras_op_) ((ras_op_)->req)
+
+#define mpig_recvq_ras_op_set_cancelled_state(ras_op_, flag_)		\
+{                                                                       \
+    (ras_op_)->cancelled = (flag_);                                     \
+}
+
+#define mpig_recvq_ras_op_get_cancelled_state(ras_op_) ((ras_op_)->cancelled)
+#endif
 /**********************************************************************************************************************************
 						    END RECEIVE QUEUE SECTION
 **********************************************************************************************************************************/
@@ -1552,7 +1582,9 @@ struct MPID_Request * mpig_recvq_deq_posted_or_enq_unexp(int rank, int tag, int 
 /**********************************************************************************************************************************
 						BEGIN PROCESS MANAGEMENT SECTION
 **********************************************************************************************************************************/
-int mpig_pm_init(void);
+struct mpig_pm;
+
+int mpig_pm_init(int * argc, char *** argv);
 
 int mpig_pm_finalize(void);
 
@@ -1570,76 +1602,56 @@ int mpig_pm_get_pg_id(const char ** pg_id_p);
 
 int mpig_pm_get_app_num(const mpig_bc_t * bc, int * app_num);
 
-
-int mpig_pm_gk_init(void);
-
-int mpig_pm_gk_finalize(void);
-
-int mpig_pm_gk_abort(int exit_code);
-
-int mpig_pm_gk_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_p);
-
-int mpig_pm_gk_free_business_cards(mpig_bc_t * bcs);
-
-int mpig_pm_gk_get_pg_size(int * pg_size);
-
-int mpig_pm_gk_get_pg_rank(int * pg_rank);
-
-int mpig_pm_gk_get_pg_id(const char ** pg_id_p);
-
-int mpig_pm_gk_get_app_num(const mpig_bc_t * bc, int * app_num);
+float * mpig_pm_vtable_last_entry(double foo, int bar, const float * baz, short bif);
 
 
-int mpig_pm_ws_init(void);
+typedef int (*mpig_pm_init_fn_t)(int * argc, char *** argv, struct mpig_pm * pm, bool_t * my_pm);
 
-int mpig_pm_ws_finalize(void);
+typedef int (*mpig_pm_finalize_fn_t)(struct mpig_pm * pm);
 
-int mpig_pm_ws_abort(int exit_code);
+typedef int (*mpig_pm_abort_fn_t)(struct mpig_pm * pm, int exit_code);
 
-int mpig_pm_ws_exchange_business_cards(mpig_bc_t * bc, mpig_bc_t ** bcs_p);
+typedef int (*mpig_pm_exchange_business_cards_fn_t)(struct mpig_pm * pm, mpig_bc_t * bc, mpig_bc_t ** bcs_p);
 
-int mpig_pm_ws_free_business_cards(mpig_bc_t * bcs);
+typedef int (*mpig_pm_free_business_cards_fn_t)(struct mpig_pm * pm, mpig_bc_t * bcs);
 
-int mpig_pm_ws_get_pg_size(int * pg_size);
+typedef int (*mpig_pm_get_pg_size_fn_t)(struct mpig_pm * pm, int * pg_size);
 
-int mpig_pm_ws_get_pg_rank(int * pg_rank);
+typedef int (*mpig_pm_get_pg_rank_fn_t)(struct mpig_pm * pm, int * pg_rank);
 
-int mpig_pm_ws_get_pg_id(const char ** pg_id_p);
+typedef int (*mpig_pm_get_pg_id_fn_t)(struct mpig_pm * pm, const char ** pg_id_p);
 
-int mpig_pm_ws_get_app_num(const mpig_bc_t * bc, int * app_num);
+typedef int (*mpig_pm_get_app_num_fn_t)(struct mpig_pm * pm, const mpig_bc_t * bc, int * app_num);
 
-#if 1
-#define mpig_pm_init mpig_pm_gk_init
-#define mpig_pm_finalize mpig_pm_gk_finalize
-#define mpig_pm_abort mpig_pm_gk_abort
-#define mpig_pm_exchange_business_cards mpig_pm_gk_exchange_business_cards
-#define mpig_pm_free_business_cards mpig_pm_gk_free_business_cards
-#define mpig_pm_get_pg_size mpig_pm_gk_get_pg_size
-#define mpig_pm_get_pg_rank mpig_pm_gk_get_pg_rank
-#define mpig_pm_get_pg_id mpig_pm_gk_get_pg_id
-#define mpig_pm_get_app_num mpig_pm_gk_get_app_num
-#else
-#define mpig_pm_init mpig_pm_ws_init
-#define mpig_pm_finalize mpig_pm_ws_finalize
-#define mpig_pm_abort mpig_pm_ws_abort
-#define mpig_pm_exchange_business_cards mpig_pm_ws_exchange_business_cards
-#define mpig_pm_free_business_cards mpig_pm_ws_free_business_cards
-#define mpig_pm_get_pg_size mpig_pm_ws_get_pg_size
-#define mpig_pm_get_pg_rank mpig_pm_ws_get_pg_rank
-#define mpig_pm_get_pg_id mpig_pm_ws_get_pg_id
-#define mpig_pm_get_app_num mpig_pm_ws_get_app_num
-#endif
+typedef float * (*mpig_pm_vtable_last_entry_fn_t)(double foo, int bar, const float * baz, short bif);
+
+
+typedef struct mpig_pm_vtable
+{
+    mpig_pm_init_fn_t init;
+    mpig_pm_finalize_fn_t finalize;
+    mpig_pm_abort_fn_t abort;
+    mpig_pm_exchange_business_cards_fn_t exchange_business_cards;
+    mpig_pm_free_business_cards_fn_t free_business_cards;
+    mpig_pm_get_pg_size_fn_t get_pg_size;
+    mpig_pm_get_pg_rank_fn_t get_pg_rank;
+    mpig_pm_get_pg_id_fn_t get_pg_id;
+    mpig_pm_get_app_num_fn_t get_app_num;
+    mpig_pm_vtable_last_entry_fn_t vtable_last_entry;
+}
+mpig_pm_vtable_t;
+
+typedef struct mpig_pm
+{
+    const char * name;
+    mpig_pm_vtable_t * vtable;
+}
+mpig_pm_t;
+
+#define mpig_pm_get_name(pm_) ((pm_)->name)
+#define mpig_pm_get_vtable(pm_) ((const mpig_pm_vtable_t *)((pm_)->vtable))
 /**********************************************************************************************************************************
 						 END PROCESS MANAGEMENT SECTION
-**********************************************************************************************************************************/
-
-
-/**********************************************************************************************************************************
-						       BEGIN PT2PT SECTION
-**********************************************************************************************************************************/
-int mpig_adi3_cancel_recv(MPID_Request * rreq);
-/**********************************************************************************************************************************
-							END PT2PT SECTION
 **********************************************************************************************************************************/
 
 
@@ -1669,27 +1681,108 @@ int mpig_port_vc_close(mpig_vc_t * port_vc);
 
 
 /**********************************************************************************************************************************
-						       BEGIN VENDOR MPI SECTION
+                                                    BEGIN VENDOR MPI SECTION
 **********************************************************************************************************************************/
 #if defined(MPIG_VMPI)
 void mpig_vmpi_error_to_mpich2_error(int vendor_errno, int * mpi_errno_p);
 #endif
 /**********************************************************************************************************************************
-							END VENDOR MPI SECTION
+                                                     END VENDOR MPI SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+                                                       BEGIN UUID SECTION
+**********************************************************************************************************************************/
+#if defined(HAVE_UUID_GENERATE) && defined(HAVE_UUID_UNPARSE) && defined(HAVE_UUID_UUID_H)
+
+#define mpig_uuid_nullify(uuid_p_)      \
+{                                       \
+    uuid_clear((uuid_p_)->uuid);        \
+}
+#define mpig_uuid_generate(uuid_p_) (uuid_generate((uuid_p_)->uuid), MPI_SUCCESS)
+#define mpig_uuid_copy(uuid_src_p_, uuid_dest_p_)               \
+{                                                               \
+    uuid_copy((uuid_dest_p_)->uuid, (uuid_src_p_)->uuid);       \
+}
+#define mpig_uuid_parse(str_, uuid_p_) (uuid_parse((str_), (uuid_p_)->uuid), MPI_SUCCESS)
+#define mpig_uuid_unparse(uuid_p_, str_)        \
+{                                               \
+    uuid_unparse((uuid_p_)->uuid, (str_));      \
+}
+#define mpig_uuid_compare(uuid1_p_, uuid2_p_) ((uuid_compare((uuid1_p_)->uuid, (uuid2_p_)->uuid) == 0) ? TRUE : FALSE)
+#define mpig_uuid_is_null(uuid_p_) (uuid_is_null((uuid_p_)->uuid) ? TRUE : FALSE)
+
+#elif defined (HAVE_GLOBUS_COMMON_MODULE)
+
+#define mpig_uuid_nullify(uuid_p_)                              \
+{                                                               \
+    memset((uuid_p_)->binary.bytes, 0, 16);                     \
+    memset((uuid_p_)->text, 0, MPIG_UUID_MAX_STR_LEN + 1);      \
+}
+#define mpig_uuid_generate(uuid_p_) (globus_uuid_create(uuid_p_) == GLOBUS_SUCCESS ? MPI_SUCCESS : MPI_ERR_OTHER)
+#define mpig_uuid_copy(uuid_src_p_, uuid_dest_p_)                                       \
+{                                                                                       \
+    memcpy((uuid_dest_p_)->binary.bytes, (uuid_src_p_)->binary.bytes, 16);              \
+    MPIU_Strncpy((uuid_dest_p_)->text, (uuid_src_p_)->text, GLOBUS_UUID_TEXTLEN + 1);   \
+}
+#define mpig_uuid_parse(str_, uuid_p_) ((globus_uuid_import((uuid_p_), (str_)) == GLOBUS_SUCCESS) ? MPI_SUCCESS : MPI_ERR_OTHER)
+#define mpig_uuid_unparse(uuid_p_, str_)                                \
+{                                                                       \
+    MPIU_Strncpy((str_), (uuid_p_)->text, MPIG_UUID_MAX_STR_LEN + 1);   \
+}
+#define mpig_uuid_compare(uuid1_p_, uuid2_p_) (GLOBUS_UUID_MATCH(*(uuid1_p_), *(uuid2_p_)) ? TRUE : FALSE)
+#define mpig_uuid_is_null(uuid_p_) ((uuid_p_)->text[0] == '\0')  ? TRUE : FALSE)
+
+#else
+
+#define mpig_uuid_nullify(uuid_p_)                              \
+{                                                               \
+    memset((uuid_p_)->str, 0, MPIG_UUID_MAX_STR_LEN + 1);       \
+}
+#define mpig_uuid_generate(uuid_p_) ((mpig_process.my_hostname[0] != '\0') ? (MPIU_Snprintf((uuid_p_)->str,                     \
+        MPIG_UUID_MAX_STR_LEN + 1, "%s-%d", mpig_process.my_hostname, (int) mpig_process.my_pid), MPI_SUCCESS) : MPI_ERR_OTHER)
+#define mpig_uuid_copy(uuid_src_p_, uuid_dest_p_)                                       \
+{                                                                                       \
+    MPIU_Strncpy((uuid_dest_p_)->str, (uuid_src_p_)->str, MPIG_UUID_MAX_STR_LEN + 1);   \
+}
+#define mpig_uuid_parse(str_, uuid_p_) (MPIU_Strncpy((uuid_p_)->str, (str_), MPIG_UUID_MAX_STR_LEN + 1), MPI_SUCCESS)
+#define mpig_uuid_unparse(uuid_p_, str_)                                \
+{                                                                       \
+    MPIU_Strncpy((str_), (uuid_p_)->str, MPIG_UUID_MAX_STR_LEN + 1);    \
+}
+#define mpig_uuid_compare(uuid1_p_, uuid2_p_) ((strncmp((uuid1_p_)->str, (uuid2_p_)->str, MPIG_UUID_MAX_STR_LEN + 1) == 0) ?    \
+    TRUE : FALSE)
+
+#define mpig_uuid_is_null(uuid_p_) ((uuid_p_)->str[0] == '\0')  ? TRUE : FALSE)
+
+#endif
+/**********************************************************************************************************************************
+                                                        END UUID SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+                                               BEGIN BASIC DATA STRUCTURES SECTON
+**********************************************************************************************************************************/
+#include "mpig_bds_genq.i"
+/**********************************************************************************************************************************
+                                                END BASIC DATA STRUCTURES SECTON
 **********************************************************************************************************************************/
 
 
 /**********************************************************************************************************************************
 						 BEGIN DEBUGGING OUTPUT SECTION
 **********************************************************************************************************************************/
+#undef FCNAME
 #define FCNAME fcname
 
 #if defined(MPIG_DEBUG)
 #define MPIG_STATE_DECL(a_)
 #define MPIG_FUNC_ENTER(a_) MPIG_FUNCNAME_CHECK()
-#define MPIG_FUNC_EXIT(a_) MPIG_FUNCNAME_CHECK()
+#define MPIG_FUNC_EXIT(a_)
 #define MPIG_RMA_FUNC_ENTER(a_) MPIG_FUNCNAME_CHECK()
-#define MPIG_RMA_FUNC_EXIT(a_) MPIG_FUNCNAME_CHECK()
+#define MPIG_RMA_FUNC_EXIT(a_)
 #else
 #define MPIG_STATE_DECL(a_) MPIDI_STATE_DECL(a_)
 #define MPIG_FUNC_ENTER(a_) MPIDI_FUNC_ENTER(a_)
@@ -1706,10 +1799,31 @@ void mpig_vmpi_error_to_mpich2_error(int vendor_errno, int * mpi_errno_p);
 						    BEGIN USAGE STAT ROUTINES
 **********************************************************************************************************************************/
 
+void mpig_usage_init(void);
+
 void mpig_usage_finalize(void);
 
 /**********************************************************************************************************************************
 						     END USAGE STAT ROUTINES
 **********************************************************************************************************************************/
+
+#if defined(HAVE_C_INLINE)
+#if defined(__GNUC__)
+#define MPIG_EMIT_INLINE_FUNCS 1
+#undef MPIG_INLINE_HDECL
+#undef MPIG_INLINE_HDEF
+#define MPIG_INLINE_HDEF
+#else /* !defined(__GNUC__) --> C99? */
+#define MPIG_EMIT_INLINE_FUNCS 1
+#undef MPIG_INLINE_HDECL
+#define MPIG_INLINE_HDECL extern
+#undef MPIG_INLINE_HDEF
+#endif /* end if/else __GNUC__ */
+#else
+#define MPIG_INLINE_HDECL
+#undef MPIG_INLINE_HDEF
+#define MPIG_INLINE
+#endif /* end if/else defined(HAVE_C_INLINE) */
+
 
 #endif /* MPICH2_MPIDIMPL_H_INCLUDED */

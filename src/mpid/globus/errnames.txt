@@ -1,6 +1,3 @@
-#
-# Globus device
-#
 **globus|badreqtype:globus|badreqtype
 **globus|badreqtype %d:globus|badreqtype -- %d
 **globus|bc_add_contact:globus|bc_add_contact
@@ -16,11 +13,30 @@
 **globus|cancel_completed_sreq %R %p:globus|cancel_completed_sreq -- %R %p
 **globus|cm_other|recv_any_source:globus|cm_other|recv_any_source
 **globus|cm_other|vc_recv_any_source:globus|cm_other|vc_recv_any_source
+**globus|cm_pe_test:globus|cm_pe_test
+**globus|cm_pe_test %s:globus|cm_pe_test -- %s
+**globus|cm_pe_wait:globus|cm_pe_wait
+**globus|cm_pe_wait %s:globus|cm_pe_wait -- %s
 **globus|cm_self|hostname:globus|cm_self|hostname
+**globus|cm_self|probedeadlock:globus|cm_self|probedeadlock
+**globus|cm_vmpi|cancel_ras:globus|cm_vmpi|cancel_ras
+**globus|cm_vmpi|cancel_ras %R:globus|cm_vmpi|cancel_ras -- %R
+**globus|cm_vmpi|dt_resize_bounds:globus|cm_vmpi|dt_resize_bounds
+**globus|cm_vmpi|dt_resize_bounds %D:globus|cm_vmpi|dt_resize_bounds -- %D
+**globus|cm_vmpi|iprobe_any_source:globus|cm_vmpi|iprobe_any_source
+**globus|cm_vmpi|localcomm:globus|cm_vmpi|localcomm
+**globus|cm_vmpi|localcomm %C %p:globus|cm_vmpi|localcomm -- %C %p
+**globus|cm_vmpi|pe_table_add_req:globus|cm_vmpi|pe_table_add_req
+**globus|cm_vmpi|pe_table_add_req %R %p:globus|cm_vmpi|pe_table_add_req -- %R %p
 **globus|cm_vmpi|progress_add_req:a error occurred while adding a vendor MPI request to the request tracking array
 **globus|cm_vmpi|progress_add_req %R %p:a error occurred while adding a vendor MPI request to the request tracking array: req_handle=%R, req_ptr=%p
+**globus|cm_vmpi|reg_ras:globus|cm_vmpi|reg_ras
+**globus|cm_vmpi|unreg_ras:globus|cm_vmpi|unreg_ras
 **globus|cm_vmpi|uuid_create:an error occurred while attempting to create a UUID
 **globus|cm_vmpi|uuid_create %s:an error occurred while attempting to create a UUID -- %s
+**globus|cm_vmpi|uuid_generate:globus|cm_vmpi|uuid_generate
+**globus|cm_vmpi|uuid_import:globus|cm_vmpi|uuid_import
+**globus|cm_vmpi|uuid_parse:globus|cm_vmpi|uuid_parse
 **globus|cm_xio_port_find_and_lock:globus|cm_xio_port_find_and_lock
 **globus|cm_xio_port_find_and_lock %s:globus|cm_xio_port_find_and_lock -- %s
 **globus|cm_xio|client_connect_port:globus|cm_xio|client_connect_port
@@ -230,6 +246,8 @@
 **globus|comm_create_key %s:globus|comm_create_key -- %s
 **globus|comm_destroy_key:globus|comm_destroy_key
 **globus|comm_destroy_key %s:globus|comm_destroy_key -- %s
+**globus|comm_finalize:globus|comm_finalize
+**globus|comm_init:globus|comm_init
 **globus|comm_list_wait_empty:globus|comm_list_wait_empty
 **globus|comm_set_attr:globus|comm_set_attr
 **globus|comm_set_attr %s:globus|comm_set_attr -- %s
@@ -240,6 +258,7 @@
 **globus|connacc|bcast_vct_error_status:globus|connacc|bcast_vct_error_status
 **globus|connacc|bcast_vct_error_status %p:globus|connacc|bcast_vct_error_status -- %p
 **globus|connacc|bcast_vct_error_status_recvd:globus|connacc|bcast_vct_error_status_recvd
+**globus|connacc|bcast_vct_error_status_recvd %p:globus|connacc|bcast_vct_error_status_recvd -- %p
 **globus|connacc|bcast_vct_error_status_recvd %p %p %d:globus|connacc|bcast_vct_error_status_recvd -- %p %p %d
 **globus|connacc|bcast_vct_len:globus|connacc|bcast_vct_len
 **globus|connacc|bcast_vct_len %p:globus|connacc|bcast_vct_len -- %p
@@ -286,6 +305,7 @@
 **globus|mutex_destroy %s:globus|mutex_destroy -- %s
 **globus|mutex_init:an error occurred while initializing a mutex 
 **globus|mutex_init %s:globus|mutex_init -- %s
+**globus|pe_poke:globus|pe_poke
 **globus|pe_test:globus|pe_test
 **globus|pe_test %s:globus|pe_test -- %s
 **globus|pe_wait:globus|pe_wait
@@ -324,8 +344,14 @@
 **globus|pm_not_init:attempt to use the process manangement module before initialization
 **globus|pm_pg_id_create:an error occurred while attempting to create a process group id
 **globus|pm_xchg:an error occurred while exchanging business cards with the other processes
+**globus|recvq_deq_posted_or_enq_unexp:globus|recvq_deq_posted_or_enq_unexp
+**globus|recvq_deq_posted_or_enq_unexp %d %d %d:globus|recvq_deq_posted_or_enq_unexp -- %d %d %d
+**globus|recvq_deq_unexp_or_enq_posted:globus|recvq_deq_unexp_or_enq_posted
+**globus|recvq_deq_unexp_or_enq_posted %d %d %d:globus|recvq_deq_unexp_or_enq_posted -- %d %d %d
 **globus|recvq_finalize:an error occurred while shutting down the receive queue module
+**globus|recvq_fuaes:globus|recvq_fuaes
 **globus|recvq_init:an error occurred while initializing the receive queue module
+**globus|recvq_unreg_ras:globus|recvq_unreg_ras
 **globus|request_get_ptr:globus|request_get_ptr
 **globus|request_get_ptr %R:globus|request_get_ptr -- %R
 **globus|server_handle_open_proc_resp_ack:globus|server_handle_open_proc_resp_ack
@@ -334,6 +360,12 @@
 **globus|strspace_extract_element %s %p:globus|strspace_extract_element -- %s %p
 **globus|strtointconv:globus|strtointconv
 **globus|strtointconv %s %s:globus|strtointconv -- %s %s
+**globus|tcp_buf_size_invalid:globus|tcp_buf_size_invalid
+**globus|tcp_buf_size_invalid %s:globus|tcp_buf_size_invalid -- %s
+**globus|tcp_buf_size_neg:globus|tcp_buf_size_neg
+**globus|tcp_buf_size_neg %s:globus|tcp_buf_size_neg -- %s
+**globus|tcp_buf_size_overflow:globus|tcp_buf_size_overflow
+**globus|tcp_buf_size_overflow %s:globus|tcp_buf_size_overflow -- %s
 **globus|topology_comm_construct:globus|topology_comm_construct
 **globus|topology_comm_destruct:globus|topology_comm_destruct
 **globus|topology_finalize:globus|topology_finalize
@@ -349,5 +381,8 @@
 **globus|vmpi_fn_failed:globus|vmpi_fn_failed
 **globus|vmpi_fn_failed %s %s:globus|vmpi_fn_failed -- %s %s
 **globus|vmpi_init:an error occurred while initializing the vendor MPI
+**globus|vmpi_pe_finalize:globus|vmpi_pe_finalize
 **globus|vmpi_pe_init:globus|vmpi_pe_init
 **globus|vmpi_pe_table_inc_size:globus|vmpi_pe_table_inc_size
+**globus|vmpi_req_failed:globus|vmpi_req_failed
+**globus|vmpi_req_failed %s:globus|vmpi_req_failed -- %s

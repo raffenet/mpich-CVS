@@ -33,12 +33,12 @@ int mpig_bc_copy(const mpig_bc_t * const orig_bc, mpig_bc_t * const copy_bc)
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_copy);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: orig_bc=" MPIG_PTR_FMT ", copy_bc=" MPIG_PTR_FMT,
-	(MPIG_PTR_CAST) orig_bc, (MPIG_PTR_CAST) copy_bc));
+	MPIG_PTR_CAST(orig_bc), MPIG_PTR_CAST(copy_bc)));
     
     str = MPIU_Strdup(orig_bc->str_begin);
     MPIU_ERR_CHKANDJUMP1((str == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "duplicate business card");
 
-    MPIU_Free(copy_bc->str_begin);
+    if (copy_bc->str_begin) MPIU_Free(copy_bc->str_begin);
     
     copy_bc->str_begin = str;
     copy_bc->str_size = strlen(copy_bc->str_begin);
@@ -47,7 +47,7 @@ int mpig_bc_copy(const mpig_bc_t * const orig_bc, mpig_bc_t * const copy_bc)
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: orig_bc=" MPIG_PTR_FMT ", copy_bc=" MPIG_PTR_FMT
-	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) orig_bc, (MPIG_PTR_CAST) copy_bc, mpi_errno));
+	", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(orig_bc), MPIG_PTR_CAST(copy_bc), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_copy);
     return mpi_errno;
 
@@ -83,7 +83,7 @@ int mpig_bc_add_contact(mpig_bc_t * const bc, const char * const key, const char
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_add_contact);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: bc=" MPIG_PTR_FMT ", key=\"%s\", value=\"%s\"",
-	(MPIG_PTR_CAST) bc, key, value));
+	MPIG_PTR_CAST(bc), key, value));
 
     do
     {
@@ -106,6 +106,7 @@ int mpig_bc_add_contact(mpig_bc_t * const bc, const char * const key, const char
 	    if (bc->str_begin != NULL)
 	    { 
 		MPIU_Strncpy(str_begin, bc->str_begin, (size_t) bc->str_size);
+		MPIU_Free(bc->str_begin);
 	    }
 	    else
 	    {
@@ -125,7 +126,7 @@ int mpig_bc_add_contact(mpig_bc_t * const bc, const char * const key, const char
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
-	(MPIG_PTR_CAST) bc, mpi_errno));
+	MPIG_PTR_CAST(bc), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_add_contact);
     return mpi_errno;
 
@@ -165,7 +166,7 @@ int mpig_bc_get_contact(const mpig_bc_t * const bc, const char * const key, char
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_get_contact);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: bc=" MPIG_PTR_FMT ", key=\"%s\"",
-	(MPIG_PTR_CAST) bc, key));
+	MPIG_PTR_CAST(bc), key));
     
     val_size = MPIG_BC_VAL_GROWTH_RATE;
     val_str = (char *) MPIU_Malloc(val_size);
@@ -185,7 +186,9 @@ int mpig_bc_get_contact(const mpig_bc_t * const bc, const char * const key, char
 	}
 	else if (rc == MPIU_STR_FAIL)
 	{
+	    MPIU_Free(val_str);
 	    *flag = FALSE;
+	    *value = NULL;
 	    goto fn_return;
 	}
 	else if (rc != MPIU_STR_SUCCESS)
@@ -200,8 +203,8 @@ int mpig_bc_get_contact(const mpig_bc_t * const bc, const char * const key, char
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: bc=" MPIG_PTR_FMT ", key=\"%s\", value=\"%s\""
-	", valuep=" MPIG_PTR_FMT "flag=%s, mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) bc, key, (*flag) ? *value : "",
-	(MPIG_PTR_CAST) *value, MPIG_BOOL_STR(*flag), mpi_errno));
+	", valuep=" MPIG_PTR_FMT "flag=%s, mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(bc), key, (*flag) ? *value : "",
+	MPIG_PTR_CAST(*value), MPIG_BOOL_STR(*flag), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_get_contact);
     return mpi_errno;
     
@@ -209,6 +212,7 @@ int mpig_bc_get_contact(const mpig_bc_t * const bc, const char * const key, char
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIU_Free(val_str);
 	*flag = FALSE;
+	*value = NULL;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
@@ -233,11 +237,11 @@ void mpig_bc_free_contact(char * const value)
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_free_contact);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: valuep=" MPIG_PTR_FMT ", value=\"%s\"",
-	(MPIG_PTR_CAST) value, value));
+	MPIG_PTR_CAST(value), value));
     
     MPIU_Free(value);
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: valuep=" MPIG_PTR_FMT, (MPIG_PTR_CAST) value));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: valuep=" MPIG_PTR_FMT, MPIG_PTR_CAST(value)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_free_contact);
     return;
 }
@@ -265,14 +269,14 @@ int mpig_bc_serialize_object(mpig_bc_t * const bc, char ** const str)
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_serialize_object);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: bc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) bc));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: bc=" MPIG_PTR_FMT, MPIG_PTR_CAST(bc)));
     
     *str = MPIU_Strdup(bc->str_begin);
     MPIU_ERR_CHKANDJUMP1((*str == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "serialized business card");
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: bc=" MPIG_PTR_FMT ", str=" MPIG_PTR_FMT
-	", mpi_errno=" MPIG_ERRNO_FMT, (MPIG_PTR_CAST) bc, (MPIG_PTR_CAST) *str, mpi_errno));
+	", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(bc), MPIG_PTR_CAST(*str), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_serialize_object);
     return mpi_errno;
     
@@ -299,11 +303,11 @@ void mpig_bc_free_serialized_object(char * const str)
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_free_serialized_object);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: str=" MPIG_PTR_FMT, (MPIG_PTR_CAST) str));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: str=" MPIG_PTR_FMT, MPIG_PTR_CAST(str)));
     
     MPIU_Free(str);
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: str=" MPIG_PTR_FMT, (MPIG_PTR_CAST) str));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: str=" MPIG_PTR_FMT, MPIG_PTR_CAST(str)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_free_serialized_object);
     return;
 }
@@ -332,14 +336,14 @@ int mpig_bc_deserialize_object(const char * const str, mpig_bc_t * const bc)
     MPIG_UNUSED_VAR(fcname);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_bc_deserialize_object);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: bc=" MPIG_PTR_FMT, (MPIG_PTR_CAST) bc));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "entering: bc=" MPIG_PTR_FMT, MPIG_PTR_CAST(bc)));
 
     str_len = strlen(str);
     
     new_str = MPIU_Strdup(str);
     MPIU_ERR_CHKANDJUMP1((new_str == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "business card string");
 
-    MPIU_Free(bc->str_begin);
+    if (bc->str_begin) MPIU_Free(bc->str_begin);
     
     /*
      * str_end should point at the terminating NULL, not the last character, so one (1) is not subtracted.  likewise, one (1) is
@@ -352,7 +356,7 @@ int mpig_bc_deserialize_object(const char * const str, mpig_bc_t * const bc)
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC, "exiting: bc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
-	(MPIG_PTR_CAST) bc, mpi_errno));
+	MPIG_PTR_CAST(bc), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_bc_deserialize_object);
     return mpi_errno;
 

@@ -8,9 +8,10 @@
 
 #include "mpidimpl.h"
 
-mpig_pe_count_t mpig_pe_count = 0;
-int mpig_pe_num_cm_must_be_polled = 0;
+mpig_pe_count_t mpig_pe_total_ops_count = 0;
 int mpig_pe_active_ops_count = 0;
+int mpig_pe_active_ras_ops_count = 0;
+int mpig_pe_polling_required_count = 0;
 
 
 /*
@@ -79,26 +80,38 @@ int MPID_Progress_wait(MPID_Progress_state * state)
     MPIG_FUNC_ENTER(MPID_STATE_MPID_PROGRESS_WAIT);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PROGRESS, "entering"));
 
+    MPIU_Assert(mpig_pe_active_ops_count > 0 || state->dev.count != mpig_pe_total_ops_count);
+
     while (TRUE)
     {
 	/* NOTE: a CM pe_wait() routine must not block if the total number of active operations is greater than the number of
-	   active operations in that module or if more than one CM requires polling in order to make progress.  a CM can
-	   determine if it safe to block by calling mpig_pe_cm_can_block(). */
+	   active operations in that module or if an operation has completed since the previous call to MPID_Progress_start or
+	   MPID_Progress_wait.  a CM can determine if it safe to block by checking two things.  first, the CM must confirm that
+	   it owns all active operations by calling mpig_pe_cm_owns_all_active_ops().  second, the CM must call
+	   mpig_pe_op_has_completed() to verify that no operations have completed since the previous call to a MPID_Progress
+	   routine. */
 
-	/* XXX: should we loop some number of times here to reduce average latency, or does that belong in
-	   mpig_cm_vmpi_pe_wait()? */
+#if defined(MPIG_VMPI)
 	mpi_errno = mpig_cm_vmpi_pe_wait(state);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_wait", "**globus|pe_wait %s", "VMPI");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_pe_wait", "**globus|cm_pe_wait %s", "VMPI");
+#endif
 
-	/* XXX: likewise, should we perform a thread yield here if no progress was made, allowing the XIO CM threads some CPU
-	   time in which to make progress, or should that decision be in the XIO CM pe_wait() routine? */
+#if defined(HAVE_GLOBUS_XIO_MODULE)
 	mpi_errno = mpig_cm_xio_pe_wait(state);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_wait", "**globus|pe_wait %s", "XIO");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_pe_wait", "**globus|cm_pe_wait %s", "XIO");
+#endif
+	
+        if (mpig_pe_op_has_completed(state)) break;
 
-        if (state->dev.count != mpig_pe_count) break;
+	/* XXX: should we really be performing a thread yield here if no progress was made.  the primary reason for doing so is
+	   to allow the XIO communication threads some CPU time to make progress, which suggests the yield should be performed in
+	   the CM XIO module.  However, other threads could theoretically exist which are in need of a timeslice, so the yield
+	   has been placed here for now to prevent multiple modules from yielding.  a mechanism may be needed to determine when
+	   yielding is really necessary so that performance is not sacrificed unnecessarily. */
+	mpig_thread_yield();
     }
     
-    state->dev.count = mpig_pe_count;
+    state->dev.count = mpig_pe_total_ops_count;
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PROGRESS, "exiting"));
@@ -129,11 +142,15 @@ int MPID_Progress_test(void)
     MPIG_FUNC_ENTER(MPID_STATE_MPID_PROGRESS_TEST);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PROGRESS, "entering"));
 
+#if defined(MPIG_VMPI)
     mpi_errno = mpig_cm_vmpi_pe_test();
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_test", "**globus|pe_test %s", "VMPI");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_pe_test", "**globus|cm_pe_test %s", "VMPI");
+#endif
 
+#if defined(HAVE_GLOBUS_XIO_MODULE)
     mpi_errno = mpig_cm_xio_pe_test();
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_test", "**globus|pe_test %s", "XIO");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_pe_test", "**globus|cm_pe_test %s", "XIO");
+#endif
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PROGRESS, "exiting"));

@@ -9,6 +9,8 @@
 #if !defined(MPIG_CM_XIO_H_INCLUDED)
 #define MPIG_CM_XIO_H_INCLUDED
 
+#if defined(HAVE_GLOBUS_XIO_MODULE)
+
 #include "globus_xio.h"
 
 /*
@@ -60,7 +62,7 @@ mpig_cm_xio_conn_info_t;
  * define the structure to be included in the communication method union (CMU) of the VC object
  */
 #define MPIG_VC_CMU_XIO_DECL					\
-struct mpig_cm_xio_vc						\
+struct mpig_cm_xio_vc_cmu					\
 {								\
     /* state of the connection */				\
     mpig_cm_xio_vc_state_t state;				\
@@ -97,7 +99,7 @@ struct mpig_cm_xio_vc						\
     struct mpig_vc * list_next;					\
 								\
     /* data structures for mpig_port_connect-accept */		\
-    globus_cond_t cond;						\
+    mpig_cond_t cond;						\
     char * port_id;						\
     int mpi_errno;						\
 }								\
@@ -108,7 +110,7 @@ xio;
  * define the communication method structure to be included in a request
  */
 #define MPIG_REQUEST_CMU_XIO_DECL												\
-struct mpig_cm_xio_request													\
+struct mpig_cm_xio_request_cmu													\
 {																\
     /* state of the message being sent or received */										\
     mpig_cm_xio_req_state_t state;												\
@@ -120,10 +122,10 @@ struct mpig_cm_xio_request													\
        counter within the xio communication module */										\
     int cc;															\
 																\
-    /* information about the user buffer being sent/received.  the segment object is used to help process buffers that are	\
-       noncontiguous or data that is heterogeneous. */										\
+    /* information about the application buffer being sent/received.  the segment object is used to help process buffers that	\
+       are noncontiguous or data that is heterogeneous. */									\
     MPIU_Size_t buf_size;													\
-    mpig_cm_xio_userbuf_type_t buf_type;											\
+    mpig_cm_xio_app_buf_type_t buf_type;											\
     MPI_Aint buf_true_lb;													\
     MPIU_Size_t stream_size;													\
     MPIU_Size_t stream_pos;													\
@@ -292,18 +294,18 @@ mpig_cm_xio_req_state_t;
 
 
 /*
- * user buffer type
+ * application buffer type
  */
-typedef enum mpig_cm_xio_userbuf_type
+typedef enum mpig_cm_xio_app_buf_type
 {
-    MPIG_CM_XIO_USERBUF_TYPE_FIRST = 0,
-    MPIG_CM_XIO_USERBUF_TYPE_UNDEFINED,
-    MPIG_CM_XIO_USERBUF_TYPE_CONTIG,
-    MPIG_CM_XIO_USERBUF_TYPE_DENSE,
-    MPIG_CM_XIO_USERBUF_TYPE_SPARSE,
-    MPIG_CM_XIO_USERBUF_TYPE_LAST
+    MPIG_CM_XIO_APP_BUF_TYPE_FIRST = 0,
+    MPIG_CM_XIO_APP_BUF_TYPE_UNDEFINED,
+    MPIG_CM_XIO_APP_BUF_TYPE_CONTIG,
+    MPIG_CM_XIO_APP_BUF_TYPE_DENSE,
+    MPIG_CM_XIO_APP_BUF_TYPE_SPARSE,
+    MPIG_CM_XIO_APP_BUF_TYPE_LAST
 }
-mpig_cm_xio_userbuf_type_t;
+mpig_cm_xio_app_buf_type_t;
 
 
 /*
@@ -323,15 +325,20 @@ int mpig_cm_xio_pe_poke(void);
 /*
  * macro implementations of CM interface functions
  */
-#define mpig_cm_xio_pe_start(state_)	\
-{					\
-}
+#define mpig_cm_xio_pe_start(state_)
 
-#define mpig_cm_xio_pe_end(state_)	\
-{					\
-}
+#define mpig_cm_xio_pe_end(state_)
 
 #define mpig_cm_xio_pe_poke() mpig_cm_xio_progess_test()
 
+
+#else /* !defined(HAVE_GLOBUS_XIO_MODULE) */
+
+
+#define mpig_cm_xio_pe_start(state_)
+
+#define mpig_cm_xio_pe_end(state_)
+
+#endif /* if/else defined(HAVE_GLOBUS_XIO_MODULE) */
 
 #endif /* !defined(MPICH2_MPIG_CM_XIO_H_INCLUDED) */

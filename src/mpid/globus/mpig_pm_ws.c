@@ -10,9 +10,10 @@
  * This file contains an implementation of process management routines that interface with Web Services implementation of Globus.
  * In particular, this module makes use of the GRAM and Redezvous services.
  */
+
 #include "mpidimpl.h"
 
-#if defined(MPIG_GLOBUS_RENDEZVOUS_INSTALLED)
+#if defined(HAVE_GLOBUS_RENDEZVOUS_MODULE)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,11 +21,73 @@
 #include <strings.h>
 #include <string.h>
 #include "globus_rendezvous.h"
-#include "globus_uuid.h"
-#ifdef MPIG_VMPI
-#include <mpi.h>
-#endif
 
+#include "globus_error_gssapi.h"
+#include "gssapi.h"
+#include "globus_common.h"
+#include "globus_xio.h"
+/* #include "globus_delegation_client_util.h" */
+#include "globus_ws_addressing.h"
+#include "globus_service_engine.h"
+#include "globus_notification_consumer.h"
+#include "globus_xml_buffer.h"
+/* #include "globus_wsrf_core_tools.h" */
+#include "globus_wsrf_core_tools.h"
+#include "wsa_EndpointReferenceType.h"
+#include "ManagedMultiJobService_client.h"
+
+/* XXX: this is a hack to work around the Globus xsd_long.h header file also defining int64_t */
+#include "mpichconf.h"
+#if !defined(HAVE_INT64_T)
+#define HAVE_INT64_T 1
+#endif
+#include "mpidimpl.h"
+
+/*
+ * prototypes and data structures exposing the "web services" process management class
+ */
+static int mpig_pm_ws_init(int * argc, char *** argv, mpig_pm_t * pm, bool_t * my_pm_p);
+
+static int mpig_pm_ws_finalize(mpig_pm_t * pm);
+
+static int mpig_pm_ws_abort(mpig_pm_t * pm, int exit_code);
+
+static int mpig_pm_ws_exchange_business_cards(mpig_pm_t * pm, mpig_bc_t * bc, mpig_bc_t ** bcs_p);
+
+static int mpig_pm_ws_free_business_cards(mpig_pm_t * pm, mpig_bc_t * bcs);
+
+static int mpig_pm_ws_get_pg_size(mpig_pm_t * pm, int * pg_size);
+
+static int mpig_pm_ws_get_pg_rank(mpig_pm_t * pm, int * pg_rank);
+
+static int mpig_pm_ws_get_pg_id(mpig_pm_t * pm, const char ** pg_id_p);
+
+static int mpig_pm_ws_get_app_num(mpig_pm_t * pm, const mpig_bc_t * bc, int * app_num);
+
+MPIG_STATIC mpig_pm_vtable_t mpig_pm_ws_vtable =
+{
+    mpig_pm_ws_init,
+    mpig_pm_ws_finalize,
+    mpig_pm_ws_abort,
+    mpig_pm_ws_exchange_business_cards,
+    mpig_pm_ws_free_business_cards,
+    mpig_pm_ws_get_pg_size,
+    mpig_pm_ws_get_pg_rank,
+    mpig_pm_ws_get_pg_id,
+    mpig_pm_ws_get_app_num,
+    mpig_pm_vtable_last_entry
+};
+
+mpig_pm_t mpig_pm_ws =
+{
+    "web services",
+    &mpig_pm_ws_vtable
+};
+
+
+#define GLOBUS_NAMESPACE "http://www.globus.org/namespaces/2004/10/gram/job"
+
+#define GLOBUS_GRAM_MULTIJOB_HANDLE "GLOBUS_GRAM_MULTIJOB_HANDLE"
 #define GLOBUS_GRAM_JOB_HANDLE      "GLOBUS_GRAM_JOB_HANDLE"
 #define GLOBUS_GRAM_MULTIJOB_HANDLE "GLOBUS_GRAM_MULTIJOB_HANDLE"
 #define GLOBUS_GRAM_SUBJOB_RANK     "GLOBUS_GRAM_SUBJOB_RANK"
@@ -54,7 +117,7 @@
 
 #define TRY_MALLOC(ptr, cast, nbytes) \
 { \
-    if (!((ptr) = (cast) globus_malloc((nbytes)))) \
+    if (!((ptr) = (cast) globus_malloc((size_t)(nbytes))))	\
     { \
         sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: failed malloc %d bytes\n", \
 	    __FILE__, __LINE__, (int) (nbytes)); \
@@ -64,7 +127,7 @@
 
 #define TRY_REALLOC(nptr, optr, cast, nbytes) \
 { \
-    if (!((nptr) = (cast) realloc((optr), (nbytes)))) \
+    if (!((nptr) = (cast) globus_realloc((optr), (size_t)(nbytes))))	\
     { \
         sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: failed realloc %d bytes\n", \
 	    __FILE__, __LINE__, (int) (nbytes)); \
@@ -82,12 +145,12 @@ struct rz_data
 /* GLOBAL VARIABLES */
 /* NICK: debugging */
 /* MPIG_STATIC FILE *Log_fp;                              */
-/* MPIG_STATIC int Pid;                                  */
-/* MPIG_STATIC void print_byte_array(char *v, int vlen);  */
+/* MPIG_STATIC int Pid;                                   */
+/* static void print_byte_array(char *v, int vlen);       */
 /* NICK: debugging */
 
-MPIG_STATIC globus_mutex_t mpig_pm_ws_Mutex;
-MPIG_STATIC globus_cond_t  mpig_pm_ws_Cond;
+MPIG_STATIC mpig_mutex_t mpig_pm_ws_Mutex;
+MPIG_STATIC mpig_cond_t  mpig_pm_ws_Cond;
 MPIG_STATIC globus_rz_handle_t mpig_pm_ws_SubjobHandle    = NULL;
 MPIG_STATIC globus_rz_handle_t mpig_pm_ws_WholejobHandle  = NULL;
 MPIG_STATIC globus_rz_handle_attr_t mpig_pm_ws_HandleAttr = NULL;
@@ -109,11 +172,17 @@ MPIG_STATIC char *mpig_pm_ws_GlobusErrorStr; /* for TEST_RES() */
 MPIG_STATIC char mpig_pm_ws_ErrorMsg[500]; 
 
 /* LOCAL CALLBACK FUNCTIONS */
-MPIG_STATIC void globus_rz_data_callback(globus_result_t res, const char *data, size_t length, void *args);
+static void mpig_pm_ws_rz_data_callback(globus_result_t res, const char *data, size_t length, void *args);
 /* LOCAL UTILITY FUNCTIONS */
-MPIG_STATIC void print_byte_array(char *v, int vlen);
-MPIG_STATIC void mpig_pm_ws_gather_subjob_data(struct rz_data *subjob_data, char *my_checkinbuff, int hdr_len, int my_checkinbufflen);
-MPIG_STATIC void mpig_pm_ws_process_wholejob_byte_array(char *v,
+static globus_result_t set_attr_security(
+    globus_soap_message_attr_t          message_attr,
+    globus_soap_message_authz_method_t  value,
+    globus_bool_t                       encrypt,
+    const char *                        id,
+    globus_soap_message_auth_method_t   msg_sec);
+
+static void mpig_pm_ws_gather_subjob_data(struct rz_data *subjob_data, char *my_checkinbuff, int hdr_len, int my_checkinbufflen);
+static void mpig_pm_ws_process_wholejob_byte_array(char *v,
 					    int vlen,
 					    int my_subjobidx,
 					    int rank_in_my_subjob,
@@ -123,17 +192,17 @@ MPIG_STATIC void mpig_pm_ws_process_wholejob_byte_array(char *v,
 					    char ***boot_cs_array,
 					    int *nprocs,
 					    int *my_grank);
-MPIG_STATIC void mpig_pm_ws_process_subjob_byte_array(char *v,
+static void mpig_pm_ws_process_subjob_byte_array(char *v,
 					    int vlen,
 					    char **cp,
-					    int mpig_pm_ws_SubjobIdx,
+					    int SubjobIdx,
 					    int *nprocs,
 					    char ***subjob_byte_arrays,
 					    int **subjob_byte_array_lens,
 					    char ***subjob_boot_cs_array);
-MPIG_STATIC void mpig_pm_ws_extract_int_and_single_space(char *v, int vlen, char **cp, int *val);
+static void mpig_pm_ws_extract_int_and_single_space(char *v, int vlen, char **cp, int *val);
 #ifndef MPIG_VMPI
-MPIG_STATIC int mpig_pm_ws_distribute_byte_array_to_my_children(char *v,
+static int mpig_pm_ws_distribute_byte_array_to_my_children(char *v,
 						    int vlen,
 						    int my_subjob_rank,
 						    int my_subjob_size,
@@ -145,12 +214,17 @@ MPIG_STATIC int mpig_pm_ws_distribute_byte_array_to_my_children(char *v,
 /*********************
  * mpig_pm_ws_init()
  ********************/ 
-int mpig_pm_ws_init(void)
+static int mpig_pm_ws_init(int * argc, char *** argv, mpig_pm_t * const pm, bool_t * my_pm_p)
 {       
     globus_result_t res;
+    const char *multijob_epr;
     const char *subjob_epr;
     const char *subjobidx_c;
 
+    MPIG_UNUSED_ARG(argc);
+    MPIG_UNUSED_ARG(argv);
+    MPIG_UNUSED_ARG(pm);
+    
     if (mpig_pm_ws_Initialized)
 	return MPI_SUCCESS;
 
@@ -169,15 +243,18 @@ int mpig_pm_ws_init(void)
     /* END NICK: debugging */
 #endif
 
-    mpig_pm_ws_Initialized = 1;
-
-    res = globus_module_activate(GLOBUS_RENDEZVOUS_MODULE); TEST_RES(res);
-    res = globus_mutex_init(&mpig_pm_ws_Mutex, NULL);       TEST_RES(res);
-    res = globus_cond_init(&mpig_pm_ws_Cond, NULL);         TEST_RES(res);
-
     /****************/
     /* get env vars */
     /****************/
+
+    /* first verify that that the MultiJob service was used to start the job.  if it is not, let the calling routine know that
+       this PM module is not compatable with the mechanism used to start the job. */
+    multijob_epr = globus_libc_getenv("GLOBUS_GRAM_MULTIJOB_HANDLE");
+    if (multijob_epr == NULL)
+    {
+	*my_pm_p = FALSE;
+	goto fn_return;
+    }
 
     TRY_GETENV(subjob_epr,  GLOBUS_GRAM_JOB_HANDLE);
     TRY_GETENV(subjobidx_c, GLOBUS_GRAM_SUBJOB_RANK);
@@ -188,6 +265,16 @@ int mpig_pm_ws_init(void)
 	    __FILE__, __LINE__, GLOBUS_GRAM_SUBJOB_RANK, mpig_pm_ws_SubjobIdx);
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
+
+    /********************************************************************/
+    /* activate rendezvous module and initialize global data structures */
+    /********************************************************************/
+
+    mpig_pm_ws_Initialized = 1;
+
+    res = globus_module_activate(GLOBUS_RENDEZVOUS_MODULE); TEST_RES(res);
+    res = mpig_mutex_construct(&mpig_pm_ws_Mutex);          TEST_RES(res);
+    res = mpig_cond_construct(&mpig_pm_ws_Cond);            TEST_RES(res);
 
     /***********************/
     /* build subjob handle */
@@ -210,6 +297,9 @@ int mpig_pm_ws_init(void)
     res = globus_xio_server_get_contact_string(mpig_pm_ws_SubjobBootServer, &mpig_pm_ws_SubjobBootCS); TEST_RES(res);
 #endif
 
+    *my_pm_p = TRUE;
+
+  fn_return:
     return MPI_SUCCESS;
 
 } /* end mpig_pm_ws_init() */
@@ -217,10 +307,12 @@ int mpig_pm_ws_init(void)
 /*********************
  * mpig_pm_ws_finalize()
  ********************/ 
-int mpig_pm_ws_finalize(void)
-{       
+static int mpig_pm_ws_finalize(mpig_pm_t * const pm)
+{
     globus_result_t res;
 
+    MPIG_UNUSED_ARG(pm);
+    
     if (!mpig_pm_ws_Initialized)
     {
         sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_finalize() called without calling mpig_pm_ws_init()", 
@@ -228,8 +320,8 @@ int mpig_pm_ws_finalize(void)
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
 
-    res = globus_cond_destroy(&mpig_pm_ws_Cond);   TEST_RES(res);
-    res = globus_mutex_destroy(&mpig_pm_ws_Mutex); TEST_RES(res);
+    res = mpig_cond_destruct(&mpig_pm_ws_Cond);   TEST_RES(res);
+    res = mpig_mutex_destruct(&mpig_pm_ws_Mutex); TEST_RES(res);
     globus_rz_handle_destroy(mpig_pm_ws_SubjobHandle);       /* returns void */
 
     if (mpig_pm_ws_WholejobHandle) /* only subjob masters get this populated */
@@ -259,14 +351,332 @@ int mpig_pm_ws_finalize(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_ws_abort
-int mpig_pm_ws_abort(int exit_code)
+static int mpig_pm_ws_abort(mpig_pm_t * const pm, int exit_code)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    const char *wholejob_epr_str;
+    wsa_EndpointReferenceType *wholejob_epr;
+    xsd_QName wsgram_resourceid_qname;
+    int msg_idx;
+    int value_idx;
+    globus_bool_t encrypt_flag;
+    int npossible_msg_secs = 0;
+    globus_soap_message_auth_method_t *possible_msg_secs = NULL;
+    static globus_soap_message_authz_method_t possible_values[] = {
+	GLOBUS_SOAP_MESSAGE_AUTHZ_HOST, 
+	GLOBUS_SOAP_MESSAGE_AUTHZ_SELF
+    };
+    globus_result_t result;
+    int mpi_errno = MPI_SUCCESS;
 
-    /* FIXME: kill the jobs (all subjobs) */
+    MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
     
+    if (globus_module_activate(MANAGEDMULTIJOBSERVICE_MODULE))
+    {
+	globus_fatal("managed multi job service module activate failed");
+    }
+    else if (globus_module_activate(GLOBUS_WSRF_CORE_TOOLS_MODULE))
+    {
+	globus_fatal("globus wsrf core tools module activate failed");
+    } /* endif */
+
+    /********************************/
+    /* getting whole job epr handle */
+    /********************************/
+
+    if (!(wholejob_epr_str = globus_libc_getenv(GLOBUS_GRAM_MULTIJOB_HANDLE)))
+    {
+	globus_fatal("NO GLOBUS_GRAM_MULTIJOB_HANDLE env!");
+    } /* endif */
+    /* fprintf(Log_fp, "ABORT: wholejob epr string=%s\n", wholejob_epr_str);  */
+    /* fflush(Log_fp); */
+
+    /* env var GLOBUS_GRAM_MULTIJOB_HANDLE has something like an EPR,    */
+    /* but it's not exactly an EPR.                                      */
+    /* extracting whole job EPR from GLOBUS_GRAM_MULTIJOB_HANDLE env var */
+    result = wsa_EndpointReferenceType_init(&wholejob_epr);
+    if (result != GLOBUS_SUCCESS)
+    {
+	globus_panic(NULL, result, "Failed wsa_EndpointReferenceType_init");
+    } /* endif */
+    
+    wsgram_resourceid_qname.Namespace  = GLOBUS_NAMESPACE;
+    wsgram_resourceid_qname.local      = "ResourceID";
+    result = globus_wsrf_core_unwrap_endpoint_reference(wholejob_epr_str,
+						&wsgram_resourceid_qname,
+						wholejob_epr);
+    if (result != GLOBUS_SUCCESS)
+    {
+	globus_panic(NULL, result, 
+	    "Failed globus_wsrf_core_unwrap_endpoint_reference");
+    } /* endif */
+
+    /* 
+       THIS WHOLE PROCESS IS A KLUDGE ... THE CORRECT SOLUTION IS
+       TO HAVE THE GLOBUS FOLKS EMBED IN THE WHOLEJOB CONTAINER EPR 
+       (AND PROVIDE ACCESSOR FUNCTIONS) THE SECURITY INFORMATION WE'RE 
+       FORCE TO GUESS AT WITH THE METHOD DESCRIBED HERE.
+
+       Guessing at what kind of security will be needed for this
+       process (the client) to contact the wholejob container
+       process (the server) based on whether or not "https"
+       or "http" is in GLOBUS_GRAM_MULTIJOB_HANDLE (wholejob epr string)
+
+       There are THREE security parameters that need to be set
+       (as explained to me by John Bresnahan):
+
+       (1) globus_soap_message_authz_method_t
+
+           This is what *I*, this process (the client), expects
+	   the server to use to identify itself, in other words, this
+	   is the DN that I expect to receive from the wholejob container
+	   process (the server).  Legal values are:
+
+		- GLOBUS_SOAP_MESSAGE_AUTHZ_HOST 
+		    Expect a host DN that "matches" the host found
+		    somewhere in the URL that *I* (this process, client)
+		    used to connect to the wholejob container process (server).
+
+		- GLOBUS_SOAP_MESSAGE_AUTHZ_SELF
+		    Expect a DN that matches the DN found in the proxy
+		    that the this process (the client) is running under
+		    This is used when connecting to a wholejob container
+		    that was stood up by the same user running this 
+		    process, (i.e., a "personal container").
+
+		- GLOBUS_SOAP_MESSAGE_AUTHZ_IDENTITY
+		    Here *I* (client) provides an ID string (a DN)
+		    and it expects from the wholejob container process
+		    a DN that matches it.
+
+		- GLOBUS_SOAP_MESSAGE_AUTHZ_NONE
+		    This process, the client, is willing to accept anything
+		    or nothing at all ... no security, just connect.
+
+	   We try only these TWO from the FOUR above:
+	    GLOBUS_SOAP_MESSAGE_AUTHZ_HOST and 
+	    GLOBUS_SOAP_MESSAGE_AUTHZ_SELF
+
+       (2) globus_soap_message_auth_method_t (note "auth" here, "authz" in (1))
+
+           This is the type of security the wholejob container process (server)
+	   insists that *I* (client) use to connect back to him.
+	   Legal values are:
+
+		- GLOBUS_SOAP_MESSAGE_AUTH_SECURE
+		    Transport security, meaning (as I understand)
+		    using something like secure sockets.
+
+		- GLOBUS_SOAP_MESSAGE_AUTH_SECURE_MESSAGE
+		    Message security, meaning (as I understand)
+		    adding a checksum (not encrypting) to make
+		    sure the message has not been tampered with.
+		    Messages are still sent in the clear.
+
+		- GLOBUS_SOAP_MESSAGE_AUTH_SECURE_CONVERSATION
+		    I don't know what "conversation" means.
+		    They have *not* implemented this in C, and so, 
+		    I can't try it even if I wanted to.
+
+		- GLOBUS_SOAP_MESSAGE_AUTH_NONE
+		    Sever requires no security.
+
+	   Here we look at the env var GLOBUS_GRAM_MULTIJOB_HANDLE, 
+	   which is a string that "represents" the wholejob container
+	   EPR (it's *not* the actual EPR) and decide which of the above
+	   FOUR to try based on if the env var contains if "https" or "http":
+
+	   if (https)
+		try GLOBUS_SOAP_MESSAGE_AUTH_SECURE
+		and GLOBUS_SOAP_MESSAGE_AUTH_SECURE_MESSAGE
+	    else if (http)
+		try GLOBUS_SOAP_MESSAGE_AUTH_NONE
+		and GLOBUS_SOAP_MESSAGE_AUTH_SECURE_MESSAGE
+	    else
+		give up ... don't try anything
+	    endif
+
+       (3) globus_bool_t encrypt
+	    The wholejob container process (server) dictates whether
+	    or not the messages must be encrypted.
+	    We try both.
+    */
+    if (strstr(wholejob_epr_str, "https"))
+    {
+	/* wholejob epr has https */
+	npossible_msg_secs = 2;
+
+	if (!(possible_msg_secs = (globus_soap_message_auth_method_t *)
+	malloc(npossible_msg_secs*sizeof(globus_soap_message_auth_method_t))))
+	{
+	    globus_fatal("failed malloc (https), npossible_msg_secs");
+	} /* endif */
+
+	possible_msg_secs[0] = GLOBUS_SOAP_MESSAGE_AUTH_SECURE;
+	possible_msg_secs[1] = GLOBUS_SOAP_MESSAGE_AUTH_SECURE_MESSAGE;
+    }
+    else if (strstr(wholejob_epr_str, "http"))
+    {
+	/* wholejob epr has http */
+	npossible_msg_secs = 2;
+
+	if (!(possible_msg_secs = (globus_soap_message_auth_method_t *)
+	malloc(npossible_msg_secs*sizeof(globus_soap_message_auth_method_t))))
+	{
+	    globus_fatal("failed malloc (http), npossible_msg_secs");
+	} /* endif */
+
+	possible_msg_secs[0] = GLOBUS_SOAP_MESSAGE_AUTH_NONE;
+	possible_msg_secs[1] = GLOBUS_SOAP_MESSAGE_AUTH_SECURE_MESSAGE;
+    } 
+    else
+    {
+	/* cannot figure out how to even guess at security ... 
+	   just give up trying to kill all procs now */
+		/* fprintf(Log_fp,  */
+		    /* "ABORT: ERROR: could not find 'https' or 'http' in >%s<\n " */
+		    /* "... returning immediately without trying to kill",  */
+		    /* wholejob_epr_str);  */
+		/* fflush(Log_fp); */
+	goto fn_return;
+    } /* endif */
+
+    /**************************************************************/
+    /* loops to run through all combinations of security settings */
+    /* that make sense based on what we were able to tease out    */
+    /* of the EPR                                                 */
+    /**************************************************************/
+
+    for (msg_idx = 0; msg_idx < npossible_msg_secs; msg_idx ++)
+    {
+	for (value_idx = 0; 
+	     value_idx < (int)
+		 (sizeof(possible_values)/sizeof(globus_soap_message_authz_method_t));
+	     value_idx ++)
+	{
+	    for (encrypt_flag = 0; encrypt_flag < 2; encrypt_flag ++)
+	    {
+		globus_soap_message_attr_t             	attr;
+		ManagedMultiJobService_client_handle_t 	destroy_handle;
+		wsrl_DestroyType                       	destroy;
+		wsrl_DestroyResponseType               	*destroy_response;
+		ManagedMultiJobPortType_Destroy_fault_t fault_type;
+		xsd_any 				*fault;
+
+		/* fprintf(Log_fp,  */
+	    /* "*** ABORT: top of loop: msg_idx %d value_idx %d encrypt_flag %d\n", */
+		    /* msg_idx, value_idx, encrypt_flag);  */
+		/* fflush(Log_fp); */
+
+		if ((result = globus_soap_message_attr_init(&attr)) 
+		    != GLOBUS_SUCCESS)
+		{
+		    globus_panic(NULL, result, 
+			"Failed globus_soap_message_attr_init");
+		} /* endif */
+
+		if ((result = set_attr_security(attr,
+						possible_values[value_idx],
+						encrypt_flag,
+						NULL,
+						possible_msg_secs[msg_idx])) 
+		    != GLOBUS_SUCCESS)
+		{
+		    globus_panic(NULL, result, "Failed set_attr_security");
+		} /* endif */
+
+		result = ManagedMultiJobService_client_init(&destroy_handle,
+							    attr,
+							    NULL);
+		if (result != GLOBUS_SUCCESS)
+		{
+		    globus_panic(NULL, result, 
+			"Failed ManagedMultiJobService_client_init");
+		} /* endif */
+
+		destroy_response = NULL;
+		/* 
+		   OK ... we pullthe trigger here ... if we return from 
+		   this then we know that this attempt to bring down
+		   the ENTIRE job did not work
+		 */
+		/* fprintf(Log_fp,  */
+		    /* "    ABORT: msg_idx %d value_idx %d encrypt_flag %d: " */
+		    /* "BEFORE pulling the trigger\n", */
+		    /* msg_idx, value_idx, encrypt_flag);  */
+		/* fflush(Log_fp); */
+		result = ManagedMultiJobPortType_Destroy_epr(destroy_handle,
+							    wholejob_epr,
+							    &destroy,
+							    &destroy_response,
+							    &fault_type,
+							    &fault);
+		/* fprintf(Log_fp,  */
+		    /* "    ABORT: msg_idx %d value_idx %d encrypt_flag %d: " */
+		    /* "AFTER pulling the trigger ... empty chamber :-(\n", */
+		    /* msg_idx, value_idx, encrypt_flag);  */
+		/* fflush(Log_fp); */
+		/* if I get to this point the last attempt to kill
+		   the entire job failed.  I might be able to  do something
+		   clever with result, fault, and fault_type to help
+		   guide my next guess, but at this point I don;t
+		   know how to use any of that information to help 
+		   guide my next move and so I ignore them for now.
+		*/
+#if 0
+if(result != GLOBUS_SUCCESS)
+{
+    if(fault_type != GLOBUS_SUCCESS)
+    {
+	/* check fault */
+	...
+
+	xsd_any_destroy(fault);
+    } /* endif */
+
+    /* deal with error */
+} /* endif */
+#endif
+		/* dunno if this all of this "destroy" at the end of
+		this loop is necessary if every time, or worst, 
+		if it breaks things, but what the heck */
+		globus_soap_message_attr_destroy(attr);
+		/* fprintf(Log_fp,  */
+		    /* "    ABORT: msg_idx %d value_idx %d encrypt_flag %d: " */
+		    /* "after globus_soap_message_attr_destroy\n", */
+		    /* msg_idx, value_idx, encrypt_flag);  */
+		/* fflush(Log_fp); */
+
+		wsrl_DestroyType_destroy_contents(&destroy);
+		/* fprintf(Log_fp,  */
+		    /* "    ABORT: msg_idx %d value_idx %d encrypt_flag %d: " */
+		    /* "after wsrl_DestroyType_destroy_contents\n", */
+		    /* msg_idx, value_idx, encrypt_flag);  */
+		/* fflush(Log_fp); */
+
+		wsrl_DestroyResponseType_destroy(destroy_response);
+		/* fprintf(Log_fp,  */
+		    /* "    ABORT: msg_idx %d value_idx %d encrypt_flag %d: " */
+		    /* "after wsrl_DestroyResponseType_destroy\n", */
+		    /* msg_idx, value_idx, encrypt_flag);  */
+		/* fflush(Log_fp); */
+
+		ManagedMultiJobService_client_destroy(destroy_handle);
+		/* fprintf(Log_fp,  */
+		    /* "    ABORT: msg_idx %d value_idx %d encrypt_flag %d: " */
+		    /* "after ManagedMultiJobService_client_destroy ... " */
+		    /* "that was the last one\n", */
+		    /* msg_idx, value_idx, encrypt_flag);  */
+		/* fflush(Log_fp); */
+	    } /* endfor */
+	} /* endfor */
+    } /* endfor */
+
+  fn_return:
     return mpi_errno;
 }
+/* end mpig_pm_ws_abort() */
 
 
 /*********************
@@ -280,7 +690,7 @@ int mpig_pm_ws_abort(int exit_code)
  * - the byte arrays we are distributing here MUST be the biz cards
  * - all procs use the same stack as passed by the arg 'stack'
  ********************/ 
-int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const bcs_ptr)
+static int mpig_pm_ws_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const bc, mpig_bc_t ** const bcs_ptr)
 {       
     int rc;
     char *inbuf = NULL;
@@ -305,6 +715,8 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
     int mpi_errno = MPI_SUCCESS;
     /* fprintf(Log_fp, "%ud: subjobcslen %d: ", Pid, subjobcslen); fflush(Log_fp); print_byte_array(mpig_pm_ws_SubjobBootCS, subjobcslen); */
 
+    MPIG_UNUSED_ARG(pm);
+    
     if (!mpig_pm_ws_Initialized)
     {
         sprintf(mpig_pm_ws_ErrorMsg, 
@@ -327,18 +739,19 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 
     /* create a process group id and add it to the business card.  only the id added to the job master will be used below. */
     {
-	globus_uuid_t uuid;
-	globus_result_t grc;
-
-	grc = globus_uuid_create(&uuid);
-	if (grc)
+	mpig_uuid_t uuid;
+        char uuid_str[MPIG_UUID_MAX_STR_LEN + 1];
+        
+        mpi_errno = mpig_uuid_generate(&uuid);
+	if (mpi_errno)
 	{
 	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() could not create UUID", 
 		__FILE__, __LINE__);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	}
-	
-	mpi_errno = mpig_bc_add_contact(bc, "PM_WS_PG_ID", uuid.text);
+
+        mpig_uuid_unpares(&uuid, uuid_str);
+	mpi_errno = mpig_bc_add_contact(bc, "PM_WS_PG_ID", uuid_str);
 	if (mpi_errno)
 	{
 	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() was unable to add "
@@ -350,11 +763,11 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
     /* add the subjob index to the business card.  the subjob index is be needed by the topology module to perform topology
        discovery and to fill in the MPI_APP_NUM attribute attached to MPI_COMM_WORLD (see MPID_Init). */
     {
-	char str[10];
+	char sj_index_str[10];
 
 	if (MPIU_Snprintf(sj_index_str, 10, "%d", mpig_pm_ws_SubjobIdx) < 10)
         {
-	    mpi_errno = mpig_bc_add_contact(bc, "PM_GK_APP_NUM", str);
+	    mpi_errno = mpig_bc_add_contact(bc, "PM_WS_APP_NUM", sj_index_str);
 
 	    if (mpi_errno)
 	    {
@@ -430,14 +843,14 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
     sprintf(cp, "%d ", subjobcslen);
     cp += strlen(cp);
 #ifndef MPIG_VMPI
-    memcpy(cp, mpig_pm_ws_SubjobBootCS, subjobcslen);
+    memcpy(cp, mpig_pm_ws_SubjobBootCS, (size_t) subjobcslen);
     cp += subjobcslen;
 #endif
 
     /* business card */
     sprintf(cp, "%d ", inbuf_len);
     cp += strlen(cp);
-    memcpy(cp, inbuf, inbuf_len);
+    memcpy(cp, inbuf, (size_t) inbuf_len);
     cp += inbuf_len;
     mpig_bc_free_serialized_object(inbuf);
 
@@ -445,7 +858,7 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 #ifdef MPIG_VMPI
     if (mpig_pm_ws_MySubjobRank == -1)
     {
-	mpig_vmpi_comm_rank(VMPI_COMM_WORLD, &mpig_pm_ws_MySubjobRank);
+	mpig_vmpi_comm_rank(MPIG_VMPI_COMM_WORLD, &mpig_pm_ws_MySubjobRank);
     } /* endif */
 #endif
 
@@ -491,19 +904,19 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 
 	mpig_pm_ws_Done = 0;
 	GlobusTimeReltimeSet(poll_freq, 1, 0); /* NICK */
-	res = globus_rz_multi_data_request_begin(mpig_pm_ws_WholejobHandle, &poll_freq, globus_rz_data_callback, &subjob_data);
+	res = globus_rz_multi_data_request_begin(mpig_pm_ws_WholejobHandle, &poll_freq, mpig_pm_ws_rz_data_callback, &subjob_data);
 	TEST_RES(res);
 
 	/* fprintf(Log_fp, "%ud: after globus_rz_multi_data_request_begin()\n", Pid); fflush(Log_fp); */
 
 	/* Wait for result */
 	/* fprintf(Log_fp, "%ud: subjob master BEFORE wholejob wait loop\n", Pid); fflush(Log_fp); */
-	globus_mutex_lock(&mpig_pm_ws_Mutex);
+	mpig_mutex_lock(&mpig_pm_ws_Mutex);
 	while (!mpig_pm_ws_Done)
 	{
-	    globus_cond_wait(&mpig_pm_ws_Cond, &mpig_pm_ws_Mutex);
+	    mpig_cond_wait(&mpig_pm_ws_Cond, &mpig_pm_ws_Mutex);
 	} /* endwhile */
-	globus_mutex_unlock(&mpig_pm_ws_Mutex);
+	mpig_mutex_unlock(&mpig_pm_ws_Mutex);
 	/* fprintf(Log_fp, "%ud: subjob master AFTER wholejob wait loop\n", Pid); fflush(Log_fp); */
 
 	/* free up some resources in globus_rz_XXX lib */
@@ -532,12 +945,12 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 	/*****************************************************/
 
 #ifdef MPIG_VMPI
-	mpig_vmpi_bcast(&(subjob_data.length), 1, VMPI_INT, 0, VMPI_COMM_WORLD);
+	mpig_vmpi_bcast(&(subjob_data.length), 1, MPIG_VMPI_INT, 0, MPIG_VMPI_COMM_WORLD);
 	mpig_vmpi_bcast(subjob_data.data, 
 		    subjob_data.length, 
-		    VMPI_BYTE, 
+		    MPIG_VMPI_BYTE, 
 		    0, 
-		    VMPI_COMM_WORLD);
+		    MPIG_VMPI_COMM_WORLD);
 #else
 	rc = mpig_pm_ws_distribute_byte_array_to_my_children(subjob_data.data,
 						subjob_data.length,
@@ -574,11 +987,11 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 #endif
 
 #ifdef MPIG_VMPI
-	mpig_vmpi_bcast(&ba_len, 1, VMPI_INT, 0, VMPI_COMM_WORLD);
+	mpig_vmpi_bcast(&ba_len, 1, MPIG_VMPI_INT, 0, MPIG_VMPI_COMM_WORLD);
 
 	TRY_MALLOC(ba, char *, ba_len);
 
-	mpig_vmpi_bcast(ba, ba_len, VMPI_BYTE, 0, VMPI_COMM_WORLD);
+	mpig_vmpi_bcast(ba, ba_len, MPIG_VMPI_BYTE, 0, MPIG_VMPI_COMM_WORLD);
 	mpig_pm_ws_process_wholejob_byte_array(ba,
 				    ba_len,
 				    mpig_pm_ws_SubjobIdx,
@@ -615,8 +1028,8 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 	TRY_MALLOC(ba, char *, ba_len);
 
 	/* now read the actual ba */
-        res = globus_xio_read(parent_handle, ba, ba_len, ba_len, &nbytes, NULL); TEST_RES(res);
-        if (nbytes != ba_len)
+        res = globus_xio_read(parent_handle, ba, (globus_size_t )ba_len, (globus_size_t) ba_len, &nbytes, NULL); TEST_RES(res);
+        if (nbytes != (globus_size_t) ba_len)
         {
 	    sprintf(mpig_pm_ws_ErrorMsg, 
 		"ERROR: file %s: line %d: MPIDI_PM_distribute_byte_array() ba_len read only %d bytes, requested %d bytes", 
@@ -679,7 +1092,7 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
 	char * pg_id_str;
 	bool_t found;
 
-	mpi_errno = mpig_bc_get_contact(&bcs_ptr[0], "PM_WS_PG_ID", &pg_id_str, &found);
+	mpi_errno = mpig_bc_get_contact(bcs_ptr[0], "PM_WS_PG_ID", &pg_id_str, &found);
 	if (mpi_errno)
 	{
 	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: file %s: line %d: mpig_pm_ws_exchange_business_cards() could not extract the "
@@ -728,11 +1141,13 @@ int mpig_pm_ws_exchange_business_cards(mpig_bc_t * const bc, mpig_bc_t ** const 
  * mpig_pm_ws_free_business_cards()
  * NICK: need to write this later ... dunno what it's for. Brian added this.
  ********************/ 
-int mpig_pm_ws_free_business_cards(mpig_bc_t * const bcs)
+static int mpig_pm_ws_free_business_cards(mpig_pm_t * const pm, mpig_bc_t * const bcs)
 {       
     int mpi_errno = MPI_SUCCESS;
     int i;
 
+    MPIG_UNUSED_ARG(pm);
+    
     if (!mpig_pm_ws_Initialized)
     {
         sprintf(mpig_pm_ws_ErrorMsg, 
@@ -754,10 +1169,11 @@ int mpig_pm_ws_free_business_cards(mpig_bc_t * const bcs)
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
 
-    for (i = 0; mpi_errno == MPI_SUCCESS && i < mpig_pm_ws_PG_Size; i ++)
+    for (i = 0; i < mpig_pm_ws_PG_Size; i ++)
     {
-	mpi_errno = mpig_bc_destruct(&bcs[i]);
+	mpig_bc_destruct(&bcs[i]);
     } /* endfor */
+    globus_free(bcs);
 
     return mpi_errno;
 
@@ -767,8 +1183,10 @@ int mpig_pm_ws_free_business_cards(mpig_bc_t * const bcs)
  * mpig_pm_ws_get_pg_size()
  * Assumed that mpig_pm_ws_exchange_business_cards() called before this func
  ********************/ 
-int mpig_pm_ws_get_pg_size(int * const pg_size)
+static int mpig_pm_ws_get_pg_size(mpig_pm_t * const pm, int * const pg_size)
 {       
+    MPIG_UNUSED_ARG(pm);
+    
     if (!mpig_pm_ws_SizeAndRankSet)
     {
         sprintf(mpig_pm_ws_ErrorMsg, 
@@ -793,8 +1211,10 @@ int mpig_pm_ws_get_pg_size(int * const pg_size)
  * mpig_pm_ws_get_pg_rank()
  * Assumed that mpig_pm_ws_exchange_business_cards() called before this func
  ********************/ 
-int mpig_pm_ws_get_pg_rank(int * const pg_rank)
+static int mpig_pm_ws_get_pg_rank(mpig_pm_t * const pm, int * const pg_rank)
 {       
+    MPIG_UNUSED_ARG(pm);
+
     if (!mpig_pm_ws_SizeAndRankSet)
     {
         sprintf(mpig_pm_ws_ErrorMsg, 
@@ -820,8 +1240,10 @@ int mpig_pm_ws_get_pg_rank(int * const pg_rank)
  * Assumed that mpig_pm_ws_exchange_business_cards() called before this func
  * NICK: need to write this later ... dunno what it's for. Brian added this.
  ********************/ 
-int mpig_pm_ws_get_pg_id(const char ** char pg_id)
+static int mpig_pm_ws_get_pg_id(mpig_pm_t * const pm, const char ** const pg_id)
 {       
+    MPIG_UNUSED_ARG(pm);
+    
     if (!mpig_pm_ws_SizeAndRankSet)
     {
         sprintf(mpig_pm_ws_ErrorMsg, 
@@ -848,7 +1270,7 @@ int mpig_pm_ws_get_pg_id(const char ** char pg_id)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_pm_ws_get_app_num
-int mpig_pm_ws_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
+static int mpig_pm_ws_get_app_num(mpig_pm_t * const pm, const mpig_bc_t * const bc, int * const app_num_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     char * app_num_str = NULL;
@@ -857,6 +1279,9 @@ int mpig_pm_ws_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
     int rc;
     int mpi_errno = MPI_SUCCESS;
 
+    MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(pm);
+    
     mpi_errno = mpig_bc_get_contact(bc, "PM_WS_APP_NUM", &app_num_str, &found);
     if (mpi_errno)
     {
@@ -896,7 +1321,7 @@ int mpig_pm_ws_get_app_num(const mpig_bc_t * const bc, int * const app_num_p)
 #define FUNCNAME mpig_pm_ws_rz_data_callback
 #undef FCNAME
 #define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_STATIC void mpig_pm_ws_rz_data_callback(globus_result_t res, const char *data, size_t length, void *args)
+static void mpig_pm_ws_rz_data_callback(globus_result_t res, const char *data, size_t length, void *args)
 {
     struct rz_data *v = (struct rz_data *) args;
 
@@ -909,16 +1334,16 @@ MPIG_STATIC void mpig_pm_ws_rz_data_callback(globus_result_t res, const char *da
 	MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
     } /* endif */
 
-    globus_mutex_lock(&mpig_pm_ws_Mutex);
+    mpig_mutex_lock(&mpig_pm_ws_Mutex);
     {
 	TRY_MALLOC(v->data, char *, length);
 	memcpy(v->data, data, length);
 	v->length = length;
 
 	mpig_pm_ws_Done = 1;
-	globus_cond_signal(&mpig_pm_ws_Cond);
+	mpig_cond_signal(&mpig_pm_ws_Cond);
     }
-    globus_mutex_unlock(&mpig_pm_ws_Mutex);
+    mpig_mutex_unlock(&mpig_pm_ws_Mutex);
 
     return;
 
@@ -929,7 +1354,7 @@ MPIG_STATIC void mpig_pm_ws_rz_data_callback(globus_result_t res, const char *da
 /***************************/
 
 #if 0
-MPIG_STATIC void print_byte_array(char *v, int vlen)
+static void print_byte_array(char *v, int vlen)
 {
     int i;
 
@@ -943,9 +1368,89 @@ MPIG_STATIC void print_byte_array(char *v, int vlen)
 } /* end print_byte_array() */
 #endif
 
+static globus_result_t set_attr_security(
+    globus_soap_message_attr_t          message_attr,
+    globus_soap_message_authz_method_t  value,
+    globus_bool_t                       encrypt,
+    const char *                        id,
+    globus_soap_message_auth_method_t   msg_sec)
+{
+    globus_result_t                     res;
+    gss_buffer_desc                     send_tok;
+    gss_name_t                          target_name;
+    OM_uint32                           min_stat;
+    OM_uint32                           maj_stat;
+
+    switch(value)
+    {
+        case GLOBUS_SOAP_MESSAGE_AUTHZ_IDENTITY:
+            send_tok.value = (void *)id;
+            send_tok.length = strlen(id) + 1;
+
+            maj_stat = gss_import_name(
+                &min_stat,
+                &send_tok,
+                GSS_C_NT_USER_NAME,
+                &target_name);
+            if(maj_stat != GSS_S_COMPLETE)
+            {
+                res = globus_error_put(GLOBUS_ERROR_NO_INFO);
+                goto error;
+            }
+
+            res = globus_soap_message_attr_set(
+                message_attr,
+                GLOBUS_SOAP_MESSAGE_AUTHZ_TARGET_NAME_KEY,
+                NULL,
+                NULL,
+                (void *)target_name);
+            if(res != GLOBUS_SUCCESS)
+            {
+                goto error;
+            }
+            break;
+
+        case GLOBUS_SOAP_MESSAGE_AUTHZ_SELF:
+        case GLOBUS_SOAP_MESSAGE_AUTHZ_HOST:
+        case GLOBUS_SOAP_MESSAGE_AUTHZ_NONE:
+        default:
+            break;
+    }
+
+    globus_soap_message_attr_set(
+        message_attr,
+        GLOBUS_SOAP_MESSAGE_AUTHZ_METHOD_KEY,
+        NULL,
+        NULL,
+        (void *) value);
+
+    globus_soap_message_attr_set(
+        message_attr,
+        GLOBUS_SOAP_MESSAGE_AUTHENTICATION_METHOD_KEY,
+        NULL,
+        NULL,
+        (void *) msg_sec);
+
+    if(encrypt)
+    {
+        globus_soap_message_attr_set(
+            message_attr,
+            GLOBUS_SOAP_MESSAGE_AUTH_PROTECTION_KEY,
+            NULL,
+            NULL,
+            (void *) GLOBUS_SOAP_MESSAGE_AUTH_PROTECTION_PRIVACY);
+    }
+    return GLOBUS_SUCCESS;
+
+error:
+    return res;
+    /* return 0; */
+} /* end set_attr_security() */
+
+
 #ifdef MPIG_VMPI
 /* mpig_pm_ws_gather_subjob_data() using vMPI */
-MPIG_STATIC void mpig_pm_ws_mpig_pm_ws_gather_subjob_data(struct rz_data *subjob_data,
+static void mpig_pm_ws_gather_subjob_data(struct rz_data *subjob_data,
 			    char *my_checkinbuff, 
 			    int hdr_len, 
 			    int my_checkinbufflen)
@@ -956,7 +1461,7 @@ MPIG_STATIC void mpig_pm_ws_mpig_pm_ws_gather_subjob_data(struct rz_data *subjob
     int *displs      = NULL;
     int mycheckinlen = hdr_len+my_checkinbufflen;
 
-    mpig_vmpi_comm_size(VMPI_COMM_WORLD, &mysubjobsize);
+    mpig_vmpi_comm_size(MPIG_VMPI_COMM_WORLD, &mysubjobsize);
 
     if (mpig_pm_ws_MySubjobRank == 0)
     {
@@ -966,13 +1471,13 @@ MPIG_STATIC void mpig_pm_ws_mpig_pm_ws_gather_subjob_data(struct rz_data *subjob
 
     mpig_vmpi_gather(&mycheckinlen,    /* sendbuff  */
 		1,               /* sendcount */
-		VMPI_INT,         /* sendtype  */
+		MPIG_VMPI_INT,         /* sendtype  */
 		checkinlens,     /* recvbuff  */
 		1,               /* recvcount */
-		VMPI_INT,         /* recvtype  */
+		MPIG_VMPI_INT,         /* recvtype  */
 		0,               /* root      */
-		VMPI_COMM_WORLD); /* comm      */
-/* fprintf(Log_fp, "mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): " "after MPI_Gather mysubjobsize %d ... i submitted mycheckinlen %d\n", mysubjobsize, mycheckinlen); fflush(Log_fp); */
+		MPIG_VMPI_COMM_WORLD); /* comm      */
+/* fprintf(Log_fp, "mpig_pm_ws_gather_subjob_data(): " "after MPI_Gather mysubjobsize %d ... i submitted mycheckinlen %d\n", mysubjobsize, mycheckinlen); fflush(Log_fp); */
 
     if (mpig_pm_ws_MySubjobRank == 0)
     {
@@ -982,23 +1487,23 @@ MPIG_STATIC void mpig_pm_ws_mpig_pm_ws_gather_subjob_data(struct rz_data *subjob
 	displs[0] = strlen(b);
 	if (checkinlens[0] < 0)
 	{
-	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): received checkinlens[0]=%d (must be >= 0)",
+	    sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: mpig_pm_ws_gather_subjob_data(): received checkinlens[0]=%d (must be >= 0)",
 		__FILE__, __LINE__, checkinlens[0]);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	} /* endif */
 	subjob_data->length = strlen(b) + checkinlens[0];
-/* fprintf(Log_fp, "mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): " "after adding checkinlens[0]=%d: subjob_data->length = %d\n", checkinlens[0], subjob_data->length); fflush(Log_fp); */
+/* fprintf(Log_fp, "mpig_pm_ws_gather_subjob_data(): " "after adding checkinlens[0]=%d: subjob_data->length = %d\n", checkinlens[0], subjob_data->length); fflush(Log_fp); */
 
 	for (i = 1; i < mysubjobsize; i ++)
 	{
 	    if (checkinlens[i] < 0)
 	    {
-		sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): received checkinlens[%d]=%d (must be >= 0)",
+		sprintf(mpig_pm_ws_ErrorMsg, "ERROR: %s: line %d: mpig_pm_ws_gather_subjob_data(): received checkinlens[%d]=%d (must be >= 0)",
 		    __FILE__, __LINE__, i, checkinlens[i]);
 		MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	    } /* endif */
 	    (subjob_data->length) += checkinlens[i];
-/* fprintf(Log_fp, "mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): " "after adding checkinlens[%d]=%d: subjob_data->length = %d\n", i, checkinlens[i], subjob_data->length); fflush(Log_fp); */
+/* fprintf(Log_fp, "mpig_pm_ws_gather_subjob_data(): " "after adding checkinlens[%d]=%d: subjob_data->length = %d\n", i, checkinlens[i], subjob_data->length); fflush(Log_fp); */
 	    displs[i] = displs[i-1] + checkinlens[i-1];
 	} /* endfor */
 
@@ -1009,24 +1514,24 @@ MPIG_STATIC void mpig_pm_ws_mpig_pm_ws_gather_subjob_data(struct rz_data *subjob
 
     mpig_vmpi_gatherv(my_checkinbuff,    /* sendbuff  */
 		mycheckinlen,      /* sendcount */
-		VMPI_BYTE,          /* sendtype  */
+		MPIG_VMPI_BYTE,          /* sendtype  */
 		subjob_data->data, /* recvbuff  */
 		checkinlens,       /* recvcounts */
 		displs,            /* displs */
-		VMPI_BYTE,          /* recvtype  */
+		MPIG_VMPI_BYTE,          /* recvtype  */
 		0,                 /* root      */
-		VMPI_COMM_WORLD);   /* comm      */
-    /* fprintf(Log_fp, "mpig_pm_ws_mpig_pm_ws_gather_subjob_data(): after vMPI checkin my byte array to subjob master %d bytes: ", mycheckinlen); print_byte_array(my_checkinbuff, mycheckinlen); */
+		MPIG_VMPI_COMM_WORLD);   /* comm      */
+    /* fprintf(Log_fp, "mpig_pm_ws_gather_subjob_data(): after vMPI checkin my byte array to subjob master %d bytes: ", mycheckinlen); print_byte_array(my_checkinbuff, mycheckinlen); */
 
     globus_free(checkinlens);
     globus_free(displs);
 
     return;
 
-} /* end mpig_pm_ws_mpig_pm_ws_gather_subjob_data() - vMPI */
+} /* end mpig_pm_ws_gather_subjob_data() - vMPI */
 #else
-/* mpig_pm_ws_mpig_pm_ws_gather_subjob_data() using rendezvous service (i.e., without vMPI) */
-MPIG_STATIC void mpig_pm_ws_mpig_pm_ws_gather_subjob_data(struct rz_data *subjob_data,
+/* mpig_pm_ws_gather_subjob_data() using rendezvous service (i.e., without vMPI) */
+static void mpig_pm_ws_gather_subjob_data(struct rz_data *subjob_data,
 			    char *my_checkinbuff, 
 			    int hdr_len, 
 			    int my_checkinbufflen)
@@ -1051,16 +1556,17 @@ MPIG_STATIC void mpig_pm_ws_mpig_pm_ws_gather_subjob_data(struct rz_data *subjob
 
 	mpig_pm_ws_Done = 0;
 	GlobusTimeReltimeSet(poll_freq, 1, 0);
-	res = globus_rz_sub_data_request_begin(mpig_pm_ws_SubjobHandle, &poll_freq, mpig_pm_ws_rz_data_callback, subjob_data); TEST_RES(res);
+	res = globus_rz_sub_data_request_begin(mpig_pm_ws_SubjobHandle, &poll_freq, mpig_pm_ws_rz_data_callback, subjob_data);
+	TEST_RES(res);
 
 	/* Wait for result */
 	/* fprintf(Log_fp, "%ud: subjob master BEFORE wait loop\n", Pid); fflush(Log_fp); */
-	globus_mutex_lock(&mpig_pm_ws_Mutex);
+	mpig_mutex_lock(&mpig_pm_ws_Mutex);
 	while (!mpig_pm_ws_Done)
 	{
-	    globus_cond_wait(&mpig_pm_ws_Cond, &mpig_pm_ws_Mutex);
+	    mpig_cond_wait(&mpig_pm_ws_Cond, &mpig_pm_ws_Mutex);
 	} /* endwhile */
-	globus_mutex_unlock(&mpig_pm_ws_Mutex);
+	mpig_mutex_unlock(&mpig_pm_ws_Mutex);
 	/* fprintf(Log_fp, "%ud: subjob master AFTER wait loop\n", Pid); fflush(Log_fp); */
 
 	/* free up some resources in globus_rz_XXX lib */
@@ -1073,7 +1579,7 @@ MPIG_STATIC void mpig_pm_ws_mpig_pm_ws_gather_subjob_data(struct rz_data *subjob
 
     return;
 
-} /* end mpig_pm_ws_mpig_pm_ws_gather_subjob_data() - rendezvous service */
+} /* end mpig_pm_ws_gather_subjob_data() - rendezvous service */
 #endif
 
 /* format of v = <nsubjobs><singlespace><subjob_0>...<subjob_n-1>
@@ -1081,7 +1587,7 @@ MPIG_STATIC void mpig_pm_ws_mpig_pm_ws_gather_subjob_data(struct rz_data *subjob
 	    where <proc_i> = <nbytes><singlespace><nbytes of data>
  */
 
-MPIG_STATIC void mpig_pm_ws_process_wholejob_byte_array(char *v, 
+static void mpig_pm_ws_process_wholejob_byte_array(char *v, 
 					    int vlen,
 					    int my_subjobidx, 
 					    int rank_in_my_subjob,
@@ -1174,10 +1680,10 @@ MPIG_STATIC void mpig_pm_ws_process_wholejob_byte_array(char *v,
     <proc_i> = <nbytes><sp><nbytes of boot CS><kbytes><sp><kbytes of biz card>
 */
 
-MPIG_STATIC void mpig_pm_ws_process_subjob_byte_array(char *v,
+static void mpig_pm_ws_process_subjob_byte_array(char *v,
 					    int vlen,
 					    char **cp, 
-					    int mpig_pm_ws_SubjobIdx,
+					    int SubjobIdx,
 					    int *nprocs,
 					    char ***subjob_byte_arrays,
 					    int **subjob_byte_array_lens,
@@ -1211,7 +1717,7 @@ MPIG_STATIC void mpig_pm_ws_process_subjob_byte_array(char *v,
 	{
 	    sprintf(mpig_pm_ws_ErrorMsg, 
 		"ERROR: %s: line %d: mpig_pm_ws_process_subjob_byte_array(): extracted invalid nbytes %d for proc %d of subjob %d", 
-		__FILE__, __LINE__, nbytes, proc, mpig_pm_ws_SubjobIdx);
+		__FILE__, __LINE__, nbytes, proc, SubjobIdx);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	}
 	else if (*cp+nbytes-v > vlen)
@@ -1219,14 +1725,14 @@ MPIG_STATIC void mpig_pm_ws_process_subjob_byte_array(char *v,
 	    sprintf(mpig_pm_ws_ErrorMsg, 
 		"ERROR: %s: line %d: mpig_pm_ws_process_subjob_byte_array(): "
 		"ran off end of bytearray reading data %d bytes for proc %d of subjob %d", 
-		__FILE__, __LINE__, nbytes, proc, mpig_pm_ws_SubjobIdx);
+		__FILE__, __LINE__, nbytes, proc, SubjobIdx);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	} /* endif */
 
 	if (nbytes > 0)
 	{
 	    TRY_MALLOC((*subjob_boot_cs_array)[proc], char *, nbytes);
-	    memcpy((*subjob_boot_cs_array)[proc], *cp, nbytes);
+	    memcpy((*subjob_boot_cs_array)[proc], *cp, (size_t) nbytes);
 	}
 	else
 	    (*subjob_boot_cs_array)[proc] = NULL;
@@ -1242,7 +1748,7 @@ MPIG_STATIC void mpig_pm_ws_process_subjob_byte_array(char *v,
 	{
 	    sprintf(mpig_pm_ws_ErrorMsg, 
 		"ERROR: %s: line %d: mpig_pm_ws_process_subjob_byte_array(): extracted invalid nbytes %d for proc %d of subjob %d", 
-		__FILE__, __LINE__, nbytes, proc, mpig_pm_ws_SubjobIdx);
+		__FILE__, __LINE__, nbytes, proc, SubjobIdx);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	}
 	else if (*cp+nbytes-v > vlen)
@@ -1250,14 +1756,14 @@ MPIG_STATIC void mpig_pm_ws_process_subjob_byte_array(char *v,
 	    sprintf(mpig_pm_ws_ErrorMsg, 
 		"ERROR: %s: line %d: mpig_pm_ws_process_subjob_byte_array(): "
 		"ran off end of bytearray reading data %d bytes for proc %d of subjob %d", 
-		__FILE__, __LINE__, nbytes, proc, mpig_pm_ws_SubjobIdx);
+		__FILE__, __LINE__, nbytes, proc, SubjobIdx);
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	} /* endif */
 
 	if (nbytes > 0)
 	{
 	    TRY_MALLOC((*subjob_byte_arrays)[proc], char *, nbytes);
-	    memcpy((*subjob_byte_arrays)[proc], *cp, nbytes);
+	    memcpy((*subjob_byte_arrays)[proc], *cp, (size_t) nbytes);
 	}
 	else
 	    (*subjob_byte_arrays)[proc] = NULL;
@@ -1269,7 +1775,7 @@ MPIG_STATIC void mpig_pm_ws_process_subjob_byte_array(char *v,
 
 } /* end mpig_pm_ws_process_subjob_byte_array() */
 
-MPIG_STATIC void mpig_pm_ws_extract_int_and_single_space(char *v, int vlen, char **cp, int *val)
+static void mpig_pm_ws_extract_int_and_single_space(char *v, int vlen, char **cp, int *val)
 {
     int rc;
 
@@ -1383,7 +1889,7 @@ MPIG_STATIC void mpig_pm_ws_extract_int_and_single_space(char *v, int vlen, char
  *   
  */
 
-MPIG_STATIC int mpig_pm_ws_distribute_byte_array_to_my_children(char *v, 
+static int mpig_pm_ws_distribute_byte_array_to_my_children(char *v, 
 						int vlen,
 						int my_subjob_rank,
 						int my_subjob_size,
@@ -1455,7 +1961,7 @@ MPIG_STATIC int mpig_pm_ws_distribute_byte_array_to_my_children(char *v,
 		MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	    } /* endif */
 
-	    res = globus_xio_write(child_handle, v, vlen, vlen, &nbytes, NULL); TEST_RES(res);
+	    res = globus_xio_write(child_handle, v, (globus_size_t) vlen, (globus_size_t) vlen, &nbytes, NULL); TEST_RES(res);
 
 	    if (nbytes != vlen)
 	    {
@@ -1478,4 +1984,12 @@ MPIG_STATIC int mpig_pm_ws_distribute_byte_array_to_my_children(char *v,
 
 #endif /* !defined(MPIG_VMPI) */
 
-#endif /* defined(MPIG_GLOBUS_RENDEZVOUS_INSTALLED) */
+#else /* !defined(HAVE_GLOBUS_RENDEZVOUS_MODULE) */
+
+mpig_pm_t mpig_pm_ws =
+{
+    "web services",
+    NULL
+};
+
+#endif /* if/else defined(HAVE_GLOBUS_RENDEZVOUS_MODULE) */

@@ -137,7 +137,7 @@ int mpig_topology_comm_construct(MPID_Comm * const comm)
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_topology_comm_construct);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
-	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
+	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, MPIG_PTR_CAST(comm)));
 
     MPIR_Nest_incr();
     
@@ -166,9 +166,8 @@ int mpig_topology_comm_construct(MPID_Comm * const comm)
     max_depth = 0;
     for (p0 = 0; p0 < size; p0++)
     {
-	mpig_vc_t * vc;
-
-	mpig_comm_get_vc(comm, p0, &vc);
+	mpig_vc_t * const vc = mpig_comm_get_remote_vc(comm, p0);
+	
 	depths[p0] = mpig_vc_get_num_topology_levels(vc);
 
 	if (depths[p0] > max_depth)
@@ -223,50 +222,49 @@ int mpig_topology_comm_construct(MPID_Comm * const comm)
 	    int rank;
 	    int p1;
 	  
-	    if ( level >= depths[p0] ) continue;
-
-	    if (colors[p0][level] == MPI_UNDEFINED)
+	    if (level < depths[p0])
 	    {
-		mpig_vc_t * vc0;
-		mpig_vc_t * vc1;
-	       
-		/* this proc has not been colored at this level yet, i.e., it hasn't matched any of the procs to the left at
-		 * this level yet ... ok, start new color at this level. */
-
-		mpig_comm_get_vc(comm, p0, &vc0);
-	       
-		colors[p0][level] = next_color++;
-		for (p1 = p0 + 1; p1 < size; p1++)
+		if (colors[p0][level] == MPI_UNDEFINED)
 		{
-		    if (level < depths[p1] && colors[p1][level] == MPI_UNDEFINED)
+		    const mpig_vc_t * const vc0 = mpig_comm_get_remote_vc(comm, p0);
+	       
+		    /* this proc has not been colored at this level yet, i.e., it hasn't matched any of the procs to the left at
+		       this level yet ... ok, start new color at this level. */
+	       
+		    colors[p0][level] = next_color++;
+		    for (p1 = p0 + 1; p1 < size; p1++)
 		    {
-			bool_t match;
-		       
-			mpig_comm_get_vc(comm, p1, &vc1);
-			mpi_errno = mpig_topology_get_vc_match(vc0, vc1, level, &match);
-			if (mpi_errno) goto fn_fail;
-			if (match)
+			if (level < depths[p1] && colors[p1][level] == MPI_UNDEFINED)
 			{
-			    colors[p1][level] = colors[p0][level];
+			    const mpig_vc_t * const vc1 = mpig_comm_get_remote_vc(comm, p1);
+			    bool_t match;
+			
+			    mpi_errno = mpig_topology_get_vc_match(vc0, vc1, level, &match);
+			    if (mpi_errno) goto fn_fail;
+			    if (match)
+			    {
+				colors[p1][level] = colors[p0][level];
+			    }
 			}
 		    }
 		}
-	    }
-	    /* end if (colors[p0][level] == MPI_UNDEFINED) */
+		/* end if (colors[p0][level] == MPI_UNDEFINED) */
 
-	    /* determine the rank of this process inside its cluster */
-	    rank = 0;
-	    for (p1 = 0; p1 < p0; p1++)
-	    {
-		if (level < depths[p1] && colors[p1][level] == colors[p0][level])
+		/* determine the rank of this process inside its cluster */
+		rank = 0;
+		for (p1 = 0; p1 < p0; p1++)
 		{
-		    rank += 1;
+		    if (level < depths[p1] && colors[p1][level] == colors[p0][level])
+		    {
+			rank += 1;
+		    }
 		}
-	    }
 	   
-	    ranks[p0][level] = rank;
+		ranks[p0][level] = rank;
+	    }
+	    /* end if (level < depths[p0]) */
 	}
-	/* end for (level = 0; level < max_depth; level++) */
+	/* end for (p0 = 0; p0 < size; p0++) */
 
 	/* allocate space for the array to hold the cluster sizes for the current level */
 	cluster_sizes[level] = (int *) MPIU_Malloc(next_color * sizeof(int));
@@ -330,9 +328,10 @@ int mpig_topology_comm_construct(MPID_Comm * const comm)
 				    colors[p1][level + 1] == colors[p2][level + 1])
 				{
 				    cluster_ids[p1][level] = cluster_ids[p2][level];
-				    break;
+				    break; /* for p2 */
 				}
 			    }
+			    
 			    if (p2 == p1)
 			    {
 				/* did not find one */
@@ -425,7 +424,7 @@ int mpig_topology_comm_construct(MPID_Comm * const comm)
   fn_return:
     MPIR_Nest_decr();
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT
-	",mpi_errno=" MPIG_ERRNO_FMT, comm->handle, (MPIG_PTR_CAST) comm, mpi_errno));
+	",mpi_errno=" MPIG_ERRNO_FMT, comm->handle, MPIG_PTR_CAST(comm), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_topology_comm_construct);
     return mpi_errno;
     
@@ -472,7 +471,7 @@ int mpig_topology_comm_destruct(MPID_Comm * const comm)
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_topology_comm_destruct);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
-	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, (MPIG_PTR_CAST) comm));
+	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, MPIG_PTR_CAST(comm)));
 
     /* topology information is only created for intracommunicators, at least for now */
     if (comm->comm_kind == MPID_INTERCOMM) goto fn_return;
@@ -483,38 +482,38 @@ int mpig_topology_comm_destruct(MPID_Comm * const comm)
 	MPIU_Free(comm->dev.topology_comm_sets[level].set);
     }
     MPIU_Free(comm->dev.topology_comm_sets);
-    comm->dev.topology_comm_sets = NULL;
+    comm->dev.topology_comm_sets = MPIG_INVALID_PTR;
     
     for (level = 0; level < comm->dev.topology_max_depth; level++)
     {
 	MPIU_Free(comm->dev.topology_cluster_sizes[level]);
     }
     MPIU_Free(comm->dev.topology_cluster_sizes);
-    comm->dev.topology_cluster_sizes = NULL;
+    comm->dev.topology_cluster_sizes = MPIG_INVALID_PTR;
 
     for (p = 0; p < size; p++)
     {
 	MPIU_Free(comm->dev.topology_cluster_ids[p]);
     }
     MPIU_Free(comm->dev.topology_cluster_ids);
-    comm->dev.topology_cluster_ids = NULL;
+    comm->dev.topology_cluster_ids = MPIG_INVALID_PTR;
 
     for (p = 0; p < size; p++)
     {
 	MPIU_Free(comm->dev.topology_ranks[p]);
     }
     MPIU_Free(comm->dev.topology_ranks);
-    comm->dev.topology_ranks = NULL;
+    comm->dev.topology_ranks = MPIG_INVALID_PTR;
 
     for (p = 0; p < size; p++)
     {
 	MPIU_Free(comm->dev.topology_colors[p]);
     }
     MPIU_Free(comm->dev.topology_colors);
-    comm->dev.topology_colors = NULL;
+    comm->dev.topology_colors = MPIG_INVALID_PTR;
 
     MPIU_Free(comm->dev.topology_depths);
-    comm->dev.topology_depths = NULL;
+    comm->dev.topology_depths = MPIG_INVALID_PTR;
 
     comm->dev.topology_max_depth = -1;
 
@@ -523,7 +522,7 @@ int mpig_topology_comm_destruct(MPID_Comm * const comm)
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT
-	",mpi_errno=" MPIG_ERRNO_FMT, comm->handle, (MPIG_PTR_CAST) comm, mpi_errno));
+	",mpi_errno=" MPIG_ERRNO_FMT, comm->handle, MPIG_PTR_CAST(comm), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_topology_comm_destruct);
     return mpi_errno;
 }
@@ -551,7 +550,7 @@ MPIG_STATIC int mpig_topology_get_vc_match(const mpig_vc_t * const vc1, const mp
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_topology_get_vc_match);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_TOPO, "entering: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT
-	", level=%d", (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, level));
+	", level=%d", MPIG_PTR_CAST(vc1), MPIG_PTR_CAST(vc2), level));
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_TOPO, "level_mask=0x%02x, vc1_levels=0x%02x, vc2_levels=0x%02x, result=0x%02x",
 	((unsigned) 1 << level), mpig_vc_get_topology_levels(vc1), mpig_vc_get_topology_levels(vc2),
@@ -573,7 +572,7 @@ MPIG_STATIC int mpig_topology_get_vc_match(const mpig_vc_t * const vc1, const mp
 		if (levels_out)
 		{
 		    match = TRUE;
-		    break;
+		    break; /* for n */
 		}
 	    }
 	}
@@ -583,7 +582,7 @@ MPIG_STATIC int mpig_topology_get_vc_match(const mpig_vc_t * const vc1, const mp
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_TOPO, "exiting: vc1=" MPIG_PTR_FMT ", vc2=" MPIG_PTR_FMT
-	", match=%s", (MPIG_PTR_CAST) vc1, (MPIG_PTR_CAST) vc2, MPIG_BOOL_STR(*match_p)));
+	", match=%s", MPIG_PTR_CAST(vc1), MPIG_PTR_CAST(vc2), MPIG_BOOL_STR(*match_p)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_topology_get_vc_match);
     return mpi_errno;
     
@@ -611,13 +610,13 @@ MPIG_STATIC int mpig_topology_destroy_depths_attr(MPI_Comm comm_handle, int keyv
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_topology_destroy_depths_attr);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM | MPIG_DEBUG_LEVEL_TOPO, "entering: comm=" MPIG_HANDLE_FMT
-	", keyval=" MPIG_HANDLE_FMT ", depths=" MPIG_PTR_FMT, comm_handle, keyval, (MPIG_PTR_CAST) keyval));
+	", keyval=" MPIG_HANDLE_FMT ", depths=" MPIG_PTR_FMT, comm_handle, keyval, MPIG_PTR_CAST(keyval)));
 
     MPIU_Free(depths);
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM | MPIG_DEBUG_LEVEL_TOPO, "exiting: comm=" MPIG_HANDLE_FMT
-	", keyval=" MPIG_HANDLE_FMT ", depths=" MPIG_PTR_FMT, comm_handle, keyval, (MPIG_PTR_CAST) keyval));
+	", keyval=" MPIG_HANDLE_FMT ", depths=" MPIG_PTR_FMT, comm_handle, keyval, MPIG_PTR_CAST(keyval)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_topology_destroy_depths_attr);
     return mpi_errno;
 }
@@ -642,19 +641,20 @@ MPIG_STATIC int mpig_topology_destroy_colors_attr(MPI_Comm comm_handle, int keyv
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_topology_destroy_colors_attr);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM | MPIG_DEBUG_LEVEL_TOPO, "entering: comm=" MPIG_HANDLE_FMT
-	", keyval=" MPIG_HANDLE_FMT ", colors=" MPIG_PTR_FMT, comm_handle, keyval, (MPIG_PTR_CAST) keyval));
+	", keyval=" MPIG_HANDLE_FMT ", colors=" MPIG_PTR_FMT, comm_handle, keyval, MPIG_PTR_CAST(keyval)));
 
     MPID_Comm_get_ptr(comm_handle, comm);
     
     for (p = 0; p < comm->remote_size; p++)
     {
 	MPIU_Free(colors[p]);
+	colors[p] = MPIG_INVALID_PTR;
     }
     MPIU_Free(colors);
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM | MPIG_DEBUG_LEVEL_TOPO, "exiting: comm=" MPIG_HANDLE_FMT
-	", keyval=" MPIG_HANDLE_FMT ", colors=" MPIG_PTR_FMT, comm_handle, keyval, (MPIG_PTR_CAST) keyval));
+	", keyval=" MPIG_HANDLE_FMT ", colors=" MPIG_PTR_FMT, comm_handle, keyval, MPIG_PTR_CAST(keyval)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_topology_destroy_colors_attr);
     return mpi_errno;
 }

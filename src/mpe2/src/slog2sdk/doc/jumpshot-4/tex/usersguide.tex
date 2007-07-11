@@ -1,4 +1,4 @@
-%% LyX 1.3 created this file.  For more info, see http://www.lyx.org/.
+%% LyX 1.4.4 created this file.  For more info, see http://www.lyx.org/.
 %% Do not edit unless you really know what you are doing.
 \documentclass[12pt,oneside,english]{book}
 \usepackage[]{fontenc}
@@ -9,8 +9,8 @@
 \pagestyle{fancy}
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
-\setlength\parskip{\medskipamount}
-\setlength\parindent{0pt}
+\setlength{\parskip}{\medskipamount}
+\setlength{\parindent}{0pt}
 \usepackage{array}
 \usepackage{longtable}
 \usepackage{subfigure}
@@ -34,13 +34,13 @@
 
 
 \author{Anthony Chan,%
-\footnote{chan@mcs.anl.gov%
+\thanks{chan@mcs.anl.gov%
 } David Ashton,%
-\footnote{ashton@mcs.anl.gov%
+\thanks{ashton@mcs.anl.gov%
 } Rusty Lusk,%
-\footnote{lusk@mcs.anl.gov%
+\thanks{lusk@mcs.anl.gov%
 } William Gropp%
-\footnote{gropp@mcs.anl.gov%
+\thanks{gropp@mcs.anl.gov%
 }\\
 Mathematics and Computer Science Division, Argonne National Laboratory}
 
@@ -160,8 +160,7 @@ real states in the back.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/timeline_preview_detail_0.png}
+\includegraphics[scale=0.6]{pic/timeline_preview_detail_0}
 
 
 \caption{\label{fig:timeline_preview_detail_0} Typical zoomed-out view of
@@ -226,8 +225,7 @@ of load-balancing problems before zooming in to see all the real states.
 \begin{figure}[!htbp]
 \centering
 
-\includegraphics[%
-  scale=0.6]{pic/timeline_preview_detail_1.png}
+\includegraphics[scale=0.6]{pic/timeline_preview_detail_1}
 
 
 \caption{\label{fig:timeline_preview_detail_1} Zoomed-in view of Figure \ref{fig:timeline_preview_detail_0}.}
@@ -265,8 +263,7 @@ states.
 \begin{figure}[!htbp]
 \centering
 
-\includegraphics[%
-  scale=0.6]{pic/timeline_preview_detail_2.png}
+\includegraphics[scale=0.6]{pic/timeline_preview_detail_2}
 
 
 \caption{\label{fig:timeline_preview_detail_2} Zoomed-in view of Figure \ref{fig:timeline_preview_detail_1}.}
@@ -300,8 +297,7 @@ clicking on the preview drawable. The result is shown in Figure \ref{fig:timelin
 \begin{figure}[!htbp]
 \centering
 
-\includegraphics[%
-  scale=0.6]{pic/timeline_preview_detail_3.png}
+\includegraphics[scale=0.6]{pic/timeline_preview_detail_3}
 
 
 \caption{\label{fig:timeline_preview_detail_3} Zoomed-in view of Figure \ref{fig:timeline_preview_detail_2}.}
@@ -321,8 +317,7 @@ in Figure \ref{fig:timeline_preview_detail_4}.
 \begin{figure}[h]
 \centering
 
-\includegraphics[%
-  scale=0.6]{pic/timeline_preview_detail_4.png}
+\includegraphics[scale=0.6]{pic/timeline_preview_detail_4}
 
 
 \caption{\label{fig:timeline_preview_detail_4} Zoomed-in view of Figure \ref{fig:timeline_preview_detail_3}.}
@@ -379,8 +374,7 @@ the innermost nested states at a very high preview level.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/timeline_nesting_detail.png}
+\includegraphics[scale=0.5]{pic/timeline_nesting_detail}
 
 
 \caption{\label{fig:timeline_nesting_detail}Zoomed-in view of some nested
@@ -407,22 +401,19 @@ Inclusion Ratio&
 Exclusion Ratio\tabularnewline
 \hline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/timeline_nesting_legend_innermost.png}&
+\includegraphics[scale=0.8]{pic/timeline_nesting_legend_innermost}&
 Innermost Nested State&
 0.5 sec&
 50\%&
 50\%\tabularnewline
 \hline 
-\multicolumn{1}{|c|}{\includegraphics[%
-  scale=0.8]{pic/timeline_nesting_legend_middle.png}}&
+\multicolumn{1}{|c|}{\includegraphics[scale=0.8]{pic/timeline_nesting_legend_middle}}&
 Intermediate Nested State&
 0.8 sec&
 80\%&
 30\%\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/timeline_nesting_legend_outermost.png}&
+\includegraphics[scale=0.8]{pic/timeline_nesting_legend_outermost}&
 Outermost Enclosing State&
 1.0 sec&
 100\%&
@@ -449,8 +440,7 @@ are the same.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/timeline_nesting_preview_all.png}
+\includegraphics[scale=0.5]{pic/timeline_nesting_preview_all}
 
 
 \caption{\label{fig:timeline_nesting_preview_all} Different preview state
@@ -520,8 +510,7 @@ visually.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/timeline_preview_detail_0_excl.png}
+\includegraphics[scale=0.6]{pic/timeline_preview_detail_0_excl}
 
 
 \caption{\label{fig:timeline_preview_detail_0_excl}\emph{CumulativeExclusionRatio}
@@ -532,8 +521,7 @@ view of Figure \ref{fig:timeline_preview_detail_0}.}
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/timeline_preview_detail_1_excl.png}
+\includegraphics[scale=0.6]{pic/timeline_preview_detail_1_excl}
 
 
 \caption{\label{fig:timeline_preview_detail_1_excl}\emph{CumulativeExclusionRatio}
@@ -554,8 +542,7 @@ shot of Figure \ref{fig:timeline_preview_detail_0_excl}.}
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/main.png}
+\includegraphics[scale=0.6]{pic/main}
 
 
 \caption{\label{fig:main} Main control window of Jumpshot-4.}
@@ -569,15 +556,17 @@ bar. The function of each of these buttons is listed in Table \ref{table:main_to
 Two text fields display crucial information about the logfile being
 processed. The text field entitled \emph{LogName} displays the pathname
 of the logfile being processed. The pulldown menu entitled \emph{ViewMap}
-lists all the available ViewMaps in the SLOG-2 file. Currently, the
-CLOG%
+lists all the available ViewMaps in the SLOG-2 file. The CLOG%
 \footnote{A low-overhead native trace format from MPE.%
-}, CLOG-2%
+}, older CLOG-2%
 \footnote{A low-overheaed native trace foramt from MPE-2%
 } and RLOG-converted%
 \footnote{An internal MPICH2 profiling format%
-} SLOG-2 files contain one ViewMap, called the Identity Map. Only IBM's
-UTE trace-converted SLOG-2 file contains multiple ViewMaps.
+} SLOG-2 files contain one ViewMap, called the Identity Map. The recent
+CLOG-2 and IBM's UTE trace-converted SLOG-2 file contains multiple
+ViewMaps, e.g. a CLOG-2 logfile generated from a multi-threaded MPI
+program contains the Process-Thread and Communicator-Thread ViewMaps
+besides the Identity Map.
 
 %
 \begin{table}[!htbp]
@@ -588,38 +577,31 @@ Description&
 Function\tabularnewline
 \hline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Open24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Open24}&
 File Selection &
 display a File Chooser dialog to select logfile to be processed\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Convert24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Convert24}&
 Logfile Conversion&
 invoke the Logfile Convertor to convert non-slog2 file to slog2 format\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Properties24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Properties24}&
 Show Legend Window&
 display the Legend window of the selected logfile if it is hidden\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/New24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/New24}&
 Show Timeline Window&
 display the Timeline window of the selected logfile if it is hidden\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Preferences24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Preferences24}&
 Edit Preferences&
 display the Preference window that adjusts Jumpshot's properties\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Help24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Help24}&
 Show Users Manual&
 show the Users Manual of this program\tabularnewline
 \hline
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Information24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Information24}&
 Show FAQs&
 show the FAQs of this program\tabularnewline
 \hline
@@ -636,8 +618,7 @@ show the FAQs of this program\tabularnewline
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/convertor_init.png}
+\includegraphics[scale=0.5]{pic/convertor_init}
 
 
 \caption{\label{fig:convertor_init}Logfile Convertor window allowing conversion
@@ -648,22 +629,22 @@ of supported trace file format to SLOG-2 format.}
 If a non-slog2 file is selected in the Main window, the Logfile Convertor,
 as shown in Figure \ref{fig:convertor_init}, will be invoked to prompt
 user to convert the file to SLOG-2 format readable by this viewer.
-Currently, four convertors are supported: \emph{CLOG} --\textgreater{}
+Currently, five convertors are supported: \emph{CLOG} --\textgreater{}
 \emph{SLOG-2}, \emph{CLOG-2 --\textgreater{} SLOG-2, RLOG} --\textgreater{}
-\emph{SLOG-2} and \emph{UTE} --\textgreater{} \emph{SLOG-2.} The convertor
-is generally selected based on the input file's file extension. If
-the wrong file convertor is selected, the user can correct it through
-the pale-blue pulldown menu located at the top of the window. The
-Logfile Convertor window can also be invoked by directly clicking
-on the Logfile Conversion button shown in the Table \ref{table:main_toolbar}.
-The text field of the Output File Name usually displays the default
-slog2 filename recommended by the convertor based on the text field
-in the Input File Specification. If the text field does not display
-the default name as expected, hitting return key in the Input File
-Specification field will force an update of the Output File Name field
-with the default name. The Logfile Convertor has five major functions,
-each is associated with a button in the lower panel of the window.
-They are listed in Table \ref{table:convertor_buttons}.
+\emph{SLOG-2,} \emph{UTE} --\textgreater{} \emph{SLOG-2} and \emph{TXT
+--\textgreater{} SLOG-2.} The convertor is generally selected based
+on the input file's file extension. If the wrong file convertor is
+selected, the user can correct it through the pale-blue pulldown menu
+located at the top of the window. The Logfile Convertor window can
+also be invoked by directly clicking on the Logfile Conversion button
+shown in the Table \ref{table:main_toolbar}. The text field of the
+Output File Name usually displays the default slog2 filename recommended
+by the convertor based on the text field in the Input File Specification.
+If the text field does not display the default name as expected, hitting
+return key in the Input File Specification field will force an update
+of the Output File Name field with the default name. The Logfile Convertor
+has five major functions, each is associated with a button in the
+lower panel of the window. They are listed in Table \ref{table:convertor_buttons}.
 
 %
 \begin{table}[!htbp]
@@ -674,28 +655,23 @@ Description&
 Function\tabularnewline
 \hline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Convert24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Convert24}&
 Convert&
 Start the logfile conversion of the selected convertor\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Stop24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Stop24}&
 Stop&
 Stop the ongoing logfile conversion of the selected convertor\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/About24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/About24}&
 Usage&
 Print the usage information of the selected convertor\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/ConvertCancel24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/ConvertCancel24}&
 Cancel&
 Close the window without doing anything\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/ConvertOk24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/ConvertOk24}&
 OK&
 Display the last converted SLOG-2 file and close the window\tabularnewline
 \hline
@@ -719,8 +695,7 @@ the text fields can be modified to reflect the situation.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/convertor_parameters.png}
+\includegraphics[scale=0.5]{pic/convertor_parameters}
 
 
 \caption{\label{fig:convertor_parameters}Hidden parameters panel of the Logfile
@@ -741,8 +716,7 @@ to stop the ongoing conversion.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/convertor_progress.png}
+\includegraphics[scale=0.5]{pic/convertor_progress}
 
 
 \caption{\label{fig:convertor_progress} Logfile conversion in progress.}
@@ -757,8 +731,7 @@ button has not been clicked during the conversion.
 
 %
 \begin{figure}[!htbp]
-\centering\includegraphics[%
-  scale=0.5]{pic/convertor_done.png}
+\centering\includegraphics[scale=0.5]{pic/convertor_done}
 
 
 \caption{\label{fig:convertor_done}The \emph{OK} button is enabled when the
@@ -787,54 +760,65 @@ and the Histogram windows.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/legend_popup.png}
+\subfigure[Legend Window's initial view]{\includegraphics[scale=0.6]{pic/legend_popup}}~~~~~~~~~~~~~~~\subfigure[Fully extended Legend window that shows statistics sumary]{\includegraphics[scale=0.6]{pic/legend_popup_full}}
 
 
 \caption{\label{fig:legend_popup} Typical Legend window when a slog2 file
-is first loaded into Jumpshot-4.}
+is first loaded into Jumpshot-4. The Legend window can be expanded
+to reveal the hidden statistics, \emph{count}, \emph{inclusion ratio}
+and \emph{exclusion ratio} of each category of drawables, stored in
+the 5th, 6th and 7th columns of the window.}
 \end{figure}
 
 
-The Legend window contains mainly a four-column legend table. The
-four columns are labeled \emph{Topo, Name, V,} and \emph{S,} as in
-Table \ref{table:legend_column_ops}.
-
-\clearpage
+The Legend window contains mainly a seven-column legend table. The
+seven columns are labeled \emph{Topo, Name, V, S, count, incl and
+excl} as in Table \ref{table:legend_column_ops}.
 
 %
 \begin{table}[!htbp]
-\begin{longtable}{|c|c|>{\centering}p{2in}|m{2in}|}
+\centering\begin{longtable}{|c|c|>{\centering}p{2in}|>{\centering}p{2in}|}
 \hline 
-\multicolumn{1}{|c|}{Icon}&
+Icon&
 Description&
 Left Mouse Click on Column Cell&
 Right Mouse Click on Column Cell or Left Mouse Click on Column Title\tabularnewline
 \hline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/legend_topo.png}&
+\includegraphics[scale=0.8]{pic/legend_topo}&
 Topology&
 Pick new Color (Figure \ref{fig:legend_color_chooser})&
 None\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/legend_name.png}&
+\includegraphics[scale=0.8]{pic/legend_name}&
 Name&
 Edit Name&
-Sort Order Menu (Figure \ref{fig:legend_sort_order})\tabularnewline
+String Sort Order Menu (Figure \ref{fig:legend_sort_orders}(a))\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/legend_v.png}&
+\includegraphics[scale=0.8]{pic/legend_v}&
 Visibility&
 Check or Uncheck&
 Checkbox Operations Menu (Figure \ref{fig:legend_checkbox_ops})\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/legend_s.png}&
+\includegraphics[scale=0.8]{pic/legend_s}&
 Searchability&
 Check or Uncheck&
 Checkbox Operations Menu (Figure \ref{fig:legend_checkbox_ops})\tabularnewline
+\hline 
+\includegraphics[scale=0.8]{pic/legend_count}&
+Count&
+Non-editable&
+Number Sort Order Menu(Figure\ref{fig:legend_sort_orders}(b))\tabularnewline
+\hline 
+\includegraphics[scale=0.8]{pic/legend_incl}&
+Inclusion Ratio&
+Non-editable&
+Number Sort Order Menu(Figure\ref{fig:legend_sort_orders}(b))\tabularnewline
+\hline 
+\includegraphics[scale=0.8]{pic/legend_excl}&
+Exclusion Ratio&
+Non-editable&
+Number Sort Order Menu(Figure\ref{fig:legend_sort_orders}(b))\tabularnewline
 \hline
 \end{longtable}
 
@@ -852,8 +836,7 @@ and (2) right mouse clicking in any column cell.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/legend_color_chooser.png}
+\includegraphics[scale=0.6]{pic/legend_color_chooser}
 
 
 \caption{\label{fig:legend_color_chooser} Color Chooser Dialog for column
@@ -868,25 +851,27 @@ selecting a new color from the dialog, the new color will be used
 to update the icon button. The update won't be carried out in the
 timeline canvas automatically; an explicit screen redraw is needed.
 
-\clearpage
-
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/legend_sort_menu.png}
+\subfigure[Sort Order menu for Name]{\includegraphics[scale=0.6]{pic/legend_sort_string_menu}}~~~~~~~~~~~~~~~\subfigure[Sort Order menu for count, inclusion and exclusion ratios]{\includegraphics[scale=0.6]{pic/legend_sort_number_menu}}
 
 
-\caption{\label{fig:legend_sort_order} Sort Order operation menu for the
-column Category Name in the Legend window.}
+\caption{\label{fig:legend_sort_orders} Sort Order operation menu for the
+column \emph{Name, count, incl} and \emph{excl} in the Legend window.}
 \end{figure}
 
 
-Figure \ref{fig:legend_sort_order} shows the popup dialog box either
-when the title icon of column Name is pressed or when the right mouse
-button is clicked somewhere in the column. Altogether, there are six
-different sort orders as shown in the figure and they are summarized
-in Table \ref{table:legend_sort_orders}.
+Figure \ref{fig:legend_sort_orders}(a) shows the popup dialog box
+either when the title icon of column \emph{Name} is pressed or when
+the right mouse button is clicked somewhere in the column. Altogether,
+there are six different alphabetical sort orders as shown in the figure
+and they are summarized in Table \ref{table:legend_sort_string_orders}.
+Fig \ref{fig:legend_sort_orders}(b) shows the popup dialog box for
+the column \emph{count}, i\emph{ncl} or \emph{excl} is pressed or
+when the right mouse button is clicked somewhere in the column. The
+popup dialog box contains a menu which will be described later in
+Table \ref{table:legend_sort_number_orders}.
 
 %
 \begin{table}[!htbp]
@@ -918,8 +903,8 @@ reverse of Creation order\tabularnewline
 \end{longtable}
 
 
-\caption{\label{table:legend_sort_orders}Description of the Sort Order operation
-menu in the Legend window.}
+\caption{\label{table:legend_sort_string_orders}Description of the alphabetical
+Sort Order operation menu for column \emph{Name} in the Legend window.}
 \end{table}
 
 
@@ -936,10 +921,35 @@ is ahead of state). The Preview and Topo sort orders can be turned
 on or off through the Preference window in Table \ref{table:preference_legend}.
 
 %
+\begin{table}[!htbp]
+\centering\begin{longtable}{|c|c|}
+\hline 
+Ordering&
+Description\tabularnewline
+\hline
+\hline 
+9 ... 1&
+Decreasing numerical ordering\tabularnewline
+\hline 
+1 ... 9&
+Increasing numerical ordering\tabularnewline
+\hline
+\end{longtable}
+
+
+\caption{\label{table:legend_sort_number_orders}Description of the numerical
+Sort Order operation menu for columns \emph{count}, i\emph{ncl} and
+\emph{excl} in the Legend window}
+\end{table}
+
+
+Table \ref{table:legend_sort_number_orders} shows the only two orderings
+allowed for all numerical entries in the Legend window.
+
+%
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/legend_checkbox_menu.png}
+\includegraphics[scale=0.6]{pic/legend_checkbox_menu}
 
 
 \caption{\label{fig:legend_checkbox_ops} Checkbox Operation menu for column
@@ -948,10 +958,10 @@ Category Visibility and Searchability }
 
 
 Figure \ref{fig:legend_checkbox_ops} shows a popup dialog box when
-the title icon of column V (Visibility) or S (Searchability) is pressed
-or when the right mouse button is clicked somewhere in either column.
-The rule of selection in the legend table follows the standard practice
-of other graphical user interfaces as in Table \ref{table:selection_rules}.
+the title icon of column \emph{V (Visibility)} or \emph{S (Searchability)}
+is pressed or when the right mouse button is clicked somewhere in
+either column. The rule of selection in the legend table follows the
+standard practice of other graphical user interfaces as in Table \ref{table:selection_rules}.
 Together with these standard selection rules, the operations provided
 in the checkbox operation menu allow easy enabling and disabling of
 visibility as well as searchability checkboxes. With the help of continuous
@@ -959,15 +969,14 @@ selection of the category rows in the legend table and the various
 sort orderings, users can easily make a huge number of categories
 disappear in the Timeline or Histogram window. For instance, in CLOG
 converted SLOG-2 file where upper-case names always refer to MPI names,
-the case-sensitive alphabetical ordering allows all MPI names to be
-put before all user-defined categories. With continuous mouse selection,
-the user can easily toggle the visibility of user-defined states in
-the Timeline or Histogram window. Also, every element in the column
-Name can be edited. This feature allows the user to correct undesirable
-category names set during logfile creation and even facilitates sorting
-of the names for selection purposes.
-
-\clearpage
+in CLOG2 converted SLOG-2 file where all MPI states will be prefixed
+with MPI\_, the case-sensitive alphabetical ordering allows all MPI
+names to be put before all user-defined categories. With continuous
+mouse selection, the user can easily toggle the visibility of user-defined
+states in the Timeline or Histogram window. Also, every element in
+the column Name can be edited. This feature allows the user to correct
+undesirable category names set during logfile creation and even facilitates
+sorting of the names for selection purposes.
 
 %
 \begin{table}[!htbp]
@@ -1005,14 +1014,16 @@ selection and selects the range of text.\tabularnewline
 appearance of drawables will not be automatically updated in the Timeline
 canvas until the CanvasReDraw button in the Timeline window is pressed.
 
+\clearpage
+
+
 
 \section{Timeline \emph{Zoomable} Window}
 
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/timeline_popup.png}
+\includegraphics[scale=0.5]{pic/timeline_popup}
 
 
 \caption{\label{fig:timeline_popup} Initial display of the Timeline window
@@ -1075,7 +1086,7 @@ the space between the knob and scrollbar's end buttons.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics{pic/mouse_zoom_mode.png}
+\includegraphics{pic/mouse_zoom_mode}
 
 
 \caption{\label{fig:mouse_zoom_mode} Canvas's left mouse click is in zoom
@@ -1086,7 +1097,7 @@ mode.}
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics{pic/mouse_hand_mode.png}
+\includegraphics{pic/mouse_hand_mode}
 
 
 \caption{\label{fig:mouse_hand_mode} Canvas's left mouse click is in hand
@@ -1100,7 +1111,7 @@ mode.}
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics{pic/gif2png/ZoomPlusUpLeft25.png}
+\includegraphics{pic/gif2png/ZoomPlusUpLeft25}
 
 
 \caption{\label{fig:zoom_plus_cursor} Zoom-plus cursor that indicates the
@@ -1133,7 +1144,7 @@ display panel.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics{pic/gif2png/ZoomMinusUpLeft25.png}
+\includegraphics{pic/gif2png/ZoomMinusUpLeft25}
 
 
 \caption{\label{fig:zoom_minus_cursor} Zoom-minus cursor that indicates the
@@ -1159,7 +1170,7 @@ The zoom factor is 2 in this case.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics{pic/gif2png/HandOpenUpLeft25.png}
+\includegraphics{pic/gif2png/HandOpenUpLeft25}
 
 
 \caption{\label{fig:hand_open_cursor} Open-hand cursor indicates that the
@@ -1170,7 +1181,7 @@ left mouse click is ready to grasp and scroll.}
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics{pic/gif2png/HandCloseUpLeft25.png}
+\includegraphics{pic/gif2png/HandCloseUpLeft25}
 
 
 \caption{\label{fig:hand_close_cursor} Closed-hand cursor indicates that
@@ -1222,8 +1233,7 @@ and one for real drawable.
 \begin{figure}[!htbp]
 \centering
 
-\includegraphics[%
-  scale=0.6]{pic/timeline_infobox_preview_state.png}
+\includegraphics[scale=0.6]{pic/timeline_infobox_preview_state}
 
 
 \caption{\label{fig:timeline_infobox_preview_state} Drawable Info Box for
@@ -1247,12 +1257,12 @@ box shows the color and shape of the drawable. Below the icon is a
 big text area that prints all the detailed statistical information
 about this preview state. There are six timestamps in the text area:
 maximum duration, minimum starttime, maximum endtime, average duration,
-average starttime, and average endtime. Here {}``{[}0{]}'' refers
-to starting point, and {}``{[}1{]}'' refers to the ending point.
-The three {}``average'' timestamps are averaged over all the real
-drawables represented by this preview drawable. Besides timestamps,
-the info box also tells the{}``Number of Real Drawables'' represented
-by the preview object. In this case, 136 real states are amalgamated
+average starttime, and average endtime. Here {}``{[}0]'' refers
+to starting point, and {}``{[}1]'' refers to the ending point. The
+three {}``average'' timestamps are averaged over all the real drawables
+represented by this preview drawable. Besides timestamps, the info
+box also tells the{}``Number of Real Drawables'' represented by
+the preview object. In this case, 136 real states are amalgamated
 by the pure white preview state. Also, the text area lists all the
 categories of real drawables amalgamated and their ratios of the total
 duration of all real drawables to the duration of the preview states.
@@ -1295,8 +1305,7 @@ each real category.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/timeline_infobox_real_primitive.png}
+\includegraphics[scale=0.6]{pic/timeline_infobox_real_primitive}
 
 
 \caption{\label{fig:timeline_infobox_real_primitive} Drawable Info Box for
@@ -1325,8 +1334,7 @@ bytes.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/timeline_infobox_duration.png}
+\includegraphics[scale=0.6]{pic/timeline_infobox_duration}
 
 
 \caption{\label{fig:timeline_infobox_duration} Duration Info Box shows the
@@ -1353,8 +1361,7 @@ is about 1.74 msec.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/timeline_infobox_time.png}
+\includegraphics[scale=0.6]{pic/timeline_infobox_time}
 
 
 \caption{\label{fig:timeline_infobox_time} Time Info Box displays the time
@@ -1383,123 +1390,106 @@ Shortcut&
 Function\tabularnewline
 \hline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Up24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Up24}&
 Up&
 Alt-UP&
 Scroll upward by half a screen\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Down24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Down24}&
 Down&
 Alt-DOWN&
 Scroll downward by half of a screen\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Edit24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Edit24}&
 LabelMark&
 none&
 Mark the timeline(s)\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Paste24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Paste24}&
 LabelMove&
 none&
 Move the marked timeline(s)\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Delete24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Delete24}&
 LabelDelete&
 none&
 Delete the marked timeline(s)\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/TreeExpand24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/TreeExpand24}&
 LabelExpand&
 Alt-E&
-Expand the y-axis tree label by 1 level\tabularnewline
+Expand the y-axis tree label by 1 level. Useful in Process-Thread
+or Communicator-Thread view to expand each process timeline into multiple
+thread timelines in multi-threaded slog2 file.\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/TreeCollapse24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/TreeCollapse24}&
 LabelCollapse&
 Alt-C&
-Collapse the y-axis tree label by 1 level\tabularnewline
+Collapse the y-axis tree label by 1 level. Useful in collapsing multiple
+thread timelines into single process timeline.\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Backward24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Backward24}&
 Backward&
 Alt-LEFT&
 Scroll Backward by half a screen\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Forward24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Forward24}&
 Forward&
 Alt-RIGHT&
 Scroll Forward by half a screen\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/WinUndo.png}&
+\includegraphics[scale=0.8]{pic/gif2png/WinUndo}&
 ZoomUndo&
 Alt-U&
 Undo the previous zoom operation\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/ZoomOut24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/ZoomOut24}&
 ZoomOut&
 Alt-O&
 Zoom Out by 1 level in time\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Home24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Home24}&
 ZoomHome&
 Alt-H&
 Reset zoom to the initial resolution in time\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/ZoomIn24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/ZoomIn24}&
 ZoomIn&
 Alt-I&
 Zoom In by 1 level in time\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/WinRedo.png}&
+\includegraphics[scale=0.8]{pic/gif2png/WinRedo}&
 ZoomRedo&
 Alt-R&
 Redo the previous zoom operation\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/FindBack24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/FindBack24}&
 SearchBackward&
 Alt-B&
 Search backward in time\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Find24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Find24}&
 SeachInitialize&
 Alt-S&
 Search initialization from last popup InfoBox's time\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/FindFore24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/FindFore24}&
 SearchForward&
 Alt-F&
 Search forward in time\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Refresh24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Refresh24}&
 CanvasReDraw&
 Alt-D&
 Redraw canvas to synchronize changes from Preference/Legend window
 or y-axis label panel.\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Print24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Print24}&
 Print&
 none&
 Print the Timeline window\tabularnewline
 \hline 
-\includegraphics[%
-  scale=0.8]{pic/gif2png/Stop24.png}&
+\includegraphics[scale=0.8]{pic/gif2png/Stop24}&
 Exit&
 none&
 Exit the Timeline window\tabularnewline
@@ -1534,9 +1524,7 @@ from the label panel.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/yaxis_label_panel_simple.png}~~~~~~~~~~~~~~~\includegraphics[%
-  scale=0.6]{pic/yaxis_label_panel_expanded.png}
+\includegraphics[scale=0.6]{pic/yaxis_label_panel_simple}~~~~~~~~~~~~~~~\includegraphics[scale=0.6]{pic/yaxis_label_panel_expanded}
 
 
 \caption{\label{fig:yaxis_label_panel} Simple one-level y-axis label tree.
@@ -1578,9 +1566,7 @@ to magnify or shrink the height of the timeline as desired.
 %
 \begin{figure}[!htbp]
 \centering
-\subfigure[Row Count mode]{\includegraphics[%
-  scale=0.6]{pic/adj_row_count.png}}~~~~~~~~~~~~~~~\subfigure[Row Height mode]{\includegraphics[%
-  scale=0.6]{pic/adj_row_height.png}}
+\subfigure[Row Count mode]{\includegraphics[scale=0.6]{pic/adj_row_count}}~~~~~~~~~~~~~~~\subfigure[Row Height mode]{\includegraphics[scale=0.6]{pic/adj_row_height}}
 
 
 \caption{\label{fig:row_adjustment_panel} Row Adjustment Panel determines
@@ -1596,8 +1582,7 @@ simultaneously.}
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/histogram_state_all_cumu_excl.png}
+\includegraphics[scale=0.5]{pic/histogram_state_all_cumu_excl}
 
 
 \caption{\label{fig:histogram_state_all_cumu_excl}Histogram window of the
@@ -1652,8 +1637,7 @@ both summary states and arrows are displayed.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/histogram_state_infobox.png}
+\includegraphics[scale=0.5]{pic/histogram_state_infobox}
 
 
 \caption{\label{fig:histogram_state_infobox} Summary state info boxes of
@@ -1697,8 +1681,7 @@ computation.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/histogram_state_over_incl.png}
+\includegraphics[scale=0.5]{pic/histogram_state_over_incl}
 
 
 \caption{\label{fig:histogram_state_over_incl} \emph{OverlapInclusionRatio}
@@ -1732,8 +1715,7 @@ contribution among different timelines.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/histogram_arrow.png}
+\includegraphics[scale=0.5]{pic/histogram_arrow}
 
 
 \caption{\label{fig:histogram_arrow} \emph{Arrows Only} view of the Figure
@@ -1752,8 +1734,7 @@ than that of the canvas.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/histogram_arrow_infobox.png}
+\includegraphics[scale=0.5]{pic/histogram_arrow_infobox}
 
 
 \caption{\label{fig:histogram_arrow_infobox} Arrow Summary Info Box of Figure
@@ -1774,8 +1755,7 @@ ordered pair of timelines communicates the most.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.6]{pic/preference_pview_state.png}
+\includegraphics[scale=0.6]{pic/preference_pview_state}
 
 
 \caption{\label{fig:preference_pview_state} Preference window showing the
@@ -2025,13 +2005,15 @@ window} in the Preference window.}
 
 \section{Search and Scan Facility}
 
-The level-of-detail support provided in SLOG-2 and Jumpshot-4 tends
-to help locate states that either are longer in time or occur very
-frequently. States that are short and occur rarely in a big logfile
-are difficult to locate without a special tool. In Jumpshot-4, a search
-and scan facility is provided to facilitate this goal. There are three
-search criteria: search time, searchable timeline IDs, and searchable
-categories. 
+The level-of-detail support provided in SLOG-2 and Jumpshot-4's timeline
+window tends to help locate states that either are longer in time
+or occur very frequently. States that are short and occur rarely in
+a big logfile are difficult to locate without a special tool. User
+can easily spot the rarest states from looking at column \emph{count}
+in the Legend window as in Figure \ref{fig:legend_popup}. In Jumpshot-4,
+a search and scan facility is provided to facilitate this goal. There
+are three search criteria: search time, searchable timeline IDs, and
+searchable categories. 
 
 \begin{enumerate}
 \item \emph{Search time} is the time that search starts. It is marked by
@@ -2061,8 +2043,7 @@ facility. By default, all categories in the Legend window are searchable.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/timeline_search_preview.png}
+\includegraphics[scale=0.5]{pic/timeline_search_preview}
 
 
 \caption{\label{fig:timeline_search_preview} Search of state \emph{eos} in
@@ -2097,8 +2078,7 @@ Box.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/timeline_search_preview_zoomed.png}
+\includegraphics[scale=0.5]{pic/timeline_search_preview_zoomed}
 
 
 \caption{\label{fig:timeline_search_preview_zoomed} Dragged zoom performed
@@ -2127,8 +2107,7 @@ process will be automated in a later version of Jumpshot-4.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/timeline_popup_finer.png}
+\includegraphics[scale=0.5]{pic/timeline_popup_finer}
 
 
 \caption{\label{fig:timeline_popup_finer} Initial Timeline window with finer
@@ -2176,8 +2155,7 @@ not recommended.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/timeline_mpi_overhead.png}
+\includegraphics[scale=0.5]{pic/timeline_mpi_overhead}
 
 
 \caption{\label{fig:timeline_mpi_overhead} Graphical MPI overhead profiling
@@ -2215,12 +2193,378 @@ is assumed to be for user computation.
 %
 \begin{figure}[!htbp]
 \centering
-\includegraphics[%
-  scale=0.5]{pic/histogram_mpi_overhead.png}
+\includegraphics[scale=0.5]{pic/histogram_mpi_overhead}
 
 
 \caption{\label{fig:histogram_mpi_overhead} Overall MPI overhead histogram
 for Figure \ref{fig:timeline_mpi_overhead}.}
 \end{figure}
 
+
+
+\section{Performance Analysis of Threaded MPI Application}
+
+The goal of this section is to provide an example how Jumpshot's ViewMap
+can be used to study the performance of threaded MPI applications.
+Let's say we are interested to find out the performance of different
+MPI implementations in a threaded environment. We will use a simple
+mult-threaded MPI program to see if there is any preformance difference.
+The test program, pthread\_sendrecv.c, used here first creates multiple
+threads in each process. Each spawned thread then duplicates the MPI\_COMM\_WORLD
+to form a ring, i.e. each thread sends a message to its next rank
+and receives a message from its previous rank within same duplicated
+MPI\_COMM\_WORLD to form a ring. The program is shown at the end of
+the document. MPE is built with --enable-threadlogging%
+\footnote{--enable-threadlogging enables MPE to build a thread-safe MPI logging
+library which is implemented by using a global mutex over MPE logging
+library which is not thread-safe yet.%
+} and --disable-safePMPI%
+\footnote{MPE by defaults does --enable-safePMPI to protect the logging code
+from doing circular logging in unknown MPI implementation where MPI
+calls are implementated with other MPI calls. Basically, --enable-safePMPI
+disables the logging before making PMPI call and then re-enables logging
+when the PMPI call is returned. Using --disable-safePMPI in MPE eliminiates
+this layer of protection but allows lowest possible logging overhead.%
+}. The most accessible MPI implementations with MPI\_THREAD\_MULTIPLE
+support are MPICH2 and OpenMPI. We will use the latest stable release
+of MPICH2, 1.0.5p4, and OpenMPI, 1.2.3 for this demonstration. Since
+OpenMPI has the option to enable progress thread in additional to
+the standard thread support, we will build 2 different versions of
+OpenMPIs for this little experiment. The experiment will be performed
+on 4 AMD64 nodes running Linux Ubuntu 7.04, each node consists of
+4 cores and the test program will be running with 1 to 6 extra threads
+to see if the oversubscribing has any effect on the send and receive
+performance.
+
+Table \ref{tab:runtime_pthread_sendrecv} shows the total duration
+of the 4-process run with various numbers of child threads. The data
+shows that as the number of child threads increases, so is the total
+runtime. For MPICH2, the runtime increase is modest for each additional
+thread. For OpenMPI+progress\_thread, the performance isn't as good
+as MPICH2 but it is still reasonable as the number of threads increases.
+However for OpenMPI without progress thread support, the runtime increases
+drastically as there are 3 child threads or more. The situation becomes
+very bad as the node becomes oversubscribed, i.e. when there are 5
+or more child threads. Now we are going to use MPE logging and Jumpshot
+to find out what happens. 
+
+%
+\begin{table}[!htbp]
+\centering
+
+\begin{longtable}{|c|c|c|c|}
+\hline 
+child thread count&
+MPICH2&
+OpenMPI+progress\_thread&
+OpenMPI\tabularnewline
+\hline
+\hline 
+1&
+0.025299&
+0.029545&
+0.029230\tabularnewline
+\hline 
+2&
+0.026213 &
+0.030872 &
+0.032966 \ref{fig:openmpi_4_2}\tabularnewline
+\hline 
+3&
+0.028916 &
+0.038964 &
+0.050484 \ref{fig:openmpi_4_3}\tabularnewline
+\hline 
+4&
+0.030145 &
+0.045354 &
+0.054791 \ref{fig:openmpi_4_4}\tabularnewline
+\hline 
+5&
+0.031977 &
+0.058039 &
+0.149200 \ref{fig:openmpi_4_5}\tabularnewline
+\hline 
+6&
+0.034462 &
+0.058505 &
+0.193399 \ref{fig:openmpi_4_6}\tabularnewline
+\hline
+\end{longtable}
+
+
+\caption{\label{tab:runtime_pthread_sendrecv}The total runtime (in second)
+of the 4-process run of pthread\_sendrecv with various number of child
+threads in different MPI implementations. The 2nd column header, MPICH2:
+refers to MPICH2-1.0.5p4 built with default sock channel which has
+MPI\_THREAD\_MULTIPLE support. The 3rd column header, OpenMPI+progress\_thread,
+refers to OpenMPI-1.2.3 configured with --enable-mpi-threads and --enable-progress-threads.
+The 4th column, OpenMPI, refers to OpenMPI-1.2.3 built with --enable-mpi-threads
+which enables the MPI\_THREAD\_MULTIPLE support.}
+\end{table}
+
+
+The problematic data in the last column of Table \ref{tab:runtime_pthread_sendrecv}
+are being analyzed with two Jumpshot viewmaps for each run. They are
+shown in Figures \ref{fig:openmpi_4_2}, \ref{fig:openmpi_4_3},\ref{fig:openmpi_4_4},\ref{fig:openmpi_4_5}
+and \ref{fig:openmpi_4_6}. The legend for these pictures are shown
+in Figure\ref{fig:pthread_sendrecv_legend}. 
+
+%
+\begin{figure}[!htbp]
+\centering
+
+\includegraphics[scale=0.7]{pic/pthread_sendrecv_legend}
+
+
+\caption{\label{fig:pthread_sendrecv_legend} The legend table of all the
+pthread\_sendrecv runs.}
+\end{figure}
+
+
+The extra viewmaps provided in MPE logging are:
+
+1) Process-Thread view: where each thread timeline is shown nested
+under the process timeline it belongs to. Since we are only running
+4 processes, only 4 process timelines here.
+
+2) Communicator-Thread view: where each thread is shown nested within
+the communicator timeline. Since we are runing with 2 to 6 child threads
+where a duplicated MPI\_COMM\_WORLD is created for each thread, so
+we expect to see 3 to 7 major communicator timelines. MPI\_COMM\_WORLD
+is always labeled as 0 in CLOG2 converted SLOG-2 file and other duplicated
+MPI\_Comm is labeled with other integer depends on the order of when
+it is being created.
+
+When the timeline window of the process-thread view first shows up,
+only process timelines are visible, i.e. all the thread timelines
+are nested within the process timeline. User needs to use the Y-axis
+LabelExpand button \includegraphics{pic/gif2png/TreeExpand24} or
+\emph{Alt-E} to expand each process timeline to reveal the thread
+timeline. Similarly, user can use the Y-axis LabelCollapse button
+\includegraphics{pic/gif2png/TreeCollapse24} or \emph{Alt-C} to collapse
+the thread timeline back to their corresponding process timeline.
+Similarly for the communicator-thread view, the Y-axis LabelExpand
+and LabelCollapse buttons should be used to expand and collapse the
+communicator timelines.
+
+Figures \ref{fig:openmpi_4_3}, \ref{fig:openmpi_4_4}, \ref{fig:openmpi_4_5}
+and \ref{fig:openmpi_4_6} clearly demonstrate that there is some
+kind of communication progress problem in OpenMPI when used without
+progress thread. Without alternating between communicator-thread and
+process-thread views, it would be difficult to identify the existence
+of a progress engine problem.
+
+%
+\begin{figure}[!htbp]
+\centering
+
+\subfigure[process-thread view]{\includegraphics[scale=0.4]{pic/openmpi_4_2_procthd}}
+
+\centering
+
+\subfigure[communicator-thread view]{\includegraphics[scale=0.4]{pic/openmpi_4_2_commthd}}
+
+
+\caption{\label{fig:openmpi_4_2}OpenMPI without progress thread: 2 child
+threads per process. As shown in both the Process-Thread view and
+Communicator-Thread views here, everything performs as expected.}
+\end{figure}
+
+
+%
+\begin{figure}[!htbp]
+\centering
+
+\subfigure[process-thread view]{\includegraphics[scale=0.4]{pic/openmpi_4_3_procthd}}
+
+\centering
+
+\subfigure[communicator-thread view]{\includegraphics[scale=0.4]{pic/openmpi_4_3_commthd}}
+
+
+\caption{\label{fig:openmpi_4_3}OpenMPI without progress thread: 3 child
+threads per process where there are 3 MPI\_Comm\_dup() calls in the
+master thread 0. As shown in the expanded Process-Thread view, the
+3rd MPI\_Comm\_dup() call takes significantly longer than the first
+two MPI\_Comm\_dup(). The expanded Communicator-Thread view also suggests
+that the delayed 3rd MPI\_Comm\_dup() is blocking MPI point-to-point
+communication in the first two duplicated MPI\_COMM\_WORLD. As soon
+as the delayed MPI\_Comm\_dup() exits, the MPI point-to-point communication
+is restored. }
+\end{figure}
+
+
+%
+\begin{figure}[!htbp]
+\centering
+
+\subfigure[process-thread view]{\includegraphics[scale=0.4]{pic/openmpi_4_4_procthd}}
+
+\centering
+
+\subfigure[communicator-thread view]{\includegraphics[scale=0.4]{pic/openmpi_4_4_commthd}}
+
+
+\caption{\label{fig:openmpi_4_4}OpenMPI without progress thread: 4 child
+threads per process. Similar to Fig. \ref{fig:openmpi_4_3}, the 3rd
+MPI\_Comm\_dup() is delayed but not the 4th MPI\_Comm\_dup(). The
+interference between the delayed 3rd MPI\_Comm\_dup() and the other
+dup MPI\_COMM\_WORLD seen in Fig. \ref{fig:openmpi_4_3} is not observed
+here. So the communication in first two dup MPI\_COMM\_WORLD finishes
+much earlier than the communication in the last two communicators.}
+\end{figure}
+
+
+%
+\begin{figure}[!htbp]
+\centering
+
+\subfigure[process-thread view]{\includegraphics[scale=0.4]{pic/openmpi_4_5_procthd}}
+
+\centering
+
+\subfigure[communicator-thread view]{\includegraphics[scale=0.4]{pic/openmpi_4_5_commthd}}
+
+
+\caption{\label{fig:openmpi_4_5}OpenMPI without progress thread: 5 child
+threads per process. Again, the last MPI\_Comm\_dup() takes longer
+than previous MPI\_Comm\_dup()s in finishing up. The feature that
+we observed in Fig. \ref{fig:openmpi_4_3} that the delayed MPI\_Comm\_dup()
+is blocking other communicator's communication occurs here. However,
+even long after all MPI\_Comm\_dup() are done, there are many regions
+in the communicator-thread view that MPI communication is not progressing,
+i.e. some kind of temporary deadlock in the MPI progress engine may
+be happening here.}
+\end{figure}
+
+
+%
+\begin{figure}[!htbp]
+\centering
+
+\subfigure[process-thread view]{\includegraphics[scale=0.4]{pic/openmpi_4_6_procthd}}
+
+\centering
+
+\subfigure[communicator-thread view]{\includegraphics[scale=0.4]{pic/openmpi_4_6_commthd}}
+
+
+\caption{\label{fig:openmpi_4_6}OpenMPI without progress thread: 6 child
+threads per process. This is very similar to Fig. \ref{fig:openmpi_4_5}.}
+\end{figure}
+
+
+
+
+
+\subsection{Test program}
+
+The following is the test program, pthread\_sendrecv.c, used in the
+previous experiment.
+
+\begin{verbatim}
+/*
+   (C) 2007 by Argonne National Laboratory.
+       See COPYRIGHT in top-level directory.
+*/
+#include "mpi.h"
+#include <stdio.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define BUFLEN 512
+#define NTIMES 100
+#define MAX_THREADS 10
+
+/*
+    Concurrent send and recv by multiple threads on each process. 
+*/
+void *thd_sendrecv( void * );
+void *thd_sendrecv( void *comm_ptr )
+{
+    MPI_Comm     comm;
+    int         my_rank, num_procs, next, buffer_size, namelen, idx;
+    char        buffer[BUFLEN], processor_name[MPI_MAX_PROCESSOR_NAME];
+    MPI_Status  status;
+
+    comm = *(MPI_Comm *) comm_ptr;
+
+    MPI_Comm_size( comm, &num_procs );
+    MPI_Comm_rank( comm, &my_rank );
+    MPI_Get_processor_name( processor_name, &namelen );
+
+    fprintf( stderr, "Process %d on %s\n", my_rank, processor_name );
+    strcpy( buffer, "hello there" );
+    buffer_size = strlen(buffer)+1;
+
+    if ( my_rank == num_procs-1 )
+        next = 0;
+    else
+        next = my_rank+1;
+
+    for ( idx = 0; idx < NTIMES; idx++ ) {
+        if (my_rank == 0) {
+            MPI_Send(buffer, buffer_size, MPI_CHAR, next, 99, comm);
+            MPI_Send(buffer, buffer_size, MPI_CHAR, MPI_PROC_NULL, 299, comm);
+            MPI_Recv(buffer, BUFLEN, MPI_CHAR, MPI_ANY_SOURCE, 99,
+                     comm, &status);
+        }
+        else {
+            MPI_Recv(buffer, BUFLEN, MPI_CHAR, MPI_ANY_SOURCE, 99,
+                     comm, &status);
+            MPI_Recv(buffer, BUFLEN, MPI_CHAR, MPI_PROC_NULL, 299,
+                     comm, &status);
+            MPI_Send(buffer, buffer_size, MPI_CHAR, next, 99, comm);
+        }
+        /* MPI_Barrier(comm); */
+    }
+
+    pthread_exit( NULL );
+    return 0;
+}
+
+
+
+int main( int argc,char *argv[] )
+{
+    MPI_Comm   comm[ MAX_THREADS ];
+    pthread_t  thd_id[ MAX_THREADS ];
+    int        my_rank, ii, provided;
+    int        num_threads;
+
+    MPI_Init_thread( &argc, &argv, MPI_THREAD_MULTIPLE, &provided );
+    if ( provided != MPI_THREAD_MULTIPLE ) {
+        printf( "Aborting, MPI_THREAD_MULTIPLE is needed...\n" );
+        MPI_Abort( MPI_COMM_WORLD, 1 );
+    }
+
+    MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+
+    if ( my_rank == 0 ) {
+        if (argc != 2) {
+            printf( "Error: %s num_threads\n", argv[0] );
+            MPI_Abort( MPI_COMM_WORLD, 1 );
+        }
+        num_threads = atoi( argv[1] );
+        MPI_Bcast( &num_threads, 1, MPI_INT, 0, MPI_COMM_WORLD );
+    }
+    else
+        MPI_Bcast( &num_threads, 1, MPI_INT, 0, MPI_COMM_WORLD );
+
+    MPI_Barrier( MPI_COMM_WORLD );
+
+    for ( ii=0; ii < num_threads; ii++ ) {
+        MPI_Comm_dup( MPI_COMM_WORLD, &comm[ii] );
+        pthread_create( &thd_id[ii], NULL, thd_sendrecv, (void *) &comm[ii] );
+    }
+        
+    for ( ii=0; ii < num_threads; ii++ )
+        pthread_join( thd_id[ii], NULL );
+
+    MPI_Finalize();
+    return 0;
+}
+\end{verbatim}
 \end{document}

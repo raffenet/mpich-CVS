@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 # 
 # Globus device code:          Copyright 2005 Northern Illinois University

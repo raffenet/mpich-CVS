@@ -7,6 +7,9 @@
 #if !defined(MPICH2_MPIDDEFS_H_INCLUDED)
 #define MPICH2_MPIDDEFS_H_INCLUDED
 
+/**********************************************************************************************************************************
+						BEGIN TOPOLOGY DISCOVERY SECTION
+**********************************************************************************************************************************/
 /* attribute keys for accessing topology information */
 #define MPIG_TOPOLOGY_DEPTHS_KEYVAL ((const int) mpig_topology_depths_keyval)
 #define MPIG_TOPOLOGY_COLORS_KEYVAL ((const int) mpig_topology_colors_keyval)
@@ -29,11 +32,16 @@ extern int mpig_topology_colors_keyval;
 #define MPICHX_LAN_LEVEL  MPIG_TOPOLOGY_LEVEL_LAN
 #define MPICHX_HOST_LEVEL MPIG_TOPOLOGY_LEVEL_SAN
 #define MPICHX_VMPI_LEVEL MPIG_TOPOLOGY_LEVEL_VMPI
+/**********************************************************************************************************************************
+						 END TOPOLOGY DISCOVERY SECTION
+**********************************************************************************************************************************/
 
-#if @MPIG_VMPI_DEFINED@ /* defined(MPIG_VMPI) */
+/**********************************************************************************************************************************
+						  BEGIN SYMBOL RENAMING SECTION
+**********************************************************************************************************************************/
+#if @MPIG_RENAME_SYMBOLS_DEFINED@ /* MPIG_RENAME_SYMBOLS */
 /* rename MPI and PMPI symbols if building on top of a vendor MPI */
-@MPIG_SYMBOL_MAP_MPI_H@
-@MPIG_SYMBOL_MAP_PMPI_H@
+@MPIG_SYMBOL_MAP_PUBLIC_H@
 
 #if defined(MPIG_BUILDING_MPICH2)
 /* rename internal MPICH2 symbols if building on top of a vendor MPI, but only while building MPICH2 */
@@ -43,7 +51,41 @@ extern int mpig_topology_colors_keyval;
 #if @ROMIO_ENABLED@ == 0
 #undef MPI_File_f2c
 #endif
+
 #endif /* defined(MPIG_BUILDING_MPICH2) */
-#endif /* defined(MPIG_VMPI) */
+#endif /* MPIG_RENAME_SYMBOLS */
+/**********************************************************************************************************************************
+						   END SYMBOL RENAMING SECTION
+**********************************************************************************************************************************/
+
+/**********************************************************************************************************************************
+						     BEGIN DEBUGGING SECTION
+**********************************************************************************************************************************/
+void mpig_debug_app_printf(const char * filename, const char * funcname, int line, const char * fmt, ...);
+
+/* printf conversion specifiers and other macros to make printing values of types that vary with the platform a little easier */
+#define MPIG_HANDLE_FMT      "0x%08x"			/* format for MPICH2 object handles; assumed to be at most 32-bits */
+#define MPIG_ERRNO_FMT       "0x%08x"			/* format of an MPI error code; assumed to be at most 32-bits */
+#define MPIG_AINT_FMT        @MPIG_AINT_FMT@		/* format for an MPI_Aint */
+#define MPIG_SIZE_FMT        @MPIG_SIZE_FMT@		/* format of a size_t (and replated types) */
+#define MPIG_PTR_FMT         @MPIG_PTR_FMT@		/* format of a pointer */
+#define MPIG_PTR_CAST(ptr_)  ((@MPIG_PTR_CAST@)(ptr_))	/* cast type for a pointer */
+
+#if @MPIG_DEBUG_DEFINED@
+#define MPIG_DEBUG_APP_PRINTF(a_) mpig_debug_app_printf a_
+#define MPIG_DEBUG_APP_ERROR_PRINT(funcname_, errno_)						\
+{												\
+    char err_str__[MPI_MAX_ERROR_STRING + 1];							\
+    int err_str_len__;										\
+    MPI_Error_string((errno_), err_str__, &err_str_len__);					\
+    MPIG_DEBUG_APP_PRINTF((__FILE__, (funcname_), __LINE__, "MPI_ERROR: %s", err_str__));	\
+}
+#else
+#define MPIG_DEBUG_APP_PRINTF(a_)
+#define MPIG_DEBUG_APP_ERROR_PRINT(funcname_, errno_)
+#endif
+/**********************************************************************************************************************************
+						      END DEBUGGING SECTION
+**********************************************************************************************************************************/
 
 #endif /* MPICH2_MPIDDEFS_H_INCLUDED */

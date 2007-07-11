@@ -19,7 +19,7 @@ extern struct mpig_cm mpig_cm_self;
  * define the structure to be included in the communication method structure (CMS) of the VC object
  */
 #define MPIG_VC_CMS_SELF_DECL						\
-struct mpig_ci_self_vc							\
+struct mpig_cm_self_vc_cms						\
 {									\
     /* name of hostname running the process */				\
     char * hostname;							\

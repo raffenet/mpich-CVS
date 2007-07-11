@@ -67,12 +67,11 @@ int MPIDI_CH3_PreLoad( void )
 				  (void **)&libraryVersion );
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     if (libraryVersion == 0 || *libraryVersion == 0) {
-	mpi_errno = MPIU_ERR_SETSIMPLE(mpi_errno,MPI_ERR_OTHER,
-				       "**nodllversion");
+	MPIU_ERR_SETSIMPLE(mpi_errno,MPI_ERR_OTHER,"**nodllversion");
 	MPIU_ERR_POP(mpi_errno);
     }
     if (strcmp( libraryVersion, MPICH_CH3ABIVERSION ) != 0) {
-	mpi_errno = MPIU_ERR_SET2(mpi_errno,MPI_ERR_OTHER,
+	MPIU_ERR_SET2(mpi_errno,MPI_ERR_OTHER,
 			  "**dllversionmismatch","**dllversionmismatch %s %s",
 			  libraryVersion, MPICH_CH3ABIVERSION );
 	MPIU_ERR_POP(mpi_errno);

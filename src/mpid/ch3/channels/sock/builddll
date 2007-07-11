@@ -139,6 +139,13 @@ cd ..
 rm -rf .tmp
 #
 # Build the ch3 socket support code and link it into the ch3-sock dll
+if [ ! -d ../util ] ; then
+    mkdir ../util
+fi
+if [ ! -d ../../util/sock ] ; then
+    mkdir ../../util/sock
+fi
+
 (\
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/sock" ; \
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/sock/poll" ; \
