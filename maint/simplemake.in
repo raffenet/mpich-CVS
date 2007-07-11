@@ -169,9 +169,9 @@ $quiet = 0;
 	      'f:s' => '$(F77_COMPILE) -S $<',
 # C preprocessor *output* definitions.  We don't use cpp as the 
 # output suffix to avoid conflicts with C++ 
-	      'c:txt' => '$(CPP) $(INCLUDES) $< >$*.txt',
-	      'F:txt' => '$(CPP) $(INCLUDES) $<  >$*.txt',
-	      'cxx:txt' => '$(CXXCPP) $(INCLUDES) $< >$*.txt',
+	      'c:txt' => '$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt',
+	      'F:txt' => '$(CPP) $(INCLUDES) $(CPPFLAGS) $<  >$*.txt',
+	      'cxx:txt' => '$(CXXCPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt',
 # Program from source rules
 	      'c:' => '$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)',
 	      'f:' => '$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)',
