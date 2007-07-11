@@ -95,6 +95,9 @@
 #define NMPI_Ibsend MPI_Ibsend
 #define NMPI_Buffer_detach MPI_Buffer_detach
 #define NMPI_Gather MPI_Gather
+#define NMPIX_Grequest_class_create MPIX_Grequest_class_create
+#define NMPIX_Grequest_class_allocate MPIX_Grequest_class_allocate
+#define NMPIX_Grequest_start MPIX_Grequest_start
 #else
 #define NMPI_Abort PMPI_Abort
 #define NMPI_Bcast PMPI_Bcast
@@ -168,5 +171,8 @@
 #define NMPI_Ibsend PMPI_Ibsend
 #define NMPI_Buffer_detach PMPI_Buffer_detach
 #define NMPI_Gather PMPI_Gather
+#define NMPIX_Grequest_class_create PMPIX_Grequest_class_create
+#define NMPIX_Grequest_class_allocate PMPIX_Grequest_class_allocate
+#define NMPIX_Grequest_start PMPIX_Grequest_start
 #endif
 #endif /* MPICH_NMPI_H_INCLUDED */

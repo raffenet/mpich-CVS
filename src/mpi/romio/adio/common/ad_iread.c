@@ -20,6 +20,8 @@
 #include <sys/aio.h>
 #endif
 
+#include "mpiu_greq.h"
+
 /* ADIOI_GEN_IreadContig
  *
  * This code handles two distinct cases.  If ROMIO_HAVE_WORKING_AIO is not
@@ -31,7 +33,7 @@
  */
 void ADIOI_GEN_IreadContig(ADIO_File fd, void *buf, int count, 
 			   MPI_Datatype datatype, int file_ptr_type,
-			   ADIO_Offset offset, ADIO_Request *request,
+			   ADIO_Offset offset, MPI_Request *request,
 			   int *error_code)  
 {
     int len, typesize;
@@ -42,11 +44,6 @@ void ADIOI_GEN_IreadContig(ADIO_File fd, void *buf, int count,
     static char myname[] = "ADIOI_GEN_IREADCONTIG";
 #endif
 
-    (*request) = ADIOI_Malloc_request();
-    (*request)->optype = ADIOI_READ;
-    (*request)->fd = fd;
-    (*request)->datatype = datatype;
-
     MPI_Type_size(datatype, &typesize);
     len = count * typesize;
 
@@ -55,7 +52,6 @@ void ADIOI_GEN_IreadContig(ADIO_File fd, void *buf, int count,
 
     ADIO_ReadContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
 		    &status, error_code);  
-    (*request)->queued = 0;
 #ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
 	MPI_Get_elements(&status, MPI_BYTE, &len);
@@ -67,11 +63,8 @@ void ADIOI_GEN_IreadContig(ADIO_File fd, void *buf, int count,
 
 #else
     if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
-    aio_errno = ADIOI_GEN_aio(fd, buf, len, offset, 0, &((*request)->handle));
+    aio_errno = ADIOI_GEN_aio(fd, buf, len, offset, 0, request);
     if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
-
-    (*request)->queued = 1;
-    ADIOI_Add_req_to_list(request);
 
     fd->fp_sys_posn = -1;
 
@@ -84,8 +77,6 @@ void ADIOI_GEN_IreadContig(ADIO_File fd, void *buf, int count,
     
     *error_code = MPI_SUCCESS;
 #endif  /* NO_AIO */
-
-    fd->async_count++;
 }
 
 
@@ -102,25 +93,17 @@ void ADIOI_GEN_IreadStrided(ADIO_File fd, void *buf, int count,
     int typesize;
 #endif
 
-    *request = ADIOI_Malloc_request();
-    (*request)->optype = ADIOI_READ;
-    (*request)->fd = fd;
-    (*request)->datatype = datatype;
-    (*request)->queued = 0;
-    (*request)->handle = 0;
-
     /* Call the blocking function.  It will create an error code
      * if necessary.
      */
     ADIO_ReadStrided(fd, buf, count, datatype, file_ptr_type, 
 		     offset, &status, error_code);  
 
-    fd->async_count++;
-
 #ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
 	MPI_Type_size(datatype, &typesize);
-	(*request)->nbytes = count * typesize;
+	/* do something with count * typesize.. but what? */
     }
 #endif
+    MPIO_Completed_request_create(&fd, error_code, request);
 }

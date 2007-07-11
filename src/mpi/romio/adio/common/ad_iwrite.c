@@ -20,11 +20,16 @@
 #include <sys/aio.h>
 #endif
 
+#include "../../mpi-io/mpioimpl.h"
+#include "../../mpi-io/mpioprof.h"
+#include "mpiu_greq.h"
 /* Workaround for incomplete set of definitions if __REDIRECT is not 
    defined and large file support is used in aio.h */
 #if !defined(__REDIRECT) && defined(__USE_FILE_OFFSET64)
 #define aiocb aiocb64
 #endif
+
+static MPIX_Grequest_class ADIOI_GEN_greq_class = 0;
 
 /* ADIOI_GEN_IwriteContig
  *
@@ -45,11 +50,6 @@ void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count,
     static char myname[] = "ADIOI_GEN_IWRITECONTIG";
 #endif
 
-    *request = ADIOI_Malloc_request();
-    (*request)->optype = ADIOI_WRITE;
-    (*request)->fd = fd;
-    (*request)->datatype = datatype;
-
     MPI_Type_size(datatype, &typesize);
     len = count * typesize;
 
@@ -58,11 +58,11 @@ void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count,
 
     ADIO_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
 		     &status, error_code);  
-    (*request)->queued = 0;
+    MPIO_Completed_request_create(fd, error_code, request);
 # ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
 	MPI_Get_elements(&status, MPI_BYTE, &len);
-	(*request)->nbytes = len;
+	/* how to set status? */
     }
 # endif
 
@@ -70,11 +70,8 @@ void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count,
 
 #else
     if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
-    aio_errno = ADIOI_GEN_aio(fd, buf, len, offset, 1, &((*request)->handle));
+    aio_errno = ADIOI_GEN_aio(fd, buf, len, offset, 1, request);
     if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
-
-    (*request)->queued = 1;
-    ADIOI_Add_req_to_list(request);
 
     fd->fp_sys_posn = -1;
 
@@ -87,8 +84,6 @@ void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count,
 
     *error_code = MPI_SUCCESS;
 #endif /* NO_AIO */
-
-    fd->async_count++;
 }
 
 
@@ -100,15 +95,18 @@ void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count,
  */
 #ifdef ROMIO_HAVE_WORKING_AIO
 int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
-		  int wr, void *handle)
+		  int wr, MPI_Request *request)
 {
     int err=-1, fd_sys;
 
     int error_code;
     struct aiocb *aiocbp;
+    ADIOI_AIO_Request *aio_req;
+
 
     fd_sys = fd->fd_sys;
 
+    aio_req = (ADIOI_AIO_Request*)ADIOI_Calloc(sizeof(ADIOI_AIO_Request), 1);
     aiocbp = (struct aiocb *) ADIOI_Calloc(sizeof(struct aiocb), 1);
     aiocbp->aio_offset = offset;
     aiocbp->aio_buf    = buf;
@@ -145,40 +143,25 @@ int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 
     if (err == -1) {
 	if (errno == EAGAIN) {
-        /* exceeded the max. no. of outstanding requests.
-           complete all previous async. requests and try again. */
-
-	    ADIOI_Complete_async(&error_code);
-	    if (error_code != MPI_SUCCESS) return -EIO;
-
-	    while (err == -1 && errno == EAGAIN) {
-
-#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
-		if (wr) err = aio_write(aiocbp);
-		else err = aio_read(aiocbp);
-#else
-		/* Broken IBM interface */
-		if (wr) err = aio_write(fd_sys, aiocbp);
-		else err = aio_read(fd_sys, aiocbp);
-#endif
-
-		if (err == -1 && errno == EAGAIN) {
-		    /* sleep and try again */
-		    sleep(1);
-		}
-		else if (err == -1) {
-		    /* real error */
-		    return -errno;
-		}
-	    }
-        }
-	else {
+	    /* exceeded the max. no. of outstanding requests.
+	    treat this as a blocking request and return.  */
+	    ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
+			offset, NULL, &error_code);  
+	    MPIO_Completed_request_create(&fd, &error_code, request);
+	    return 0;
+	} else {
 	    return -errno;
 	}
     }
-
-    *((struct aiocb **) handle) = aiocbp;
-
+    aio_req->aiocbp = aiocbp;
+    aio_req->req = request;
+    if (ADIOI_GEN_greq_class == 0) {
+	    MPIX_Grequest_class_create(ADIOI_GEN_aio_query_fn, 
+			    ADIOI_GEN_aio_free_fn, MPIU_Greq_cancel_fn, 
+			    ADIOI_GEN_aio_poll_fn, ADIOI_GEN_aio_wait_fn, 
+			    &ADIOI_GEN_greq_class);
+    }
+    MPIX_Grequest_class_allocate(ADIOI_GEN_greq_class, aio_req, request);
     return 0;
 }
 #endif
@@ -189,7 +172,7 @@ int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
  */
 void ADIOI_GEN_IwriteStrided(ADIO_File fd, void *buf, int count, 
 			     MPI_Datatype datatype, int file_ptr_type,
-			     ADIO_Offset offset, ADIO_Request *request,
+			     ADIO_Offset offset, MPI_Request *request,
 			     int *error_code)
 {
     ADIO_Status status;
@@ -197,25 +180,112 @@ void ADIOI_GEN_IwriteStrided(ADIO_File fd, void *buf, int count,
     int typesize;
 #endif
 
-    *request = ADIOI_Malloc_request();
-    (*request)->optype = ADIOI_WRITE;
-    (*request)->fd = fd;
-    (*request)->datatype = datatype;
-    (*request)->queued = 0;
-    (*request)->handle = 0;
-
     /* Call the blocking function.  It will create an error code 
      * if necessary.
      */
     ADIO_WriteStrided(fd, buf, count, datatype, file_ptr_type, 
 		      offset, &status, error_code);  
 
-    fd->async_count++;
-
 #ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
 	MPI_Type_size(datatype, &typesize);
-	(*request)->nbytes = count * typesize;
+	/* do something with count * typesize and status */
     }
 #endif
+    MPIO_Completed_request_create(&fd, error_code, request);
+}
+
+/* generic POSIX aio completion test routine */
+int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
+{
+    ADIOI_AIO_Request *aio_req;
+    int err;
+
+    aio_req = (ADIOI_AIO_Request *)extra_state;
+
+    errno = aio_error(aio_req->aiocbp);
+    if (errno == EINPROGRESS) {
+	    /* TODO: need to diddle with status somehow */
+    }
+    else if (errno == ECANCELED) {
+	    /* TODO: unsure how to handle this */
+    } else if (errno == 0) {
+	    errno = aio_return(aio_req->aiocbp);
+	    aio_req->nbytes = errno;
+	    MPIR_Nest_incr();
+	    MPI_Grequest_complete(*(aio_req->req));
+	    MPIR_Nest_decr();
+    }
+    return MPI_SUCCESS;
+}
+
+/* wait for multiple requests to complete */
+int ADIOI_GEN_aio_wait_fn(int count, void ** array_of_states, 
+		double timeout, MPI_Status *status)
+{
+	const struct aiocb **cblist;
+
+	ADIOI_AIO_Request **aio_reqlist;
+	int i;
+
+	aio_reqlist = (ADIOI_AIO_Request **)array_of_states;
+
+	cblist = (const struct aiocb**) calloc(count, sizeof(struct aiocb*));
+
+	for (i=0; i< count; i++)
+	{
+		cblist[i] = aio_reqlist[i]->aiocbp;
+	}
+
+	errno = aio_suspend(cblist, count, NULL);
+	if (errno == 0) 
+	{ /* run through the list of requests, and mark all the completed ones
+	     as done */
+		for (i=0; i< count; i++)
+		{
+			aio_error(aio_reqlist[i]->aiocbp);
+			if (errno == 0) {
+				errno = aio_return(aio_reqlist[i]->aiocbp);
+				aio_reqlist[i]->nbytes = errno;
+				MPIR_Nest_incr();
+				MPI_Grequest_complete(*(aio_reqlist[i]->req));
+				MPIR_Nest_decr();
+			} 
+			/* TODO: need to handle error conditions somehow*/
+		}
+	} /* TODO: also need to handle errors here  */
+
+	if (cblist != NULL) free(cblist);
+}
+
+int ADIOI_GEN_aio_query_fn(void *extra_state, MPI_Status *status) 
+{
+	ADIOI_AIO_Request *aio_req;
+
+	aio_req = (ADIOI_AIO_Request *)extra_state;
+
+
+	MPI_Status_set_elements(status, MPI_BYTE, aio_req->nbytes); 
+
+	/* do i need to nest_incr/nest_decr  here? */
+	/* can never cancel so always true */ 
+	MPI_Status_set_cancelled(status, 0); 
+
+	/* choose not to return a value for this */ 
+	status->MPI_SOURCE = MPI_UNDEFINED; 
+	/* tag has no meaning for this generalized request */ 
+	status->MPI_TAG = MPI_UNDEFINED; 
+	/* this generalized request never fails */ 
+	return MPI_SUCCESS; 
+}
+
+int ADIOI_GEN_aio_free_fn(void *extra_state)
+{
+	ADIOI_AIO_Request *aio_req;
+	aio_req = (ADIOI_AIO_Request*)extra_state;
+
+	ADIOI_Free(aio_req->aiocbp);
+	ADIOI_Free(aio_req);
+
+	return MPI_SUCCESS;
 }

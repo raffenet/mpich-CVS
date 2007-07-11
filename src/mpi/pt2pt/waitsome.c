@@ -190,6 +190,7 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
     MPID_Progress_start(&progress_state);
     for(;;)
     {
+	MPIR_Grequest_progress_poke(incount, request_ptrs, array_of_statuses);
 	for (i = 0; i < incount; i++)
 	{
 	    if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)

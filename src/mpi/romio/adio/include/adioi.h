@@ -23,32 +23,6 @@
 
 #ifndef ADIOI_INCLUDE
 #define ADIOI_INCLUDE
-
-/* each pending nonblocking request is stored on a linked list */
-typedef struct ADIOI_Async {
-    ADIO_Request *request;
-    struct ADIOI_Async *prev, *next;
-} ADIOI_Async_node;
-
-/* list to keep track of memory regions that have been malloced 
-   for above async list */
-typedef struct ADIOI_Malloc_async_ptr {
-    ADIOI_Async_node *ptr;  /* ptr to malloced region */
-    struct ADIOI_Malloc_async_ptr *next;
-} ADIOI_Malloc_async;
-
-/* used to malloc request objects in bulk */
-typedef struct ADIOI_Req_n {
-    struct ADIOI_RequestD reqd;
-    struct ADIOI_Req_n *next;
-} ADIOI_Req_node;
-
-/* used to keep track of the malloced requests that need to be freed */
-typedef struct ADIOI_Malloc_req_ptr {
-    ADIOI_Req_node *ptr;  /* ptr to malloced region */
-    struct ADIOI_Malloc_req_ptr *next;
-} ADIOI_Malloc_req;
-
 /* used to keep track of hint/info values.
  * Note that there are a lot of int-sized values in here...they are
  * used as int-sized entities other places as well.  This would be a 
@@ -124,6 +98,24 @@ typedef struct ADIOI_Fl_node {
     struct ADIOI_Fl_node *next;  /* pointer to next node */
 } ADIOI_Flatlist_node;
 
+#ifdef ROMIO_PVFS2
+#include <pvfs2.h>
+#endif
+typedef struct ADIOI_AIO_req_str {
+	MPI_Request *req;
+	MPI_Offset nbytes;
+	/* should probably make this a union */
+#ifdef ROMIO_HAVE_WORKING_AIO
+	struct aiocb *aiocbp;
+#endif
+#ifdef ROMIO_PVFS2
+	PVFS_sys_op_id op_id;
+	PVFS_sysresp_io resp_io;
+#endif
+#ifdef ROMIO_NTFS
+	HANDLE *lpHandles;
+#endif
+} ADIOI_AIO_Request;
 
 struct ADIOI_Fns_struct {
     void (*ADIOI_xxx_Open) (ADIO_File fd, int *error_code);
@@ -292,13 +284,7 @@ void ADIOI_Flatten(MPI_Datatype type, ADIOI_Flatlist_node *flat,
 		  ADIO_Offset st_offset, int *curr_index);  
 void ADIOI_Delete_flattened(MPI_Datatype datatype);
 int ADIOI_Count_contiguous_blocks(MPI_Datatype type, int *curr_index);
-ADIOI_Async_node *ADIOI_Malloc_async_node(void);
-void ADIOI_Free_async_node(ADIOI_Async_node *node);
-void ADIOI_Add_req_to_list(ADIO_Request *request);
 void ADIOI_Complete_async(int *error_code);
-void ADIOI_Del_req_from_list(ADIO_Request *request);
-struct ADIOI_RequestD *ADIOI_Malloc_request(void);
-void ADIOI_Free_request(ADIOI_Req_node *node);
 void *ADIOI_Malloc_fn(size_t size, int lineno, char *fname);
 void *ADIOI_Calloc_fn(size_t nelem, size_t elsize, int lineno, char *fname);
 void *ADIOI_Realloc_fn(void *ptr, size_t size, int lineno, char *fname);
@@ -318,7 +304,7 @@ void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count,
 			  ADIO_Offset offset, ADIO_Status *status,
 			  int *error_code);
 int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
-		  int wr, void *handle);
+		  int wr, MPI_Request *request);
 void ADIOI_GEN_IreadContig(ADIO_File fd, void *buf, int count, 
 			   MPI_Datatype datatype, int file_ptr_type,
 			   ADIO_Offset offset, ADIO_Request *request,
@@ -347,6 +333,11 @@ int ADIOI_GEN_IODone(ADIO_Request *request, ADIO_Status *status,
 		     int *error_code);
 void ADIOI_GEN_IOComplete(ADIO_Request *request, ADIO_Status *status,
 			  int *error_code);
+int ADIOI_GEN_aio_poll_fn(void *extra_state, ADIO_Status *status);
+int ADIOI_GEN_aio_wait_fn(int count, void **array_of_states, double timeout, 
+		ADIO_Status *status);
+int ADIOI_GEN_aio_query_fn(void *extra_state, ADIO_Status *status);
+int ADIOI_GEN_aio_free_fn(void *extra_state);
 void ADIOI_GEN_ReadStrided_naive(ADIO_File fd, void *buf, int count,
                        MPI_Datatype buftype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
@@ -501,7 +492,7 @@ int MPIOI_File_iwrite(MPI_File fh,
 		      int count,
 		      MPI_Datatype datatype,
 		      char *myname,
-		      MPIO_Request *request);
+		      MPI_Request *request);
 int MPIOI_File_iread(MPI_File fh,
 		     MPI_Offset offset,
 		     int file_ptr_type,
@@ -509,7 +500,7 @@ int MPIOI_File_iread(MPI_File fh,
 		     int count,
 		     MPI_Datatype datatype,
 		     char *myname,
-		     MPIO_Request *request);
+		     MPI_Request *request);
 #endif
 
 
