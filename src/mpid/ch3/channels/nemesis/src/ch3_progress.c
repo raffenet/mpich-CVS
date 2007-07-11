@@ -38,7 +38,6 @@ volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 #ifdef MPICH_IS_THREADED
 volatile int MPIDI_CH3I_progress_blocked = FALSE;
 volatile int MPIDI_CH3I_progress_wakeup_signalled = FALSE;
-static unsigned int nem_completions = 0;
 MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
 static int MPIDI_CH3I_Progress_delay(unsigned int completion_count);
 static int MPIDI_CH3I_Progress_continue(unsigned int completion_count);
@@ -126,8 +125,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 #endif
                 )
             {
-                nem_completions = MPIDI_CH3I_progress_completion_count;
-                mpi_errno = MPID_nem_mpich2_blocking_recv(&cell, &in_fbox, nem_completions);
+                mpi_errno = MPID_nem_mpich2_blocking_recv(&cell, &in_fbox);
             }
             else
             {

@@ -35,7 +35,7 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 
     if (((MPIDI_CH3I_VC *)vc->channel_private)->iStartContigMsg)
     {
-        errno = ((MPIDI_CH3I_VC *)vc->channel_private)->iStartContigMsg(vc, hdr, hdr_sz, NULL, 0, sreq_ptr);
+        mpi_errno = ((MPIDI_CH3I_VC *)vc->channel_private)->iStartContigMsg(vc, hdr, hdr_sz, NULL, 0, sreq_ptr);
         goto fn_exit;
     }
 
