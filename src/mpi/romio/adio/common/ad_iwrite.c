@@ -31,11 +31,13 @@
 
 static MPIX_Grequest_class ADIOI_GEN_greq_class = 0;
 
+#ifdef ROMIO_HAVE_WORKING_AIO
 /* ADIOI_GEN_IwriteContig
  *
- * This code handles two distinct cases.  If ROMIO_HAVE_WORKING_AIO is not
- * defined, then I/O is performed in a blocking manner.  Otherwise we post
- * an asynchronous I/O operations using the appropriate aio routines.
+ * This code handles only the case where ROMIO_HAVE_WORKING_AIO is 
+ * defined. We post an asynchronous I/O operations using the appropriate aio
+ * routines.  Otherwise, the ADIOI_Fns_struct will point to the FAKE
+ * version.
  */
 void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count, 
 			    MPI_Datatype datatype, int file_ptr_type,
@@ -43,32 +45,12 @@ void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count,
 			    int *error_code)  
 {
     int len, typesize;
-#ifndef ROMIO_HAVE_WORKING_AIO
-    ADIO_Status status;
-#else
     int aio_errno = 0;
     static char myname[] = "ADIOI_GEN_IWRITECONTIG";
-#endif
 
     MPI_Type_size(datatype, &typesize);
     len = count * typesize;
 
-#ifndef ROMIO_HAVE_WORKING_AIO
-    /* no support for nonblocking I/O. Use blocking I/O. */
-
-    ADIO_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
-		     &status, error_code);  
-    MPIO_Completed_request_create(&fd, error_code, request);
-# ifdef HAVE_STATUS_SET_BYTES
-    if (*error_code == MPI_SUCCESS) {
-	MPI_Get_elements(&status, MPI_BYTE, &len);
-	/* how to set status? */
-    }
-# endif
-
-    fd->fp_sys_posn = -1;
-
-#else
     if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;
     aio_errno = ADIOI_GEN_aio(fd, buf, len, offset, 1, request);
     if (file_ptr_type == ADIO_INDIVIDUAL) fd->fp_ind += len;
@@ -83,17 +65,13 @@ void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count,
     /* --END ERROR HANDLING-- */
 
     *error_code = MPI_SUCCESS;
-#endif /* NO_AIO */
 }
-
-
 /* This function is for implementation convenience.
  * It takes care of the differences in the interface for nonblocking I/O
  * on various Unix machines! If wr==1 write, wr==0 read.
  *
  * Returns 0 on success, -errno on failure.
  */
-#ifdef ROMIO_HAVE_WORKING_AIO
 int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		  int wr, MPI_Request *request)
 {
