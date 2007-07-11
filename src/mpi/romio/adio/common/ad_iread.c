@@ -52,10 +52,10 @@ void ADIOI_GEN_IreadContig(ADIO_File fd, void *buf, int count,
 
     ADIO_ReadContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
 		    &status, error_code);  
+    MPIO_Completed_request_create(&fd, error_code, request);
 #ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
 	MPI_Get_elements(&status, MPI_BYTE, &len);
-	(*request)->nbytes = len;
     }
 #endif
 

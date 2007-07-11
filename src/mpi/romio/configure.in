@@ -1307,7 +1307,7 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
     fi
 fi
 
-if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" ; then
+if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" -o "x$disable_aio" = "xno"; then
 
     # Check that aio is available (many systems appear to have aio
     # either installed improperly or turned off).

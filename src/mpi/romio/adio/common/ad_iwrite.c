@@ -58,7 +58,7 @@ void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count,
 
     ADIO_WriteContig(fd, buf, len, MPI_BYTE, file_ptr_type, offset, 
 		     &status, error_code);  
-    MPIO_Completed_request_create(fd, error_code, request);
+    MPIO_Completed_request_create(&fd, error_code, request);
 # ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
 	MPI_Get_elements(&status, MPI_BYTE, &len);
@@ -195,6 +195,7 @@ void ADIOI_GEN_IwriteStrided(ADIO_File fd, void *buf, int count,
     MPIO_Completed_request_create(&fd, error_code, request);
 }
 
+#ifdef ROMIO_HAVE_WORKING_AIO
 /* generic POSIX aio completion test routine */
 int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
 {
@@ -289,3 +290,4 @@ int ADIOI_GEN_aio_free_fn(void *extra_state)
 
 	return MPI_SUCCESS;
 }
+#endif /* working AIO */
