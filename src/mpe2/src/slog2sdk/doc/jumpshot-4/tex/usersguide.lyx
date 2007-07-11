@@ -1744,9 +1744,8 @@ An internal MPICH2 profiling format
  SLOG-2 files contain one ViewMap, called the Identity Map.
  The recent CLOG-2 and IBM's UTE trace-converted SLOG-2 file contains multiple
  ViewMaps, e.g.
- a CLOG-2 logfile generated from a multi-threaded MPI program will have
- Process-Thread viewmap and Communicator-Thread viewmap besides the Identity
- Map.
+ a CLOG-2 logfile generated from a multi-threaded MPI program contains the
+ Process-Thread and Communicator-Thread ViewMaps besides the Identity Map.
 \end_layout
 
 \begin_layout Standard
@@ -2125,7 +2124,7 @@ If a non-slog2 file is selected in the Main window, the Logfile Convertor,
 
 , will be invoked to prompt user to convert the file to SLOG-2 format readable
  by this viewer.
- Currently, four convertors are supported: 
+ Currently, five convertors are supported: 
 \emph on
 CLOG
 \emph default
@@ -2139,15 +2138,19 @@ CLOG-2 --> SLOG-2, RLOG
 \emph default
 -->
 \emph on
- SLOG-2
+ SLOG-2,
 \emph default
- and 
+ 
 \emph on
 UTE 
 \emph default
 -->
 \emph on
- SLOG-2.
+ SLOG-2 
+\emph default
+and
+\emph on
+ TXT --> SLOG-2.
  
 \emph default
 The convertor is generally selected based on the input file's file extension.
@@ -3652,7 +3655,7 @@ Topo Order,
 \end_layout
 
 \begin_layout Standard
-\begin_inset Float figure
+\begin_inset Float table
 wide false
 sideways false
 status open
@@ -3673,7 +3676,7 @@ centering
 
 \begin_inset Tabular
 <lyxtabular version="3" rows="3" columns="2">
-<features>
+<features islongtable="true">
 <column alignment="center" valignment="top" leftline="true" width="0">
 <column alignment="center" valignment="top" leftline="true" rightline="true" width="0">
 <row topline="true" bottomline="true">
@@ -9404,18 +9407,19 @@ Table
  drastically as there are 3 child threads or more.
  The situation becomes very bad as the node becomes oversubscribed, i.e.
  when there are 5 or more child threads.
- Now we are going to use MPE logging and Jumpshot to find out what happens
+ Now we are going to use MPE logging and Jumpshot to find out what happens.
+ 
 \end_layout
 
 \begin_layout Standard
-\begin_inset Float figure
+\begin_inset Float table
 wide false
 sideways false
 status open
 
 \begin_layout Standard
 \begin_inset ERT
-status collapsed
+status open
 
 \begin_layout Standard
 
@@ -9427,9 +9431,12 @@ centering
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
 \begin_inset Tabular
 <lyxtabular version="3" rows="7" columns="4">
-<features>
+<features islongtable="true">
 <column alignment="center" valignment="top" leftline="true" width="0">
 <column alignment="center" valignment="top" leftline="true" width="0">
 <column alignment="center" valignment="top" leftline="true" width="0">
@@ -9449,17 +9456,6 @@ child thread count
 
 \begin_layout Standard
 MPICH2
-\begin_inset Foot
-status collapsed
-
-\begin_layout Standard
-MPICH2-1.0.5p4 is built with default sock channel which has MPI_THREAD_MULTIPLE
- support.
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -9469,17 +9465,6 @@ MPICH2-1.0.5p4 is built with default sock channel which has MPI_THREAD_MULTIPLE
 
 \begin_layout Standard
 OpenMPI+progress_thread
-\begin_inset Foot
-status collapsed
-
-\begin_layout Standard
-OpenMPI-1.2.3 is configured with --enable-mpi-threads and --enable-progress-thread
-s.
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -9489,17 +9474,6 @@ s.
 
 \begin_layout Standard
 OpenMPI
-\begin_inset Foot
-status collapsed
-
-\begin_layout Standard
-Since OpenMPI-1.2.3 by default does not support MPI_THREAD_MULTIPLE, so --enable-m
-pi-threads is used to enable the thread_multiple support.
-\end_layout
-
-\end_inset
-
-
 \end_layout
 
 \end_inset
@@ -9770,8 +9744,14 @@ pi-threads is used to enable the thread_multiple support.
 
 \end_inset
 
-The total runtime in second of the 4-process run of pthread_sendrecv with
+The total runtime (in second) of the 4-process run of pthread_sendrecv with
  various number of child threads in different MPI implementations.
+ The 2nd column header, MPICH2: refers to MPICH2-1.0.5p4 built with default
+ sock channel which has MPI_THREAD_MULTIPLE support.
+ The 3rd column header, OpenMPI+progress_thread, refers to OpenMPI-1.2.3 configure
+d with --enable-mpi-threads and --enable-progress-threads.
+ The 4th column, OpenMPI, refers to OpenMPI-1.2.3 built with --enable-mpi-threads
+ which enables the MPI_THREAD_MULTIPLE support.
 \end_layout
 
 \end_inset
@@ -9780,7 +9760,13 @@ The total runtime in second of the 4-process run of pthread_sendrecv with
 \end_layout
 
 \begin_layout Standard
-Two Jumpshot views are shown with each run in Figures 
+The problematic data in the last column of Table 
+\begin_inset LatexCommand \ref{tab:runtime_pthread_sendrecv}
+
+\end_inset
+
+ are being analyzed with two Jumpshot viewmaps for each run.
+ They are shown in Figures 
 \begin_inset LatexCommand \ref{fig:openmpi_4_2}
 
 \end_inset
@@ -9813,23 +9799,6 @@ Two Jumpshot views are shown with each run in Figures
 
 .
  
-\end_layout
-
-\begin_layout Standard
-1) Process-thread view: where each thread timeline is shown nested under
- the process timeline it belongs to.
- Since we are only running 4 processes, only 4 process timelines here.
-\end_layout
-
-\begin_layout Standard
-2) Communicator-thread view: where each thread is shown nested within the
- communicator timeline.
- Since we are runing with 2 to 6 child threads where a duplicated MPI_COMM_WORLD
- is created for each thread, so we expect to see 3 to 7 major communicator
- timelines.
- MPI_COMM_WORLD is always labeled as 0 in MPE logging and other duplicated
- MPI_Comm is labeled with other integer depends on the order of when it
- is being created.
 \end_layout
 
 \begin_layout Standard
@@ -9878,6 +9847,27 @@ centering
 \end_layout
 
 \begin_layout Standard
+The extra viewmaps provided in MPE logging are:
+\end_layout
+
+\begin_layout Standard
+1) Process-Thread view: where each thread timeline is shown nested under
+ the process timeline it belongs to.
+ Since we are only running 4 processes, only 4 process timelines here.
+\end_layout
+
+\begin_layout Standard
+2) Communicator-Thread view: where each thread is shown nested within the
+ communicator timeline.
+ Since we are runing with 2 to 6 child threads where a duplicated MPI_COMM_WORLD
+ is created for each thread, so we expect to see 3 to 7 major communicator
+ timelines.
+ MPI_COMM_WORLD is always labeled as 0 in CLOG2 converted SLOG-2 file and
+ other duplicated MPI_Comm is labeled with other integer depends on the
+ order of when it is being created.
+\end_layout
+
+\begin_layout Standard
 When the timeline window of the process-thread view first shows up, only
  process timelines are visible, i.e.
  all the thread timelines are nested within the process timeline.
@@ -9887,23 +9877,29 @@ When the timeline window of the process-thread view first shows up, only
 
 \end_inset
 
- or Alt-E to expand each process timeline to review the thread timeline.
+ or 
+\emph on
+Alt-E
+\emph default
+ to expand each process timeline to reveal the thread timeline.
  Similarly, user can use the Y-axis LabelCollapse button 
 \begin_inset Graphics
 	filename pic/gif2png/TreeCollapse24.png
 
 \end_inset
 
- or Alt-C to collapse the thread timeline back to their corresponding process
- timeline.
+ or 
+\emph on
+Alt-C
+\emph default
+ to collapse the thread timeline back to their corresponding process timeline.
  Similarly for the communicator-thread view, the Y-axis LabelExpand and
  LabelCollapse buttons should be used to expand and collapse the communicator
  timelines.
 \end_layout
 
 \begin_layout Standard
-Figures.
- 
+Figures 
 \begin_inset LatexCommand \ref{fig:openmpi_4_3}
 
 \end_inset
@@ -9923,8 +9919,8 @@ Figures.
 
 \end_inset
 
- clearly demonstrates that there is some kind of communication progress
- problem in OpenMPI when used without progress thread.
+ clearly demonstrate that there is some kind of communication progress problem
+ in OpenMPI when used without progress thread.
  Without alternating between communicator-thread and process-thread views,
  it would be difficult to identify the existence of a progress engine problem.
 \end_layout
@@ -10001,8 +9997,8 @@ centering
 \end_inset
 
 OpenMPI without progress thread: 2 child threads per process.
- As shown in both the Process-Thread view and Communicator-Thread view,
- everything performs as expected.
+ As shown in both the Process-Thread view and Communicator-Thread views
+ here, everything performs as expected.
 \end_layout
 
 \end_inset
@@ -10085,9 +10081,9 @@ OpenMPI without progress thread: 3 child threads per process where there
  are 3 MPI_Comm_dup() calls in the master thread 0.
  As shown in the expanded Process-Thread view, the 3rd MPI_Comm_dup() call
  takes significantly longer than the first two MPI_Comm_dup().
- The expanded Communicator view also suggests that the delayed 3rd MPI_Comm_dup(
-) is blocking MPI point-to-point communication in the first two duplicated
- MPI_COMM_WORLD.
+ The expanded Communicator-Thread view also suggests that the delayed 3rd
+ MPI_Comm_dup() is blocking MPI point-to-point communication in the first
+ two duplicated MPI_COMM_WORLD.
  As soon as the delayed MPI_Comm_dup() exits, the MPI point-to-point communicati
 on is restored.
  
@@ -10186,7 +10182,7 @@ OpenMPI without progress thread: 4 child threads per process.
 
  is not observed here.
  So the communication in first two dup MPI_COMM_WORLD finishes much earlier
- thann the communication in the last two communicators.
+ than the communication in the last two communicators.
 \end_layout
 
 \end_inset
@@ -10266,7 +10262,7 @@ centering
 \end_inset
 
 OpenMPI without progress thread: 5 child threads per process.
- Again, the last MPI_Comm_dup() takes longer than previous MPI_Comm_dup()
+ Again, the last MPI_Comm_dup() takes longer than previous MPI_Comm_dup()s
  in finishing up.
  The feature that we observed in Fig.
  
@@ -10383,7 +10379,8 @@ Test program
 \end_layout
 
 \begin_layout Standard
-The following is the test program, pthread_sendrecv.c, used in this study.
+The following is the test program, pthread_sendrecv.c, used in the previous
+ experiment.
 \end_layout
 
 \begin_layout Standard

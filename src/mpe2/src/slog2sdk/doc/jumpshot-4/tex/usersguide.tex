@@ -565,7 +565,7 @@ lists all the available ViewMaps in the SLOG-2 file. The CLOG%
 } SLOG-2 files contain one ViewMap, called the Identity Map. The recent
 CLOG-2 and IBM's UTE trace-converted SLOG-2 file contains multiple
 ViewMaps, e.g. a CLOG-2 logfile generated from a multi-threaded MPI
-program will have Process-Thread viewmap and Communicator-Thread viewmap
+program contains the Process-Thread and Communicator-Thread ViewMaps
 besides the Identity Map.
 
 %
@@ -629,22 +629,22 @@ of supported trace file format to SLOG-2 format.}
 If a non-slog2 file is selected in the Main window, the Logfile Convertor,
 as shown in Figure \ref{fig:convertor_init}, will be invoked to prompt
 user to convert the file to SLOG-2 format readable by this viewer.
-Currently, four convertors are supported: \emph{CLOG} --\textgreater{}
+Currently, five convertors are supported: \emph{CLOG} --\textgreater{}
 \emph{SLOG-2}, \emph{CLOG-2 --\textgreater{} SLOG-2, RLOG} --\textgreater{}
-\emph{SLOG-2} and \emph{UTE} --\textgreater{} \emph{SLOG-2.} The convertor
-is generally selected based on the input file's file extension. If
-the wrong file convertor is selected, the user can correct it through
-the pale-blue pulldown menu located at the top of the window. The
-Logfile Convertor window can also be invoked by directly clicking
-on the Logfile Conversion button shown in the Table \ref{table:main_toolbar}.
-The text field of the Output File Name usually displays the default
-slog2 filename recommended by the convertor based on the text field
-in the Input File Specification. If the text field does not display
-the default name as expected, hitting return key in the Input File
-Specification field will force an update of the Output File Name field
-with the default name. The Logfile Convertor has five major functions,
-each is associated with a button in the lower panel of the window.
-They are listed in Table \ref{table:convertor_buttons}.
+\emph{SLOG-2,} \emph{UTE} --\textgreater{} \emph{SLOG-2} and \emph{TXT
+--\textgreater{} SLOG-2.} The convertor is generally selected based
+on the input file's file extension. If the wrong file convertor is
+selected, the user can correct it through the pale-blue pulldown menu
+located at the top of the window. The Logfile Convertor window can
+also be invoked by directly clicking on the Logfile Conversion button
+shown in the Table \ref{table:main_toolbar}. The text field of the
+Output File Name usually displays the default slog2 filename recommended
+by the convertor based on the text field in the Input File Specification.
+If the text field does not display the default name as expected, hitting
+return key in the Input File Specification field will force an update
+of the Output File Name field with the default name. The Logfile Convertor
+has five major functions, each is associated with a button in the
+lower panel of the window. They are listed in Table \ref{table:convertor_buttons}.
 
 %
 \begin{table}[!htbp]
@@ -921,8 +921,8 @@ is ahead of state). The Preview and Topo sort orders can be turned
 on or off through the Preference window in Table \ref{table:preference_legend}.
 
 %
-\begin{figure}[!htbp]
-\centering\begin{tabular}{|c|c|}
+\begin{table}[!htbp]
+\centering\begin{longtable}{|c|c|}
 \hline 
 Ordering&
 Description\tabularnewline
@@ -934,13 +934,13 @@ Decreasing numerical ordering\tabularnewline
 1 ... 9&
 Increasing numerical ordering\tabularnewline
 \hline
-\end{tabular}
+\end{longtable}
 
 
 \caption{\label{table:legend_sort_number_orders}Description of the numerical
 Sort Order operation menu for columns \emph{count}, i\emph{ncl} and
 \emph{excl} in the Legend window}
-\end{figure}
+\end{table}
 
 
 Table \ref{table:legend_sort_number_orders} shows the only two orderings
@@ -2246,24 +2246,18 @@ However for OpenMPI without progress thread support, the runtime increases
 drastically as there are 3 child threads or more. The situation becomes
 very bad as the node becomes oversubscribed, i.e. when there are 5
 or more child threads. Now we are going to use MPE logging and Jumpshot
-to find out what happens
+to find out what happens. 
 
 %
-\begin{figure}[!htbp]
-\centering\begin{tabular}{|c|c|c|c|}
+\begin{table}[!htbp]
+\centering
+
+\begin{longtable}{|c|c|c|c|}
 \hline 
 child thread count&
-MPICH2%
-\footnote{MPICH2-1.0.5p4 is built with default sock channel which has MPI\_THREAD\_MULTIPLE
-support.%
-}&
-OpenMPI+progress\_thread%
-\footnote{OpenMPI-1.2.3 is configured with --enable-mpi-threads and --enable-progress-threads.%
-}&
-OpenMPI%
-\footnote{Since OpenMPI-1.2.3 by default does not support MPI\_THREAD\_MULTIPLE,
-so --enable-mpi-threads is used to enable the thread\_multiple support.%
-}\tabularnewline
+MPICH2&
+OpenMPI+progress\_thread&
+OpenMPI\tabularnewline
 \hline
 \hline 
 1&
@@ -2296,31 +2290,25 @@ so --enable-mpi-threads is used to enable the thread\_multiple support.%
 0.058505 &
 0.193399 \ref{fig:openmpi_4_6}\tabularnewline
 \hline
-\end{tabular}
+\end{longtable}
 
 
-\caption{\label{tab:runtime_pthread_sendrecv}The total runtime in second
+\caption{\label{tab:runtime_pthread_sendrecv}The total runtime (in second)
 of the 4-process run of pthread\_sendrecv with various number of child
-threads in different MPI implementations.}
-\end{figure}
+threads in different MPI implementations. The 2nd column header, MPICH2:
+refers to MPICH2-1.0.5p4 built with default sock channel which has
+MPI\_THREAD\_MULTIPLE support. The 3rd column header, OpenMPI+progress\_thread,
+refers to OpenMPI-1.2.3 configured with --enable-mpi-threads and --enable-progress-threads.
+The 4th column, OpenMPI, refers to OpenMPI-1.2.3 built with --enable-mpi-threads
+which enables the MPI\_THREAD\_MULTIPLE support.}
+\end{table}
 
 
-Two Jumpshot views are shown with each run in Figures \ref{fig:openmpi_4_2},
-\ref{fig:openmpi_4_3},\ref{fig:openmpi_4_4},\ref{fig:openmpi_4_5}
+The problematic data in the last column of Table \ref{tab:runtime_pthread_sendrecv}
+are being analyzed with two Jumpshot viewmaps for each run. They are
+shown in Figures \ref{fig:openmpi_4_2}, \ref{fig:openmpi_4_3},\ref{fig:openmpi_4_4},\ref{fig:openmpi_4_5}
 and \ref{fig:openmpi_4_6}. The legend for these pictures are shown
 in Figure\ref{fig:pthread_sendrecv_legend}. 
-
-1) Process-thread view: where each thread timeline is shown nested
-under the process timeline it belongs to. Since we are only running
-4 processes, only 4 process timelines here.
-
-2) Communicator-thread view: where each thread is shown nested within
-the communicator timeline. Since we are runing with 2 to 6 child threads
-where a duplicated MPI\_COMM\_WORLD is created for each thread, so
-we expect to see 3 to 7 major communicator timelines. MPI\_COMM\_WORLD
-is always labeled as 0 in MPE logging and other duplicated MPI\_Comm
-is labeled with other integer depends on the order of when it is being
-created.
 
 %
 \begin{figure}[!htbp]
@@ -2334,19 +2322,34 @@ pthread\_sendrecv runs.}
 \end{figure}
 
 
+The extra viewmaps provided in MPE logging are:
+
+1) Process-Thread view: where each thread timeline is shown nested
+under the process timeline it belongs to. Since we are only running
+4 processes, only 4 process timelines here.
+
+2) Communicator-Thread view: where each thread is shown nested within
+the communicator timeline. Since we are runing with 2 to 6 child threads
+where a duplicated MPI\_COMM\_WORLD is created for each thread, so
+we expect to see 3 to 7 major communicator timelines. MPI\_COMM\_WORLD
+is always labeled as 0 in CLOG2 converted SLOG-2 file and other duplicated
+MPI\_Comm is labeled with other integer depends on the order of when
+it is being created.
+
 When the timeline window of the process-thread view first shows up,
 only process timelines are visible, i.e. all the thread timelines
 are nested within the process timeline. User needs to use the Y-axis
 LabelExpand button \includegraphics{pic/gif2png/TreeExpand24} or
-Alt-E to expand each process timeline to review the thread timeline.
-Similarly, user can use the Y-axis LabelCollapse button \includegraphics{pic/gif2png/TreeCollapse24}
-or Alt-C to collapse the thread timeline back to their corresponding
-process timeline. Similarly for the communicator-thread view, the
-Y-axis LabelExpand and LabelCollapse buttons should be used to expand
-and collapse the communicator timelines.
+\emph{Alt-E} to expand each process timeline to reveal the thread
+timeline. Similarly, user can use the Y-axis LabelCollapse button
+\includegraphics{pic/gif2png/TreeCollapse24} or \emph{Alt-C} to collapse
+the thread timeline back to their corresponding process timeline.
+Similarly for the communicator-thread view, the Y-axis LabelExpand
+and LabelCollapse buttons should be used to expand and collapse the
+communicator timelines.
 
-Figures. \ref{fig:openmpi_4_3}, \ref{fig:openmpi_4_4}, \ref{fig:openmpi_4_5}
-and \ref{fig:openmpi_4_6} clearly demonstrates that there is some
+Figures \ref{fig:openmpi_4_3}, \ref{fig:openmpi_4_4}, \ref{fig:openmpi_4_5}
+and \ref{fig:openmpi_4_6} clearly demonstrate that there is some
 kind of communication progress problem in OpenMPI when used without
 progress thread. Without alternating between communicator-thread and
 process-thread views, it would be difficult to identify the existence
@@ -2365,7 +2368,7 @@ of a progress engine problem.
 
 \caption{\label{fig:openmpi_4_2}OpenMPI without progress thread: 2 child
 threads per process. As shown in both the Process-Thread view and
-Communicator-Thread view, everything performs as expected.}
+Communicator-Thread views here, everything performs as expected.}
 \end{figure}
 
 
@@ -2384,7 +2387,7 @@ Communicator-Thread view, everything performs as expected.}
 threads per process where there are 3 MPI\_Comm\_dup() calls in the
 master thread 0. As shown in the expanded Process-Thread view, the
 3rd MPI\_Comm\_dup() call takes significantly longer than the first
-two MPI\_Comm\_dup(). The expanded Communicator view also suggests
+two MPI\_Comm\_dup(). The expanded Communicator-Thread view also suggests
 that the delayed 3rd MPI\_Comm\_dup() is blocking MPI point-to-point
 communication in the first two duplicated MPI\_COMM\_WORLD. As soon
 as the delayed MPI\_Comm\_dup() exits, the MPI point-to-point communication
@@ -2409,7 +2412,7 @@ MPI\_Comm\_dup() is delayed but not the 4th MPI\_Comm\_dup(). The
 interference between the delayed 3rd MPI\_Comm\_dup() and the other
 dup MPI\_COMM\_WORLD seen in Fig. \ref{fig:openmpi_4_3} is not observed
 here. So the communication in first two dup MPI\_COMM\_WORLD finishes
-much earlier thann the communication in the last two communicators.}
+much earlier than the communication in the last two communicators.}
 \end{figure}
 
 
@@ -2426,8 +2429,8 @@ much earlier thann the communication in the last two communicators.}
 
 \caption{\label{fig:openmpi_4_5}OpenMPI without progress thread: 5 child
 threads per process. Again, the last MPI\_Comm\_dup() takes longer
-than previous MPI\_Comm\_dup() in finishing up. The feature that we
-observed in Fig. \ref{fig:openmpi_4_3} that the delayed MPI\_Comm\_dup()
+than previous MPI\_Comm\_dup()s in finishing up. The feature that
+we observed in Fig. \ref{fig:openmpi_4_3} that the delayed MPI\_Comm\_dup()
 is blocking other communicator's communication occurs here. However,
 even long after all MPI\_Comm\_dup() are done, there are many regions
 in the communicator-thread view that MPI communication is not progressing,
@@ -2457,8 +2460,8 @@ threads per process. This is very similar to Fig. \ref{fig:openmpi_4_5}.}
 
 \subsection{Test program}
 
-The following is the test program, pthread\_sendrecv.c, used in this
-study.
+The following is the test program, pthread\_sendrecv.c, used in the
+previous experiment.
 
 \begin{verbatim}
 /*
