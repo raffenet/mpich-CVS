@@ -113,7 +113,7 @@ int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 # endif
 #endif
 
-#ifdef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
+#ifndef ROMIO_HAVE_AIO_CALLS_NEED_FILEDES
     if (wr) err = aio_write(aiocbp);
     else err = aio_read(aiocbp);
 #else
