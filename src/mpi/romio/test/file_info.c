@@ -74,10 +74,10 @@ int main(int argc, char **argv)
 	    /* no check */
 	}
 	else if (!strcmp("cb_buffer_size", key)) {
-	    if (atoi(value) != 4194304) {
+	    if (atoi(value) != 16777216) {
 		errs++;
 		if (verbose) fprintf(stderr, "cb_buffer_size is %d; should be %d\n",
-				     atoi(value), 4194304);
+				     atoi(value), 16777216);
 	    }
 	}
 	else if (!strcmp("romio_cb_read", key)) {
