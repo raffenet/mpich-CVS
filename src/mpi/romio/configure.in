@@ -1290,6 +1290,7 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
     # We try to compile it, not just read it.
     AC_MSG_CHECKING([if aio.h exists and can be compiled])
     AC_TRY_COMPILE([
+#include <sys/types.h>
 #include <aio.h>],
 [],have_aio_h=yes,have_aio_h=no)
     AC_MSG_RESULT($have_aio_h)
