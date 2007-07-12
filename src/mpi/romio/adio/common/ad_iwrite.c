@@ -178,7 +178,6 @@ void ADIOI_GEN_IwriteStrided(ADIO_File fd, void *buf, int count,
 int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
 {
     ADIOI_AIO_Request *aio_req;
-    int err;
 
     aio_req = (ADIOI_AIO_Request *)extra_state;
 
@@ -235,6 +234,7 @@ int ADIOI_GEN_aio_wait_fn(int count, void ** array_of_states,
 	} /* TODO: also need to handle errors here  */
 
 	if (cblist != NULL) ADIOI_Free(cblist);
+        return MPI_SUCCESS;
 }
 
 int ADIOI_GEN_aio_query_fn(void *extra_state, MPI_Status *status) 

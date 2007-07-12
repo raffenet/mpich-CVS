@@ -178,7 +178,7 @@ int ADIOI_PVFS2_aio_wait_fn(int count, void ** array_of_states,
     ADIOI_AIO_Request **aio_reqlist;
     ADIOI_AIO_Request *tmp_req;
     PVFS_sys_op_id *op_id_array;
-    int i, error;
+    int i;
     int *error_array;
 
     aio_reqlist = (ADIOI_AIO_Request **)array_of_states;

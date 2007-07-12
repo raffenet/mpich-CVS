@@ -24,6 +24,7 @@ void ADIOI_TESTFS_IreadContig(ADIO_File fd, void *buf, int count,
 
     MPI_Comm_size(fd->comm, &nprocs);
     MPI_Comm_rank(fd->comm, &myrank);
+    MPI_Type_size(datatype, &typesize);
     FPRINTF(stdout, "[%d/%d] ADIOI_TESTFS_IreadContig called on %s\n", 
 	    myrank, nprocs, fd->filename);
     FPRINTF(stdout, "[%d/%d]    calling ADIOI_TESTFS_ReadContig\n", 

@@ -1136,6 +1136,16 @@ int MPIX_Grequest_start(MPI_Grequest_query_function *,
 		       MPIX_Grequest_poll_function *,
 		       MPIX_Grequest_wait_function *, void *, MPI_Request *);
 #if !defined(MPI_BUILD_PROFILING)
+int PMPIX_Grequest_class_create(MPI_Grequest_query_function *, 
+                       MPI_Grequest_free_function *, 
+                       MPI_Grequest_cancel_function *, 
+		       MPIX_Grequest_poll_function *,
+		       MPIX_Grequest_wait_function *, 
+		       MPIX_Grequest_class *);
+
+int PMPIX_Grequest_class_allocate(MPIX_Grequest_class,
+		       void *,
+		       MPI_Request *);
 int PMPIX_Grequest_start(MPI_Grequest_query_function *, 
                        MPI_Grequest_free_function *, 
                        MPI_Grequest_cancel_function *, 

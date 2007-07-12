@@ -14,7 +14,6 @@ void ADIO_End(int *error_code)
 {
     ADIOI_Flatlist_node *curr, *next;
     ADIOI_Datarep *datarep, *datarep_next;
-    static char myname[] = "ADIO_END";
     
 /*    FPRINTF(stderr, "reached end\n"); */
 

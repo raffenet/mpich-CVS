@@ -502,7 +502,7 @@ int MPIR_Grequest_progress_poke(int count,
 		MPID_Request **request_ptrs, 
 		MPI_Status array_of_statuses[] )
 {
-    MPIX_Grequest_wait_function *wait_fn;
+    MPIX_Grequest_wait_function *wait_fn = NULL;
     void ** state_ptrs;
     int i, j, n_classes, n_native, n_greq;
 
