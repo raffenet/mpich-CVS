@@ -532,14 +532,16 @@ int MPIR_Grequest_progress_poke(int count,
 	    n_native += 1;
 	}
     }
+
     if (j > 0 && n_classes == 1 && wait_fn != NULL) {
         (wait_fn)(j, state_ptrs, 0, NULL);
     } else {
 	for (i = 0; i< count; i++ )
 	{
-	    if (request_ptrs[i]->kind == MPID_UREQUEST && 
-			    *request_ptrs[i]->cc_ptr != 0) {
-		    (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, &(array_of_statuses[i]));
+	    if (request_ptrs[i] != NULL && 
+			request_ptrs[i]->kind == MPID_UREQUEST && 
+			*request_ptrs[i]->cc_ptr != 0) {
+		(request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, &(array_of_statuses[i]));
 	    }
 	}
     }
