@@ -71,10 +71,7 @@ typedef @MPID_TIMER_TYPE@ MPID_Time_t;
   For example, the for Intel x86 and gcc, 
 .vb
 #define MPID_Wtime(timeval) \
-    __asm__ __volatile__  ( "cpuid ; rdtsc ; mov %%edx,%1 ; mov %%eax,%0" \
-                            : "=m" (*((char *) (var_ptr))), \
-                              "=m" (*(((char *) (var_ptr))+4)) \
-                            :: "eax", "ebx", "ecx", "edx" ); \
+     __asm__ __volatile__("rdtsc" : "=A" (*timeval))
 .ve
 
   For some purposes, it is important
@@ -230,12 +227,8 @@ void MPID_Wtime_init(void);
 /* There may be a better way to read the two 32 bit values into a single
    long long, but this should work */
 #define MPID_Wtime(var_ptr) \
-{ \
-    __asm__ __volatile__  ( "cpuid ; rdtsc ; mov %%edx,%1 ; mov %%eax,%0" \
-                            : "=m" (*((char *) (var_ptr))), \
-                              "=m" (*(((char *) (var_ptr))+4)) \
-                            :: "eax", "ebx", "ecx", "edx" ); \
-}
+     __asm__ __volatile__("rdtsc" : "=A" (*var_ptr))
+
 extern double MPID_Seconds_per_tick;
 #define MPIDM_Wtime_todouble(t, d) *d = (double)*t * MPID_Seconds_per_tick
 

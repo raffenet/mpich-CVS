@@ -15,14 +15,12 @@ static inline void *MPID_NEM_SWAP (volatile void *ptr, void *val)
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
     __asm__ __volatile__ ("xchgl %0,%1"
 		  :"=r" (val)
-		  :"m" (*(void **)ptr), "0" (val)
-		  :"memory");
+		  :"+m" (*(void **)ptr), "0" (val));
     return val;
 #elif defined(HAVE_GCC_AND_X86_64_ASM)
     __asm__ __volatile__ ("xchgq %0,%1"
 		  :"=r" (val)
-		  :"m" (*(void **)ptr), "0" (val)
-		  :"memory");
+		  :"+m" (*(void **)ptr), "0" (val));
     return val;
 #elif defined(HAVE_GCC_AND_IA64_ASM)
     __asm__ __volatile__ ("xchg8 %0=[%1],%2" : "=r" (val)
@@ -41,15 +39,13 @@ static inline void *MPID_NEM_CAS (volatile void *ptr, void *oldv, void *newv)
     void *prev;
     __asm__ __volatile__ ("lock ; cmpxchgl %1,%2"
 		  : "=a" (prev)
-		  : "q" (newv), "m" (*(void **)ptr), "0" (oldv)
-		  : "memory");
+		  : "q" (newv), "+m" (*(void **)ptr), "0" (oldv));
     return prev;
 #elif defined(HAVE_GCC_AND_X86_64_ASM)
     void *prev;
     __asm__ __volatile__ ("lock ; cmpxchgq %1,%2"
 		  : "=a" (prev)
-		  : "q" (newv), "m" (*(void **)ptr), "0" (oldv)
-		  : "memory");
+		  : "q" (newv), "+m" (*(void **)ptr), "0" (oldv));
     return prev;   
 #elif defined(HAVE_GCC_AND_IA64_ASM)
     void *prev;
@@ -70,15 +66,13 @@ static inline int MPID_NEM_CAS_INT (volatile int *ptr, int oldv, int newv)
     int prev;
     __asm__ __volatile__ ("lock ; cmpxchg %1,%2"
                           : "=a" (prev)
-                          : "q" (newv), "m" (*ptr), "0" (oldv)
-                          : "memory");
+                          : "q" (newv), "+m" (*ptr), "0" (oldv));
     return prev;
 #elif defined(HAVE_GCC_AND_X86_64_ASM)
     int prev;
     __asm__ __volatile__ ("lock ; cmpxchg %1,%2"
                           : "=a" (prev)
-                          : "q" (newv), "m" (*ptr), "0" (oldv)
-                          : "memory");
+                          : "q" (newv), "+m" (*ptr), "0" (oldv));
     return prev;   
 #elif defined(HAVE_GCC_AND_IA64_ASM)
     int prev;
@@ -115,12 +109,12 @@ static inline int MPID_NEM_FETCH_AND_ADD (volatile int *ptr, int val)
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
     __asm__ __volatile__ ("lock ; xaddl %0,%1"
 		  : "=r" (val)
-		  : "m" (*ptr), "0" (val));
+		  : "+m" (*ptr), "0" (val));
     return val;
 #elif defined(HAVE_GCC_AND_X86_64_ASM)
     __asm__ __volatile__ ("lock ; xadd %0,%1" /* xadd not xaddq: let the assembler choose which one to use */
 		  : "=r" (val)
-		  : "m" (*ptr), "0" (val));
+		  : "+m" (*ptr), "0" (val));
     return val;
 #elif defined(HAVE_GCC_AND_IA64_ASM)
     int new;

@@ -12,14 +12,12 @@
 #include "stdio.h"
 #include "unistd.h"
 
-#define MPID_Atomic_fetch_and_inc(count_ptr_, count_old_)						\
-    __asm__ __volatile__ ("0: movl %0, %%eax;"								\
-			  "movl %%eax, %%ebx;"								\
-			  "incl %%ebx;"									\
-			  "lock; cmpxchg %%ebx, %0;"							\
-			  "jnz 0b;"									\
-			  "movl %%eax, %1"								\
-			  : "+m" (*count_ptr_), "=q" (count_old_) :: "memory", "cc", "eax", "ebx")
+#define MPID_Atomic_fetch_and_incr(count_ptr_, count_old_) do {         \
+        (count_old_) = 1;                                               \
+        __asm__ __volatile__ ("lock ; xaddl %0,%1"                      \
+                              : "=r" (count_old_)                       \
+                              : "+m" (*count_ptr_), "0" (count_old_));   \
+    } while (0)
 
 int main( int argc, char **argv )
 {

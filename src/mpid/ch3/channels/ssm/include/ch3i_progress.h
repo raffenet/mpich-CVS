@@ -25,12 +25,8 @@
 #if MPICH_CPU_TICK_TYPE == USE_GCC_X86_CYCLE_ASM
 /* This cycle counter is the read time stamp (rdtsc) instruction with gcc asm */
 #define MPID_CPU_TICK(var_ptr) \
-{ \
-    __asm__ __volatile__  ( "cpuid ; rdtsc ; mov %%edx,%1 ; mov %%eax,%0" \
-                            : "=m" (*((char *) (var_ptr))), \
-                              "=m" (*(((char *) (var_ptr))+4)) \
-                            :: "eax", "ebx", "ecx", "edx" ); \
-}
+     __asm__ __volatile__("rdtsc" : "=A" (*var_ptr))
+
 typedef long long MPID_CPU_Tick_t;
 
 #elif MPICH_CPU_TICK_TYPE == USE_WIN_X86_CYCLE_ASM

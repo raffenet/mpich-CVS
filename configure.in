@@ -4594,10 +4594,7 @@ pac_cv_posix_clock_realtime=no)
 pac_cv_linux86_cycle,[
     AC_TRY_COMPILE(,[
     long long var, *var_ptr=&var;
-    __asm__ __volatile__  ( "cpuid ; rdtsc ; mov %%edx,%1 ; mov %%eax,%0" 
-                            : "=m" (*((char *) (var_ptr))), 
-                              "=m" (*(((char *) (var_ptr))+4)) 
-                            :: "eax", "ebx", "ecx", "edx" ); 
+    __asm__ __volatile__("rdtsc" : "=A" (*var_ptr));
 ],pac_cv_linux86_cycle=yes,pac_cv_linux86_cycle=no)])
     if test "$pac_cv_linux86_cycle" != "yes" ; then
         AC_MSG_ERROR([Linux86 cycle counter is not available on this system and or with the $CC compiler])

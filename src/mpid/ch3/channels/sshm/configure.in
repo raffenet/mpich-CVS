@@ -134,10 +134,7 @@ dnl gcc checking
 cpu_gcc_x86_cycle=no
 AC_TRY_COMPILE(,[
     long long var, *var_ptr=&var;
-    __asm__ __volatile__  ( "cpuid ; rdtsc ; mov %%edx,%1 ; mov %%eax,%0" 
-                            : "=m" (*((char *) (var_ptr))), 
-                              "=m" (*(((char *) (var_ptr))+4)) 
-                            :: "eax", "ebx", "ecx", "edx" ); 
+    __asm__ __volatile__("rdtsc" : "=A" (*var_ptr));
 ],cpu_gcc_x86_cycle=yes,cpu_gcc_x86_cycle=no)
 if test "$cpu_gcc_x86_cycle" = "yes" ; then
   AC_DEFINE_UNQUOTED(MPICH_CPU_TICK_TYPE, USE_GCC_X86_CYCLE_ASM, [Define if using gcc on an Intel CPU with the rdtsc instruction])
