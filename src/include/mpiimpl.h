@@ -650,6 +650,7 @@ int MPIU_Param_bcast( void );
 int MPIU_Param_register( const char [], const char [], const char [] );
 int MPIU_Param_get_int( const char [], int, int * );
 int MPIU_Param_get_string( const char [], const char *, char ** );
+int MPIU_Param_get_range( const char name[], int *lowPtr, int *highPtr );
 void MPIU_Param_finalize( void );
 
 int MPIU_GetEnvRange( const char *, int *, int * );
