@@ -214,7 +214,7 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 	    break;
 	}
 
-	for (i=0; i++; i<count) {
+	for (i=0; i<count; i++) {
 	    if (request_ptrs[i] != NULL && 
 			    request_ptrs[i]->kind != MPID_UREQUEST) 
 	    {
