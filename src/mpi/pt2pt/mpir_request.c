@@ -506,7 +506,7 @@ int MPIR_Grequest_progress_poke(int count,
     void ** state_ptrs;
     int i, j, n_classes, n_native, n_greq;
 
-    state_ptrs = malloc(sizeof(void*)*count);
+    state_ptrs = MPIU_Malloc(sizeof(void*)*count);
 
     if (state_ptrs == NULL)
 	    goto fn_exit;
@@ -546,7 +546,7 @@ int MPIR_Grequest_progress_poke(int count,
 	}
     }
 fn_exit:
-    if (state_ptrs != NULL) free(state_ptrs);
+    if (state_ptrs != NULL) MPIU_Free(state_ptrs);
     return MPI_SUCCESS;
 }
 
