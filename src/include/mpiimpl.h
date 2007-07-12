@@ -2241,6 +2241,11 @@ int MPIR_Grequest_cancel(MPID_Request * request_ptr, int complete);
 int MPIR_Grequest_query(MPID_Request * request_ptr);
 int MPIR_Grequest_free(MPID_Request * request_ptr);
 
+/* this routine was added to support our extension relaxing the progress rules
+ * for generalized requests */
+int MPIR_Grequest_progress_poke(int count, MPID_Request **request_ptrs, 
+		MPI_Status array_of_statuses[] );
+
 /* ------------------------------------------------------------------------- */
 /* Prototypes for language-specific routines, such as routines to set
    Fortran keyval attributes */
