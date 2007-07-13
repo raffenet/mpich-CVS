@@ -61,7 +61,7 @@ export master_top_srcdir
 if [ -z "$CC_SHL" ] ; then
     case $shlibtype in
 	gcc-osx|osx-gcc)
-        CC_SHL="gcc -fPIC"
+        CC_SHL="${CC} -fPIC"
         C_LINK_SHL='${CC} -dynamiclib -undefined suppress -single_module -flat_namespace'
         SHLIB_EXT=dylib
 	;;
@@ -163,9 +163,9 @@ rm -rf .tmp
 # Include the socket includes because they're needed by the ssm includes
 # (at least for now)
 #
-# Build the ch3 shm support code and link it into the ch3-sock dll
-if [ ! -d ../util ] ; then
-    mkdir ../util
+# Build the ch3 shm support code and link it into the ch3-ssm dll
+if [ ! -d ../../util ] ; then
+    mkdir ../../util
 fi
 if [ ! -d ../../util/shmbase ] ; then
     mkdir ../../util/shmbase
@@ -206,9 +206,9 @@ rm -rf .tmp
 # Include the socket includes because they're needed by the ssm includes
 # (at least for now)
 #
-# Build the ch3 socket support code and link it into the ch3-sock dll
-if [ ! -d ../util ] ; then
-    mkdir ../util
+# Build the ch3 socket support code and link it into the ch3-ssm dll
+if [ ! -d ../../util ] ; then
+    mkdir ../../util
 fi
 if [ ! -d ../../util/shm ] ; then
     mkdir ../../util/shm
@@ -245,7 +245,7 @@ ar cr ../libmpich2-ch3-ssm.la *.lo
 cd ..
 rm -rf .tmp
 #
-# Build the socket support code and link it into the ch3-sock dll
+# Build the socket support code and link it into the ch3-ssm dll
 (cd $mybuild/src/mpid/common/sock/poll && make clean && \
     rm -f libmpich2sock.la && make libmpich2sock.la)
 rc=$?
@@ -261,7 +261,14 @@ ar cr ../libmpich2-ch3-ssm.la *.lo
 cd ..
 rm -rf .tmp
 #
-# Build the ch3 socket support code and link it into the ch3-sock dll
+# Build the ch3 socket support code and link it into the ch3-ssm dll
+if [ ! -d ../../util ] ; then
+    mkdir ../../util
+fi
+if [ ! -d ../../util/sock ] ; then
+    mkdir ../../util/sock
+fi
+
 (\
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/sock" ; \
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/sock/poll" ; \

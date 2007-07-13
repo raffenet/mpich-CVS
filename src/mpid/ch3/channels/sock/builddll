@@ -61,8 +61,8 @@ export master_top_srcdir
 if [ -z "$CC_SHL" ] ; then
     case $shlibtype in
 	gcc-osx|osx-gcc)
-        CC_SHL="gcc -fPIC"
-        C_LINK_SHL='gcc -dynamiclib -undefined suppress -single_module -flat_namespace'
+        CC_SHL="${CC} -fPIC"
+        C_LINK_SHL='${CC} -dynamiclib -undefined suppress -single_module -flat_namespace'
         SHLIB_EXT=dylib
 	;;
 	*gcc*)
@@ -81,6 +81,8 @@ export C_LINK_SHL
 export SHLIB_EXT
 #
 MPICH2_INCLUDE_FLAGS=-I$mympich2/src/mpid/ch3/include
+MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/ch3/util/sock"
+MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mybuild/src/mpid/ch3/util/sock"
 export MPICH2_INCLUDE_FLAGS
 
 # The sock channel requires the sock utilities in mpid/common/sock
@@ -97,6 +99,7 @@ if [ $? != 0 ] ; then
     echo "See $mybuild/src/mpid/common/sock/config.log for more information"
     exit 1
 fi
+
 ( MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/datatype" ; \
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/sock" ; \
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/sock/poll" ; \
@@ -139,8 +142,8 @@ cd ..
 rm -rf .tmp
 #
 # Build the ch3 socket support code and link it into the ch3-sock dll
-if [ ! -d ../util ] ; then
-    mkdir ../util
+if [ ! -d ../../util ] ; then
+    mkdir ../../util
 fi
 if [ ! -d ../../util/sock ] ; then
     mkdir ../../util/sock
