@@ -32,9 +32,10 @@
 #define aiocb aiocb64
 #endif
 
+#ifdef ROMIO_HAVE_WORKING_AIO
+
 static MPIX_Grequest_class ADIOI_GEN_greq_class = 0;
 
-#ifdef ROMIO_HAVE_WORKING_AIO
 /* ADIOI_GEN_IwriteContig
  *
  * This code handles only the case where ROMIO_HAVE_WORKING_AIO is 

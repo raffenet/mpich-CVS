@@ -484,7 +484,6 @@ int MPIOI_File_write_all_end(MPI_File fh,
 			     void *buf,
 			     char *myname,
 			     MPI_Status *status);
-#ifndef HAVE_MPI_GREQUEST
 int MPIOI_File_iwrite(MPI_File fh,
 		      MPI_Offset offset,
 		      int file_ptr_type,
@@ -501,7 +500,6 @@ int MPIOI_File_iread(MPI_File fh,
 		     MPI_Datatype datatype,
 		     char *myname,
 		     MPI_Request *request);
-#endif
 
 
 
