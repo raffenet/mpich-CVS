@@ -1306,6 +1306,9 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
     if test "$have_sys_aio_h" = yes ; then
         AC_DEFINE(HAVE_SYS_AIO_H,1,[Define if sys/aio.h exists and can be compiled])
     fi
+    if test "$have_aio_h" = "no" -a "$have_sys_aio_h" = "no" ; then
+    	disable_aio=yes
+    fi
 fi
 
 if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" -o "x$disable_aio" = "xno"; then
