@@ -38,8 +38,8 @@
 #define MPID_Atomic_fetch_and_incr(count_ptr_, count_old_) do {         \
         (count_old_) = 1;                                               \
         __asm__ __volatile__ ("lock ; xaddl %0,%1"                      \
-                              : "=r" (count_old_)                       \
-                              : "+m" (*count_ptr_), "0" (count_old_));   \
+                              : "=r" (count_old_), "=m" (*count_ptr_)   \
+                              :  "0" (count_old_),  "m" (*count_ptr_)); \
     } while (0)
 
 /* The Intel Pentium Pro has a bug that can result in out-of-order stores.  
