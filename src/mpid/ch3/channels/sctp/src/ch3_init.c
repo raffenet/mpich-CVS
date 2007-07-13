@@ -381,7 +381,7 @@ int MPIDI_CH3_PG_Init( MPIDI_PG_t *pg )
 #define FUNCNAME MPIDI_CH3_VC_GetStateString
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-const char * MPIDI_CH3_VC_GetStateString( int state )
+const char * MPIDI_CH3_VC_GetStateString(struct MPIDI_VC* state )
 {
     return NULL;
 }
