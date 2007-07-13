@@ -93,8 +93,6 @@ int main( int argc, char *argv[] )
 
     MPI_Comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
 
-    /* FIXME: Enable tests of f90 reals in create_f90_real/complex */
-#if 0
     /* This should be a valid type similar to MPI_REAL */
     p = 3;
     r = 10;
@@ -127,7 +125,6 @@ int main( int argc, char *argv[] )
     err = MPI_Type_create_f90_complex( p, r, &newtype );
     errs += checkType( "COMPLEX", p, r, MPI_COMBINER_F90_COMPLEX, 
 		       err, newtype );
-#endif
 
     /* This should be a valid type similar to MPI_INTEGER */
     p = 3;
