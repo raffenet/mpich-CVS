@@ -24,15 +24,6 @@
 #undef MPI_Grequest_start
 #define MPI_Grequest_start PMPI_Grequest_start
 
-/* Any internal routines can go here.  Make them static if possible.  If they
-   are used by both the MPI and PMPI versions, use PMPI_LOCAL instead of 
-   static; this macro expands into "static" if weak symbols are supported and
-   into nothing otherwise. */
-#endif
-
-#undef FUNCNAME
-#define FUNCNAME MPI_Grequest_start
-
 /* preallocated grequest classes */
 #ifndef MPID_GREQ_CLASS_PREALLOC
 #define MPID_GREQ_CLASS_PREALLOC 2
@@ -44,6 +35,18 @@ MPIU_Object_alloc_t MPID_Grequest_class_mem = {0, 0, 0, 0, MPID_GREQ_CLASS,
 	                                       sizeof(MPID_Grequest_class),
 					       MPID_Grequest_class_direct,
 					       MPID_GREQ_CLASS_PREALLOC, };
+
+/* Any internal routines can go here.  Make them static if possible.  If they
+   are used by both the MPI and PMPI versions, use PMPI_LOCAL instead of 
+   static; this macro expands into "static" if weak symbols are supported and
+   into nothing otherwise. */
+#else
+extern MPID_Grequest_class MPID_Grequest_class_direct[];
+extern MPIU_Object_alloc_t MPID_Grequest_class_mem;
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME MPI_Grequest_start
 
 /*@
    MPI_Grequest_start - Create and return a user-defined request
