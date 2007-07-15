@@ -8,6 +8,9 @@
 -------------------------------------------------------------------------------
                               Known Deficiencies
 -------------------------------------------------------------------------------
+- The MPD process manager can only handle relatively small amounts of data on 
+  stdin and may also have problems if there is data on stdin that is not
+  consumed by the program.  
 
 - The sock, sctp, and ssm channels are the only channels that implement dynamic 
   process support (i.e., MPI_COMM_SPAWN, MPI_COMM_CONNECT, MPI_COMM_ACCEPT, 
