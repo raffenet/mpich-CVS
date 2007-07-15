@@ -1298,7 +1298,8 @@ int PMI_InitSingletonConnection( int fd, PMIProcess *pmiprocess )
     
     MPIU_Snprintf( buf, PMIU_MAXLINE,
 		   "cmd=singinit_info versionok=%s stdio=no kvsname=%s\n",
-		   (rc == 0) ? "yes" : "no",  pmiprocess->group->kvs->kvsname );
+		   (rc == 0) ? "yes" : "no",  
+		   (char *)(pmiprocess->group->kvs->kvsname) );
     PMIWriteLine( fd, buf );
 
     return 0;
