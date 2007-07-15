@@ -93,6 +93,7 @@ AC_CHECK_HEADERS(pthread.h fcntl.h string.h strings.h sys/time.h sys/sem.h sys/i
 AC_CHECK_HEADERS(sys/stat.h sys/ptrace.h sys/wait.h errno.h ctype.h process.h sys/mman.h uuid/uuid.h mqueue.h sys/sysctl.h)
 AC_CHECK_FUNCS(msgget yield mutex_init shmget shmat shmdt shmctl usleep sleep getcwd gethostname gettimeofday putenv select socket sched_yield)
 AC_CHECK_FUNCS(sysconf sysctl pthread_mutexattr_setpshared pthread_mutexattr_init)
+
 dnl AC_CHECK_FUNCS( mmap )
 # This autoconf code checks that mmap works, at least in 
 # a simple case (private, fixed mapping of an already mapped memory)
