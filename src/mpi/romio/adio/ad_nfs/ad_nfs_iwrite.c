@@ -10,9 +10,9 @@
 #include "../../mpi-io/mpioprof.h"
 #include "mpiu_greq.h"
 
-static MPIX_Grequest_class ADIOI_GEN_greq_class = 0;
 
 #ifdef ROMIO_HAVE_WORKING_AIO
+static MPIX_Grequest_class ADIOI_GEN_greq_class = 0;
 /* this routine is nearly identical to ADIOI_GEN_IwriteContig, except we lock
  * around I/O */
 void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count, 
