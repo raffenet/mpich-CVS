@@ -1432,15 +1432,18 @@ if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" -o "x$disable_aio" = 
 
     AC_MSG_CHECKING([for aio_fildes member of aiocb structure])
     AC_TRY_COMPILE([
-	#ifdef HAVE_SIGNAL_H
-	#include <signal.h>
-	#endif
-	#ifdef HAVE_AIO_H
-	#include <aio.h>
-	#endif
-	#ifdef HAVE_SYS_AIO_H
-	#include <sys/aio.h>
-	#endif
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_AIO_H
+#include <aio.h>
+#endif
+#ifdef HAVE_SYS_AIO_H
+#include <sys/aio.h>
+#endif
 	],[
 	struct aiocb a;
 	a.aio_fildes = 0;
@@ -1451,17 +1454,20 @@ if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" -o "x$disable_aio" = 
     )
     AC_MSG_CHECKING(for aio_whence member of aiocb structure)
     AC_TRY_COMPILE([
-	#ifdef HAVE_SIGNAL_H
-	#include <signal.h>
-	#endif
-	#ifdef HAVE_AIO_H
-	#include <aio.h>
-	#endif
-	#ifdef HAVE_SYS_AIO_H
-	#include <sys/aio.h>
-	#endif
-	#include <sys/types.h>
-	#include <unistd.h>
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_AIO_H
+#include <aio.h>
+#endif
+#ifdef HAVE_SYS_AIO_H
+#include <sys/aio.h>
+#endif
+#include <sys/types.h>
+#include <unistd.h>
 	],[
 	struct aiocb a;
 	a.aio_whence = SEEK_SET;
@@ -1472,15 +1478,18 @@ if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" -o "x$disable_aio" = 
     )
     AC_MSG_CHECKING(for aio_handle member of aiocb structure)
     AC_TRY_COMPILE([
-	#ifdef HAVE_SIGNAL_H
-	#include <signal.h>
-	#endif
-	#ifdef HAVE_AIO_H
-	#include <aio.h>
-	#endif
-	#ifdef HAVE_SYS_AIO_H
-	#include <sys/aio.h>
-	#endif
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_AIO_H
+#include <aio.h>
+#endif
+#ifdef HAVE_SYS_AIO_H
+#include <sys/aio.h>
+#endif
 	],[
 	struct aiocb a;
 	aio_handle_t h;
@@ -1493,15 +1502,18 @@ if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" -o "x$disable_aio" = 
     )
     AC_MSG_CHECKING(for aio_reqprio member of aiocb structure)
     AC_TRY_COMPILE([
-	#ifdef HAVE_SIGNAL_H
-	#include <signal.h>
-	#endif
-	#ifdef HAVE_AIO_H
-	#include <aio.h>
-	#endif
-	#ifdef HAVE_SYS_AIO_H
-	#include <sys/aio.h>
-	#endif
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_AIO_H
+#include <aio.h>
+#endif
+#ifdef HAVE_SYS_AIO_H
+#include <sys/aio.h>
+#endif
 	],[
 	struct aiocb a;
 
@@ -1513,15 +1525,18 @@ if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" -o "x$disable_aio" = 
     )	
     AC_MSG_CHECKING(for aio_sigevent member of aiocb structure)
     AC_TRY_COMPILE([
-	#ifdef HAVE_SIGNAL_H
-	#include <signal.h>
-	#endif
-	#ifdef HAVE_AIO_H
-	#include <aio.h>
-	#endif
-	#ifdef HAVE_SYS_AIO_H
-	#include <sys/aio.h>
-	#endif
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_AIO_H
+#include <aio.h>
+#endif
+#ifdef HAVE_SYS_AIO_H
+#include <sys/aio.h>
+#endif
 	],[
 	struct aiocb a;
 
