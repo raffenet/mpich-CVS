@@ -32,7 +32,7 @@
 #endif
 
 int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
-                  int wr, void *handle);
+                  int wr, MPI_Request *request);
 
 #ifdef SX4
 #define lseek llseek
