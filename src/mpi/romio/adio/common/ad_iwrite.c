@@ -115,6 +115,9 @@ int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 #endif
 
 #ifndef ROMIO_HAVE_AIO_CALLS_NEED_FILEDES
+#ifndef ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES
+#error 'No fildes set for aio structure'
+#endif
     if (wr) err = aio_write(aiocbp);
     else err = aio_read(aiocbp);
 #else
@@ -125,6 +128,7 @@ int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 
     if (err == -1) {
 	if (errno == EAGAIN) {
+	    if (wr) fprintf( stderr, "FIXME! using WriteContig to implement read\n" );
 	    /* exceeded the max. no. of outstanding requests.
 	    treat this as a blocking request and return.  */
 	    ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
@@ -185,6 +189,7 @@ int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
 
     aio_req = (ADIOI_AIO_Request *)extra_state;
 
+    /* aio_error returns an ERRNO value */
     errno = aio_error(aio_req->aiocbp);
     if (errno == EINPROGRESS) {
 	    /* TODO: need to diddle with status somehow */
@@ -192,8 +197,8 @@ int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
     else if (errno == ECANCELED) {
 	    /* TODO: unsure how to handle this */
     } else if (errno == 0) {
-	    errno = aio_return(aio_req->aiocbp);
-	    aio_req->nbytes = errno;
+	    int n = aio_return(aio_req->aiocbp);
+	    aio_req->nbytes = n;
 	    MPIR_Nest_incr();
 	    MPI_Grequest_complete(*(aio_req->req));
 	    MPIR_Nest_decr();
@@ -206,6 +211,7 @@ int ADIOI_GEN_aio_wait_fn(int count, void ** array_of_states,
 		double timeout, MPI_Status *status)
 {
 	const struct aiocb **cblist;
+	int err;
 
 	ADIOI_AIO_Request **aio_reqlist;
 	int i;
@@ -219,21 +225,24 @@ int ADIOI_GEN_aio_wait_fn(int count, void ** array_of_states,
 		cblist[i] = aio_reqlist[i]->aiocbp;
 	}
 
-	errno = aio_suspend(cblist, count, NULL);
-	if (errno == 0) 
+	do {
+	    err = aio_suspend(cblist, count, NULL);
+	} while (err < 0 && errno == EINTR);
+	if (err == 0) 
 	{ /* run through the list of requests, and mark all the completed ones
 	     as done */
 		for (i=0; i< count; i++)
 		{
-			aio_error(aio_reqlist[i]->aiocbp);
-			if (errno == 0) {
-				errno = aio_return(aio_reqlist[i]->aiocbp);
-				aio_reqlist[i]->nbytes = errno;
-				MPIR_Nest_incr();
-				MPI_Grequest_complete(*(aio_reqlist[i]->req));
-				MPIR_Nest_decr();
-			} 
-			/* TODO: need to handle error conditions somehow*/
+		    /* aio_error returns an ERRNO value */
+		    errno = aio_error(aio_reqlist[i]->aiocbp);
+		    if (errno == 0) {
+			int n = aio_return(aio_reqlist[i]->aiocbp);
+			aio_reqlist[i]->nbytes = n;
+			MPIR_Nest_incr();
+			MPI_Grequest_complete(*(aio_reqlist[i]->req));
+			MPIR_Nest_decr();
+		    } 
+		    /* TODO: need to handle error conditions somehow*/
 		}
 	} /* TODO: also need to handle errors here  */
 
