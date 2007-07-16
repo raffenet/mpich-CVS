@@ -121,7 +121,11 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
             if (!MPID_nem_lmt_shm_pending && !MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE]
                 && !MPIDI_CH3I_SendQ_head(CH3_NORMAL_QUEUE) && is_blocking
 #ifdef MPICH_IS_THREADED
+#ifdef HAVE_RUNTIME_THREADCHECK
                 && !MPIR_ThreadInfo.isThreaded
+#else
+                && 0
+#endif
 #endif
                 )
             {
