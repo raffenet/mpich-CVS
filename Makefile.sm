@@ -181,6 +181,7 @@ dist-with-version:
 	    cp tmpdir2/doc/logging/logging.pdf tmpdir/${PACKAGE}-${version}/doc/logging/logging.pdf ; \
 	    cp tmpdir2/doc/windev/windev.pdf tmpdir/${PACKAGE}-${version}/doc/windev/windev.pdf ; \
 	    rm -rf tmpdir2 ; \
+	    ( cd tmpdir/${PACKAGE}-${version}/src/mpe2/maint && ${MAKE} -f Makefile4man ) ; \
 	fi
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib )
 	( cd tmpdir/${PACKAGE}-${version} && find . -name 'CVS' -print | \
