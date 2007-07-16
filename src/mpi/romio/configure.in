@@ -1107,11 +1107,11 @@ if test -n "$file_system_xfs"; then
     rm -f confmemalignval
     rm -f /tmp/romio_tmp.bin
     AC_TRY_RUN([
-	#include <stdio.h>
-	#include <unistd.h>
-	#include <fcntl.h>
-	#include <stdio.h>
-	main() { 
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+int main(int argc, char **argv) { 
 	struct dioattr st;
 	int fd = open("/tmp/romio_tmp.bin", O_RDWR | O_CREAT, 0644);
 	FILE *f=fopen("confmemalignval","w");
@@ -1150,7 +1150,7 @@ if test -n "$file_system_pvfs"; then
     # selected)
     AC_MSG_CHECKING([that pvfs.h can be compiled])
     AC_TRY_COMPILE([
-        #include <pvfs.h>
+#include <pvfs.h>
         ],[
         ],pvfs_header_ok=yes,pvfs_header_ok=no
     )
@@ -1160,7 +1160,7 @@ if test -n "$file_system_pvfs"; then
         # Try again, but with int64_t
         AC_TRY_COMPILE([
             typedef long long int int64_t;
-            #include <pvfs.h>
+#include <pvfs.h>
             ],[
             ],
             pvfs_header_ok="yes with int64 definition"
@@ -1195,8 +1195,9 @@ fi
 # layout change after pvfs-2.6.3:
 if test -n "$file_system_pvfs2"; then
     AC_COMPILE_IFELSE(
-       [  #include <stdlib.h>
-          #include "pvfs2.h"
+       [  
+#include <stdlib.h>
+#include "pvfs2.h"
           int main(int argc, char **argv) { 
 	      PVFS_object_ref ref;
 	      PVFS_sys_attr attr;
@@ -1300,6 +1301,7 @@ if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
 
     AC_MSG_CHECKING([if sys/aio.h exists and can be compiled])
     AC_TRY_COMPILE([
+#include <sys/types.h>
 #include <sys/aio.h>],
 [],have_sys_aio_h=yes,have_sys_aio_h=no)
     AC_MSG_RESULT($have_sys_aio_h)
@@ -1556,18 +1558,18 @@ fi
 AC_CHECK_HEADERS(sys/vfs.h sys/param.h sys/mount.h sys/statvfs.h)
 AC_MSG_CHECKING([whether struct statfs properly defined])
 AC_TRY_COMPILE([
-    #ifdef HAVE_SYS_VFS_H
-    #include <sys/vfs.h>
-    #endif
-    #ifdef HAVE_SYS_STATVFS_H
-    #include <sys/statvfs.h>
-    #endif
-    #ifdef HAVE_SYS_PARAM_H
-    #include <sys/param.h>
-    #endif
-    #ifdef HAVE_SYS_MOUNT_H
-    #include <sys/mount.h>
-    #endif
+#ifdef HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
     ],[
     struct statfs f;
     ],
@@ -1584,9 +1586,9 @@ fi
 	  
 AC_MSG_CHECKING([for f_fstypename member of statfs structure])
 AC_TRY_COMPILE([
-    #include <sys/param.h>
-    #include <sys/mount.h>
-    #include <string.h>
+#include <sys/param.h>
+#include <sys/mount.h>
+#include <string.h>
     ],[
     struct statfs f;
     memset(&f, 0, sizeof(f));
@@ -1608,15 +1610,15 @@ AC_CHECK_FUNCS(stat,
     AC_DEFINE(HAVE_STAT, 1, Define if stat function is present)
     AC_MSG_CHECKING([for st_fstype member of stat structure])
     AC_TRY_COMPILE([
-	#ifdef HAVE_SYS_TYPES_H
-	#include <sys/types.h>
-	#endif
-	#ifdef HAVE_SYS_STAT_H
-	#include <sys/stat.h>
-	#endif
-	#ifdef HAVE_UNISTD_H
-	#include <unistd.h>
-	#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 	],[
 	struct stat s;
 
@@ -1636,15 +1638,15 @@ AC_CHECK_FUNCS(statvfs,
     AC_DEFINE(HAVE_STATVFS, 1, Define if statvfs function is present)
     AC_MSG_CHECKING([for f_basetype member of statvfs structure])
     AC_TRY_COMPILE([
-	#ifdef HAVE_SYS_TYPES_H
-	#include <sys/types.h>
-	#endif
-        #ifdef HAVE_SYS_VFS_H
-        #include <sys/vfs.h>
-        #endif
-	#ifdef HAVE_SYS_STATVFS_H
-	#include <sys/statvfs.h>
-	#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#endif
 	], [
 	struct statvfs foo;
 
@@ -1667,9 +1669,9 @@ if test "$ac_cv_header_unistd_h" = "yes" ; then
     AC_TRY_COMPILE([
 #include <unistd.h>
         ], [
-        #ifndef _LFS64_LARGEFILE
-        #error no largefile defines
-        #endif
+#ifndef _LFS64_LARGEFILE
+#error no largefile defines
+#endif
         ],ac_cv_has_large_file_defines=yes,ac_cv_has_large_file_defines=no)])
     if test "$ac_cv_has_large_file_defines" = "yes" ; then
         # See if we can use them
