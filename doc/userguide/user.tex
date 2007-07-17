@@ -1133,15 +1133,60 @@ instance of Python has no children and is not the child of a
 Python process. That is the one that is running mpiexec and is the one you
 want to attach to.
 
-\section{Other Tools Provided with MPICH2}
-\label{sec:other-tools}
+\section{MPE}
+\label{sec:mpe}
 MPICH2 comes with the same MPE (Multi-Processing Environment) tools that are
 included with MPICH1.  These include several trace libraries for recording the
 execution of MPI programs and the Jumpshot and SLOG tools for performance
-visualization.  The MPE tools are built and installed by default and should be
-available without requiring any additional steps.  MPE is documented in 
-a separate manual.
+visualization, and a MPI collective and datatype checking library.
+The MPE tools are built and installed by default and should be available
+without requiring any additional steps.  The easiest way to use MPE profiling
+libraries is through the \texttt{-mpe=} switch provided by MPICH2's
+compiler wrappers,
+\texttt{mpicc}, \texttt{mpicxx}, \texttt{mpif77}, and \texttt{mpif90}.
+For instance, to view MPI communication pattern of a program, fpilog.f,
+one can first link the source file as follows:
+\begin{verbatim}
+mpif90 -mpe=mpilog -o fpilog fpilog.f
+\end{verbatim}
+The \texttt{-mpe=mpilog} option will link with appropriate MPE profiling
+libraries.  Then running the program through \texttt{mpiexec -n 4 fpilog}
+will result a logfile, Unknown.clog2, in the working directory.
+The final step is to convert and view the logfile through Jumpshot:
+\begin{verbatim}
+jumpshot Unknown.clog2
+\end{verbatim}
+Other MPE profiling options that are available through MPICH2 compiler wrappers
+are 
+\begin{verbatim}
+    -mpe=mpilog     : Automatic MPI and MPE user-defined states logging.
+                      This links against -llmpe -lmpe.
 
+    -mpe=mpitrace   : Trace MPI program with printf.
+                      This links against -ltmpe.
+
+    -mpe=mpianim    : Animate MPI program in real-time.
+                      This links against -lampe -lmpe.
+
+    -mpe=mpicheck   : Check MPI Program with the Collective & Datatype
+                      Checking library.  This links against -lmpe_collchk.
+
+    -mpe=graphics   : Use MPE graphics routines with X11 library.
+                      This links against -lmpe <X11 libraries>.
+
+    -mpe=log        : MPE user-defined states logging.
+                      This links against -lmpe.
+
+    -mpe=nolog      : Nullify MPE user-defined states logging.
+                      This links against -lmpe_null.
+
+    -mpe=help       : Print the help page.
+\end{verbatim}
+For more details of how to use MPE profiling tools, see
+\texttt{mpich2/src/mpe2/README}.
+
+\section{Other Tools Provided with MPICH2}
+\label{sec:other-tools}
 MPICH2 also includes a test suite for MPI-1 and MPI-2 functionality; this
 suite may be found in the \texttt{mpich2/test/mpi} source directory and can be
 run with the command \texttt{make testing}.  This test suite should work with
