@@ -1144,20 +1144,51 @@ without requiring any additional steps.  The easiest way to use MPE profiling
 libraries is through the \texttt{-mpe=} switch provided by MPICH2's
 compiler wrappers,
 \texttt{mpicc}, \texttt{mpicxx}, \texttt{mpif77}, and \texttt{mpif90}.
+
 For instance, to view MPI communication pattern of a program, fpilog.f,
 one can first link the source file as follows:
 \begin{verbatim}
 mpif90 -mpe=mpilog -o fpilog fpilog.f
 \end{verbatim}
 The \texttt{-mpe=mpilog} option will link with appropriate MPE profiling
-libraries.  Then running the program through \texttt{mpiexec -n 4 fpilog}
-will result a logfile, Unknown.clog2, in the working directory.
+libraries.  Then running the program through \texttt{mpiexec}
+will result a logfile, \texttt{Unknown.clog2}, in the working directory.
 The final step is to convert and view the logfile through Jumpshot:
 \begin{verbatim}
 jumpshot Unknown.clog2
 \end{verbatim}
-Other MPE profiling options that are available through MPICH2 compiler wrappers
-are 
+
+Another example, to validate all the MPI collective calls in a program by
+linking the source file as follows:
+\begin{verbatim}
+mpif90 -mpe=mpicheck -o wrong_reals wrong_reals.f
+\end{verbatim}
+Running the program will result with the following output:
+\begin{verbatim}
+> mpiexec -n 4 wrong_reals
+Starting MPI Collective and Datatype Checking!
+ Process            3  of            4  is alive
+Backtrace of the callstack at rank 3:
+        At [0]: wrong_reals(CollChk_err_han+0xb9)[0x8055a09]
+        At [1]: wrong_reals(CollChk_dtype_scatter+0xbf)[0x8057bff]
+        At [2]: wrong_reals(CollChk_dtype_bcast+0x3d)[0x8057ccd]
+        At [3]: wrong_reals(MPI_Bcast+0x6c)[0x80554bc]
+        At [4]: wrong_reals(mpi_bcast_+0x35)[0x80529b5]
+        At [5]: wrong_reals(MAIN__+0x17b)[0x805264f]
+        At [6]: wrong_reals(main+0x27)[0x80dd187]
+        At [7]: /lib/libc.so.6(__libc_start_main+0xdc)[0x9a34e4]
+        At [8]: wrong_reals[0x8052451]
+[cli_3]: aborting job:
+Fatal error in MPI_Comm_call_errhandler:
+
+Collective Checking: BCAST (Rank 3) --> Inconsistent datatype signatures
+                                        detected between rank 3 and rank 0.
+\end{verbatim}
+The error message here shows that the \texttt{MPI\_Bcast} has been used with
+inconsistent datatype in the program wrong\_reals.f.
+
+Other MPE profiling options that are available through MPICH2 compiler
+wrappers are 
 \begin{verbatim}
     -mpe=mpilog     : Automatic MPI and MPE user-defined states logging.
                       This links against -llmpe -lmpe.
@@ -1184,6 +1215,7 @@ are
 \end{verbatim}
 For more details of how to use MPE profiling tools, see
 \texttt{mpich2/src/mpe2/README}.
+
 
 \section{Other Tools Provided with MPICH2}
 \label{sec:other-tools}
