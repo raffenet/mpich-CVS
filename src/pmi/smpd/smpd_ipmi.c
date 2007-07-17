@@ -1040,7 +1040,8 @@ int iPMI_Abort(int exit_code, const char error_msg[])
 	printf("PMI_Abort called after PMI_Finalize, error message:\n%s\n", error_msg);
 	fflush(stdout);
 #ifdef HAVE_WINDOWS_H
-	ExitProcess(exit_code);
+	/* ExitProcess(exit_code); */
+    TerminateProcess(GetCurrentProcess(), exit_code);
 #else
 	exit(exit_code);
 	return PMI_FAIL;
@@ -1071,7 +1072,8 @@ int iPMI_Abort(int exit_code, const char error_msg[])
 	smpd_dbs_finalize();
 	pmi_process.init_finalized = PMI_FINALIZED;
 #ifdef HAVE_WINDOWS_H
-	ExitProcess(exit_code);
+	/* ExitProcess(exit_code); */
+    TerminateProcess(GetCurrentProcess(), exit_code);
 #else
 	exit(exit_code);
 	return PMI_FAIL;
@@ -1139,7 +1141,8 @@ int iPMI_Abort(int exit_code, const char error_msg[])
 	return PMI_FAIL;
     }
 #ifdef HAVE_WINDOWS_H
-    ExitProcess(exit_code);
+    /* ExitProcess(exit_code); */
+    TerminateProcess(GetCurrentProcess(), exit_code);
 #else
     exit(exit_code);
     return PMI_FAIL;
