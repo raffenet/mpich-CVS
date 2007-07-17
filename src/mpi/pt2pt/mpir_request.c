@@ -505,6 +505,7 @@ int MPIR_Grequest_progress_poke(int count,
     MPIX_Grequest_wait_function *wait_fn = NULL;
     void ** state_ptrs;
     int i, j, n_classes, n_native, n_greq;
+    int mpi_error = MPI_SUCCESS;
 
     state_ptrs = MPIU_Malloc(sizeof(void*)*count);
 
@@ -524,8 +525,9 @@ int MPIR_Grequest_progress_poke(int count,
 	    state_ptrs[j] = request_ptrs[i]->grequest_extra_state;
 	    j++;
 	    if (i+1 < count) {
-	        if (request_ptrs[i]->greq_class != 
-			    request_ptrs[i+1]->greq_class)
+	        if (request_ptrs[i+1] == NULL ||
+			(request_ptrs[i]->greq_class != 
+				request_ptrs[i+1]->greq_class) )
 	            n_classes += 1;
 	    }
 	} else {
@@ -534,19 +536,19 @@ int MPIR_Grequest_progress_poke(int count,
     }
 
     if (j > 0 && n_classes == 1 && wait_fn != NULL) {
-        (wait_fn)(j, state_ptrs, 0, NULL);
+        mpi_error = (wait_fn)(j, state_ptrs, 0, NULL);
     } else {
 	for (i = 0; i< count; i++ )
 	{
 	    if (request_ptrs[i] != NULL && 
 			request_ptrs[i]->kind == MPID_UREQUEST && 
 			*request_ptrs[i]->cc_ptr != 0) {
-		(request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, &(array_of_statuses[i]));
+		mpi_error = (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, &(array_of_statuses[i]));
 	    }
 	}
     }
 fn_exit:
     if (state_ptrs != NULL) MPIU_Free(state_ptrs);
-    return MPI_SUCCESS;
+    return mpi_error;
 }
 

@@ -163,7 +163,10 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 
     for(;;)
     {
-	MPIR_Grequest_progress_poke(count, request_ptrs, array_of_statuses);
+	mpi_errno = MPIR_Grequest_progress_poke(count, 
+			request_ptrs, array_of_statuses);
+	if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
 	for (i = 0; i < count; i++)
 	{
 	    if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
