@@ -502,8 +502,6 @@ Section~\ref{configure-options}.  Here we comment on some of them.
   expense of error reporting and other program development aids.  This
   is recommended only for getting the best performance out of proven
   production applications, and for benchmarking.
-\item[--without-mpe]Configure MPICH2 without the MPE package of
-  program development tools (including the Jumpshot performance viewer)
 \item[--enable-sharedlibs]Build MPICH2 with shared libraries. 
   For example, 
 \begin{description}
@@ -516,6 +514,14 @@ Section~\ref{configure-options}.  Here we comment on some of them.
   both process managers by specifying
 \begin{verbatim}
   --with-pm=mpd:gforker
+\end{verbatim}
+\item[--without-mpe]Configure MPICH2 without the MPE package of
+  program development tools (including the Jumpshot performance viewer)
+\item[--with-java]Set the location of Java installation.  This option
+is necessary only if the default Java installation in your PATH does
+not contain a valid Java installation for Jumpshot, e.g.
+\begin{verbatim}
+  --with-java=/opt/jdk1.6.0
 \end{verbatim}
 \end{description}
 
@@ -1118,8 +1124,9 @@ MPICH2 comes with the same MPE (Multi-Processing Environment) tools that are
 included with MPICH1.  These include several trace libraries for recording the
 execution of MPI programs and the Jumpshot and SLOG tools for performance
 visualization.  The MPE tools are built and installed by default and should be
-available without requiring any additional steps.  MPE is documented in 
-a separate manual that covers the installation and use of MPE.
+available without requiring any additional steps.  The installation of MPE
+is documented in \texttt{mpich2/src/mpe2/INSTALL} and the usage of MPE is
+documented in \texttt{mpich2/src/mpe2/README}.
 
 \section{Windows Version}
 \label{sec:windows}
