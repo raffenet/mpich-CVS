@@ -134,7 +134,7 @@ int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 		ADIO_WriteContig(fd, buf, len, MPI_BYTE, 
 			    ADIO_EXPLICIT_OFFSET, offset, NULL, &error_code);  
 	    else
-		ADIOI_ReadContig(fd, buf, len, MPI_BYTE,
+		ADIO_ReadContig(fd, buf, len, MPI_BYTE,
 			    ADIO_EXPLICIT_OFFSET, offset, NULL, &error_code);  
 		    
 	    MPIO_Completed_request_create(&fd, &error_code, request);
