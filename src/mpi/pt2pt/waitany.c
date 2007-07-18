@@ -162,7 +162,8 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 			    request_ptrs[i]->kind == MPID_UREQUEST &&
 			    request_ptrs[i]->poll_fn != NULL)
 	    {
-		(request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, status);
+		mpi_errno = (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, status);
+		if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    }
 	    if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
 	    {

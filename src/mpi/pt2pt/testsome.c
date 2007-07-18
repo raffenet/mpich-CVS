@@ -166,8 +166,9 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount,
 			request_ptrs[i]->kind == MPID_UREQUEST &&
 			request_ptrs[i]->poll_fn != NULL)
 	{
-	    (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, 
+	    mpi_errno = (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, 
 			    array_of_statuses);
+	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
 	if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
 	{

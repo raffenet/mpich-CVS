@@ -123,7 +123,9 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 
     if (request_ptr->kind == MPID_UREQUEST && request_ptr->poll_fn != NULL) 
     {
-	(request_ptr->poll_fn)(request_ptr->grequest_extra_state, status);
+	mpi_errno = (request_ptr->poll_fn)(request_ptr->grequest_extra_state, 
+			status);
+	if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     }
     
     if (*request_ptr->cc_ptr == 0)
