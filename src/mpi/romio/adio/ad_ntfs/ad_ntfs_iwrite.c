@@ -6,6 +6,12 @@
 
 #include "ad_ntfs.h"
 
+#include "../../mpi-io/mpioimpl.h"
+#include "../../mpi-io/mpioprof.h"
+#include "mpiu_greq.h"
+
+static MPIX_Grequest_class ADIOI_GEN_greq_class = 0;
+
 void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count, 
 			     MPI_Datatype datatype, int file_ptr_type,
 			     ADIO_Offset offset, ADIO_Request *request,
@@ -15,18 +21,6 @@ void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count,
     int err;
     static char myname[] = "ADIOI_NTFS_IwriteContig";
 
-    *request = ADIOI_Malloc_request();
-    if ((*request) == NULL)
-    {
-	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-	    myname, __LINE__, MPI_ERR_IO,
-	    "**nomem", "**nomem %s", "ADIOI_Request");
-	return;
-    }
-    (*request)->optype = ADIOI_WRITE;
-    (*request)->fd = fd;
-    (*request)->datatype = datatype;
-
     MPI_Type_size(datatype, &typesize);
     len = count * typesize;
 
@@ -34,14 +28,11 @@ void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count,
     {
 	offset = fd->fp_ind;
     }
-    err = ADIOI_NTFS_aio(fd, buf, len, offset, 1, &((*request)->handle));
+    err = ADIOI_NTFS_aio(fd, buf, len, offset, 1, request);
     if (file_ptr_type == ADIO_INDIVIDUAL)
     {
 	fd->fp_ind += len;
     }
-
-    (*request)->queued = 1;
-    ADIOI_Add_req_to_list(request);
 
     /* --BEGIN ERROR HANDLING-- */
     if (err != MPI_SUCCESS)
@@ -55,7 +46,6 @@ void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count,
     *error_code = MPI_SUCCESS;
 
     fd->fp_sys_posn = -1;   /* set it to null. */
-    fd->async_count++;
 }
 
 
@@ -65,9 +55,11 @@ void ADIOI_NTFS_IwriteContig(ADIO_File fd, void *buf, int count,
  * Returns MPI_SUCCESS on success, mpi_errno on failure.
  */
 int ADIOI_NTFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
-		   int wr, void *handle)
+		   int wr, MPI_Request *request)
 {
     static char myname[] = "ADIOI_NTFS_aio";
+
+    ADIOI_AIO_Request *aio_req;
     static DWORD dwNumWritten, dwNumRead;
     BOOL ret_val = FALSE;
     FDTYPE fd_sys;
@@ -77,6 +69,8 @@ int ADIOI_NTFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 
     fd_sys = fd->fd_sys;
 
+    aio_req = (ADIOI_AIO_Request *)ADIOI_Calloc(sizeof(ADIOI_AIO_Request), 1);
+    /* XXX: set up NTFS AIO structures */
     pOvl = (OVERLAPPED *) ADIOI_Calloc(sizeof(OVERLAPPED), 1);
     if (pOvl == NULL)
     {
@@ -98,22 +92,14 @@ int ADIOI_NTFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     pOvl->Offset = DWORDLOW(offset);
     pOvl->OffsetHigh = DWORDHIGH(offset);
 
+    /* XXX: initiate async I/O  */
+
     if (wr)
     {
-	/*printf("WriteFile(%d bytes)\n", len);fflush(stdout);*/
 	ret_val = WriteFile(fd_sys, buf, len, &dwNumWritten, pOvl);
     }
     else
     {
-	/*
-	{
-	    ADIO_Fcntl_t fcntl_struct;
-	    int error_code;
-	    ADIO_Fcntl(fd, ADIO_FCNTL_GET_FSIZE, &fcntl_struct, &error_code);
-	    printf("File size a: %d\n", fcntl_struct.fsize);
-	}
-	printf("ReadFile(%d bytes)\n", len);fflush(stdout);
-	*/
 	ret_val = ReadFile(fd_sys, buf, len, &dwNumRead, pOvl);
     }
 
@@ -135,6 +121,14 @@ int ADIOI_NTFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 
     *((OVERLAPPED **) handle) = pOvl;
 
+    /* XXX: set up generalized request class and request */
+    if (ADIOI_NTFS_greq_class == 0) {
+	    MPIX_Grequest_class_create(ADIOI_GEN_aio_query_fn,
+			    ADIOI_NTFS_aio_free_fn, MPIU_Greq_cancel_fn,
+			    ADIOI_NTFS_aio_poll_fn, ADIOI_NTFS_aio_wait_fn,
+			    &ADIOI_NTFS_greq_class);
+    }
+    MPIX_Grequest_class_allocate(ADIOI_NTFS_greq_class, aio_req, request);
     return mpi_errno;
 }
 
@@ -164,3 +158,45 @@ const char * ADIOI_NTFS_Strerror(int error)
     }
     return msg;
 }
+
+/* complete a single outstanding AIO request */
+int ADIOI_NTFS_aio_poll_fn(void *extra_state, MPI_Status *status)
+{
+    ADIOI_AIO_Request *aio_req;
+
+    aio_req = (ADIOI_AIO_Request *)extra_state;
+    
+    /* XXX: test for AIO completion here */
+
+    /* XXX: determine bytes read/writen */
+
+    MPIR_Nest_incr();
+    MPI_Grequest_complete(*(aio_req->req));
+    MPIR_Nest_decr();
+
+    return MPI_SUCCESS;
+}
+
+
+/* (potentially) complete multiple outstanding AIO requests */
+int ADIOI_NTFS_aio_wait_fn(int count, void **array_of_states,
+		double timeout, MPI_Status *status)
+{
+	int i;
+	ADIOI_AIO_Request **aio_reqlist;
+
+	aio_reqlist = (ADIOI_AIO_Request **)array_of_states;
+
+	/* XXX: set-up arrays of outstanding requests */
+
+	/* XXX: wait for one or more to complete */
+
+	/* XXX: mark completed requests as 'done'*/
+	MPIR_Nest_incr();
+	MPI_Grequest_complete(*(aio_reqlist[i]->req));
+	MPIR_Nest_decr();
+	return MPI_SUCCESS;
+}
+
+/* XXX: implement an ADIOI_NTFS_aio_free_fn if allocating anything in
+ * ADIOI_NTFS_aio */
