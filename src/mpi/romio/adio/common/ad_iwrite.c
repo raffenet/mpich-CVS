@@ -128,11 +128,15 @@ int ADIOI_GEN_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 
     if (err == -1) {
 	if (errno == EAGAIN) {
-	    if (wr) fprintf( stderr, "FIXME! using WriteContig to implement read\n" );
 	    /* exceeded the max. no. of outstanding requests.
 	    treat this as a blocking request and return.  */
-	    ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET, 
-			offset, NULL, &error_code);  
+	    if (wr) 
+		ADIO_WriteContig(fd, buf, len, MPI_BYTE, 
+			    ADIO_EXPLICIT_OFFSET, offset, NULL, &error_code);  
+	    else
+		ADIOI_ReadContig(fd, buf, len, MPI_BYTE,
+			    ADIO_EXPLICIT_OFFSET, offset, NULL, &error_code);  
+		    
 	    MPIO_Completed_request_create(&fd, &error_code, request);
 	    return 0;
 	} else {
