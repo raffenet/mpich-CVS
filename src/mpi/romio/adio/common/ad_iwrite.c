@@ -201,7 +201,7 @@ int ADIOI_GEN_aio_poll_fn(void *extra_state, MPI_Status *status)
 	    int n = aio_return(aio_req->aiocbp);
 	    aio_req->nbytes = n;
 	    MPIR_Nest_incr();
-	    errcode = MPI_Grequest_complete(aio_req->req);
+	    errcode = MPI_Grequest_complete(*(aio_req->req));
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (errcode != MPI_SUCCESS) {
 		    errcode = MPIO_Err_create_code(MPI_SUCCESS,
@@ -249,7 +249,7 @@ int ADIOI_GEN_aio_wait_fn(int count, void ** array_of_states,
 		    	int n = aio_return(aio_reqlist[i]->aiocbp);
 			aio_reqlist[i]->nbytes = n;
 			MPIR_Nest_incr();
-			errcode = MPI_Grequest_complete(aio_reqlist[i]->req);
+			errcode = MPI_Grequest_complete(*(aio_reqlist[i]->req));
 			if (errcode != MPI_SUCCESS) {
 				errcode = MPIO_Err_create_code(MPI_SUCCESS,
 						MPIR_ERR_RECOVERABLE,
