@@ -10,6 +10,7 @@
 #include "../../mpi-io/mpioprof.h"
 #include "mpiu_greq.h"
 
+#include <string.h>
 
 #ifdef ROMIO_HAVE_WORKING_AIO
 static MPIX_Grequest_class ADIOI_GEN_greq_class = 0;
@@ -115,7 +116,6 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 	}
     }
     aio_req->aiocbp = aiocbp;
-    aio_req->req = request;
     if (ADIOI_GEN_greq_class == 0) {
 	    MPIX_Grequest_class_create(ADIOI_GEN_aio_query_fn, 
 			    ADIOI_GEN_aio_free_fn, MPIU_Greq_cancel_fn, 
@@ -123,6 +123,7 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
 			    &ADIOI_GEN_greq_class);
     }
     MPIX_Grequest_class_allocate(ADIOI_GEN_greq_class, aio_req, request);
+    memcpy(&(aio_req->req), request, sizeof(MPI_Request));
     return 0;
 }
 #endif

@@ -102,7 +102,9 @@ typedef struct ADIOI_Fl_node {
 #include <pvfs2.h>
 #endif
 typedef struct ADIOI_AIO_req_str {
-	MPI_Request *req;
+	/* very wierd: if this MPI_Request is a pointer, some C++ compilers
+	 * will clobber it when the MPICH2 C++ bindings are used */
+	MPI_Request req;
 	MPI_Offset nbytes;
 	/* should probably make this a union */
 #ifdef ROMIO_HAVE_WORKING_AIO

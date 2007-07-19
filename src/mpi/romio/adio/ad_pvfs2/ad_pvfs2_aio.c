@@ -8,6 +8,7 @@
 #include "adio.h"
 #include "adio_extern.h"
 #include "ad_pvfs2.h"
+#include <string.h>
 
 #include "ad_pvfs2_common.h"
 #include "mpiu_greq.h"
@@ -120,7 +121,6 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
     }
     /* --END ERROR HANDLING-- */
 
-    aio_req->req = request;
     if (ADIOI_PVFS2_greq_class == 0) {
 	MPIX_Grequest_class_create(ADIOI_GEN_aio_query_fn, 
 		ADIOI_PVFS2_aio_free_fn, MPIU_Greq_cancel_fn,
@@ -128,6 +128,7 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
 		&ADIOI_PVFS2_greq_class);
     }
     MPIX_Grequest_class_allocate(ADIOI_PVFS2_greq_class, aio_req, request);
+    memcpy(&(aio_req->req), request, sizeof(request));
 
     if (file_ptr_type == ADIO_INDIVIDUAL) {
 	fd->fp_ind += len;
@@ -163,7 +164,7 @@ int ADIOI_PVFS2_aio_poll_fn(void *extra_state, MPI_Status *status)
     if (ret == 0) {
 	aio_req->nbytes = aio_req->resp_io.total_completed;
 	MPIR_Nest_incr();
-	MPI_Grequest_complete(*(aio_req->req));
+	MPI_Grequest_complete(aio_req->req);
 	MPIR_Nest_decr();
 	return MPI_SUCCESS;
     } else
@@ -194,7 +195,7 @@ int ADIOI_PVFS2_aio_wait_fn(int count, void ** array_of_states,
 	    continue;
 	tmp_req->nbytes = tmp_req->resp_io.total_completed;
 	MPIR_Nest_incr();
-	MPI_Grequest_complete(*(tmp_req->req));
+	MPI_Grequest_complete(tmp_req->req);
 	MPIR_Nest_decr();
     }
     return MPI_SUCCESS; /* TODO: no idea how to deal with errors */
