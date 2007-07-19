@@ -402,7 +402,10 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     MPID_MPI_INIT_STATE_DECL(MPID_STATE_MPI_INIT_THREAD);
 
     MPID_CS_INITIALIZE();
-    MPIU_THREAD_SINGLE_CS_ENTER("init");
+    /* Don't grab lock for this function.  We don't yet know if we're
+       threaded on entering, so we don't know whether to actually
+       lock.  Besides, it's incorrect for the app to call MPI_Init_thread
+       more than once, or by different threads anyway. */
 
 #if 0
     /* Create the thread-private region if necessary and go ahead 
@@ -435,7 +438,6 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
     /* ... end of body of routine ... */
     
     MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
-    MPIU_THREAD_SINGLE_CS_EXIT("init");
     return mpi_errno;
     
   fn_fail:
@@ -450,7 +452,6 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 #   endif
     mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
     MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT_THREAD);
-    MPIU_THREAD_SINGLE_CS_EXIT("init");
     MPID_CS_FINALIZE();
     return mpi_errno;
     /* --END ERROR HANDLING-- */
