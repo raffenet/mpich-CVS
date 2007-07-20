@@ -809,6 +809,12 @@ static const char * GetDTypeString(MPI_Datatype d)
     int num_integers, num_addresses, num_datatypes, combiner = 0;
     char *str;
 
+    if (HANDLE_GET_MPI_KIND(d) != MPID_DATATYPE ||      \
+	(HANDLE_GET_KIND(d) == HANDLE_KIND_INVALID &&   \
+	d != MPI_DATATYPE_NULL))
+        return "INVALID DATATYPE";
+    
+
     if (d == MPI_DATATYPE_NULL)
 	return "MPI_DATATYPE_NULL";
 
