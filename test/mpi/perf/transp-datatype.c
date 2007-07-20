@@ -111,6 +111,8 @@ int main(int argc, char* argv[])
 	}
     }
 
+    MPI_Type_free(&row);
+    MPI_Type_free(&xpose);
 
     MPI_Finalize();
     return 0;
