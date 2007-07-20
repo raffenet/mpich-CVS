@@ -73,6 +73,7 @@ MPID_Request * MPID_Request_create(void)
 	req->status.cancelled	   = FALSE;
 	req->comm		   = NULL;
 	req->dev.datatype_ptr	   = NULL;
+	req->dev.segment_ptr	   = NULL;
 	/* Masks and flags for channel device state in an MPID_Request */
 	req->dev.state		   = 0;
 	req->dev.cancel_pending	   = FALSE;
@@ -151,6 +152,10 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
 	MPID_Datatype_release(req->dev.datatype_ptr);
     }
 
+    if (req->dev.segment_ptr != NULL) {
+	MPID_Segment_free(req->dev.segment_ptr);
+    }
+
     if (MPIDI_Request_get_srbuf_flag(req)) {
 	MPIDI_CH3U_SRBuf_free(req);
     }
@@ -205,7 +210,6 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
     {
 	MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"remaining data loaded into IOV");
 	sreq->dev.OnDataAvail = sreq->dev.OnFinal;
-	MPID_Segment_free( sreq->dev.segment_ptr );
     }
     else if ((last - sreq->dev.segment_first) / *iov_n >= MPIDI_IOV_DENSITY_MIN)
     {
@@ -261,7 +265,6 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
 	if (last == sreq->dev.segment_size)
 	{
 	    MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"remaining data packed into SRBuf");
-	    MPID_Segment_free( sreq->dev.segment_ptr );
 	    sreq->dev.OnDataAvail = sreq->dev.OnFinal;
 	}
 	else 
@@ -382,7 +385,6 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
      "updating rreq to read the remaining data directly into the user buffer");
 	    /* Eventually, use OnFinal for this instead */
 	    rreq->dev.OnDataAvail = 0;
-	    MPID_Segment_free( rreq->dev.segment_ptr );
 	}
 	else if (last == rreq->dev.segment_size || 
 		 (last - rreq->dev.segment_first) / rreq->dev.iov_count >= MPIDI_IOV_DENSITY_MIN)

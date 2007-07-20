@@ -448,7 +448,6 @@ static int lmt_shm_send_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
     while (last < data_sz);
 
     *done = TRUE;
-    MPID_Segment_free(req->dev.segment_ptr);
     MPIDI_CH3U_Request_complete(req);   
        
  fn_exit:
@@ -543,7 +542,6 @@ static int lmt_shm_recv_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
     copy_buf->owner_info.val.rank          = NO_OWNER;
 
     *done = TRUE;
-    MPID_Segment_free(req->dev.segment_ptr);
     MPIDI_CH3U_Request_complete(req);
     
  fn_exit:

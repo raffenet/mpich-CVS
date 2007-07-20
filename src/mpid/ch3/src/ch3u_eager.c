@@ -397,7 +397,6 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		    }
 		    /* --END ERROR HANDLING-- */
 		}
-		MPID_Segment_free( rreq->dev.segment_ptr );
 		rreq->dev.OnDataAvail = 0;
 	    }
 	}

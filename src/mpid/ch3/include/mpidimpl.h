@@ -285,6 +285,7 @@ extern MPIDI_Process_t MPIDI_Process;
     (sreq_)->dev.user_count = count;				\
     (sreq_)->dev.datatype = datatype;				\
     (sreq_)->dev.datatype_ptr	   = NULL;                      \
+    (sreq_)->dev.segment_ptr	   = NULL;                      \
 }
 
 /* This is the receive request version of MPIDI_Request_create_sreq */
@@ -310,6 +311,7 @@ extern MPIDI_Process_t MPIDI_Process;
     (rreq_)->dev.state = 0;                                     \
     (rreq_)->dev.cancel_pending = FALSE;                        \
     (rreq_)->dev.datatype_ptr = NULL;                           \
+    (rreq_)->dev.segment_ptr = NULL;                            \
     (rreq_)->dev.iov_offset   = 0;                              \
      MPIDI_CH3_REQUEST_INIT(rreq_);\
 }
