@@ -122,6 +122,7 @@ main (int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Type_free( &small_non_contig_struct_type );
+    MPI_Type_free( &contig_indexed_type );
 
     MPI_Free_mem(src);
     MPI_Free_mem(sendrec);
