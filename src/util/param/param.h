@@ -7,4 +7,7 @@
 #ifndef PARAM_H_INCLUDED
 #define PARAM_H_INCLUDED
 
+/* This is a header file for definitions that are internal to the parameter
+   routines */
+
 #endif
