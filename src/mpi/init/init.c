@@ -72,6 +72,10 @@ int MPI_Init( int *argc, char ***argv )
     MPID_MPI_INIT_STATE_DECL(MPID_STATE_MPI_INIT);
 
     MPID_CS_INITIALIZE();
+    /* Don't grab lock for this function.  We don't yet know if we're
+       threaded on entering, so we don't know whether to actually
+       lock.  Besides, it's incorrect for the app to call MPI_Init
+       more than once, or by different threads anyway. */
     MPID_MPI_INIT_FUNC_ENTER(MPID_STATE_MPI_INIT);
 #   ifdef HAVE_ERROR_CHECKING
     {
