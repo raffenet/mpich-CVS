@@ -1326,6 +1326,8 @@ class MPD(object):
 	msg['username'] = username
         if hasattr(os,'fork'):
             (manPid,toManSock) = self.launch_mpdman_via_fork(msg,man_env)
+            if not manPid:
+                print '**** mpd: launch_client_via_fork_exec failed; exiting'
         elif subprocess_module_available:
             (manPid,toManSock) = self.launch_mpdman_via_subprocess(msg,man_env)
         else:
@@ -1372,7 +1374,21 @@ class MPD(object):
         msg['entry_host'] = self.myHost
         msg['entry_ifhn'] = self.myIfhn
         msg['entry_port'] = manListenPort
-        manPid = os.fork()
+        maxTries = 6
+        numTries = 0
+        while numTries < maxTries:
+            try:
+                manPid = os.fork()
+                errinfo = 0
+            except OSError, errinfo:
+                pass  ## could check for errinfo.errno == 35 (resource unavailable)
+            if errinfo:
+                sleep(1)
+                numTries += 1
+            else:
+                break
+        if numTries >= maxTries:
+            return (0,0)
         if manPid == 0:
             self.conListenSock = 0    # don't want to clean up console if I am manager
             self.myId = '%s_man_%d' % (self.myHost,self.myPid)

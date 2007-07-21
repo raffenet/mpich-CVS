@@ -348,9 +348,12 @@ class MPDMan(object):
                 (self.fd_read_cli_stderr,self.fd_write_cli_stderr) = os.pipe()
                 (self.handshake_sock_man_end,self.handshake_sock_cli_end) = mpd_sockpair()
                 clientPid = self.launch_client_via_fork_exec(cli_env)
-                if clientPid:
+                if clientPid < 0:
+                    print '**** mpdman: launch_client_via_fork_exec failed; exiting'
+                    sys.exit(-1)
+                elif clientPid > 0:
                     self.handshake_sock_cli_end.close()
-                else:
+                else:  # 0
                     self.handshake_sock_man_end.close()
             elif subprocess_module_available:
                 clientPid = self.launch_client_via_subprocess(cli_env)  # may chg self.subproc
@@ -1386,7 +1389,22 @@ class MPDMan(object):
         else:
             mpd_print(1, 'invalid msg recvd on mpdSock :%s:' % msg )
     def launch_client_via_fork_exec(self,cli_env):
-        cliPid = os.fork()
+        maxTries = 6
+        numTries = 0
+        while numTries < maxTries:
+            try:
+                cliPid = os.fork()
+                errinfo = 0
+            except OSError, errinfo:
+                pass  ## could check for errinfo.errno == 35 (resource unavailable)
+            if errinfo:
+                sleep(1)
+                numTries += 1
+            else:
+                break
+        if numTries >= maxTries:
+            ## print '**** mpdman: fork failed for launching client'
+            return -1
         if cliPid == 0:
             mpd_set_my_id(socket.gethostname() + '_man_before_exec_client_' + `os.getpid()`)
             self.ring.lhsSock.close()
