@@ -17,30 +17,6 @@
 #undef MPID_SP_VERBOSE
 #undef MPID_SU_VERBOSE
 
-/*
-* These macros allow us to add a test to an if for required alignments.
-*
-* Some CPUs require aligned data when using longer types,
-* using int64_t failed on SPARC when using the gcc compiler, probably
-* because gcc make good use of the longer move instructions at the
-* default optimization level.  The fixme here is to arrange these
-* so that weaker alignments can still be used, e.g., a basic size of
-* 8 can use the code for length 4 when the alignment is by 4s.
-* Note also that unaligned moves, even when supported, are often slower
-* than aligned moves.
-*/
-#ifdef HAVE_ANY_INT64_T_ALIGNEMENT
-#define MPIR_ALIGN8_TEST(p1,p2)
-#else
-#define MPIR_ALIGN8_TEST(p1,p2) && ((((MPI_Aint)p1 | (MPI_Aint)p2) & 0x7) == 0)
-#endif
-
-#ifdef HAVE_ANY_INT32_T_ALIGNEMENT
-#define MPIR_ALIGN4_TEST(p1,p2)
-#else
-#define MPIR_ALIGN4_TEST(p1,p2) && ((((MPI_Aint)p1 | (MPI_Aint)p2) & 0x3) == 0)
-#endif
-
 /* MPID_Segment_piece_params
 *
 * This structure is used to pass function-specific parameters into our 
@@ -48,79 +24,33 @@
 * to the functions it calls without changing the prototype.
 */
 struct MPID_Segment_piece_params {
-union {
-    struct {
-	char *pack_buffer;
-    } pack;
-    struct {
-	DLOOP_VECTOR *vectorp;
-	int index;
-	int length;
-    } pack_vector;
-    struct {
-	int64_t *offp;
-	int *sizep; /* see notes in Segment_flatten header */
-	int index;
-	int length;
-    } flatten;
-    struct {
-	char *last_loc;
-	int count;
-    } contig_blocks;
-    struct {
-	char *unpack_buffer;
-    } unpack;
-    struct {
-	int stream_off;
-    } print;
-} u;
+    union {
+	struct {
+	    char *pack_buffer;
+	} pack;
+	struct {
+	    DLOOP_VECTOR *vectorp;
+	    int index;
+	    int length;
+	} pack_vector;
+	struct {
+	    int64_t *offp;
+	    int *sizep; /* see notes in Segment_flatten header */
+	    int index;
+	    int length;
+	} flatten;
+	struct {
+	    char *last_loc;
+	    int count;
+	} contig_blocks;
+	struct {
+	    char *unpack_buffer;
+	} unpack;
+	struct {
+	    int stream_off;
+	} print;
+    } u;
 };
-
-#define MPIDI_COPY_FROM_VEC(src,dest,stride,type,nelms,count)	\
-{								\
-type * l_src = (type *)src, * l_dest = (type *)dest;	\
-int i, j;							\
-const int l_stride = stride;				\
-if (nelms == 1) {						\
-    for (i=count;i!=0;i--) {				\
-	*l_dest++ = *l_src;					\
-	l_src = (type *) ((char *) l_src + l_stride);	\
-    }							\
-}								\
-else {							\
-    for (i=count; i!=0; i--) {				\
-	for (j=0; j<nelms; j++) {				\
-	    *l_dest++ = l_src[j];				\
-	}							\
-	l_src = (type *) ((char *) l_src + l_stride);	\
-    }							\
-}								\
-dest = (char *) l_dest;					\
-src  = (char *) l_src;                                      \
-}
-
-#define MPIDI_COPY_TO_VEC(src,dest,stride,type,nelms,count)	\
-{								\
-type * l_src = (type *)src, * l_dest = (type *)dest;	\
-int i, j;							\
-const int l_stride = stride;				\
-if (nelms == 1) {						\
-    for (i=count;i!=0;i--) {				\
-	*l_dest = *l_src++;					\
-	l_dest = (type *) ((char *) l_dest + l_stride);	\
-    }							\
-}								\
-else {							\
-    for (i=count; i!=0; i--) {				\
-	for (j=0; j<nelms; j++) {				\
-	    l_dest[j] = *l_src++;				\
-	}							\
-	l_dest = (type *) ((char *) l_dest + l_stride);	\
-    }							\
-}								\
-dest = (char *) l_dest;					\
-src  = (char *) l_src;                                      \
-}
 
 /* prototypes of internal functions */
 static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
