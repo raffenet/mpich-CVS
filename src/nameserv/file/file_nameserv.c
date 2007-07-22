@@ -13,9 +13,12 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include "mpiimpl.h"
 #include "namepub.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#include <errno.h>
 
 /* For writing the name/service pair */
 /* style: allow:fprintf:1 sig:0 */   
