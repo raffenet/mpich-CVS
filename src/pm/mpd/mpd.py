@@ -1061,9 +1061,10 @@ class MPD(object):
                 if msg['spawner_mpd'] == self.myId:
                     jobid = msg['jobid']
                     spawnerManPid = msg['spawner_manpid']
-                    spawnerManSock = self.activeJobs[jobid][spawnerManPid]['socktoman']
-                    msgToSend = { 'cmd' : 'spawn_done_by_mpd', 'rc' : 0, 'reason' : '' }
-                    spawnerManSock.send_dict_msg(msgToSend)
+                    if self.activeJobs[jobid].has_key(spawnerManPid):
+                        spawnerManSock = self.activeJobs[jobid][spawnerManPid]['socktoman']
+                        msgToSend = { 'cmd' : 'spawn_done_by_mpd', 'rc' : 0, 'reason' : '' }
+                        spawnerManSock.send_dict_msg(msgToSend)
                 else:
                     self.ring.rhsSock.send_dict_msg(msg)
         else:
