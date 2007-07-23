@@ -42,7 +42,7 @@
     Office of Advanced Scientific Computing Research, SciDAC Program,
     Office of Science, U.S. Department of Energy, under Contract
     DE-AC02-06CH11357.}\\
-Version 1.0.5p4\\
+Version 1.0.6\\
 Mathematics and Computer Science Division\\
 Argonne National Laboratory}
 
@@ -1097,14 +1097,14 @@ that the program (all processes) are stopped in the call to
 
 When debugging with TotalView using the above startup sequence, MPICH2
 jobs cannot be restarted without exiting TotalView. In MPICH2 version
-1.0.5p4 or later, TotalView can be invoked on an MPICH2 job as follows: 
+1.0.6 or later, TotalView can be invoked on an MPICH2 job as follows: 
 \begin{verbatim}
     totalview python -a `which mpiexec` -tvsu \
                  <mpiexec args> <program> <program args>
 \end{verbatim}
 and the MPICH2 job will be fully restartable within TotalView.
 
-If you have MPICH2 version 1.0.5p4 or later and TotalView 8.1.0 or later,
+If you have MPICH2 version 1.0.6 or later and TotalView 8.1.0 or later,
 you can use a TotalView feature called indirect launch with
 MPICH2. Invoke TotalView as: 
 \begin{verbatim}

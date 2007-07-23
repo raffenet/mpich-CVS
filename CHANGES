@@ -1,4 +1,19 @@
 ===============================================================================
+			       Changes in 1.0.6
+===============================================================================
+
+- Updates to the ch3:nemesis channel including preliminary support for
+thread safety.
+
+- 
+
+- Singleton init now works with the MPD process manager.
+
+- Many other bug fixes and code cleanup.  A full list of changes is available 
+  at www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_5changes.htm . 
+
+
+===============================================================================
 			       Changes in 1.0.5
 ===============================================================================
 

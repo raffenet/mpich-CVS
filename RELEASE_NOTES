@@ -12,6 +12,8 @@
   stdin and may also have problems if there is data on stdin that is not
   consumed by the program.  
 
+- Only the ch3:sock and ch3:nemesis channels support thread safety.
+ 
 - The sock, sctp, and ssm channels are the only channels that implement dynamic 
   process support (i.e., MPI_COMM_SPAWN, MPI_COMM_CONNECT, MPI_COMM_ACCEPT, 
   etc.) under Unix.  All other channels will experience failures for tests 
@@ -33,10 +35,6 @@
   processor architecture, although it may also be influenced by compiler
   options.  This device does support the use of different executables (e.g.,
   multiple-program-multiple-data, or MPMD, programming).
-
-- The support for MPI_THREAD_SERIALIZED and MPI_THREAD_MULTIPLE is preliminary,
-  and only available with the sock channel.  We encourage people to
-  experiment and provide feedback.  
 
 - MPI_IRECV operations that are not explicitly completed before MPI_FINALIZE is
   called may fail to complete before MPI_FINALIZE returns, and thus never
@@ -101,9 +99,6 @@
   to allow starting two processes as singletons and then have them connect
   using MPI_Comm_connect/MPI_Comm_accept, it was necessary to change the part
   of the PMI wire prototcol that implemented the singleton init actions.
-  The "gforker" process manager is the only process manager that supports
-  singleton init in the 1.0.5 release.  We plan to extend support to the
-  mpd process manager in a subsequent release.
 
 - There are significant changes to the ch3 code base.  We expect further
   changes in the next release, particularly to reduce latency and 
