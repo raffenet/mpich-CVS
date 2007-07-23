@@ -502,10 +502,14 @@ include/ are in the same directory.
 SCTP stack specific instructions:
 
   For FreeBSD 7 and onward, SCTP comes with CURRENT and is enabled with
-  the "option SCTP" in the kernel configuration file.  For FreeBSD
-  6.x, kernel patches and instructions can be downloaded at
-  http://www.sctp.org/download.html .  These kernels place the lib and
-  include in /usr, so nothing needs to be specified for --with-sctp
+  the "option SCTP" in the kernel configuration file.  The sctp_xxx()
+  calls are contained within libc so to compile ch3:sctp, make a soft-link
+  named libsctp.a to the target libc.a, then pass the path of the 
+  libsctp.a soft-link to --with-sctp-lib.
+  
+  For FreeBSD 6.x, kernel patches and instructions can be downloaded at
+  http://www.sctp.org/download.html .  These kernels place libsctp and
+  headers in /usr, so nothing needs to be specified for --with-sctp
   since /usr is often in the default search path.
 
   For Mac OS X, the SCTP Network Kernel Extension (NKE) can be
@@ -517,9 +521,9 @@ SCTP stack specific instructions:
   a module.  This module can be loaded as root using "modprobe sctp".
   After this is loaded,  you can verify it is loaded using "lsmod".
   Once loaded, the SCTP socket lib and include files must be downloaded
-  and installed from http://lksctp.sourceforge.net/ .  The location must
-  then be passed into --with-sctp.  This bundle is called lksctp-tools
-  and is available for download off their website.
+  and installed from http://lksctp.sourceforge.net/ .  The prefix 
+  location must then be passed into --with-sctp.  This bundle is called 
+  lksctp-tools and is available for download off their website.
 
   For Solaris, SCTP comes with the default Solaris 10 kernel; the lib
   and include in /usr, so nothing needs to be specified for --with-sctp
@@ -527,10 +531,10 @@ SCTP stack specific instructions:
   under Solaris, CFLAGS must have -DMPICH_SCTP_CONCATENATES_IOVS set
   when running MPICH2's configure script.
 
-This is the initial release of the SCTP channel, so feedback is
-welcomed.  All MPI features except multithreading are supported.  Some
-performance optimizations could surely exist for this channel and will
-be investigated for future releases.
+MPICH2 v1.0.5 was the initial release of the SCTP channel, so feedback is
+definitely still welcomed.  All MPI features except multithreading are 
+supported.  Some performance optimizations could surely exist for this 
+channel and will be investigated for future releases.
 
 
 VPATH Builds
