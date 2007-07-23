@@ -5,12 +5,15 @@
 - Updates to the ch3:nemesis channel including preliminary support for
 thread safety.
 
-- 
+- Preliminary support for dynamic loading of ch3 channels (sock, ssm,
+shm). See the README file for details.
 
 - Singleton init now works with the MPD process manager.
 
+- Fixes in MPD related to MPI-2 connect-accept.
+
 - Many other bug fixes and code cleanup.  A full list of changes is available 
-  at www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_5changes.htm . 
+  at www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_6changes.htm . 
 
 
 ===============================================================================
