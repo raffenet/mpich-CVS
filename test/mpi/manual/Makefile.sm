@@ -1,7 +1,12 @@
+INCLUDES = -I../include -I${srcdir}/../include
 smvar_do_sharedlibs = 0
 
 singjoin_SOURCES    = singjoin.c
 testconnect_SOURCES = testconnect.c
+testconnectserial_SOURCES = testconnectserial.c handlers.c util.c
+
+testconnectserial.o: testconnectserial.c
+	$(C_COMPILE) -c -DMPICHLIBSTR=\"$(MPIDIR)\" $<
 
 clean-local:
 	@rm -f test-port
