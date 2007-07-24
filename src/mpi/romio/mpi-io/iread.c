@@ -87,6 +87,7 @@ int MPIOI_File_iread(MPI_File mpi_fh,
     ADIO_Status status;
     ADIO_File fh;
     ADIO_Offset off;
+    MPI_Offset nbytes=0;
 
     MPIU_THREAD_SINGLE_CS_ENTER("io");
     MPIR_Nest_incr();
@@ -152,7 +153,10 @@ int MPIOI_File_iread(MPI_File mpi_fh,
 	    {
                 ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
 	    }
-	    MPIO_Completed_request_create(&fh, &error_code, request);
+	    if (error_code == MPI_SUCCESS) {
+		nbytes = count*datatype_size;
+	    }
+	    MPIO_Completed_request_create(&fh, nbytes, &error_code, request);
         }
     }
     else ADIO_IreadStrided(fh, buf, count, datatype, file_ptr_type,

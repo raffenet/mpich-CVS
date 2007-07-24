@@ -102,7 +102,7 @@ int MPI_File_iwrite_shared(MPI_File mpi_fh, void *buf, int count,
             if (fh->file_system != ADIO_NFS)
                 ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
 
-	    MPIO_Completed_request_create(&fh, &error_code, request);
+	    MPIO_Completed_request_create(&fh, bufsize, &error_code, request);
 	}
     }
     else

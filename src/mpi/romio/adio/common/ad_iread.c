@@ -73,9 +73,8 @@ void ADIOI_GEN_IreadStrided(ADIO_File fd, void *buf, int count,
 			    int *error_code)
 {
     ADIO_Status status;
-#ifdef HAVE_STATUS_SET_BYTES
     int typesize;
-#endif
+    MPI_Offset nbytes=0;
 
     /* Call the blocking function.  It will create an error code
      * if necessary.
@@ -83,11 +82,9 @@ void ADIOI_GEN_IreadStrided(ADIO_File fd, void *buf, int count,
     ADIO_ReadStrided(fd, buf, count, datatype, file_ptr_type, 
 		     offset, &status, error_code);  
 
-#ifdef HAVE_STATUS_SET_BYTES
     if (*error_code == MPI_SUCCESS) {
 	MPI_Type_size(datatype, &typesize);
-	/* do something with count * typesize.. but what? */
+	nbytes = count*typesize;
     }
-#endif
-    MPIO_Completed_request_create(&fd, error_code, request);
+    MPIO_Completed_request_create(&fd, nbytes, error_code, request);
 }

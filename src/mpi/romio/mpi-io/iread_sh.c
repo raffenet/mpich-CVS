@@ -50,6 +50,7 @@ int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count,
     int datatype_size, incr;
     MPI_Status status;
     ADIO_Offset off, shared_fp;
+    MPI_Offset nbytes=0;
 
     MPIU_THREAD_SINGLE_CS_ENTER("io");
     MPIR_Nest_incr();
@@ -112,7 +113,10 @@ int MPI_File_iread_shared(MPI_File mpi_fh, void *buf, int count,
 	    {
                 ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
 	    }
-	    MPIO_Completed_request_create(&fh, &error_code, request);
+	    if (error_code == MPI_SUCCESS){
+		    nbytes = count * datatype_size;
+	    }
+	    MPIO_Completed_request_create(&fh, nbytes, &error_code, request);
         }
     }
     else

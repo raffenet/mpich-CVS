@@ -109,7 +109,7 @@ int ADIOI_NFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
            complete all previous async. requests and try again. */
 	    ADIO_WriteContig(fd, buf, len, MPI_BYTE, ADIO_EXPLICIT_OFFSET,
 			    offset, NULL, &error_code);
-	    MPIO_Completed_request_create(&fd, &error_code, request);
+	    MPIO_Completed_request_create(&fd, len, &error_code, request);
 	    return 0;
 	} else {
 	    return -this_errno;
