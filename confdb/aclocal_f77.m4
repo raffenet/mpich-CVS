@@ -32,6 +32,10 @@ dnl mangling convention (adding the size of the calling stack into the function
 dnl name, but also the stack management convention (callee cleans the stack,
 dnl and arguments are pushed onto the stack from right to left)
 dnl
+dnl One additional problem is that some Fortran implementations include 
+dnl references to the runtime (like pgf90_compiled for the pgf90 compiler
+dnl used as the "Fortran 77" compiler).  This is not yet solved.
+dnl
 dnl D*/
 dnl
 AC_DEFUN(PAC_PROG_F77_NAME_MANGLE,[
@@ -91,6 +95,117 @@ EOF
    fi
    LIBS="$save_LIBS"
    AC_LANG_RESTORE
+   # If we got to this point, it may be that the programs have to be
+   # linked with the Fortran, not the C, compiler.  Try reversing
+   # the language used for the test
+   if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
+       AC_LANG_SAVE
+       AC_LANG_FORTRAN77
+       save_LIBS="$LIBS"
+       LIBS="conftestc.o $LIBS"
+       if test "X$ac_ccompile" = "X" ; then
+           ac_ccompile='${CC-cc} -c $CFLAGS conftest.c 1>&AC_FD_CC'
+       fi
+       rm -f conftest*
+       cat > conftest.c <<EOF
+       void my_name( int a ) { }
+EOF
+       if AC_TRY_EVAL(ac_ccompile) && test -s conftest.o ; then
+	    mv conftest.o conftestc.o
+       else 
+	    echo "configure: failed program was:" >&AC_FD_CC
+            cat conftest.c >&AC_FD_CC
+       fi
+
+       AC_TRY_LINK(,       call my_name(0),pac_cv_prog_f77_name_mangle="lower")
+
+       if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
+           rm -f conftest*
+           cat > conftest.c <<EOF
+ void my_name_(int a) { }
+EOF
+           if AC_TRY_EVAL(ac_ccompile) && test -s conftest.o ; then
+	        mv conftest.o conftestc.o
+           else 
+	        echo "configure: failed program was:" >&AC_FD_CC
+                cat conftest.c >&AC_FD_CC
+           fi
+           AC_TRY_LINK(,       call my_name(0),
+	         pac_cv_prog_f77_name_mangle="lower underscore")
+       fi
+       if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
+          rm -f conftest*
+          cat >conftest.c <<EOF
+          void __stdcall MY_NAME(int a) {}
+EOF
+           if AC_TRY_EVAL(ac_ccompile) && test -s conftest.o ; then
+	        mv conftest.o conftestc.o
+           else 
+	        echo "configure: failed program was:" >&AC_FD_CC
+                cat conftest.c >&AC_FD_CC
+           fi
+            AC_TRY_LINK(,       call my_name(0),
+	         pac_cv_prog_f77_name_mangle="upper stdcall")
+       fi
+       if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
+          rm -f conftest*
+          cat >conftest.c <<EOF
+          void MY_NAME(int a) {}
+EOF
+           if AC_TRY_EVAL(ac_ccompile) && test -s conftest.o ; then
+	        mv conftest.o conftestc.o
+           else 
+	        echo "configure: failed program was:" >&AC_FD_CC
+                cat conftest.c >&AC_FD_CC
+           fi
+            AC_TRY_LINK(,       call MY_NAME(0),
+                pac_cv_prog_f77_name_mangle="upper")
+       fi
+       if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
+          rm -f conftest*
+          cat >conftest.c <<EOF
+          void my_name__(int a) {}
+EOF
+           if AC_TRY_EVAL(ac_ccompile) && test -s conftest.o ; then
+	        mv conftest.o conftestc.o
+           else 
+	        echo "configure: failed program was:" >&AC_FD_CC
+                cat conftest.c >&AC_FD_CC
+           fi
+            AC_TRY_LINK(,        call my_name(0),
+               pac_cv_prog_f77_name_mangle="lower doubleunderscore")
+       fi
+       if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
+          rm -f conftest*
+          cat >conftest.c <<EOF
+          void MY_name(int a) {}
+EOF
+           if AC_TRY_EVAL(ac_ccompile) && test -s conftest.o ; then
+	        mv conftest.o conftestc.o
+           else 
+	        echo "configure: failed program was:" >&AC_FD_CC
+                cat conftest.c >&AC_FD_CC
+           fi
+            AC_TRY_LINK(,       call MY_name(0),
+	        pac_cv_prog_f77_name_mangle="mixed")
+       fi
+       if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
+          rm -f conftest*
+          cat >conftest.c <<EOF
+          void MY_name_(int a) {}
+EOF
+           if AC_TRY_EVAL(ac_ccompile) && test -s conftest.o ; then
+	        mv conftest.o conftestc.o
+           else 
+	        echo "configure: failed program was:" >&AC_FD_CC
+                cat conftest.c >&AC_FD_CC
+           fi
+            AC_TRY_LINK(,       call MY_name(0),
+	           pac_cv_prog_f77_name_mangle="mixed underscore")
+       fi
+       LIBS="$save_LIBS"
+       AC_LANG_RESTORE
+   fi
    rm -f fconftest*
 ])
 # Make the actual definition
