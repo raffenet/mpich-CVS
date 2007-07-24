@@ -1171,6 +1171,14 @@ if AC_TRY_EVAL(compile_f77) ; then
         pac_cv_f90_and_f77="yes"
     else 
         pac_cv_f90_and_f77="no"
+	echo "Failed to link a F77 and F90 program" >&AC_FD_CC
+	echo "F77 Program:" >&AD_FD_CC
+	cat conftest2.f >&AD_FD_CC
+	echo "F90 Program:" >&AC_FD_CC
+	cat conftest.$ac_ext_f90 >&AC_FD_CC
+	echo "Output from the link step is"
+	# We re-run this for the output
+	eval $link_f90 2>&1
     fi
     # Some versions of the Intel compiler produce these two files
     rm -f work.pc work.pcl
@@ -1182,6 +1190,7 @@ if test "$pac_cv_f90_and_f77" = yes ; then
     ifelse($1,,:,[$1])
 else
     ifelse($2,,:,[$2])
+    AC_MSG_WARN([The test program that was used and the output may be found in config.log])
 fi
 ])
 dnl Internal routine for testing F90
