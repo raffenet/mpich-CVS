@@ -740,7 +740,7 @@ void MPE_Init_states_events( void )
     /* Should check environment and command-line for changes to allow_mask */
 
     /* By default, log only message-passing (pt-to-pt and collective) */
-    allow_mask  = MPE_KIND_MSG | MPE_KIND_COLL;
+    allow_mask  = MPE_KIND_MSG | MPE_KIND_MSG_INIT | MPE_KIND_COLL ;
     allow_mask |= MPE_KIND_COMM | MPE_KIND_COMM_INFO;
     allow_mask |= MPE_KIND_TOPO;
     MPE_Init_mpi_core();
