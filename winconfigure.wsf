@@ -1005,6 +1005,44 @@ Function DecorateMPIFuncs(str)
 End Function
 
 '
+' Get MPICH2 Version
+'
+Function GetMPICH2Version()
+    if f.FileExists("src\maint\Version") then
+    	Dim fin, ver
+		Set fin = f.OpenTextFile("src\maint\Version")
+		ver = fin.ReadAll()
+		fin.Close()
+		GetMPICH2Version = ver
+	else
+		GetMPICH2Version = "1.0.5"
+	end if
+End Function
+
+' 
+' Assume version is of the form x.yy.zz
+'
+' eg: ver = 1.0.5 ; numver = 10005
+'
+
+Function GetMPICH2NumVersion(ver)
+	Dim verTokenArray, numver
+	verTokenArray = Split(ver, ".", -1, 1)
+	numver = verTokenArray(0)
+	For i = 1 to UBound(verTokenArray, 1)
+		if(verTokenArray(i) <= 9) then
+			numver = numver + "0" + verTokenArray(i)
+		else
+			numver = numver + verTokenArray(i)
+		end if	
+	Next
+	GetMPICH2NumVersion = numver
+End Function
+
+mpich2Version = GetMPICH2Version()
+mpich2NumVersion = GetMPICH2NumVersion(mpich2Version)
+
+'
 ' Generate mpi.h
 '
 if not f.FolderExists("src\include\win64") then
@@ -2362,6 +2400,10 @@ Function ReplaceAts( str, use_f77, b64 )
 				str = Replace(str, "@F90@", "ifort.exe")
 				' FIXME: Not the complete list of F90FLAGS --- only some listed
 				str = Replace(str, "@F90FLAGS@", "/names:lowercase /iface:cref /assume:underscore")
+			Case "@VERSION@"
+				str = Replace(str, "@VERSION@", mpich2Version)
+			Case "@NUMVERSION@"
+				str = Replace(str, "@NUMVERSION@", mpich2NumVersion)
 			Case Else
 			'	unhandled_ats = unhandled_ats & Match & vbNewLine
 			'	unhandled_ats_count = unhandled_ats_count + 1
