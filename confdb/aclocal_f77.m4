@@ -98,6 +98,11 @@ EOF
    # If we got to this point, it may be that the programs have to be
    # linked with the Fortran, not the C, compiler.  Try reversing
    # the language used for the test
+   dnl Note that the definition of AC_TRY_LINK and AC_LANG_PROGRAM
+   dnl is broken in autoconf and will generate spurious warning messages
+   dnl To fix this, we use 
+   dnl AC _LINK_IFELSE([AC _LANG_PROGRAM(,[[body]])],action-if-true)
+   dnl instead of AC _TRY_LINK(,body,action-if-true)
    if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
        AC_LANG_SAVE
        AC_LANG_FORTRAN77
@@ -117,7 +122,8 @@ EOF
             cat conftest.c >&AC_FD_CC
        fi
 
-       AC_TRY_LINK(,       call my_name(0),pac_cv_prog_f77_name_mangle="lower")
+       AC_LINK_IFELSE([AC_LANG_PROGRAM(,[[        call my_name(0)]])],
+           pac_cv_prog_f77_name_mangle="lower")
 
        if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
            rm -f conftest*
@@ -130,7 +136,7 @@ EOF
 	        echo "configure: failed program was:" >&AC_FD_CC
                 cat conftest.c >&AC_FD_CC
            fi
-           AC_TRY_LINK(,       call my_name(0),
+           AC_LINK_IFELSE([AC_LANG_PROGRAM(,[[        call my_name(0)]])],
 	         pac_cv_prog_f77_name_mangle="lower underscore")
        fi
        if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
@@ -144,7 +150,7 @@ EOF
 	        echo "configure: failed program was:" >&AC_FD_CC
                 cat conftest.c >&AC_FD_CC
            fi
-            AC_TRY_LINK(,       call my_name(0),
+           AC_LINK_IFELSE([AC_LANG_PROGRAM(,[[        call my_name(0)]])],
 	         pac_cv_prog_f77_name_mangle="upper stdcall")
        fi
        if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
@@ -158,7 +164,7 @@ EOF
 	        echo "configure: failed program was:" >&AC_FD_CC
                 cat conftest.c >&AC_FD_CC
            fi
-            AC_TRY_LINK(,       call MY_NAME(0),
+           AC_LINK_IFELSE([AC_LANG_PROGRAM(,[[        call MY_NAME(0)]])],
                 pac_cv_prog_f77_name_mangle="upper")
        fi
        if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
@@ -172,7 +178,7 @@ EOF
 	        echo "configure: failed program was:" >&AC_FD_CC
                 cat conftest.c >&AC_FD_CC
            fi
-            AC_TRY_LINK(,        call my_name(0),
+           AC_LINK_IFELSE([AC_LANG_PROGRAM(,[[        call my_name(0)]])],
                pac_cv_prog_f77_name_mangle="lower doubleunderscore")
        fi
        if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
@@ -186,7 +192,7 @@ EOF
 	        echo "configure: failed program was:" >&AC_FD_CC
                 cat conftest.c >&AC_FD_CC
            fi
-            AC_TRY_LINK(,       call MY_name(0),
+           AC_LINK_IFELSE([AC_LANG_PROGRAM(,[[        call MY_name(0)]])],
 	        pac_cv_prog_f77_name_mangle="mixed")
        fi
        if test  "X$pac_cv_prog_f77_name_mangle" = "X" ; then
@@ -200,7 +206,7 @@ EOF
 	        echo "configure: failed program was:" >&AC_FD_CC
                 cat conftest.c >&AC_FD_CC
            fi
-            AC_TRY_LINK(,       call MY_name(0),
+           AC_LINK_IFELSE([AC_LANG_PROGRAM(,[[        call MY_name(0)]])],
 	           pac_cv_prog_f77_name_mangle="mixed underscore")
        fi
        LIBS="$save_LIBS"
@@ -1262,6 +1268,8 @@ dnl main program is in Fortran.  We may find that neither work because
 dnl we need special libraries in each case.
 dnl
 AC_DEFUN([PAC_PROG_F77_LINKER_WITH_C],[
+AC_LANG_SAVE
+AC_LANG_C
 AC_TRY_COMPILE(,
 long long a;,AC_DEFINE(HAVE_LONG_LONG,1,[Define if long long allowed]))
 AC_MSG_CHECKING([for linker for Fortran main programs])
@@ -1276,8 +1284,6 @@ int f(int a, long long b) { int c; c = a * ( b / 3 ) / (b-1); return c ; }
 int f(int a, long b) { int c; c = a * b / (b-1); return c ; }
 #endif
 EOF
-AC_LANG_SAVE
-AC_LANG_C
 if AC_TRY_EVAL(ac_compile); then
     mv conftest.o conftest1.o
 else
