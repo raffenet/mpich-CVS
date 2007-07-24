@@ -22,7 +22,10 @@
 
 #define MPIDI_COPY_FROM_VEC(src,dest,stride,type,nelms,count) \
 { \
-    if (stride % sizeof(type)) { \
+    if (!nelms) { \
+        src = (char*) (src + (count * stride)); \
+    } \
+    else if (stride % sizeof(type)) { \
         MPIDI_COPY_FROM_VEC_UNALIGNED(src,dest,stride,type,nelms,count); \
     } \
     else { \
@@ -32,7 +35,10 @@
 
 #define MPIDI_COPY_TO_VEC(src,dest,stride,type,nelms,count) \
 { \
-    if (stride % sizeof(type)) { \
+    if (!nelms) { \
+        dest = (char*) (dest + (count * stride)); \
+    } \
+    else if (stride % sizeof(type)) { \
         MPIDI_COPY_TO_VEC_UNALIGNED(src,dest,stride,type,nelms,count); \
     } \
     else { \
@@ -48,11 +54,7 @@
     unsigned long total_count = count * nelms;                  \
     const int l_stride = stride;				\
                                                                 \
-    if (!nelms) {                                               \
-        for (i = count; i; i--)			                \
-            l_src += l_stride;                                  \
-    }                                                           \
-    else if (nelms == 1) {                                      \
+    if (nelms == 1) {                                           \
         for (i = total_count; i; i--) {			        \
             *l_dest++ = *l_src;				        \
             l_src += l_stride;                                  \
@@ -164,11 +166,7 @@
     unsigned long total_count = count * nelms;                  \
     const int l_stride = stride;				\
                                                                 \
-    if (!nelms) {                                               \
-        for (i = count; i; i--)			                \
-            l_src = (type *) ((char *) l_src + l_stride);	\
-    }                                                           \
-    else if (nelms == 1) {                                      \
+    if (nelms == 1) {                                           \
         for (i = total_count; i; i--) {			        \
             *l_dest++ = *l_src;				        \
             l_src = (type *) ((char *) l_src + l_stride);	\
@@ -280,11 +278,7 @@
     unsigned long total_count = count * nelms;                  \
     const int l_stride = stride;				\
                                                                 \
-    if (!nelms) {                                               \
-        for (i = count; i; i--)			                \
-            l_dest += l_stride;                                 \
-    }                                                           \
-    else if (nelms == 1) {                                      \
+    if (nelms == 1) {                                           \
         for (i = total_count; i; i--) {			        \
             *l_dest = *l_src++;				        \
             l_dest += l_stride;                                 \
@@ -396,11 +390,7 @@
     unsigned long total_count = count * nelms;                  \
     const int l_stride = stride;				\
                                                                 \
-    if (!nelms) {                                               \
-        for (i = count; i; i--)			                \
-            l_dest = (type *) ((char *) l_dest + l_stride);	\
-    }                                                           \
-    else if (nelms == 1) {                                      \
+    if (nelms == 1) {                                           \
         for (i = total_count; i; i--) {			        \
             *l_dest = *l_src++;				        \
             l_dest = (type *) ((char *) l_dest + l_stride);	\
