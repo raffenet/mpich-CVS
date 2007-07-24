@@ -61,7 +61,7 @@ int ADIOI_NTFS_aio_poll_fn(void *extra_state, MPI_Status *status)
         }
     }else{
         MPIR_Nest_incr();
-        mpi_errno = MPI_Grequest_complete(*(aio_req->req));
+        mpi_errno = MPI_Grequest_complete(aio_req->req);
 	    if (mpi_errno != MPI_SUCCESS) {
 		    mpi_errno = MPIO_Err_create_code(MPI_SUCCESS,
 				    MPIR_ERR_RECOVERABLE,
@@ -112,7 +112,7 @@ int ADIOI_NTFS_aio_wait_fn(int count, void **array_of_states,
                 FALSE)){
         	/* XXX: mark completed requests as 'done'*/
 	        MPIR_Nest_incr();
-	        mpi_errno = MPI_Grequest_complete(*(aio_reqlist[retObject]->req));
+	        mpi_errno = MPI_Grequest_complete(aio_reqlist[retObject]->req);
     	    if (mpi_errno != MPI_SUCCESS) {
 	    	    mpi_errno = MPIO_Err_create_code(MPI_SUCCESS,
 				    MPIR_ERR_RECOVERABLE,
@@ -303,6 +303,6 @@ int ADIOI_NTFS_aio(ADIO_File fd, void *buf, int len, ADIO_Offset offset,
     if(mpi_errno != MPI_SUCCESS){
     /* FIXME: Pass appropriate error code to user */
     }
-    aio_req->req = request;
+    memcpy(&(aio_req->req), request, sizeof(MPI_Request));
     return mpi_errno;
 }
