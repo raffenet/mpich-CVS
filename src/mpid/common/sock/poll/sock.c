@@ -200,6 +200,14 @@ static struct MPIDU_Socki_eventq_elem * MPIDU_Socki_eventq_pool = NULL;
 /* MT: needs to be atomically incremented */
 static int MPIDU_Socki_set_next_id = 0;
 
+/* Prototypes for functions used only within the socket code. */
+
+/* Set the buffer size on the socket fd from the environment variable
+   or other option; if "firm" is true, fail if the buffer size is not
+   successfully set */
+int MPIDU_Sock_SetSockBufferSize( int fd, int firm );
+/* Get a string version of the address in ifaddr*/
+int MPIDU_Sock_AddrToStr( MPIDU_Sock_ifaddr_t *ifaddr, char *str, int maxlen );
 
 /* FIXME: Why are these files included in this way?  Why not make them either
    separate files or simply part of (one admittedly large) source file? */

@@ -49,9 +49,12 @@ int MPIDI_CH3_Sockconn_handle_conn_event( MPIDI_CH3I_Connection_t * );
 int MPIDI_CH3_Sockconn_handle_connopen_event( MPIDI_CH3I_Connection_t * );
 int MPIDI_CH3_Sockconn_handle_connwrite( MPIDI_CH3I_Connection_t * );
 
+/* Start the process of creating a socket connection */
+int MPIDI_CH3I_Sock_connect( MPIDI_VC_t *, const char[], int );
+
 /* Create/free a new socket connection */
 int MPIDI_CH3I_Connection_alloc(MPIDI_CH3I_Connection_t **);
-void MPIDI_CH3I_Connection_free(MPIDI_CH3I_Connection_t * conn);
+void MPIDI_CH3I_Connection_free(MPIDI_CH3I_Connection_t *);
 
 /* Routines to get the socket address */
 int MPIDU_CH3U_GetSockInterfaceAddr( int, char *, int, MPIDU_Sock_ifaddr_t * );
