@@ -115,7 +115,10 @@ typedef struct ADIOI_AIO_req_str {
 	PVFS_sysresp_io resp_io;
 #endif
 #ifdef ROMIO_NTFS
-	HANDLE *lpHandles;
+    /* Ptr to Overlapped struct */
+    LPOVERLAPPED    lpOvl;
+    /* Ptr to file handle */
+	HANDLE fd;
 #endif
 } ADIOI_AIO_Request;
 
