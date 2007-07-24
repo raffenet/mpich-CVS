@@ -11,7 +11,7 @@
  * to expose a problem if a problem does exist.
  */
 
-#define LOOP_COUNT  1000000
+#define LOOP_COUNT  100000
 #define DATA_SIZE   4
 #define MP_TAG      999
 
