@@ -592,7 +592,7 @@ open ( MAKEFD, ">Makefile.sm.new" ) || die "Cannot create Makefile.sm.new";
 print MAKEFD "# DO NOT EDIT\n# This file created by buildiface $arg_string\n";
 
 print MAKEFD "smvar_do_dependencies = ignore\n";
-print MAKEFD "smvar_do_sharedlibs   = 0\n";
+#print MAKEFD "smvar_do_sharedlibs   = 0\n";
 print MAKEFD "smvar_makefile_configdir = ../../..\n";
 #print MAKEFD "smvar_debug=1\n";
 print MAKEFD "MOD              = \@F90MODEXT\@\n";
@@ -622,6 +622,7 @@ INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\n";
 
 # Add the MPI module objects to the f90 library
 print MAKEFD "\
+lib\${MPILIBNAME}f90_a_NOSHARED
 lib\${MPILIBNAME}f90_a_SOURCES = mpi.o mpi_constants.o mpi_sizeofs.o mpi_base.o\n";
 
 print MAKEFD "all-preamble: \$(MPIMOD).\$(MOD)\n";
@@ -697,7 +698,7 @@ print MAKEFD "install_INCLUDE = \$(MPIMOD).\$(MOD) \$(MPICONSTMOD).\$(MOD) \$(MP
 # compilers
 print MAKEFD "optinstall_INCLUDE = mpimod.pcl mpimod.pc\n";
 print MAKEFD "install_LIB     = lib\${MPILIBNAME}f90.a\n";
-print MAKEFD "optinstall_SHLIB= lib\${MPILIBNAME}f90.so\n";
+#print MAKEFD "optinstall_SHLIB= lib\${MPILIBNAME}f90.so\n";
 
     # Add the documentation
 #doc_sources = mpif90.txt manf90.txt

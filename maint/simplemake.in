@@ -625,7 +625,7 @@ sub ReadMfile {
 	    # while using a single library for the static linking.
 	    # here is where we would do that, using a special
 	    # mapping of library name to shared library name
-	    if ($do_sharedlibs) {
+	    if ($do_sharedlibs && !defined($libNotShared{$libname})) {
 	    	$allshlibtargets[$#allshlibtargets+1] = 
 		    "${libloc}lib$libname.la";
 		$dirs_seen{'top_builddir'} = 1;   # For libtool
@@ -636,6 +636,12 @@ sub ReadMfile {
 	    # Keep track of source files
 	    &SaveSrcNames( $libsource );
         }
+	# In some cases, there is a library that should only be built as
+	# a non-shared library (e.g., built with Fortran)
+        elsif (/^lib([@\${}\(\)\w-]*)_a_NOSHARED\s*$/) {
+	    print "Adding $1 as not-shared\n";
+	    $libNotShared{$1} = 1;
+	}
 	# Using the _so_ in the library lines is necessary to distinguish
 	# between libraries and programs that start with lib...
         # This target is used for libraries that are *always* needed
@@ -1665,6 +1671,7 @@ sub ClearVars {
     %optinstall_files = ();
     $install_local_dirs = "";
     $gIssuedInstallLocal = 0;
+    %libNotShared = ();
     %external_libraries = ();
     $found_profilelib = 0;
     $found_sharedlib  = 0;
@@ -2951,6 +2958,11 @@ sub TargetSharedLibraries {
     my $libraries = $_[0];
 
     foreach $lib (keys(%$libraries)) {
+	# Skip the libraries that have no shared counter part
+	if (defined($libNotShared{$lib})) { 
+	    #print "Skipping $lib\n"; 
+	    next; 
+	}
 	$libloc = &GetLibLoc( $lib );
 	$sourcefiles = &ExpandMakeVars($$libraries{$lib});
 	&LibraryTimestampPrefix( $lib.".la", $libloc );
@@ -2984,6 +2996,17 @@ sub TargetSharedLibraryFinal {
     my $libname = $_[0];
     my $newlibname = $_[1];
     my $libdir = $_[2];
+
+    my $libbasename = $libname;
+    $libbasename =~ s/^lib//;
+    $libbasename =~ s/\.la$//;
+
+    #print "Checing $libbasename in Final\n";
+    if (defined($libNotShared{$libbasename})) {
+	#print "Skipping $libbasename in final\n";
+	return;
+    }
+
     if ($libdir eq "" || $newlibname eq "" || $libname eq "") {
 	# If we don't have these names, we cannot create a valid library
 	print STDOUT "Unable to create shared libary target (no directory\n\
@@ -2999,9 +3022,6 @@ library, or new library name)\n" if $debug;
 
     # See if this library needs an exports list
     my $exports = "";
-    my $libbasename = $libname;
-    $libbasename =~ s/^lib//;
-    $libbasename =~ s/\.la$//;
     if (defined($shared_libraries_exports{$libbasename})) {
 	my $exportFile = $shared_libraries_exports{$libbasename};
 	if ($libdir ne "." && !($exportFile =~ /^\//)) {
