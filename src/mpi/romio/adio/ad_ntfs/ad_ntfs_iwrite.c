@@ -67,7 +67,7 @@ int ADIOI_NTFS_aio_poll_fn(void *extra_state, MPI_Status *status)
 				    MPIR_ERR_RECOVERABLE,
 				    "ADIOI_NTFS_aio_poll_fn", __LINE__,
 				    MPI_ERR_IO, "**mpi_grequest_complete",
-				    "**mpi_grequest_complete");
+				    0);
 	    }
         MPIR_Nest_decr();
     }
@@ -118,7 +118,7 @@ int ADIOI_NTFS_aio_wait_fn(int count, void **array_of_states,
 				    MPIR_ERR_RECOVERABLE,
 				    "ADIOI_NTFS_aio_wait_fn", __LINE__,
 				    MPI_ERR_IO, "**mpi_grequest_complete",
-				    "**mpi_grequest_complete");
+				    0);
 	        }
 	        MPIR_Nest_decr();
         }else{
