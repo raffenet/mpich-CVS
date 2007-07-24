@@ -653,10 +653,12 @@ int MPIU_Param_get_string( const char [], const char *, char ** );
 int MPIU_Param_get_range( const char name[], int *lowPtr, int *highPtr );
 void MPIU_Param_finalize( void );
 
-int MPIU_GetEnvRange( const char *, int *, int * );
-int MPIU_GetEnvInt( const char *, int * );
+/* Prototypes for the functions to provide uniform access to the environment */
+int MPIU_GetEnvInt( const char *envName, int *val );
+int MPIU_GetEnvRange( const char *envName, int *lowPtr, int *highPtr );
 int MPIU_GetEnvBool( const char *envName, int *val );
 
+/* See mpishared.h as well */
 /* ------------------------------------------------------------------------- */
 /* end of mpiparam.h*/
 /* ------------------------------------------------------------------------- */
