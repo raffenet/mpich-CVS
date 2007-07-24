@@ -24,6 +24,13 @@ nonblocking I/O in ROMIO.
     Collective/Datatype checking library.
   * Fixed the CLOG2 format so it can be used in serial (non-MPI) loggig.
 
+- Performance improvements for derived datatypes (including packing
+and communication) through in-built loop-unrolling and buffer
+alignment.
+
+- Performance improvements for MPI_Gather when non-power of 2
+processes are used, and when a non-zero root is performing the gather.
+
 - Many other bug fixes and code cleanup.  A full list of changes is available 
   at www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_6changes.htm . 
 
