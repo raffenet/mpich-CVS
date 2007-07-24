@@ -374,7 +374,7 @@ int main( int argc, char *argv[] )
     MPI_Init( &argc, &argv );
     if (getenv("MPITEST_VERBOSE")) verbose = 1;
 
-    n      = 20000;
+    n      = 30000;
     stride = 4;
     dest = (void *)malloc( n * sizeof(double) );
     src  = (void *)malloc( n * ((1+stride)*sizeof(double)) );
