@@ -29,7 +29,7 @@ void *thd_sendrecv( void *comm_ptr )
     MPI_Comm_rank( comm, &my_rank );
     MPI_Get_processor_name( processor_name, &namelen );
 
-    fprintf( stderr, "Process %d on %s\n", my_rank, processor_name );
+    fprintf( stdout, "Process %d on %s\n", my_rank, processor_name );
     strcpy( buffer, "hello there" );
     buffer_size = strlen(buffer)+1;
 
@@ -73,7 +73,6 @@ void *thd_sendrecv( void *comm_ptr )
         /* MPI_Barrier(comm); */
     }
 
-    pthread_exit( NULL );
     return 0;
 }
 
@@ -88,32 +87,50 @@ int main( int argc,char *argv[] )
 
     MPI_Init_thread( &argc, &argv, MPI_THREAD_MULTIPLE, &provided );
     if ( provided != MPI_THREAD_MULTIPLE ) {
-	printf( "Aborting, MPI_THREAD_MULTIPLE is needed...\n" );
-	MPI_Abort( MPI_COMM_WORLD, 1 );
+        fprintf( stderr, "Aborting, MPI_THREAD_MULTIPLE is needed...\n" );
+        fflush( stderr );
+        MPI_Abort( MPI_COMM_WORLD, 1 );
     }
 
     MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
 
     if ( my_rank == 0 ) {
-	if (argc != 2) {
-	    printf( "Error: %s num_threads\n", argv[0] );
-	    MPI_Abort( MPI_COMM_WORLD, 1 );
-	}
-	num_threads = atoi( argv[1] );
-	MPI_Bcast( &num_threads, 1, MPI_INT, 0, MPI_COMM_WORLD );
+        if ( argc != 2 ) {
+            fprintf( stderr, "Error: %s num_threads\n", argv[0] );
+            fflush( stderr );
+            MPI_Abort( MPI_COMM_WORLD, 1 );
+        }
+        num_threads = atoi( argv[1] );
+        if ( num_threads < 1 ) {
+            fprintf( stderr, "Error: Input num_threads=%d < 1 \n",
+                             num_threads );
+            fflush( stderr );
+            MPI_Abort( MPI_COMM_WORLD, 1 );
+        }
+        if ( num_threads > MAX_THREADS ) {
+            fprintf( stderr, "Error: Input num_threads=%d < %d \n",
+                             num_threads, MAX_THREADS );
+            fflush( stderr );
+            MPI_Abort( MPI_COMM_WORLD, 1 );
+        }
+        MPI_Bcast( &num_threads, 1, MPI_INT, 0, MPI_COMM_WORLD );
     }
     else
-	MPI_Bcast( &num_threads, 1, MPI_INT, 0, MPI_COMM_WORLD );
+        MPI_Bcast( &num_threads, 1, MPI_INT, 0, MPI_COMM_WORLD );
 
     MPI_Barrier( MPI_COMM_WORLD );
 
     for ( ii=0; ii < num_threads; ii++ ) {
-	MPI_Comm_dup( MPI_COMM_WORLD, &comm[ii] );
-	pthread_create( &thd_id[ii], NULL, thd_sendrecv, (void *) &comm[ii] );
+        MPI_Comm_dup( MPI_COMM_WORLD, &comm[ii] );
     }
-	
-    for ( ii=0; ii < num_threads; ii++ )
-	pthread_join( thd_id[ii], NULL );
+
+    for ( ii=1; ii < num_threads; ii++ ) {
+        pthread_create( &thd_id[ii], NULL, thd_sendrecv, (void *) &comm[ii] );
+    }
+    thd_sendrecv( (void *) &comm[0] );
+
+    for ( ii=1; ii < num_threads; ii++ )
+        pthread_join( thd_id[ii], NULL );
 
     MPI_Finalize();
     return 0;
