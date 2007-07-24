@@ -128,7 +128,10 @@ MPID_nem_cell_rel_ptr_t;
 
 typedef struct MPID_nem_cell
 {
-    MPID_nem_cell_rel_ptr_t next;
+    union {
+	MPID_nem_cell_rel_ptr_t next;
+	double                  dummy;
+    } u;
     MPID_nem_pkt_t pkt;
 } MPID_nem_cell_t;
 typedef volatile MPID_nem_cell_t *MPID_nem_cell_ptr_t;

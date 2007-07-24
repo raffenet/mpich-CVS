@@ -62,7 +62,7 @@ MPID_nem_queue_enqueue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t element)
     }
     else
     {
-	MPID_NEM_REL_TO_ABS (r_prev)->next = r_element;
+	MPID_NEM_REL_TO_ABS (r_prev)->u.next = r_element;
     }
 }
 #else /*MPID_NEM_USE_MACROS */
@@ -78,7 +78,7 @@ MPID_nem_queue_enqueue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t element)
     }									\
     else								\
     {									\
-	MPID_NEM_REL_TO_ABS (r_prev)->next = r_element;			\
+	MPID_NEM_REL_TO_ABS (r_prev)->u.next = r_element;			\
     }									\
 } while (0)
 #endif /*MPID_NEM_USE_MACROS */
@@ -225,12 +225,12 @@ MPID_nem_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
 #endif /*SHADOWHEAD */
 
     _e = MPID_NEM_REL_TO_ABS (_r_e);
-    if (!MPID_NEM_IS_REL_NULL(_e->next))
+    if (!MPID_NEM_IS_REL_NULL(_e->u.next))
     {
 #ifdef MPID_NEM_USE_SHADOW_HEAD
-	qhead->my_head = _e->next;
+	qhead->my_head = _e->u.next;
 #else /*MPID_NEM_USE_SHADOW_HEAD */
-	qhead->head = _e->next;
+	qhead->head = _e->u.next;
 #endif /*MPID_NEM_USE_SHADOW_HEAD */
     }
     else
@@ -247,18 +247,18 @@ MPID_nem_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
 
 	if (!MPID_NEM_REL_ARE_EQUAL (old_tail, _r_e))
 	{
-	    while (MPID_NEM_IS_REL_NULL (_e->next))
+	    while (MPID_NEM_IS_REL_NULL (_e->u.next))
 	    {
 		SKIP;
 	    }
 #ifdef MPID_NEM_USE_SHADOW_HEAD
-	    qhead->my_head = _e->next;
+	    qhead->my_head = _e->u.next;
 #else /*MPID_NEM_USE_SHADOW_HEAD */
-	    qhead->head = _e->next;
+	    qhead->head = _e->u.next;
 #endif /*MPID_NEM_USE_SHADOW_HEAD */
 	}
     }
-    MPID_NEM_SET_REL_NULL (_e->next);
+    MPID_NEM_SET_REL_NULL (_e->u.next);
     *e = _e;
     /*    DO_PAPI (if (iter11) PAPI_accum_var (PAPI_EventSet, PAPI_vvalues11)); */
 }
@@ -272,9 +272,9 @@ MPID_nem_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
     _r_e = (qhead)->my_head;						\
     _e = MPID_NEM_REL_TO_ABS (_r_e);					\
 									\
-    if (!MPID_NEM_IS_REL_NULL (_e->next))				\
+    if (!MPID_NEM_IS_REL_NULL (_e->u.next))				\
     {									\
-	(qhead)->my_head = _e->next;					\
+	(qhead)->my_head = _e->u.next;					\
     }									\
     else								\
     {									\
@@ -286,14 +286,14 @@ MPID_nem_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
 									\
 	if (!MPID_NEM_REL_ARE_EQUAL (old_tail, _r_e))			\
 	{								\
-	    while (MPID_NEM_IS_REL_NULL (_e->next))			\
+	    while (MPID_NEM_IS_REL_NULL (_e->u.next))			\
 	    {								\
 		SKIP;							\
 	    }								\
-	    (qhead)->my_head = _e->next;				\
+	    (qhead)->my_head = _e->u.next;				\
 	}								\
     }									\
-    MPID_NEM_SET_REL_NULL (_e->next);					\
+    MPID_NEM_SET_REL_NULL (_e->u.next);					\
     *(e) = _e;								\
 } while (0)                                             
 #else /* MPID_NEM_USE_SHADOW_HEAD */
@@ -304,9 +304,9 @@ MPID_nem_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
     _r_e = (qhead)->head;						\
 									\
     _e = MPID_NEM_REL_TO_ABS (_r_e);					\
-    if (!MPID_NEM_IS_REL_NULL (_e->next))				\
+    if (!MPID_NEM_IS_REL_NULL (_e->u.next))				\
     {									\
-	(qhead)->head = _e->next;					\
+	(qhead)->head = _e->u.next;					\
     }									\
     else								\
     {									\
@@ -318,14 +318,14 @@ MPID_nem_queue_dequeue (MPID_nem_queue_ptr_t qhead, MPID_nem_cell_ptr_t *e)
 									\
 	if (!MPID_NEM_REL_ARE_EQUAL (old_tail, _r_e))			\
 	{								\
-	    while (MPID_NEM_IS_REL_NULL (_e->next))			\
+	    while (MPID_NEM_IS_REL_NULL (_e->u.next))			\
 	    {								\
 		SKIP;							\
 	    }								\
-	    (qhead)->head = _e->next;					\
+	    (qhead)->head = _e->u.next;					\
 	}								\
     }									\
-    MPID_NEM_SET_REL_NULL (_e->next);					\
+    MPID_NEM_SET_REL_NULL (_e->u.next);					\
     *(e) = _e;								\
 } while (0)                                             
 

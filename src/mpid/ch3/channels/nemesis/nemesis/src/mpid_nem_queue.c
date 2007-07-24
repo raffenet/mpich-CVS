@@ -11,7 +11,7 @@
 
 inline void MPID_nem_cell_init( MPID_nem_cell_ptr_t cell)
 {
-    MPID_NEM_SET_REL_NULL (cell->next);
+    MPID_NEM_SET_REL_NULL (cell->u.next);
     memset ((void *)&cell->pkt, 0, sizeof (MPID_nem_pkt_header_t));
 }
 
@@ -39,8 +39,8 @@ inline void MPID_nem_dump_cell_mpich ( MPID_nem_cell_ptr_t cell, int master)
 	    mark,
 	    cell,
 	    MPID_NEM_ABS_TO_REL (cell).p, 
-	    MPID_NEM_REL_TO_ABS (cell->next),
-	    cell->next.p );
+	    MPID_NEM_REL_TO_ABS (cell->u.next),
+	    cell->u.next.p );
   
     fprintf(stdout,"%i  [Source:%i] [dest : %i] [dlen : %i] [seqno : %i]\n",
 	    mark,
