@@ -126,12 +126,10 @@ MPID_nem_cell_rel_ptr_t;
  * queue in a network module) where relative pointers are not
  * needed. */
 
-/* We want the start of the cell to be the packet, so that the
- * compiler can align it when the structure is allocated. */
 typedef struct MPID_nem_cell
 {
-    MPID_nem_pkt_t pkt;
     MPID_nem_cell_rel_ptr_t next;
+    MPID_nem_pkt_t pkt;
 } MPID_nem_cell_t;
 typedef volatile MPID_nem_cell_t *MPID_nem_cell_ptr_t;
 
