@@ -4,6 +4,11 @@ PMI version 1.  This version is not yet in use in MPICH2, and is
 being developed to prototype the changes proposed.  In particular, this version
 adds support for better thread-safe behavior.
 
+Currently, the source files simply define the interfaces.  There is no 
+implementation yet.  The files have been added to the repository so that they
+can be reviewed by interested parties, particularly 3rd-parties that 
+will need to interface to this second-generation interface.
+
 A major issue that PMI verison 2 needs to address is thread-safety and
 responsiveness.  In particular, no thread that is waiting on a PMI call can 
 block other threads, even PMI_Spawn.  The design sketched out here
@@ -91,4 +96,20 @@ malloc'ing it each time), and then we'd need to re-aquire the critical
 section in order to free it (another option would be to allow one
 operation per thread and allocate it once; that would fit with the
 usage model but may not be worth the effort in this case).
+
+The above is sufficient for the needs of PMI.  One additional
+optimization is to avoid the mutex by first doing a test:
+
+test-function( test-ctx )
+if (!*flag) {
+   ... the usual code above, including the trailing mutex lock
+}
+
+An easy way to do this with the single wait function is to make the
+routine wait only if there is a non-null flag, i.e., 
+
+wait-function( NULL, wait-ctx )
+if (!*flag) {
+       ....
+}
 
