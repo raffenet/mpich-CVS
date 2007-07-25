@@ -1,6 +1,10 @@
 AC_PREREQ(2.59)
 AC_INIT(configure.in)
 
+dnl This is not completely implemented yet.
+dnl AC_ARG_WITH(libatomic,
+dnl [--with-libatomic=name - Specify the location of the libatomic package],
+dnl with_libatomic=no)
 dnl
 dnl Set the directory that contains support scripts such as install-sh and
 dnl config.guess
