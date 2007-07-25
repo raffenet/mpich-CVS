@@ -12,6 +12,13 @@ $gDebug = 0;
 #
 # parmc2f translates the C/C++ names to the Fortran 90 name.  %name% will
 # be replaced with the argument name in declarations.
+#
+# Some picky compilers want an interface description where Fortran 77
+# was happy with a simple EXTERNAL.  To handle this, the EXTERNAL
+# has a more elaborate form:
+#  INTERFACE %nl%SUBROUTINE %name%(<args>)%nl%<type decls>%nl%END SUBROUTINE%nl%END INTERFACE
+# where %nl% is newline/indent.  
+#
 %parmc2f = ( 'int' => 'INTEGER',
 	     'int[]' => 'INTEGER %name%(*)',
 	     'int[][3]' => 'INTEGER %name%(3,*)',
@@ -19,10 +26,12 @@ $gDebug = 0;
 	                               # replacement below)
 	     'bool' => 'LOGICAL',
 	     'bool[]' => 'LOGICAL %name%(*)',
-	     'MPI_Handler_function*' => 'EXTERNAL',
-	     'MPI_Win_errhandler_fn*' => 'EXTERNAL',
-	     'MPI_Comm_errhandler_fn*' => 'EXTERNAL',
-	     'MPI_File_errhandler_fn*' => 'EXTERNAL',
+	     'MPI_Handler_function*' => 'INTERFACE %nl%SUBROUTINE %name%(vv0,vv1)%nl%INTEGER vv0,vv1%nl%END SUBROUTINE%nl%END INTERFACE',
+	     'MPI_Win_errhandler_fn*' => 'INTERFACE %nl%SUBROUTINE %name%(vv0,vv1)%nl%INTEGER vv0,vv1%nl%END SUBROUTINE%nl%END INTERFACE',
+	     'MPI_Comm_errhandler_fn*' => 'INTERFACE %nl%SUBROUTINE %name%(vv0,vv1)%nl%INTEGER vv0,vv1%nl%END SUBROUTINE%nl%END INTERFACE',
+	     'MPI_File_errhandler_fn*' => 'INTERFACE %nl%SUBROUTINE %name%(vv0,vv1)%nl%INTEGER vv0,vv1%nl%END SUBROUTINE%nl%END INTERFACE',
+	     # These other functions have <choice> (really void*) arguments
+	     # and so an interface spec is very hard to do in Fortran 90.
 	     'MPI_Comm_copy_attr_function*' => 'EXTERNAL',
 	     'MPI_Comm_delete_attr_function*' => 'EXTERNAL',
 	     'MPI_Type_copy_attr_function*' => 'EXTERNAL',
@@ -553,6 +562,8 @@ foreach $routine (keys(%mpi_choice_routines)) {
 	    }
 	    if ($fparm =~ /%name%/) {
 		$fparm =~ s/%name%/v$i/;
+		# In the name case, convert any %nl% to newlines and spaces
+		$fparm =~ s/%nl%/\n       /g;
 		print MPIFD "        $fparm\n";
 	    }
 	    else {
@@ -873,6 +884,9 @@ sub PrintArgDecls {
 	    if ($varName =~ /%name%/) {
 		$varName =~ s/%name%/v$i/;
 	    }
+	    $varName =~ s/%nl%/\n       /g;
+	    $parmType =~ s/%nl%/\n       /g;
+
 	    # Here's where we might change vector to scalar args
 	    if ($svflag) {
 		if (defined($svargs{$loc})) {
