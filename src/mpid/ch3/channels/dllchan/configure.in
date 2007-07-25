@@ -41,11 +41,9 @@ LIBS=$save_libs
 if test -z "$SHLIB_EXT" ; then
     AC_MSG_ERROR([The dllchan channel requires shared library support and the symbold SHLIB_EXT (the extension of a shared library) is empty])
 fi
-MPICH_DEFAULT_CH3_CHANNEL='"'sock'"'
 MPICH_SHLIB_EXT='"'$SHLIB_EXT'"'
 AC_DEFINE_UNQUOTED(MPICH_SHLIB_EXT,$MPICH_SHLIB_EXT,[Extension for shared libraries])
 
-AC_DEFINE_UNQUOTED(MPICH_DEFAULT_CH3_CHANNEL,$MPICH_DEFAULT_CH3_CHANNEL,[Define the name of the channel to use if none is selected])
 
 AC_SUBST(device_name)
 AC_SUBST(channel_name)
@@ -86,6 +84,7 @@ channel_args=`echo $channel_args | sed -e 's/,/ /g'`
 builddir=`(cd .. && pwd)`
 SUBCHANNELS=$channel_args
 AC_SUBST(SUBCHANNELS)
+firstChannel=""
 for subchannel_name in $channel_args ; do
 
     if test ! -d $srcdir/../${subchannel_name} ; then
@@ -94,6 +93,9 @@ for subchannel_name in $channel_args ; do
         AC_MSG_ERROR([Channel ${subchannel_name} has no configure])
     fi
 
+    if test -z "$firstChannel" ; then
+        firstChannel=$subchannel_name
+    fi
     #
     # Because of the complexity in setting up channels, we invoke a script 
     # for those channels that are prepared to provide dynamically-loaded modules
@@ -120,6 +122,11 @@ for subchannel_name in $channel_args ; do
 dnl #        AC_MSG_ERROR([Failure in building dynamic library for $subchannel_name])
 #    fi
 done
+
+# The default channel is sock if no channels selected.  Otherwise,
+# it is the first of the channels in the list
+MPICH_DEFAULT_CH3_CHANNEL='"'$firstChannel'"'
+AC_DEFINE_UNQUOTED(MPICH_DEFAULT_CH3_CHANNEL,$MPICH_DEFAULT_CH3_CHANNEL,[Define the name of the channel to use if none is selected])
 
 # -------------------------------------------------------------------------
 
