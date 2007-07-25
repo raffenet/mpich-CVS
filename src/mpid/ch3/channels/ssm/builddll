@@ -274,11 +274,13 @@ MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/sock" ; 
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/sock/poll" ; \
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I../../../common/sock" ; \
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I../../../common/sock/poll" ; \
-MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I../../channels/sock/include" ; \
-MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/ch3/channels/sock/include" ; \
+MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I../../channels/ssm/include" ; \
+MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/ch3/channels/ssm/include" ; \
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I../../include" ; \
 MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/ch3/include" ; \
-MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/datatype" ; \
+MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/datatype" ;\
+MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I../../../common/locks" ; \
+MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/locks" ; \
 cd ../../util/sock && \
     $mympich2/src/mpid/ch3/util/sock/configure --enable-sharedlibs=$shlibtype \
     --prefix=$prefix --libdir=$libdir --exec-prefix=$exec_prefix )
