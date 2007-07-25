@@ -56,10 +56,10 @@ http://www.mcs.anl.gov/perfvis
 
 
 
-VI. USAGE
+II. USAGE
 ---------
 
-VI. a) CUSTOMIZING LOGFILES
+II. a) CUSTOMIZING LOGFILES
 ---------------------------
 
 In addition to using the predefined MPE logging libraries to log all MPI
@@ -125,7 +125,7 @@ has not been issued, new jumpshot (Jumpshot-4) may display the legend name as
 
 
 
-VI. c) ENVIRONMENTAL VARIABLES
+II. b) ENVIRONMENTAL VARIABLES
 ------------------------------
 
 For MPE logging, MPE_TMPDIR and MPE_LOGFILE_PREFIX are 2 environment variables
@@ -228,15 +228,12 @@ DISPLAY: determines where MPE X11 graphics on each process is connected to.
 
 
 
-VI. c) EXAMPLE PROJECT FILE
+II. c) EXAMPLE PROJECT FILE
 ---------------------------
+In examples/, user can find example source code, cpilog.c, on how to customize
+log files.
 
-Jayesh: Fill in here with where/how users can locate cpilog.vcproj
-        and fpilog.vcproj.  Other steps to get clog2 files for C
-        and Fortran applications.
-
-
-VI. d) UTILITY PROGRAMS
+II. d) UTILITY PROGRAMS
 -----------------------
 
 In bin/, user can find several useful utility programs when manipulating
@@ -316,8 +313,5 @@ jumpshot barrier.rlog
 
 Both will invoke the logfile convertor first before visualization.
 
-
-Collective and Datatype Checking
---------------------------------
 
 
