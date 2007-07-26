@@ -31,8 +31,9 @@ alignment.
 - Performance improvements for MPI_Gather when non-power of 2
 processes are used, and when a non-zero root is performing the gather.
 
-- Many other bug fixes and code cleanup.  A full list of changes is available 
-  at www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_6changes.htm . 
+- Many other bug fixes, memory leak fixes and code cleanup. A full
+list of changes is available at
+www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_6changes.htm .
 
 
 ===============================================================================
