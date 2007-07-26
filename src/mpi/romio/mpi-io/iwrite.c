@@ -89,7 +89,7 @@ int MPIOI_File_iwrite(MPI_File mpi_fh,
     ADIO_Status status;
     ADIO_Offset off;
     ADIO_File fh;
-    MPI_Offset nbytes;
+    MPI_Offset nbytes=0;
 
     MPIU_THREAD_SINGLE_CS_ENTER("io");
     MPIR_Nest_incr();
