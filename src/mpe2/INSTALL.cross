@@ -77,6 +77,10 @@ Usually the frontend will have a command to run executable in the backend,
 let say this is called "/usr/local/bin/lans64_run -np 1", where "-np 1"
 means the executable will be run on 1 node.
 
+Now pick a build directory <build_spec_dir> to build cross_spec, be sure
+not set <build_spec_dir> as <mpe2_src_dir>.  Doing so will cause conflict
+between cross_spec's Makefile and mpe2's main Makefile.
+
 One can configure cross_spec as follows:
 
     mkdir <build_spec_dir>
@@ -262,6 +266,51 @@ EOF
     make
     make install
     make installcheck
+
+
+    instructions for Cray XT4 (jaguar)
+    ----------------------------------
+
+    Compiling for the catamount(no thread support) on the frontend
+
+    **** Cross-Spec build ****
+    mkdir <build_spec_dir>
+    cd <build_spec_dir>
+    <mpe2_src_dir>/cross_spec/configure CC="cc --target=catamount"            \
+                                        F77="ftn --target=catamount"          \
+                                        MPI_CC="cc --target=catamount"        \
+                                        MPI_F77="ftn --target=catamount"      \
+                                        --host=x86_64-catamount-linux         \
+                                        --build=x86_64-linux
+    make
+
+# allocate an interactive PBS job slot to run cross_cc and cross_f2c
+    qsub -A XXXXX -V -I -lwalltime=00:15:00,size=2
+
+# cd to where cross_cc and cross_f2c re
+    cd <mpe2_src_dir>/cross_spec
+
+# run cross_cc and cross_f2c
+    yod -sz 1 cross_cc
+    yod -sz 1 cross_f2c
+
+# Now make sure that java (SUN or IBM's jdk) is in your path if it is available
+
+    **** MPE2 build ****
+    mkdir <build_mpe2_for_backend>
+    cd <build_mpe2_for_backend>
+    <mpe2_src_dir>/configure --prefix=<mpe2_install_dir>                       \
+                             --host=x86_64-catamount-linux                     \
+                             --build=x86_64-linux                              \
+                             --with-cross-spec=<build_spec_dir>/cross_spec.txt \
+                             CC="cc --target=catamount"                        \
+                             F77="ftn --target=catamount"                      \
+                             MPI_CC="cc --target=catamount"                    \
+                             MPI_F77="ftn --target=catamount"
+    make
+    make install
+                      
+
 
 
 
