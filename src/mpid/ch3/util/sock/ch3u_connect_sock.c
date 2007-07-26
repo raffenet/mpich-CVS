@@ -700,7 +700,10 @@ int MPIDI_CH3_Sockconn_handle_close_event( MPIDI_CH3I_Connection_t * conn )
 	       disconnect_reconnect fails because the vc->ch.conn 
 	       connection will continue to be used, even though
 	       the memory has been freed */
-	    if (vcch->conn == conn) vcch->conn = 0;
+	    /* FIXME: There have been reports of SEGVs in the disconnect
+	       calls, so we've added checks to the fields before assuming 
+	       that they're non-null.  */
+	    if (vcch && vcch->conn == conn) vcch->conn = 0;
 	    /* FIXME: If this isn't the associated connection, 
 	       there may be a problem */
 	}
