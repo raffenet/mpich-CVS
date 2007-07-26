@@ -222,12 +222,26 @@ void MPID_Wtime_init(void);
 #define MPIDM_Wtime_todouble MPID_Wtime_todouble
 
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
-/* This is a new version of the cycle counter, based on the read time stamp
-   (rdtsc) instruction */
-/* There may be a better way to read the two 32 bit values into a single
-   long long, but this should work */
-#define MPID_Wtime(var_ptr) \
-     __asm__ __volatile__("rdtsc" : "=A" (*var_ptr))
+/* The rdtsc instruction is not a "serializing" instruction, so the
+   processor is free to reorder it.  In order to get more accurate
+   timing numbers with rdtsc, we need to put a serializing
+   instruction, like cpuid, before rdtsc.  X86_64 architectures have
+   the rdtscp instruction which is synchronizing, we use this when we
+   can. */
+#ifdef LINUX86_CYCLE_RDTSCP
+#define MPID_Wtime(var_ptr) __asm__ __volatile__("rdtscp" : "=A" (*var_ptr))
+#elif defined(LINUX86_CYCLE_CPUID_RDTSC)
+/* Here we have to save the ebx register for when the compiler is
+   generating position independent code (e.g., when it's generating
+   shared libraries) */
+#define MPID_Wtime(var_ptr)                                                                     \
+     __asm__ __volatile__("push %%ebx ; cpuid ; rdtsc ; pop %%ebx" : "=A" (*var_ptr) : : "ecx")
+#elif defined(LINUX86_CYCLE_RDTSC)
+/* The configure test using cpuid must have failed, try just rdtsc by itself */
+#define MPID_Wtime(var_ptr) __asm__ __volatile__("rdtsc" : "=A" (*var_ptr))
+#else
+#error Dont know which Linux timer to use
+#endif
 
 extern double MPID_Seconds_per_tick;
 #define MPIDM_Wtime_todouble(t, d) *d = (double)*t * MPID_Seconds_per_tick

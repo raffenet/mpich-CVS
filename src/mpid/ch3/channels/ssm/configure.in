@@ -172,12 +172,41 @@ fi
 
 dnl gcc checking
 
-cpu_gcc_x86_cycle=no
-AC_TRY_COMPILE(,[
-    long long var, *var_ptr=&var;
-    __asm__ __volatile__("rdtsc" : "=A" (*var_ptr));
-],cpu_gcc_x86_cycle=yes,cpu_gcc_x86_cycle=no)
-if test "$cpu_gcc_x86_cycle" = "yes" ; then
+    AC_CACHE_CHECK([that linux86 cycle counter is available],
+        pac_cv_linux86_cycle,[
+            AC_TRY_COMPILE(,[
+                long long var, *var_ptr=&var;
+	        __asm__ __volatile__("rdtscp" : "=A" (*var_ptr));
+            ],pac_cv_linux86_cycle=rdtscp,
+                AC_TRY_COMPILE(,[
+	            long long var, *var_ptr=&var;
+		    __asm__ __volatile__("push %%ebx ; cpuid ; rdtsc ; pop %%ebx" : "=A" (*var_ptr) : : "ecx");
+                ],pac_cv_linux86_cycle=cpuid_rdtsc,
+                    AC_TRY_COMPILE(,[[
+	                long long var, *var_ptr=&var;
+	                __asm__ __volatile__("rdtsc" : "=A" (*var_ptr));
+                    ]],pac_cv_linux86_cycle=rdtsc,
+		    pac_cv_linux86_cycle=no)
+                )
+            )
+    ])
+
+case "$pac_cv_linux86_cycle" in
+    "rdtscp")
+        AC_DEFINE(GCC_X86_CYCLE_RDTSCP,1,[Define which x86 cycle counter to use])
+	;;
+    "cpuid_rdtsc")
+        AC_DEFINE(GCC_X86_CYCLE_CPUID_RDTSC,1,[Define which x86 cycle counter to use])
+	;;
+    "rdtsc")
+        AC_DEFINE(GCC_X86_CYCLE_RDTSC,1,[Define which x86 cycle counter to use])
+	;;
+    *)
+        cpu_gcc_x86_cycle=no
+	;;
+esac
+
+if test "$cpu_gcc_x86_cycle" != "no" ; then
   AC_DEFINE_UNQUOTED(MPICH_CPU_TICK_TYPE, USE_GCC_X86_CYCLE_ASM, [Define if using gcc on an Intel CPU with the rdtsc instruction])
 dnl else
 dnl If a cycle counter is not available the code reverts to fixed spin waits.  So no error is needed.

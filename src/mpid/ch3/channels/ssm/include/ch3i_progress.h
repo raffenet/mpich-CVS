@@ -23,9 +23,26 @@
 #endif
 
 #if MPICH_CPU_TICK_TYPE == USE_GCC_X86_CYCLE_ASM
-/* This cycle counter is the read time stamp (rdtsc) instruction with gcc asm */
-#define MPID_CPU_TICK(var_ptr) \
-     __asm__ __volatile__("rdtsc" : "=A" (*var_ptr))
+/* The rdtsc instruction is not a "serializing" instruction, so the
+   processor is free to reorder it.  In order to get more accurate
+   timing numbers with rdtsc, we need to put a serializing
+   instruction, like cpuid, before rdtsc.  X86_64 architectures have
+   the rdtscp instruction which is synchronizing, we use this when we
+   can. */
+#ifdef GCC_X86_CYCLE_RDTSCP
+#define MPID_CPU_TICK(var_ptr) __asm__ __volatile__("rdtscp" : "=A" (*var_ptr))
+#elif defined(GCC_X86_CYCLE_CPUID_RDTSC)
+/* Here we have to save the ebx register for when the compiler is
+   generating position independent code (e.g., when it's generating
+   shared libraries) */
+#define MPID_CPU_TICK(var_ptr)                                                                     \
+     __asm__ __volatile__("push %%ebx ; cpuid ; rdtsc ; pop %%ebx" : "=A" (*var_ptr) : : "ecx")
+#elif defined(GCC_X86_CYCLE_RDTSC)
+/* The configure test using cpuid must have failed, try just rdtsc by itself */
+#define MPID_CPU_TICK(var_ptr) __asm__ __volatile__("rdtsc" : "=A" (*var_ptr))
+#else
+#error Dont know which Linux timer to use
+#endif
 
 typedef long long MPID_CPU_Tick_t;
 

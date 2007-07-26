@@ -4590,13 +4590,42 @@ pac_cv_posix_clock_realtime=no)
     ;;
 
     linux86_cycle|linux86_cycle_2)
+    
     AC_CACHE_CHECK([that linux86 cycle counter is available],
-pac_cv_linux86_cycle,[
-    AC_TRY_COMPILE(,[
-    long long var, *var_ptr=&var;
-    __asm__ __volatile__("rdtsc" : "=A" (*var_ptr));
-],pac_cv_linux86_cycle=yes,pac_cv_linux86_cycle=no)])
-    if test "$pac_cv_linux86_cycle" != "yes" ; then
+        pac_cv_linux86_cycle,[
+            AC_TRY_COMPILE(,[
+                long long var, *var_ptr=&var;
+	        __asm__ __volatile__("rdtscp" : "=A" (*var_ptr));
+            ],pac_cv_linux86_cycle=rdtscp,
+                AC_TRY_COMPILE(,[
+	            long long var, *var_ptr=&var;
+		    __asm__ __volatile__("push %%ebx ; cpuid ; rdtsc ; pop %%ebx" : "=A" (*var_ptr) : : "ecx");
+                ],pac_cv_linux86_cycle=cpuid_rdtsc,
+                    AC_TRY_COMPILE(,[[
+	                long long var, *var_ptr=&var;
+	                __asm__ __volatile__("rdtsc" : "=A" (*var_ptr));
+                    ]],pac_cv_linux86_cycle=rdtsc,
+		    pac_cv_linux86_cycle=no)
+                )
+            )
+    ])
+
+    case "$pac_cv_linux86_cycle" in
+        "rdtscp")
+            AC_DEFINE(LINUX86_CYCLE_RDTSCP,1,[Define which x86 cycle counter to use])
+	    ;;
+        "cpuid_rdtsc")
+            AC_DEFINE(LINUX86_CYCLE_CPUID_RDTSC,1,[Define which x86 cycle counter to use])
+	    ;;
+        "rdtsc")
+            AC_DEFINE(LINUX86_CYCLE_RDTSC,1,[Define which x86 cycle counter to use])
+	    ;;
+        *)
+            cpu_gcc_x86_cycle=no
+	    ;;
+    esac
+
+    if test "$cpu_gcc_x86_cycle" == "no" ; then
         AC_MSG_ERROR([Linux86 cycle counter is not available on this system and or with the $CC compiler])
     fi
     MPID_TIMER_TYPE="long long"
