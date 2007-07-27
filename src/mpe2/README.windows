@@ -84,7 +84,8 @@ The simplest way to insert user-defined states is as follows:
    name and color of the states.
 3) Log the events of the logged states: MPE_Log_event() are called twice
    to log the user-defined states.
-Below is a simple example of that uses the 3 steps outlined above.
+
+Below is a simple example that uses the 3 steps outlined above.
 
 \begin{verbatim}
 
