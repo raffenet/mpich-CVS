@@ -23,7 +23,7 @@
 
 #define MPIU_STR_TRUNCATED MPIU_STR_NOMEM
 
-static int encode_buffer(char *dest, int dest_length, const char *src, 
+int encode_buffer(char *dest, int dest_length, const char *src, 
 			 int src_length, int *num_encoded)
 {
     int num_used;
@@ -68,7 +68,7 @@ static int encode_buffer(char *dest, int dest_length, const char *src,
     return src_length ? MPIU_STR_TRUNCATED : MPIU_STR_SUCCESS;
 }
 
-static int decode_buffer(const char *str, char *dest, int length, 
+int decode_buffer(const char *str, char *dest, int length, 
 			 int *num_decoded)
 {
     char hex[3];
