@@ -37,8 +37,7 @@
     Mathematical, Information, and Computational Sciences Division
     subprogram of the Office of Advanced Scientific Computing Research,
     SciDAC Program, Office of Science, U.S. Department of Energy, under
-    Contract
-    W-31-109-ENG-38.}\\
+    Contract DE-AC02-06CH11357.}\\
   Version 1.0.6\\
   Mathematics and Computer Science Division\\
   Argonne National Laboratory}
@@ -1119,19 +1118,15 @@ like this: \texttt{mpi\_init\_\_}.  Add the library that matches your Fortran co
 \end{enumerate}
 
 \subsection{Performance Analysis}
-MPICH2 suite comes with the Multi-Processing Environment (MPE) which attempts to provide programmers
-with a complete suite of performance analysis tools.
-
-The Multi-Processing Environment (MPE) attempts to provide programmers with
-a complete suite of performance analysis tools for their MPI programs based
-on post processing approach.  These tools include a set of profiling libraries,
-a set of utility programs, and a set of graphical tools.
+MPICH2 includes the Multi-Processing Environment (MPE), which is a
+suite of performance analysis tools comprising profiling libraries,
+utility programs, a set of graphical tools, and a collective checking library. 
 
 The first set of tools to be used with user MPI programs is profiling libraries
 which provide a collection of routines that create log files.  These log files
 can be created manually by inserting MPE calls in the MPI program, or
 automatically by linking with the appropriate MPE libraries, or by combining
-the above two methods.  Currently, the MPE offers the following 4 profiling
+the above two methods.  Currently, MPE offers the following four profiling
 libraries.
 
 \begin{enumerate}
@@ -1146,15 +1141,15 @@ libraries.
       that requires X window routines.
 
    \item Logging Libraries: The most useful and widely used profiling libraries
-      in MPE.  These libraries form the basis to generate log files from
-      user MPI programs.  There are several different log file formats
+      in MPE.  These libraries form the basis for generating log files from
+      user MPI programs.  Several different log file formats are
       available in MPE.  The default log file format is CLOG2.  It is a low
       overhead logging format, a simple collection of single timestamp events.
       The old format ALOG, which is not being developed for years, is not
       distributed here.  The powerful visualization format is SLOG-2, stands
-      for Scalable LOGfile format version II which is a total redesign of the
+      for Scalable LOGfile format version II, which is a total redesign of the
       original SLOG format.  SLOG-2 allows for much improved scalability for
-      visualization purpose.  CLOG2 file can be easily converted to
+      visualization purpose. A CLOG2 file can be easily converted to
       SLOG-2 file through the new SLOG-2 viewer, Jumpshot-4.
 
    \item Collective and datatype checking library: An argument consistency
@@ -1164,80 +1159,79 @@ libraries.
 
 The set of utility programs in MPE includes log format converter (e.g.
 clogTOslog2), logfile print (e.g. slog2print) and logfile viewer and
-convertor (e.g. jumpshot).  These new tools, clog2TOslog2, slog2print and
-jumpshot(Jumpshot-4) replace old tools, clog2slog, slog\_print and logviewer
+convertor (e.g. Jumpshot).  These new tools, clog2TOslog2, slog2print and
+Jumpshot (Jumpshot-4) replace old tools, clog2slog, slog\_print and logviewer
 (i.e. Jumpshot-2 and Jumpshot-3).  
 
 \subsubsection{Tracing MPI calls using the MPIEXEC Wrapper}
-A developer can trace the MPI calls using the tracing functionality of the mpiexec
-wrapper (wmpiexec.exe). A step by step process is given below, 
+A developer can trace MPI calls by using the tracing functionality of the mpiexec
+wrapper (wmpiexec.exe). A step by step process is given below. 
 
 \begin{enumerate}
 	\item Launch the mpiexec wrapper application (wmpiexec.exe).
 	
 	\item After launching the mpiexec wrapper, select the application that you would
-			like to run and select the number of processes. Now click on "more options"
-			checkbox to show the extended options for mpiexec command.
+			like to run and select the number of
+			processes. Now click on the ``more options''
+			checkbox to show the extended options for mpiexec.
 
-	\item Check the "produce clog2 file" checkbox so that the clog2 file is generated 
-			when the application is run
+	\item Check the ``produce clog2 file'' checkbox so that the clog2 file is generated 
+			when the application is run.
 
-	\item Check "run in an separate window" checkbox to enable your program to run in
-			a separate window (for user interaction)
+	\item Check ``run in an separate window'' checkbox to enable your program to run in
+			a separate window (for user interaction).
 
-	\item Run your application by clicking on the "Execute" button.
+	\item Run your application by clicking on the ``Execute'' button.
 	
-	\item Once the application exits, click on the "Jumpshot" button to launch jumpshot 
-			(the logfile viewer) 
+	\item Once the application exits, click on the ``Jumpshot'' button to launch Jumpshot 
+			(the logfile viewer). 
 
 	\item Open your logfile (the default name of the logfile is \texttt{<APPLICATION NAME>.clog2}) 
-			using jumpshot. Jumpshot will ask for converting the logfile to slog2 format.
-			Click "Convert" button in jumpshot to convert your logfile to slog2 format.
+			using Jumpshot. Jumpshot will ask for converting the logfile to slog2 format.
+			Click ``Convert'' button in Jumpshot to convert your logfile to slog2 format.
 
-	\item Now click on "OK" button in jumpshot to view the logfile.
+	\item Now click on ``OK'' button in Jumpshot to view the logfile.
 \end{enumerate}
 
 \subsubsection{Tracing MPI calls from the command line}
 
 \begin{enumerate}
-	\item Run your application using the "-log" option to the mpiexec command. 
+	\item Run your application using the ``-log'' option to the mpiexec command. 
 
-	\item Launch jumpshot using the java command. 
+	\item Launch Jumpshot using the java command. 
 (eg: \texttt{java -jar "c:$\backslash$Program Files$\backslash$MPICH2$\backslash$bin$\backslash$jumpshot.jar"})
-
 	\item Follow the steps mentioned in the previous section to convert the logfile to slog2
 			format and view the log.
 \end{enumerate}
 
 \subsubsection{Customizing logfiles}
 In addition to using the predefined MPE logging libraries to log all MPI
-calls, MPE logging calls can be inserted into user's MPI program to define
-and log states.  These states are called User-Defined states.  States may
+calls, MPE logging calls can be inserted into the user's MPI program to define
+and log states.  These states are called user-defined states.  States may
 be nested, allowing one to define a state describing a user routine that
 contains several MPI calls, and display both the user-defined state and
 the MPI operations contained within it.
 
 The simplest way to insert user-defined states is as follows:
 \begin{enumerate}
-\item Get handles from MPE logging library: \texttt{MPE\_Log\_get\_state\_eventIDs}
-   has to be used to get unique event IDs (MPE logging handles).
+\item Get handles from MPE logging library. \texttt{MPE\_Log\_get\_state\_eventIDs}
+   must be used to get unique event IDs (MPE logging handles).
    This is important if you are writing a library that uses
    the MPE logging routines from the MPE system.
-
-   PS. Hardwiring the eventIDs is considered a big idea since it may cause
-   eventID confict and so the practice isn't supported.  Older MPE library
-   provides \texttt{MPE\_Log\_get\_event\_number} which is still being supported but
-   has been deprecated, users are strongly urged to use
+   Hardwiring the eventIDs is considered a bad idea since it may cause
+   eventID confict and so the practice isn't supported. The older MPE library
+   provides \texttt{MPE\_Log\_get\_event\_number}, which is still being supported but
+   has been deprecated; users are strongly urged to use
    \texttt{MPE\_Log\_get\_state\_eventIDs} instead.
 
-\item Set the logged state's characteristics: \texttt{MPE\_Describe\_state} sets the
+\item Set the logged state's characteristics. \texttt{MPE\_Describe\_state} sets the
    name and color of the states.
 
-\item Log the events of the logged states: \texttt{MPE\_Log\_event} are called twice
+\item Log the events of the logged states. \texttt{MPE\_Log\_event} is called twice
    to log the user-defined states.
 \end{enumerate}
 
-Below is a simple example of that uses the 3 steps outlined above.
+Below is a simple example that uses the three steps outlined above.
 
 \begin{verbatim}
 
