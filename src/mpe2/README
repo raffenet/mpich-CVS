@@ -176,7 +176,7 @@ The simplest way to insert user-defined states is as follows:
    This is important if you are writing a library that uses
    the MPE logging routines from the MPE system.  
 
-   PS. Hardwiring the eventIDs is considered a big idea since it may cause
+   PS. Hardwiring the eventIDs is considered a bad idea since it may cause
    eventID confict and so the practice isn't supported.  Older MPE library
    provides MPE_Log_get_event_number() which is still being supported but
    has been deprecated, users are strongly urged to use
