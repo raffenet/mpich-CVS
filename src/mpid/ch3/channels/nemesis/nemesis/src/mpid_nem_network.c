@@ -23,6 +23,8 @@
 #include "sctp_module.h"
 #elif(MPID_NEM_NET_MODULE == MPID_NEM_IB_MODULE)
 #include "ib_module.h"
+#elif(MPID_NEM_NET_MODULE == MPID_NEM_PSM_MODULE)
+#include "psm_module.h"
 #else
 #warning ">>>>>>>>>>>>>>>> WRONG NET MODULE SELECTION"
 #endif 
@@ -94,6 +96,10 @@ MPID_nem_net_init( void)
   {
       assign_functions (ib);
   } 
+#elif (MPID_NEM_NET_MODULE == MPID_NEM_PSM_MODULE)
+  {
+      assign_functions (psm);
+  }   
 #else
 #warning ">>>>>>>>>>>>>>>> WRONG NET MODULE INITIALIZATION"
 #endif 
