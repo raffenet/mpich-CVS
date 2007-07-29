@@ -50,7 +50,8 @@
 #else
 #define MPID_NEM_CELL_LEN           (64*1024)
 #endif 
-#define MPID_NEM_CELL_PAYLOAD_LEN   (MPID_NEM_CELL_LEN - sizeof(void *))
+/* #define MPID_NEM_CELL_PAYLOAD_LEN   (MPID_NEM_CELL_LEN - sizeof(void *)) */
+#define MPID_NEM_CELL_PAYLOAD_LEN  (MPID_NEM_CELL_LEN - sizeof(double))
 
 #define MPID_NEM_CALC_CELL_LEN(cellp) (sizeof(void *) + MPID_NEM_MPICH2_HEAD_LEN + MPID_NEM_CELL_DLEN (cell))
 
