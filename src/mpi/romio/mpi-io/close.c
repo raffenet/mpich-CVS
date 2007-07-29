@@ -63,6 +63,7 @@ int MPI_File_close(MPI_File *mpi_fh)
         MPI_Barrier((fh)->comm);
 	if ((fh)->shared_fp_fd != ADIO_FILE_NULL) {
 	    ADIO_Close((fh)->shared_fp_fd, &error_code);
+    	    MPIO_File_free(mpi_fh);
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (error_code != MPI_SUCCESS) goto fn_fail;
 	    /* --END ERROR HANDLING-- */
