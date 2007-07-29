@@ -530,10 +530,10 @@ sub FindRunning {
 
     my $logname = $ENV{'USER'};
     my $pidloc = 1;
-    $rc = open PSFD, "ps auxw -U $logname 2>&1 |";
+    my $rc = open PSFD, "ps auxw -U $logname 2>&1 |";
 
     if ($rc == 0) { 
-	my $rc = open PSFD, "ps -fu $logname 2>&1 |";
+	$rc = open PSFD, "ps -fu $logname 2>&1 |";
     }
     if ($rc == 0) {
 	print STDERR "Could not execute ps command\n";
@@ -544,7 +544,10 @@ sub FindRunning {
 	if (/$programname/) {
 	    @fields = split(/\s+/);
 	    my $pid = $fields[$pidloc];
-	    $pids[$#pids + 1] = $pid;
+	    # Check that we've found a numeric pid
+	    if ($pid =~ /^\d+$/) {
+		$pids[$#pids + 1] = $pid;
+	    }
 	}
     }
     close PSFD;
