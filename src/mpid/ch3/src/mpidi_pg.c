@@ -273,6 +273,8 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
             else
                 pg_prev->next = pg->next;
 
+	    /* FIXME: This is a temp debugging print (and should use
+	       one of the standard debug macros instead */
 	    if (verbose) {
 		fprintf( stdout, "Destroying process group %s\n", 
 			 (char *)pg->id ); fflush(stdout);

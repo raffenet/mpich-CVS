@@ -22,6 +22,7 @@ int *MPIDI_CH3I_progress_completion_count_ptr = 0;
 
 static const char * MPIDI_CH3I_VC_GetStateString( struct MPIDI_VC * );
 static int MPIDI_CH3I_NotImpl(void);
+static int MPIDI_CH3I_Ignore(void);
 
 #undef FUNCNAME
 #define FUNCNAME MPICH_CH3_PreLoad
@@ -139,7 +140,8 @@ int MPIDI_CH3_PreLoad( void )
     /* If we don't find Connect_to_root, set the entry to a routine that
        returns not implemented */
     if (mpi_errno) { 
-	MPIU_CALL_MPIDI_CH3.Connect_to_root = MPIDI_CH3I_NotImpl;
+	MPIU_CALL_MPIDI_CH3.Connect_to_root = 
+	    (int (*)(const char *, MPIDI_VC_t **))MPIDI_CH3I_NotImpl;
     }
 
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3_Get_business_card", 
@@ -147,7 +149,8 @@ int MPIDI_CH3_PreLoad( void )
     /* If we don't find Get_business_card, set the entry to a routine that
        returns not implemented */
     if (mpi_errno) { 
-	MPIU_CALL_MPIDI_CH3.Get_business_card = MPIDI_CH3I_NotImpl;
+	MPIU_CALL_MPIDI_CH3.Get_business_card = 
+	    (int (*)(int,char*,int))MPIDI_CH3I_NotImpl;
     }
 
     mpi_errno = MPIU_DLL_FindSym( dllhandle, "MPIDI_CH3I_progress_completion_count", 
@@ -165,6 +168,15 @@ int MPIDI_CH3_Finalize( )
 {
     int mpi_errno = MPIU_CALL(MPIDI_CH3,Finalize());
     MPIU_DLL_Close( dllhandle );
+    dllhandle = 0;
+
+    /* Once we close the dll, the structure of function pointers is
+       no longer valid */
+    /* FIXME: As a workaround for the use of PG_Destroy *after* 
+       CH3_Finalize is called, this entry point is set to something
+       benign */
+    MPIU_CALL_MPIDI_CH3.PG_Destroy = (int (*)(MPIDI_PG_t*))MPIDI_CH3I_Ignore;
+
     return mpi_errno;
 }
 
@@ -209,3 +221,7 @@ static int MPIDI_CH3I_NotImpl(void)
 				 MPI_ERR_OTHER, "**notimpl", 0);
 }
 
+static int MPIDI_CH3I_Ignore(void)
+{
+    return MPI_SUCCESS;
+}
