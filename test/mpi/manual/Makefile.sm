@@ -4,6 +4,7 @@ smvar_do_sharedlibs = 0
 singjoin_SOURCES    = singjoin.c
 testconnect_SOURCES = testconnect.c
 testconnectserial_SOURCES = testconnectserial.c tchandlers.c tcutil.c
+testconnectserial_LDADD = -lm
 
 testconnectserial.o: testconnectserial.c
 	$(C_COMPILE) -c -DMPICHLIBSTR=\"$(MPIDIR)\" $<
