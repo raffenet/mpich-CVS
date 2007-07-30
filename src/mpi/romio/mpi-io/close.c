@@ -35,7 +35,6 @@ int MPI_File_close(MPI_File *mpi_fh)
 {
     int error_code;
     ADIO_File fh;
-    ADIO_File shared_fh;
     static char myname[] = "MPI_FILE_CLOSE";
 #ifdef MPI_hpux
     int fl_xmpi;
