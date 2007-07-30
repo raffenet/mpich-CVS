@@ -631,7 +631,7 @@ typedef struct MPIDI_VC
        can always allocate storage and hang it off of the end).  This 
        is necessary to allow dynamic loading of channels at MPI_Init time. */
 /* The ssm channel needs a *huge* space for the VC.  We need to fix that. */
-#define MPIDI_CH3_VC_SIZE 150
+#define MPIDI_CH3_VC_SIZE 256
     int32_t channel_private[MPIDI_CH3_VC_SIZE];
 # if defined(MPIDI_CH3_VC_DECL)
     MPIDI_CH3_VC_DECL
