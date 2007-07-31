@@ -31,7 +31,7 @@ MPID_nem_psm_module_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
     if (!MPID_nem_module_psm_connected)
     {
         ret = MPID_nem_psm_module_connect();
-        MPIU_ERR_CHKANDJUMP1 (ret != MPI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**MPID_nem_psm_module_connect", "**MPID_nem_psm_module_connect %d", ret);
+        MPIU_ERR_CHKANDJUMP1 (ret != MPI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**psm_module_connect", "**psm_module_connect %d", ret);
     }
 
     

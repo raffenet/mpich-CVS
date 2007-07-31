@@ -196,7 +196,7 @@ MPID_nem_psm_module_poll(MPID_nem_poll_dir_t in_or_out)
    if (!MPID_nem_module_psm_connected)
    {
        ret = MPID_nem_psm_module_connect();
-       MPIU_ERR_CHKANDJUMP1 (ret != MPI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**MPID_nem_psm_module_connect", "**MPID_nem_psm_module_connect %d", ret);
+       MPIU_ERR_CHKANDJUMP1 (ret != MPI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**psm_module_connect", "**psm_module_connect %d", ret);
    }
    
    

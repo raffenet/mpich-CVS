@@ -877,6 +877,34 @@ with MPI_Alloc_mem.
 **ctspkt:failure occurred while attempting to send CTS packet
 **cookiepkt:failure occurred while attempting to send COOKIE packet
 **donepkt:failure occurred while attempting to send DONE packet
+**psm_module_connect:psm_module_connect failed
+**psm_module_connect %d: psm_module_connect failed (%d)
+**decode_buffer:decode_buffer failed
+**decode_buffer %d:decode_buffer failed (%d)
+**encode_buffer:decode_buffer failed
+**encode_buffer %d:decode_buffer failed (%d)
+**psm_close_endpoint:psm_close_endpiont failed
+**psm_close_endpoint %s:psm_close_endpiont failed (%s)
+**psm_ep_connect:psm_ep_connect failed
+**psm_ep_connect %s:psm_ep_connect failed (%s)
+**psm_ep_open:psm_ep_open failed
+**psm_ep_open %s:psm_ep_open failed (%s)
+**psm_finalize:psm_finalize failed
+**psm_finalize %s:psm_finalize failed (%s)
+**psm_init:psm_init failed
+**psm_init %s:psm_init failed (%s)
+**psm_irecv:psm_irecv failed
+**psm_irecv %s:psm_irecv failed (%s)
+**psm_isend:psm_isend failed
+**psm_isend %s:psm_isend failed (%s)
+**psm_mq_finalize:psm_mq_finalize failed
+**psm_mq_finalize %s:psm_mq_finalize failed (%s)
+**psm_mq_init:psm_mq_init failed
+**psm_mq_init %s:psm_mq_init failed (%s)
+**psm_test:psm_test failed
+**psm_test %s:psm_test failed (%s)
+**psm_wait:psm_wait failed
+**psm_wait %s:psm_wait failed (%s)
 
 
 #
