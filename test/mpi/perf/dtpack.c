@@ -22,8 +22,8 @@ static int verbose = 0;
 
 #define N_REPS 1000
 #define THRESHOLD 0.10
-#define VARIANCE_THRESHOLD 0.01
-#define NTRIALS 5
+#define VARIANCE_THRESHOLD (THRESHOLD * THRESHOLD)
+#define NTRIALS 10
 
 double mean(double *list, int count)
 {
