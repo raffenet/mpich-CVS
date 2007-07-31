@@ -59,8 +59,19 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     int   *node_ids = 0;    
     MPIU_CHKPMEM_DECL(4);
 
+    /* Make sure the nemesis packet is no larger than the generic
+       packet.  This is needed because we no longer include channel
+       packet types in the CH3 packet types to allow dynamic channel
+       loading. */
     MPIU_Assert(sizeof(MPIDI_CH3_nem_pkt_t) <= sizeof(MPIDI_CH3_PktGeneric_t));
+
+    /* Make sure the cell structure looks like it should */
+    MPIU_Assert(MPID_NEM_CELL_PAYLOAD_LEN + MPID_NEM_CELL_HEAD_LEN == sizeof(MPID_nem_cell_t));
+    MPIU_Assert(sizeof(MPID_nem_cell_t) == sizeof(MPID_nem_abs_cell_t));
+    /* Make sure payload is aligned on a double */
+    MPIU_Assert(MPID_NEM_ALIGNED(&((MPID_nem_cell_t*)0)->pkt.mpich2.payload[0], sizeof(double)));
     
+                
     /* Initialize the business card */
     mpi_errno = MPIDI_CH3I_BCInit( &bc_val, &val_max_remaining );
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -664,7 +675,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 /*         /\* iStartContigMsg iSendContig and sendEagerNoncontig_fn must */
 /*            be set for nonlocal processes.  Default functions only */
 /*            support shared-memory communication. *\/ */
-/*         MPIU_Assert(vc_ch->iStartContigMsg && vc_ch->iSendContig ** vc->sendEagerNoncontig_fn); */
+/*         MPIU_Assert(vc_ch->iStartContigMsg && vc_ch->iSendContig && vc->sendEagerNoncontig_fn); */
 
     }
 
