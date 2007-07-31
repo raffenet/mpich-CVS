@@ -130,6 +130,11 @@ sub ConvertToF90 {
 	if (/^(\s*)include\s+[\'\"]mpif\.h/) {
 	    $_ = "$1use mpi";
 	}
+	# Allow the insertion of Fortran 90 only statements, such as
+	# interface definitions
+        if (/^CF90/) {
+	    s/^CF90/    /;
+	}
 	if ($convertToNewComments) {
 	    s/^C/!/;
 	    s/^c/!/;
