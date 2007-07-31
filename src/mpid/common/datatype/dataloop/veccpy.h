@@ -49,7 +49,7 @@
 #define MPIDI_COPY_FROM_VEC_ALIGNED(src,dest,stride,type,nelms,count) \
 {								\
     type * l_src = (type *)src, * l_dest = (type *)dest;	\
-    type * tmp_src = l_src, * tmp_dest = l_dest;                \
+    type * tmp_src = l_src;                                     \
     register int i, j, k;		                        \
     unsigned long total_count = count * nelms;                  \
     const int l_stride = stride;				\
@@ -161,7 +161,7 @@
 #define MPIDI_COPY_FROM_VEC_UNALIGNED(src,dest,stride,type,nelms,count) \
 {								\
     type * l_src = (type *)src, * l_dest = (type *)dest;	\
-    type * tmp_src = l_src, * tmp_dest = l_dest;                \
+    type * tmp_src = l_src;                                     \
     register int i, j, k;		                        \
     unsigned long total_count = count * nelms;                  \
     const int l_stride = stride;				\
@@ -273,7 +273,7 @@
 #define MPIDI_COPY_TO_VEC_ALIGNED(src,dest,stride,type,nelms,count) \
 {								\
     type * l_src = (type *)src, * l_dest = (type *)dest;	\
-    type * tmp_src = l_src, * tmp_dest = l_dest;                \
+    type * tmp_dest = l_dest;                                   \
     register int i, j, k;		                        \
     unsigned long total_count = count * nelms;                  \
     const int l_stride = stride;				\
@@ -385,7 +385,7 @@
 #define MPIDI_COPY_TO_VEC_UNALIGNED(src,dest,stride,type,nelms,count) \
 {								\
     type * l_src = (type *)src, * l_dest = (type *)dest;	\
-    type * tmp_src = l_src, * tmp_dest = l_dest;                \
+    type * tmp_dest = l_dest;                                   \
     register int i, j, k;		                        \
     unsigned long total_count = count * nelms;                  \
     const int l_stride = stride;				\
