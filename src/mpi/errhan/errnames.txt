@@ -96,6 +96,7 @@ was not started with MPI_GREQUEST_START
 **commperm:Cannot free permanent communicator
 **commperm %s:Cannot free permanent communicator %s
 **group:Invalid group
+**groupperm:Cannot free permanent group
 **groupnotincomm:Specified group is not within the communicator
 **groupnotincomm %d:Rank %d of the specified group is not a member of this communicator
 **commnotintra:An intracommunicator is required but an intercommunicator \
