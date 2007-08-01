@@ -128,7 +128,6 @@ int MPIC_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
         *status = recv_req_ptr->status;
     mpi_errno = recv_req_ptr->status.MPI_ERROR;
 
- fn_exit:
     MPID_Request_release(send_req_ptr);
     MPID_Request_release(recv_req_ptr);
  fn_fail:

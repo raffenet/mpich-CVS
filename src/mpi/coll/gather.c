@@ -56,20 +56,23 @@ int MPIR_Gather (
     static const char FCNAME[] = "MPIR_Gather";
     int        comm_size, rank;
     int        mpi_errno = MPI_SUCCESS;
-    int curr_cnt=0, relative_rank, nbytes, recv_size, is_homogeneous;
-    int mask, sendtype_size, recvtype_size, src, dst, position, relative_src;
+    int curr_cnt=0, relative_rank, nbytes, is_homogeneous;
+    int mask, sendtype_size, recvtype_size, src, dst, relative_src;
     int recvblks;
     int tmp_buf_size, diff, i;
     void *tmp_buf=NULL;
     MPI_Status status;
     MPI_Aint   extent=0;            /* Datatype extent */
     MPI_Comm comm;
-    int count;
     int blocks[2];
     int displs[2];
     MPI_Aint struct_displs[2];
     MPI_Datatype types[2], tmp_type;
-    int copy_offset, copy_blks = 0;
+    int copy_offset = 0, copy_blks = 0;
+
+#ifdef MPID_HAS_HETERO
+    int position, recv_size;
+#endif
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;

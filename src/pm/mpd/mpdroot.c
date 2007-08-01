@@ -4,6 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include <stdio.h>
 #include "mpdroot.h"
 
 int main(int argc, char *argv[])

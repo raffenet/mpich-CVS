@@ -62,7 +62,7 @@ int MPIR_Scatter (
     int        rank, comm_size, is_homogeneous, sendtype_size;
     int curr_cnt, relative_rank, nbytes, send_subtree_cnt;
     int mask, recvtype_size=0, src, dst, position;
-    int tmp_buf_size;
+    int tmp_buf_size = 0;
     void *tmp_buf=NULL;
     int        mpi_errno = MPI_SUCCESS;
     MPI_Comm comm;
