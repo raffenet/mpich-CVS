@@ -22,7 +22,7 @@ static int verbose = 0;
 
 #define N_REPS 1000
 #define THRESHOLD 0.10
-#define VARIANCE_THRESHOLD (THRESHOLD * THRESHOLD)
+#define VARIANCE_THRESHOLD ((THRESHOLD * THRESHOLD) / 2)
 #define NTRIALS 10
 
 double mean(double *list, int count)
@@ -76,6 +76,7 @@ int TestVecPackDouble( int n, int stride,
 	MPI_Datatype vectype;
 
 	/* User code */
+	if (verbose) printf("TestVecPackDouble (USER): ");
 	for (j = 0; j < NTRIALS; j++) {
 		t1 = MPI_Wtime();
 		for (rep=0; rep<N_REPS; rep++) {
@@ -89,7 +90,9 @@ int TestVecPackDouble( int n, int stride,
 		}
 		t2 = MPI_Wtime() - t1;
 		t[j] = t2;
+		if (verbose) printf("%.3f ", t[j]);
 	}
+	if (verbose) printf("[%.3f]\n", noise(t, NTRIALS));
 	/* If there is too much noise, discard the test */
 	if (noise(t, NTRIALS) > VARIANCE_THRESHOLD) {
 		*avgTimeUser = 0;
@@ -104,6 +107,7 @@ int TestVecPackDouble( int n, int stride,
 	MPI_Type_vector( n, 1, stride, MPI_DOUBLE, &vectype );
 	MPI_Type_commit( &vectype );
 
+	if (verbose) printf("TestVecPackDouble (MPI): ");
 	for (j = 0; j < NTRIALS; j++) {
 		t1 = MPI_Wtime();
 		for (rep=0; rep<N_REPS; rep++) {
@@ -113,7 +117,9 @@ int TestVecPackDouble( int n, int stride,
 		}
 		t2 = MPI_Wtime() - t1;
 		t[j] = t2;
+		if (verbose) printf("%.3f ", t[j]);
 	}
+	if (verbose) printf("[%.3f]\n", noise(t, NTRIALS));
 	/* If there is too much noise, discard the test */
 	if (noise(t, NTRIALS) > VARIANCE_THRESHOLD) {
 		*avgTimeUser = 0;
@@ -142,6 +148,7 @@ int TestVecUnPackDouble( int n, int stride,
 	MPI_Datatype vectype;
 
 	/* User code */
+	if (verbose) printf("TestVecUnPackDouble (USER): ");
 	for (j = 0; j < NTRIALS; j++) {
 		t1 = MPI_Wtime();
 		for (rep=0; rep<N_REPS; rep++) {
@@ -155,7 +162,9 @@ int TestVecUnPackDouble( int n, int stride,
 		}
 		t2 = MPI_Wtime() - t1;
 		t[j] = t2;
+		if (verbose) printf("%.3f ", t[j]);
 	}
+	if (verbose) printf("[%.3f]\n", noise(t, NTRIALS));
 	/* If there is too much noise, discard the test */
 	if (noise(t, NTRIALS) > VARIANCE_THRESHOLD) {
 		*avgTimeUser = 0;
@@ -170,6 +179,7 @@ int TestVecUnPackDouble( int n, int stride,
 	MPI_Type_vector( n, 1, stride, MPI_DOUBLE, &vectype );
 	MPI_Type_commit( &vectype );
 
+	if (verbose) printf("TestVecUnPackDouble (MPI): ");
 	for (j = 0; j < NTRIALS; j++) {
 		t1 = MPI_Wtime();
 		for (rep=0; rep<N_REPS; rep++) {
@@ -179,7 +189,9 @@ int TestVecUnPackDouble( int n, int stride,
 		}
 		t2 = MPI_Wtime() - t1;
 		t[j] = t2;
+		if (verbose) printf("%.3f ", t[j]);
 	}
+	if (verbose) printf("[%.3f]\n", noise(t, NTRIALS));
 	/* If there is too much noise, discard the test */
 	if (noise(t, NTRIALS) > VARIANCE_THRESHOLD) {
 		*avgTimeUser = 0;
@@ -208,6 +220,7 @@ int TestVecPack2Double( int n, int stride,
 	MPI_Datatype vectype;
 
 	/* User code */
+	if (verbose) printf("TestVecPack2Double (USER): ");
 	for (j = 0; j < NTRIALS; j++) {
 		t1 = MPI_Wtime();
 		for (rep=0; rep<N_REPS; rep++) {
@@ -222,7 +235,9 @@ int TestVecPack2Double( int n, int stride,
 		}
 		t2 = MPI_Wtime() - t1;
 		t[j] = t2;
+		if (verbose) printf("%.3f ", t[j]);
 	}
+	if (verbose) printf("[%.3f]\n", noise(t, NTRIALS));
 	/* If there is too much noise, discard the test */
 	if (noise(t, NTRIALS) > VARIANCE_THRESHOLD) {
 		*avgTimeUser = 0;
@@ -237,6 +252,7 @@ int TestVecPack2Double( int n, int stride,
 	MPI_Type_vector( n, 2, stride, MPI_DOUBLE, &vectype );
 	MPI_Type_commit( &vectype );
     
+	if (verbose) printf("TestVecPack2Double (MPI): ");
 	for (j = 0; j < NTRIALS; j++) {
 		t1 = MPI_Wtime();
 		for (rep=0; rep<N_REPS; rep++) {
@@ -246,7 +262,9 @@ int TestVecPack2Double( int n, int stride,
 		}
 		t2 = MPI_Wtime() - t1;
 		t[j] = t2;
+		if (verbose) printf("%.3f ", t[j]);
 	}
+	if (verbose) printf("[%.3f]\n", noise(t, NTRIALS));
 	/* If there is too much noise, discard the test */
 	if (noise(t, NTRIALS) > VARIANCE_THRESHOLD) {
 		*avgTimeUser = 0;
@@ -283,6 +301,7 @@ int TestIndexPackDouble( int n, int stride,
 	for (i=0; i<n; i++) displs[i] = i * stride;
 
 	/* User code */
+	if (verbose) printf("TestIndexPackDouble (USER): ");
 	for (j = 0; j < NTRIALS; j++) {
 		t1 = MPI_Wtime();
 		for (rep=0; rep<N_REPS; rep++) {
@@ -295,7 +314,9 @@ int TestIndexPackDouble( int n, int stride,
 		}
 		t2 = MPI_Wtime() - t1;
 		t[j] = t2;
+		if (verbose) printf("%.3f ", t[j]);
 	}
+	if (verbose) printf("[%.3f]\n", noise(t, NTRIALS));
 	/* If there is too much noise, discard the test */
 	if (noise(t, NTRIALS) > VARIANCE_THRESHOLD) {
 		*avgTimeUser = 0;
@@ -312,6 +333,7 @@ int TestIndexPackDouble( int n, int stride,
 
 	free( displs );
     
+	if (verbose) printf("TestIndexPackDouble (MPI): ");
 	for (j = 0; j < NTRIALS; j++) {
 		t1 = MPI_Wtime();
 		for (rep=0; rep<N_REPS; rep++) {
@@ -321,7 +343,9 @@ int TestIndexPackDouble( int n, int stride,
 		}
 		t2 = MPI_Wtime() - t1;
 		t[j] = t2;
+		if (verbose) printf("%.3f ", t[j]);
 	}
+	if (verbose) printf("[%.3f]\n", noise(t, NTRIALS));
 	/* If there is too much noise, discard the test */
 	if (noise(t, NTRIALS) > VARIANCE_THRESHOLD) {
 		*avgTimeUser = 0;
