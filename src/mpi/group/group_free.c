@@ -84,10 +84,10 @@ int MPI_Group_free(MPI_Group *group)
             MPID_Group_valid_ptr( group_ptr, mpi_errno );
 	    /* If group_ptr is not valid, it will be reset to null */
 
-	    /* Cannot free the predefined communicators */
+	    /* Cannot free the predefined groups */
 	    if (HANDLE_GET_KIND(*group) == HANDLE_KIND_BUILTIN) {
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
-                      MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_COMM,
+                      MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_GROUP,
 					  "**groupperm", 0);
 	    }
             if (mpi_errno) goto fn_fail;
