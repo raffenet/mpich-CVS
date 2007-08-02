@@ -41,7 +41,7 @@ int main(int argc, char ** argv)
     MPI_Info_set(info, "cb_nodes", "1");
 
     for (i=0; i<BUFSIZE; i++) {
-        buffer[i] = rank;
+        buffer[i] = 10000+rank;
     }
     off = rank*sizeof(buffer);
 
@@ -64,7 +64,7 @@ int main(int argc, char ** argv)
     if (errcode != MPI_SUCCESS) handle_error(errcode, "MPI_File_close");
 
     for (i=0; i<BUFSIZE; i++) {
-        if (buf2[i] != rank)
+        if (buf2[i] != 10000+rank)
 	    errs++;
     }
     MPI_Allreduce( &errs, &toterrs, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
