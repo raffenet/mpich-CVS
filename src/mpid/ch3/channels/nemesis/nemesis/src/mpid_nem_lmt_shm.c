@@ -365,8 +365,6 @@ static int get_next_req(MPIDI_VC_t *vc)
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_GET_NEXT_REQ);
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 
 
@@ -454,8 +452,6 @@ static int lmt_shm_send_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
     copy_buf->sender_present.val = FALSE;
     MPIDI_FUNC_EXIT(MPID_STATE_LMT_SHM_SEND_PROGRESS);
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -548,8 +544,6 @@ static int lmt_shm_recv_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
     copy_buf->receiver_present.val = FALSE;
     MPIDI_FUNC_EXIT(MPID_STATE_LMT_SHM_RECV_PROGRESS);
     return mpi_errno;
- fn_fail:
-    goto fn_exit;
 }
 
 #undef FUNCNAME

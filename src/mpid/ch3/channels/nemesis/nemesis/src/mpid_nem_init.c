@@ -55,7 +55,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     char  *publish_bc_orig = NULL;
     char  *bc_val          = NULL;
     int    val_max_remaining;
-    int    num_nodes;
+    int    num_nodes = 0;
     int   *node_ids = 0;    
     MPIU_CHKPMEM_DECL(4);
 
@@ -461,7 +461,6 @@ get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_
     int *procs;
     int i, j;
     char key[MPID_NEM_MAX_KEY_VAL_LEN];
-    char val[MPID_NEM_MAX_KEY_VAL_LEN];
     char *kvs_name;
     char **node_names;
     char *node_name_buf;
