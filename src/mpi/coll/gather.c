@@ -59,7 +59,7 @@ int MPIR_Gather (
     int curr_cnt=0, relative_rank, nbytes, is_homogeneous;
     int mask, sendtype_size, recvtype_size, src, dst, relative_src;
     int recvblks;
-    int tmp_buf_size, diff, i;
+    int tmp_buf_size, diff;
     void *tmp_buf=NULL;
     MPI_Status status;
     MPI_Aint   extent=0;            /* Datatype extent */
