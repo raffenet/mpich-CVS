@@ -42,6 +42,12 @@
   By explicitly completed, we mean that the request associated with the
   operation is completed by one of the MPI_TEST or MPI_WAIT routines.
 
+- The dllchan in the ch3 device is experimental and is very fragile.  For
+  example, you may encounter problems when configuring with --enable-g and 
+  --enable-g=log .  This is an "alpha test" of the dllchan; try it if you'd 
+  like, and let us know what does and does not work, but know that fixes will
+  probably wait for the next release.
+
 - C++ Binding:
   
   The MPI datatypes corresponding to Fortran datatypes are not available

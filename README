@@ -419,6 +419,12 @@ gforker, you can also use a commandline option to mpiexec; specify
 
     mpiexec -n 4 -channel=shm a.out
 
+There are known problems with this channel, particularly during the make step.
+You may find that some symbols are not found when loading the libraries.  
+If you want to try this experimental channel, please let us know what does
+and does not work.  The next release will have a more robust, 
+ready-for-production, version of this channel.
+
 
 The sshm (scalable shared memory) channel is not supported for
 1.0.6. The code has been retained to provide an example of some MPI-2
