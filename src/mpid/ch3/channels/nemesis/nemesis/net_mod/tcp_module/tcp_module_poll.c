@@ -190,7 +190,7 @@ MPID_nem_tcp_module_poll_recv( void )
                                     else if (errno != EAGAIN)
                                     {
                                         /* read() returned an error */
-                                        printf ("read (fd=%d buf=%p len=%d) grank=\n", nodes[grank].desc, /*DARIUS*/
+                                        printf ("read (fd=%d buf=%p len=%d) grank=%d\n", nodes[grank].desc, /*DARIUS*/
                                                 (pkt->mpich2.payload + MPID_NEM_OPT_SIZE), /*DARIUS*/
                                                 nodes[grank].left2read, grank); /*DARIUS*/
                                         MPIU_ERR_SETANDJUMP1 (mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror (errno));
