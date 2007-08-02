@@ -168,7 +168,7 @@ int MPIDI_CH3_PktHandler_RndvReqToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     int mpi_errno = MPI_SUCCESS;
     
     MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
- "received rndv RTS pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d, data_sz=%d",
+ "received rndv RTS pkt, sreq=0x%08x, rank=%d, tag=%d, context=%d, data_sz=" MPIDI_MSG_SZ_FMT,
 	      rts_pkt->sender_req_id, rts_pkt->match.rank, rts_pkt->match.tag, 
               rts_pkt->match.context_id, rts_pkt->data_sz));
     MPIU_DBG_MSGPKT(vc,rts_pkt->match.tag,rts_pkt->match.context_id,
