@@ -57,7 +57,7 @@ int main(int argc, char ** argv)
     errcode = MPI_File_open(MPI_COMM_WORLD, argv[1], 
 		MPI_MODE_RDONLY, info, &fh);
     if (errcode != MPI_SUCCESS) handle_error(errcode, "MPI_File_open");
-    errcode = MPI_File_read_at_all(fh, off, buffer, BUFSIZE, 
+    errcode = MPI_File_read_at_all(fh, off, buf2, BUFSIZE, 
 		MPI_INT,  &status);
     if (errcode != MPI_SUCCESS) handle_error(errcode, "MPI_File_read_at_all");
     errcode = MPI_File_close(&fh);
