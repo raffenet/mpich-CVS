@@ -17,6 +17,15 @@
 #include <assert.h>
 #endif
 
+#include "mpiimpl.h"
+
+#if !defined(MPICH_MPIDPRE_H_INCLUDED)
+#include "mpidpre.h"
+#endif
+
+/* Add the ch3 packet definitions */
+#include "mpidpkt.h"
+
 /* We need to match the size of MPI_Aint to the relevant Format control
  */
 #ifdef MPI_AINT_IS_LONG_INT
@@ -26,15 +35,6 @@
 #else
 #define MPIDI_MSG_SZ_FMT "%d"
 #endif
-
-#include "mpiimpl.h"
-
-#if !defined(MPICH_MPIDPRE_H_INCLUDED)
-#include "mpidpre.h"
-#endif
-
-/* Add the ch3 packet definitions */
-#include "mpidpkt.h"
 
 #if !defined(MPIDI_IOV_DENSITY_MIN)
 #   define MPIDI_IOV_DENSITY_MIN (16 * 1024)
