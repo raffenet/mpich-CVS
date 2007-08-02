@@ -1703,16 +1703,16 @@ int MPIDI_CH3_PktPrint_EagerSyncAck( FILE *fp, MPIDI_CH3_Pkt_t *pkt );
 /* Routines to create packets (used in implementing MPI communications */
 int MPIDI_CH3_EagerNoncontigSend( MPID_Request **, MPIDI_CH3_Pkt_type_t, 
 				  const void *, int, 
-				  MPI_Datatype, int, int, int, MPID_Comm *, 
+				  MPI_Datatype, MPIDI_msg_sz_t, int, int, MPID_Comm *, 
 				  int );
 int MPIDI_CH3_EagerContigSend( MPID_Request **, MPIDI_CH3_Pkt_type_t, 
-			       const void *, int, int, 
+			       const void *, MPIDI_msg_sz_t, int, 
 			       int, MPID_Comm *, int );
 int MPIDI_CH3_EagerContigShortSend( MPID_Request **, MPIDI_CH3_Pkt_type_t, 
-				    const void *, int, 
+				    const void *, MPIDI_msg_sz_t, 
 				    int, int, MPID_Comm *, int );
 int MPIDI_CH3_EagerContigIsend( MPID_Request **, MPIDI_CH3_Pkt_type_t, 
-				const void *, int, int, 
+				const void *, MPIDI_msg_sz_t, int, 
 				int, MPID_Comm *, int );
 
 
@@ -1720,7 +1720,7 @@ int MPIDI_CH3_RndvSend( MPID_Request **, const void *, int, MPI_Datatype,
 			int, MPIDI_msg_sz_t, MPI_Aint, int, int, MPID_Comm *, int );
 
 int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **, const void *, int, 
-				      MPI_Datatype, int, int, MPI_Aint,
+				      MPI_Datatype, MPIDI_msg_sz_t, int, MPI_Aint,
 				      int, int, MPID_Comm *, int );
 int MPIDI_CH3_EagerSyncZero(MPID_Request **, int, int, MPID_Comm *, int );
 

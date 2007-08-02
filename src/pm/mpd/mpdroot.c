@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include "mpdroot.h"
 
+int snprintf(char *str, size_t size, const char *format, ...);
+
 int main(int argc, char *argv[])
 {
     int rc, sock;

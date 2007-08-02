@@ -27,7 +27,7 @@
 */
 int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **sreq_p, 
 				      const void * buf, int count, 
-				      MPI_Datatype datatype, int data_sz, 
+				      MPI_Datatype datatype, MPIDI_msg_sz_t data_sz, 
 				      int dt_contig, MPI_Aint dt_true_lb,
 				      int rank, 
 				      int tag, MPID_Comm * comm, 
@@ -135,7 +135,7 @@ int MPIDI_CH3_EagerSyncZero(MPID_Request **sreq_p, int rank, int tag,
     MPIDI_Pkt_set_seqnum(es_pkt, seqnum);
     MPIDI_Request_set_seqnum(sreq, seqnum);
     
-    MPIU_DBG_MSGPKT(vc,tag,es_pkt->match.context_id,rank,0,"EagerSync0");
+    MPIU_DBG_MSGPKT(vc,tag,es_pkt->match.context_id,rank,(MPIDI_msg_sz_t)0,"EagerSync0");
     mpi_errno = MPIU_CALL(MPIDI_CH3,iSend(vc, sreq, es_pkt, sizeof(*es_pkt)));
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
