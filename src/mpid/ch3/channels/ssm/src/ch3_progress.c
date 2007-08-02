@@ -1199,4 +1199,5 @@ int MPIDI_CH3U_Finalize_ssm_memory( void )
 	MPIDI_CH3I_SHM_Release_mem(&vcch->shm_write_queue_info);
 	MPIDI_CH3I_Process.shm_writing_list = vcch->shm_next_writer;
     }
+    return 0;
 }
