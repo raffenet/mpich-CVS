@@ -135,6 +135,11 @@ sub ConvertToF90 {
         if (/^CF90/) {
 	    s/^CF90/    /;
 	}
+	# Since we use interface statements for the error handlers,
+	# remove their external declaration
+	if (/^\s+external myerrhanfunc/) {
+	    s/^\s/!/;
+	}
 	if ($convertToNewComments) {
 	    s/^C/!/;
 	    s/^c/!/;
