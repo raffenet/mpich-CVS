@@ -690,7 +690,6 @@ int MPIDU_Sock_wakeup(struct MPIDU_Sock_set * sock_set)
     MPIU_THREAD_CHECK_END
 #   endif
     
-  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAKEUP);
     return mpi_errno;
 }

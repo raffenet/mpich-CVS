@@ -4,10 +4,12 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpidu_process_locks.h"
+#include "mpidimpl.h"
 
 #ifdef USE_PROCESS_LOCKS
 
 #include <errno.h>
+#include <string.h>
 #ifdef HAVE_WINDOWS_H
 #include <winsock2.h>
 #include <windows.h>

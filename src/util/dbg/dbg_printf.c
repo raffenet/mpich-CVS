@@ -722,8 +722,8 @@ static int MPIU_DBG_OpenFile( void )
 	withinMthread = 0;        /* True if within an @T...@ */
     /* FIXME: Need to know how many MPI_COMM_WORLDs are known */
     int nWorld = 1;
-    int threadID = 0;
 #ifdef MPICH_IS_THREADED
+    int threadID = 0;
     int nThread = 2;
 #else
     int nThread = 1;

@@ -383,7 +383,6 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     }
 #endif
 
-fn_exit:
     if (val != NULL)
     { 
 	MPIU_Free(val);

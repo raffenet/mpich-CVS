@@ -307,7 +307,10 @@ int MPIDI_CH3I_Shm_connect(MPIDI_VC_t *vc, const char *business_card, int *flag)
 #endif
 
     return MPI_SUCCESS;
+
+#ifdef HAVE_SHARED_PROCESS_READ
  fn_fail:
+#endif
     MPIDI_CH3I_SHM_Unlink_mem(&vcch->shm_write_queue_info);
     MPIDI_CH3I_SHM_Release_mem(&vcch->shm_write_queue_info);
     *flag = FALSE;
@@ -322,12 +325,13 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
     char val[MPIDI_MAX_KVS_VALUE_LEN];
+#if 0
     char host_description[MAX_HOST_DESCRIPTION_LEN];
     int port;
     MPIDU_Sock_ifaddr_t ifaddr;
     int hasIfaddr = 0;
-    int rc;
     MPIDI_CH3I_Connection_t * conn;
+#endif
     MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
     int connected;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_CONNECT);

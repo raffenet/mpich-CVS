@@ -233,7 +233,7 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			    /* --END ERROR HANDLING-- */
 
 			    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
-    (MPIU_DBG_FDEST,"immediate readv, vc=%p nb=%d, rreq=0x%08x",
+    (MPIU_DBG_FDEST,"immediate readv, vc=%p nb=" MPIDI_MSG_SZ_FMT ", rreq=0x%08x",
      conn->vc, nb, rreq->handle));
 
 			    if (nb > 0 && adjust_iov(&iovp, &rreq->dev.iov_count, nb))
@@ -324,8 +324,8 @@ int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			    /* --END ERROR HANDLING-- */
 
 			    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,
-        (MPIU_DBG_FDEST,"immediate readv, vc=%p nb=%d, rreq=0x%08x",
-	 conn->vc, rreq->handle, nb));
+        (MPIU_DBG_FDEST,"immediate readv, vc=%p nb=" MPIDI_MSG_SZ_FMT ", rreq=0x%08x",
+	 conn->vc, nb, rreq->handle));
 				
 			    if (nb > 0 && adjust_iov(&iovp, &rreq->dev.iov_count, nb))
 			    {

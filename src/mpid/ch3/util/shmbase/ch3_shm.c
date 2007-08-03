@@ -858,7 +858,9 @@ int MPIDI_CH3I_SHM_read_progress(MPIDI_VC_t *vc, int millisecond_timeout,
     MPIDI_CH3I_SHM_Packet_t *pkt_ptr;
     MPIDI_CH3I_SHM_Queue_t *shm_ptr;
     register int index, working;
+#ifndef MPIDI_CH3_SHM_SCALABLE_READQUEUES
     int i;
+#endif
 #ifdef MPIDI_CH3_CHANNEL_RNDV
     MPID_Request *sreq, *rreq;
     int complete;

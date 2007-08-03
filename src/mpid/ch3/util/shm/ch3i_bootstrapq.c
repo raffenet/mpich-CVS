@@ -4,6 +4,9 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpidi_ch3_impl.h"
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 
 #ifdef HAVE_WINDOWS_H
 #include <winsock2.h>

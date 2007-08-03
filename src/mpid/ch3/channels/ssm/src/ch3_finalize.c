@@ -5,6 +5,7 @@
  */
 
 #include "mpidi_ch3_impl.h"
+#include "ch3i_progress.h"
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Finalize

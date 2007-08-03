@@ -1024,7 +1024,6 @@ void MPIDI_CH3_Progress_end(MPID_Progress_state *state)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Progress_init()
 {
-    MPIDU_Sock_t sock;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
 
@@ -1081,7 +1080,6 @@ int MPIDI_CH3I_Progress_init()
 int MPIDI_CH3I_Progress_finalize()
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Progress_state progress_state;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
@@ -1103,7 +1101,6 @@ int MPIDI_CH3I_Progress_finalize()
 #   endif
     */
 
-fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
     return mpi_errno;
 }

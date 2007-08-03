@@ -30,7 +30,6 @@ int MPIDI_CH3U_Get_business_card_sshm(char **bc_val_p, int *val_max_sz_p)
 {
     char queue_name[100];
     int mpi_errno;
-    MPIDI_PG_t * pg = MPIDI_Process.my_pg;
     MPIDI_CH3I_PG *pgch = 
 	(MPIDI_CH3I_PG *)MPIDI_Process.my_pg->channel_private;
 #ifdef HAVE_SHARED_PROCESS_READ

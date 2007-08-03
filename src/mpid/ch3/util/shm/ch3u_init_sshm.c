@@ -45,7 +45,7 @@ int MPIDI_CH3U_Init_sshm(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 #ifdef USE_MQSHM
     char queue_name[MPIDI_MAX_SHM_NAME_LENGTH];
     int initialize_queue = 0;
-    int root_rank;
+    int root_rank = 0;
 #endif
     int key_max_sz;
     int val_max_sz;
