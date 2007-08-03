@@ -70,7 +70,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr,
 		if (nb == hdr_sz)
 		{
 		    MPIU_DBG_MSG_D(CH3_CHANNEL,VERBOSE,
-                     "write complete %d bytes, calling OnDataAvail fcn", nb);
+                     "write complete " MPIDI_MSG_SZ_FMT " bytes, calling OnDataAvail fcn", nb);
 		    reqFn = sreq->dev.OnDataAvail;
 		    if (!reqFn) {
 			MPIU_Assert(MPIDI_Request_get_type(sreq)!=MPIDI_REQUEST_TYPE_GET_RESP);
@@ -103,7 +103,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr,
 		else
 		{
 		    MPIU_DBG_MSG_D(CH3_CHANNEL,VERBOSE,
-                     "partial write of %d bytes, request enqueued at head", nb);
+                     "partial write of " MPIDI_MSG_SZ_FMT " bytes, request enqueued at head", nb);
 		    update_request(sreq, hdr, hdr_sz, nb);
 		    MPIDI_CH3I_SendQ_enqueue_head(vcch, sreq);
 		    MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,

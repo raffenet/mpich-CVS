@@ -92,13 +92,13 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz,
 		if (nb == hdr_sz)
 		{ 
 		    MPIU_DBG_MSG_D(CH3_CHANNEL,VERBOSE,
-				   "entire write complete, %d bytes", nb);
+				   "entire write complete, " MPIDI_MSG_SZ_FMT " bytes", nb);
 		    /* done.  get us out of here as quickly as possible. */
 		}
 		else
 		{
 		    MPIU_DBG_MSG_D(CH3_CHANNEL,VERBOSE,
-                    "partial write of %d bytes, request enqueued at head", nb);
+                    "partial write of " MPIDI_MSG_SZ_FMT " bytes, request enqueued at head", nb);
 		    sreq = create_request(hdr, hdr_sz, nb);
 		    if (!sreq) {
 			MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
