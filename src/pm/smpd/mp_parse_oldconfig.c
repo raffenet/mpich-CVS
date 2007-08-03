@@ -426,13 +426,11 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 				g_pHosts = dummy.next;
 				
 				fclose(fin);
-				if (mktemp(temp_filename) == NULL)
+				if ((fout = mkstemp(temp_filename)) < 0)
 				{
 				    smpd_exit_fn(FCNAME);
 				    return SMPD_FAIL;
 				}
-				strncpy(configfilename, temp_filename, length);
-				fout = fopen(configfilename, "w");
 				/*printf("printing output to <%s>\n", configfilename);*/
 				print_configfile(fout);
 				fclose(fout);
@@ -447,14 +445,12 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 	}
     }
     fclose(fin);
-    if (mktemp(temp_filename) == NULL)
+    if ((fout = mkstemp(temp_filename)) < 0)
     {
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    strncpy(configfilename, temp_filename, length);
     /*printf("printing output to <%s>\n", configfilename);*/
-    fout = fopen(configfilename, "w");
     print_configfile(fout);
     fclose(fout);
     cleanup();
