@@ -3254,6 +3254,8 @@ Sub AddDefinitions( fout, filename, b64 )
 					fout.WriteLine("#undef HAVE_UTIL_SHM")
 				Case "HAVE_UTIL_SOCK"
 					fout.WriteLine("#undef HAVE_UTIL_SOCK")
+				Case "MPI_AINT_IS_INT"
+					fout.WriteLine("#define MPI_AINT_IS_INT 1")
 				Case "MPI_AINT_IS_LONG_INT"
 					fout.WriteLine("#define MPI_AINT_IS_LONG_INT 1")
 				Case "MPI_AINT_IS_LONG_LONG_INT"
