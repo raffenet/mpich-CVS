@@ -98,6 +98,7 @@ extern const char *const CONN_STATE_STR[];
 #undef M_
 
 
+/* IMPORTANT: This macro should not be called for listening socket fd's */
 #define CHANGE_STATE(_sc, _state) do { \
     (_sc)->state.cstate = _state; \
     (_sc)->handler = sc_state_info[_state].sc_state_handler; \
@@ -130,8 +131,10 @@ struct MPID_nem_new_tcp_module_sockconn{
     handler_func_t handler;
     sockconn_event_t pending_event;
 
+    /* @san Doesn't seem necessary
     sockconn_t *g_sc_tbl;
     pollfd_t *g_plfd_tbl;
+    */
 };
 
 typedef enum MPIDI_nem_newtcp_module_pkt_type {
