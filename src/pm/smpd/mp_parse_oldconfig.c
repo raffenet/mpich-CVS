@@ -37,6 +37,20 @@ static int g_nHosts;
 
 #ifdef HAVE_WINDOWS_H
 #undef FCNAME
+#define FCNAME "mkstemp"
+int mkstemp(char *template)
+{
+    FILE *fout;
+    int fd=-1;
+    if(mktemp(template) != NULL){
+        if((fout = fopen(template, "w")) != NULL){
+            fd = fileno(fout);
+        }
+    }
+    return fd;
+}
+
+#undef FCNAME
 #define FCNAME "ExeToUnc"
 static void ExeToUnc(char *pszExe, int length)
 {
@@ -286,6 +300,7 @@ static void cleanup()
 int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 {
     FILE *fin, *fout;
+    int fd;
     char buffer[1024] = "";
     char temp_filename[256] = "tmpXXXXXX";
 
@@ -426,12 +441,18 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 				g_pHosts = dummy.next;
 				
 				fclose(fin);
-				if ((fout = mkstemp(temp_filename)) < 0)
+				if ((fd = mkstemp(temp_filename)) < 0)
 				{
 				    smpd_exit_fn(FCNAME);
 				    return SMPD_FAIL;
 				}
 				/*printf("printing output to <%s>\n", configfilename);*/
+				strncpy(configfilename, temp_filename, length);
+                if((fout = fdopen(fd, "w")) == NULL)
+                {
+				    smpd_exit_fn(FCNAME);
+				    return SMPD_FAIL;
+                }
 				print_configfile(fout);
 				fclose(fout);
 				cleanup();
@@ -445,12 +466,18 @@ int mp_parse_mpich1_configfile(char *filename, char *configfilename, int length)
 	}
     }
     fclose(fin);
-    if ((fout = mkstemp(temp_filename)) < 0)
+    if ((fd = mkstemp(temp_filename)) < 0)
     {
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
     /*printf("printing output to <%s>\n", configfilename);*/
+	strncpy(configfilename, temp_filename, length);
+    if((fout = fdopen(fd, "w")) == NULL)
+    {
+	smpd_exit_fn(FCNAME);
+	return SMPD_FAIL;
+    }
     print_configfile(fout);
     fclose(fout);
     cleanup();
