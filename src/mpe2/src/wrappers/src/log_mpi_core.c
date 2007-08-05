@@ -404,9 +404,7 @@ void MPE_Req_wait_test( MPI_Request, MPI_Status *, char *, MPE_State *,
     register       MPE_Event       *solo_event;
 #endif
 
-extern MPEU_DLL_SPEC       CLOG_CommSet_t  *CLOG_CommSet;
-extern               const CLOG_CommIDs_t  *CLOG_CommIDs4Self;
-extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
+extern MPEU_DLL_SPEC CLOG_CommSet_t  *CLOG_CommSet;
 
 /*
    All following macros have "comm" as argument, but none of them except
@@ -471,6 +469,7 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
     MPE_Req_wait_test( request, status, note, state, THREADID, IS_MPELOG_ON );
 
 /*    if (is_mpilog_on && IS_MPELOG_ON && state->is_active) { \ */
+/* Update commIDs after CLOG_CommSet_add_intracomm because of realloc() */
 #define MPE_LOG_INTRACOMM(comm,new_comm,comm_etype) \
     if (is_thisfn_logged) { \
         if ( new_comm != MPI_COMM_NULL ) { \
@@ -478,6 +477,7 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
             new_commIDs = CLOG_CommSet_add_intracomm( CLOG_CommSet, \
                                                       new_comm ); \
             IS_MPELOG_ON = 1; \
+            commIDs = CLOG_CommSet_get_IDs( CLOG_CommSet, comm ); \
             MPE_Log_commIDs_intracomm( commIDs, THREADID, \
                                        comm_etype, new_commIDs ); \
             MPE_LOG_SOLO_EVENT( new_commIDs, THREADID, MPE_COMM_INIT_ID ) \
@@ -489,6 +489,7 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
     }
 
 /*    if (is_mpilog_on && IS_MPELOG_ON && state->is_active) { \ */
+/* Update commIDs after CLOG_CommSet_add_intercomm because of realloc() */
 #define MPE_LOG_INTERCOMM(comm,new_comm,comm_etype) \
     if (is_thisfn_logged) { \
         if ( new_comm != MPI_COMM_NULL ) { \
@@ -496,6 +497,7 @@ extern MPEU_DLL_SPEC const CLOG_CommIDs_t  *CLOG_CommIDs4World;
             new_commIDs = CLOG_CommSet_add_intercomm( CLOG_CommSet, \
                                                       new_comm, commIDs ); \
             IS_MPELOG_ON = 1; \
+            commIDs = CLOG_CommSet_get_IDs( CLOG_CommSet, comm ); \
             MPE_Log_commIDs_intercomm( commIDs, THREADID, \
                                        comm_etype, new_commIDs ); \
             MPE_LOG_SOLO_EVENT( new_commIDs, THREADID, MPE_COMM_INIT_ID ) \
@@ -3387,7 +3389,7 @@ int  MPI_Finalize( )
     MPE_LOG_THREAD_LOCK
 
     is_thisfn_logged  = 1;
-    MPE_LOG_SOLO_EVENT( CLOG_CommIDs4World, THREADID, MPE_COMM_FINALIZE_ID )
+    MPE_LOG_SOLO_EVENT( CLOG_CommSet->IDs4world, THREADID, MPE_COMM_FINALIZE_ID )
 
 #if defined( MAKE_SAFE_PMPI_CALL )
     MPE_LOG_OFF
@@ -3409,7 +3411,7 @@ int  MPI_Finalize( )
         for ( idx = 0; idx < MPE_MAX_KNOWN_STATES; idx++ ) {
             if (state_total[idx] > 0) {
                 state  = &states[idx];
-                MPE_Describe_known_state( CLOG_CommIDs4World, THREADID,
+                MPE_Describe_known_state( CLOG_CommSet->IDs4world, THREADID,
                                           state->stateID,
                                           state->start_evtID,
                                           state->final_evtID, 
@@ -3420,7 +3422,7 @@ int  MPI_Finalize( )
         for ( idx = 0; idx < MPE_MAX_KNOWN_EVENTS; idx++ ) {
             if (event_total[idx] > 0) {
                 event  = &events[idx];
-                MPE_Describe_known_event( CLOG_CommIDs4World, THREADID,
+                MPE_Describe_known_event( CLOG_CommSet->IDs4world, THREADID,
                                           event->eventID,
                                           event->name, event->color,
                                           NULL );
@@ -3534,7 +3536,7 @@ char  ***argv;
     is_mpilog_on = 1;
     IS_MPELOG_ON = 1;
 
-    MPE_LOG_SOLO_EVENT( CLOG_CommIDs4World, THREADID, MPE_COMM_INIT_ID )
+    MPE_LOG_SOLO_EVENT( CLOG_CommSet->IDs4world, THREADID, MPE_COMM_INIT_ID )
     MPE_LOG_THREAD_UNLOCK
 
     return returnVal;
@@ -3588,7 +3590,7 @@ int    *provided;
     is_mpilog_on = 1;
     IS_MPELOG_ON = 1;
 
-    MPE_LOG_SOLO_EVENT( CLOG_CommIDs4World, THREADID, MPE_COMM_INIT_ID )
+    MPE_LOG_SOLO_EVENT( CLOG_CommSet->IDs4world, THREADID, MPE_COMM_INIT_ID )
     MPE_LOG_THREAD_UNLOCK
 
     return returnVal;

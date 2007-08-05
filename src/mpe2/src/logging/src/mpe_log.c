@@ -40,14 +40,12 @@
 #include "mpiprof.h"
 #endif
 
-extern CLOG_Uuid_t    CLOG_UUID_NULL;
+extern               CLOG_Uuid_t     CLOG_UUID_NULL;
 
 /* Global variables for MPE logging */
                     CLOG_Stream_t  *CLOG_Stream            = NULL;
                     CLOG_Buffer_t  *CLOG_Buffer            = NULL;
 MPEU_DLL_SPEC       CLOG_CommSet_t *CLOG_CommSet           = NULL;
-              const CLOG_CommIDs_t *CLOG_CommIDs4Self            ;
-MPEU_DLL_SPEC const CLOG_CommIDs_t *CLOG_CommIDs4World           ;
                     int             MPE_Log_hasBeenInit    = 0;
                     int             MPE_Log_hasBeenClosed  = 0;
 
@@ -93,29 +91,25 @@ int MPE_Init_log( void )
         CLOG_Local_init( CLOG_Stream, NULL );
         CLOG_Buffer     = CLOG_Stream->buffer;
         CLOG_CommSet    = CLOG_Buffer->commset;
-        CLOG_CommIDs4World  = CLOG_CommSet_get_IDs( CLOG_CommSet,
-                                                    MPI_COMM_WORLD );
-        MPE_Log_commIDs_intracomm( CLOG_CommIDs4World, 0,
+        MPE_Log_commIDs_intracomm( CLOG_CommSet->IDs4world, 0,
                                    CLOG_COMM_WORLD_CREATE,
-                                   CLOG_CommIDs4World );
-        CLOG_CommIDs4Self   = CLOG_CommSet_get_IDs( CLOG_CommSet,
-                                                    MPI_COMM_SELF );
-        MPE_Log_commIDs_intracomm( CLOG_CommIDs4World, 0,
+                                   CLOG_CommSet->IDs4world );
+        MPE_Log_commIDs_intracomm( CLOG_CommSet->IDs4world, 0,
                                    CLOG_COMM_SELF_CREATE,
-                                   CLOG_CommIDs4Self );
+                                   CLOG_CommSet->IDs4self );
 #if !defined( CLOG_NOMPI )
         /*
            Leave these on so the clog2 file can be distinguished
            if real MPI(i.e. non serial-MPI) is used or not.
         */
         if ( CLOG_Buffer->world_rank == 0 ) {
-            CLOG_Buffer_save_constdef( CLOG_Buffer, CLOG_CommIDs4World, 0,
+            CLOG_Buffer_save_constdef( CLOG_Buffer, CLOG_CommSet->IDs4world, 0,
                                        CLOG_EVT_CONST,
                                        MPI_PROC_NULL, "MPI_PROC_NULL" );
-            CLOG_Buffer_save_constdef( CLOG_Buffer, CLOG_CommIDs4World, 0,
+            CLOG_Buffer_save_constdef( CLOG_Buffer, CLOG_CommSet->IDs4world, 0,
                                        CLOG_EVT_CONST,
                                        MPI_ANY_SOURCE, "MPI_ANY_SOURCE" );
-            CLOG_Buffer_save_constdef( CLOG_Buffer, CLOG_CommIDs4World, 0,
+            CLOG_Buffer_save_constdef( CLOG_Buffer, CLOG_CommSet->IDs4world, 0,
                                        CLOG_EVT_CONST,
                                        MPI_ANY_TAG, "MPI_ANY_TAG" );
         }
@@ -670,7 +664,7 @@ int MPE_Log_comm_send( MPI_Comm comm, int local_thread,
 @*/
 int MPE_Log_send( int other_party, int tag, int size )
 {
-    return MPE_Log_commIDs_send( CLOG_CommIDs4World, 0,
+    return MPE_Log_commIDs_send( CLOG_CommSet->IDs4world, 0,
                                  other_party, tag, size );
 }
 
@@ -714,7 +708,7 @@ int MPE_Log_comm_receive( MPI_Comm comm, int local_thread,
 @*/
 int MPE_Log_receive( int other_party, int tag, int size )
 {
-    return MPE_Log_commIDs_receive( CLOG_CommIDs4World, 0,
+    return MPE_Log_commIDs_receive( CLOG_CommSet->IDs4world, 0,
                                     other_party, tag, size );
 }
 
@@ -866,7 +860,7 @@ int MPE_Log_comm_event( MPI_Comm comm, int local_thread,
 @*/
 int MPE_Log_event( int event, int data, const char *bytebuf )
 {
-    return MPE_Log_commIDs_event( CLOG_CommIDs4World, 0, event, bytebuf );
+    return MPE_Log_commIDs_event( CLOG_CommSet->IDs4world, 0, event, bytebuf );
 }
 
 /*@
@@ -880,7 +874,7 @@ int MPE_Log_event( int event, int data, const char *bytebuf )
 @*/
 int MPE_Log_bare_event( int event )
 {
-    CLOG_Buffer_save_bareevt( CLOG_Buffer, CLOG_CommIDs4World, 0,
+    CLOG_Buffer_save_bareevt( CLOG_Buffer, CLOG_CommSet->IDs4world, 0,
                               event );
     return MPE_LOG_OK;
 }
@@ -898,7 +892,7 @@ int MPE_Log_bare_event( int event )
 @*/
 int MPE_Log_info_event( int event, const char *bytebuf )
 {
-    CLOG_Buffer_save_cargoevt( CLOG_Buffer, CLOG_CommIDs4World, 0,
+    CLOG_Buffer_save_cargoevt( CLOG_Buffer, CLOG_CommSet->IDs4world, 0,
                                event, bytebuf );
     return MPE_LOG_OK;
 }
