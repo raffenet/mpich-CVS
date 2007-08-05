@@ -17,18 +17,6 @@
  * variables and/or command-line options.
  */
 
-/* We need to match the size of MPI_Aint to the relevant Format control
- */
-#ifdef MPI_AINT_IS_LONG_INT
-#define MPIDI_MSG_SZ_FMT "%ld"
-#elif defined(MPI_AINT_IS_LONG_LONG_INT)
-#define MPIDI_MSG_SZ_FMT "%lld"
-#elif defined(MPI_AINT_IS_INT)
-#define MPIDI_MSG_SZ_FMT "%d"
-#else
-#error "Configuration file is missing"
-#endif
-
 #ifdef USE_DBG_LOGGING
 #define MPIU_DBG_SELECTED(_class,_level) \
    ((MPIU_DBG_##_class & MPIU_DBG_ActiveClasses) && \
