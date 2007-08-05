@@ -28,8 +28,10 @@ nonblocking I/O in ROMIO.
 and communication) through in-built loop-unrolling and buffer
 alignment.
 
-- Performance improvements for MPI_Gather when non-power of 2
+- Performance improvements for MPI_Gather when non-power-of-two
 processes are used, and when a non-zero root is performing the gather.
+
+- MPI_Comm_create works for intercommunicators
 
 - Many other bug fixes, memory leak fixes and code cleanup. A full
 list of changes is available at
