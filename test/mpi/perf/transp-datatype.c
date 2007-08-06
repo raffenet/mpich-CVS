@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 #define SIZE 100
-#define ITER 50
+#define ITER 100
 
 int main(int argc, char* argv[])
 {
