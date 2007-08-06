@@ -468,8 +468,12 @@ extern MPEU_DLL_SPEC CLOG_CommSet_t  *CLOG_CommSet;
 #define MPE_REQ_WAIT_TEST(request,status,note) \
     MPE_Req_wait_test( request, status, note, state, THREADID, IS_MPELOG_ON );
 
+/*
+   Update commIDs after CLOG_CommSet_add_intracomm() which may have invoked
+   realloc() on CLOG_CommSet's table[] of commIDs, because invocation
+   of realloc() may invalidate all commIDs handed out by CLOG_CommSet.
+*/
 /*    if (is_mpilog_on && IS_MPELOG_ON && state->is_active) { \ */
-/* Update commIDs after CLOG_CommSet_add_intracomm because of realloc() */
 #define MPE_LOG_INTRACOMM(comm,new_comm,comm_etype) \
     if (is_thisfn_logged) { \
         if ( new_comm != MPI_COMM_NULL ) { \
@@ -488,8 +492,12 @@ extern MPEU_DLL_SPEC CLOG_CommSet_t  *CLOG_CommSet;
         } \
     }
 
+/*
+   Update commIDs after CLOG_CommSet_add_intercomm() which may have invoked
+   realloc() on CLOG_CommSet's table[] of commIDs, because invocation
+   of realloc() may invalidate all commIDs handed out by CLOG_CommSet.
+*/
 /*    if (is_mpilog_on && IS_MPELOG_ON && state->is_active) { \ */
-/* Update commIDs after CLOG_CommSet_add_intercomm because of realloc() */
 #define MPE_LOG_INTERCOMM(comm,new_comm,comm_etype) \
     if (is_thisfn_logged) { \
         if ( new_comm != MPI_COMM_NULL ) { \
