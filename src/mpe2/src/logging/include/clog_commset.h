@@ -35,7 +35,7 @@ typedef int          CLOG_ThreadLID_t
 #define CLOG_COMM_KIND_REMOTE     3    /* is remote intracommunicator */
 
 /* Some CLOG communicator internal constant */
-#define CLOG_COMM_TABLE_INCRE     10
+#define CLOG_COMM_TABLE_INCRE     2
 #define CLOG_COMM_LID_NULL       -999999999
 #define CLOG_COMM_RANK_NULL      -1
 #define CLOG_COMM_WRANK_NULL     -1
@@ -75,6 +75,8 @@ typedef struct {
     unsigned int        max;
     CLOG_CommLID_t      count;
     CLOG_CommIDs_t     *table;
+    CLOG_CommIDs_t     *IDs4world;
+    CLOG_CommIDs_t     *IDs4self;
 } CLOG_CommSet_t;
 
 CLOG_CommSet_t* CLOG_CommSet_create( void );
@@ -102,7 +104,7 @@ const CLOG_CommIDs_t* CLOG_CommSet_add_intracomm( CLOG_CommSet_t *commset,
 const CLOG_CommIDs_t*
 CLOG_CommSet_add_intercomm(       CLOG_CommSet_t *commset,
                                   MPI_Comm        intercomm,
-                            const CLOG_CommIDs_t *orig_intracommIDs );
+                            const CLOG_CommIDs_t *intracommIDs );
 
 CLOG_CommLID_t CLOG_CommSet_get_LID( CLOG_CommSet_t *commset, MPI_Comm comm );
 
