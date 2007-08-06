@@ -35,7 +35,7 @@ typedef int          CLOG_ThreadLID_t
 #define CLOG_COMM_KIND_REMOTE     3    /* is remote intracommunicator */
 
 /* Some CLOG communicator internal constant */
-#define CLOG_COMM_TABLE_INCRE     2
+#define CLOG_COMM_TABLE_INCRE     10
 #define CLOG_COMM_LID_NULL       -999999999
 #define CLOG_COMM_RANK_NULL      -1
 #define CLOG_COMM_WRANK_NULL     -1
