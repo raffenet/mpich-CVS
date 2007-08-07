@@ -4,11 +4,11 @@
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpidi_ch3_impl.h"
-#include <sys/types.h>
-#include <sys/msg.h>
 
 #ifdef USE_SINGLE_MSG_QUEUE
 #include <sys/ipc.h>
+#include <sys/types.h>
+#include <sys/msg.h>
 #endif
 
 #ifdef HAVE_WINDOWS_H
