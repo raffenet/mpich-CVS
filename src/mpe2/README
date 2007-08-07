@@ -198,9 +198,12 @@ MPE_Describe_state( eventID_begin, eventID_end, "Multiplication", "red" );
 ...
 MyAmult( Matrix m, Vector v )
 {
-    /* Log the start event along with the size of the matrix */
+    /* Log the start event of the red "Multiplication" state */
     MPE_Log_event( eventID_begin, 0, NULL );
+    ...
     ... Amult code, including MPI calls ...
+    ...
+    /* Log the end event of the red "Multiplication" state */
     MPE_Log_event( eventID_end, 0, NULL );
 }
 
