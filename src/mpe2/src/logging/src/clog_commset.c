@@ -75,6 +75,13 @@ CLOG_CommSet_t* CLOG_CommSet_create( void )
         fflush( stderr );
         return NULL;
     }
+    /*
+       memset() to set all alignment space in commset->table.
+       This is done to keep valgrind happy on 64bit machine.
+    */
+    memset( commset->table, 0, table_size );
+
+    /* Initialize */
     commset->IDs4world = &(commset->table[0]);
     commset->IDs4self  = &(commset->table[1]);
 
@@ -104,10 +111,12 @@ CLOG_CommIDs_t* CLOG_CommSet_get_new_IDs( CLOG_CommSet_t *commset, int num_IDs )
     CLOG_CommIDs_t  *new_table;
     CLOG_CommIDs_t  *new_entry;
     int              new_size;
+    int              old_size, old_max;
     int              idx;
 
     /* Enlarge the CLOG_CommSet_t.table if necessary */
     if ( commset->count + num_IDs > commset->max ) {
+        old_max    = commset->max;
         do {
             commset->max += CLOG_COMM_TABLE_INCRE;
         } while ( commset->count + num_IDs > commset->max );
@@ -120,6 +129,10 @@ CLOG_CommIDs_t* CLOG_CommSet_get_new_IDs( CLOG_CommSet_t *commset, int num_IDs )
             fflush( stderr );
             CLOG_Util_abort( 1 );
         }
+        /* memset() newly allocated data to keep valgrind happy on 64bit box */
+        old_size   = old_max * sizeof(CLOG_CommIDs_t);
+        memset( &(new_table[old_max]), 0, new_size - old_size );
+
         commset->table     = new_table;
         /* Update commset->IDs4xxxx after successfully REALLOC() */
         commset->IDs4world = &(commset->table[0]);
@@ -544,6 +557,11 @@ void CLOG_CommSet_merge( CLOG_CommSet_t *commset )
         fflush( stderr );
         CLOG_Util_abort( 1 );
     }
+    /*
+       memset() to set all alignment space in commset->table.
+       This is done to keep valgrind happy on 64bit machine.
+       memset( recv_table, 0, recv_table_size );
+    */
 
     if ( comm_world_rank == 0 )
         memcpy( recv_table, commset->table, recv_table_size );
