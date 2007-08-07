@@ -1647,11 +1647,11 @@ AC_CHECK_FUNCS(statvfs,
 #ifdef HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
 #endif
-	], [
+	], [[
 	struct statvfs foo;
 
-	foo.f_basetype = NULL;
-	],
+	foo.f_basetype[0] = 'a';
+	]],
 	AC_MSG_RESULT(yes)
 	AC_DEFINE(ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE, 1, defined if struct statvfs has a f_basetype member),
 	AC_MSG_RESULT(no)
