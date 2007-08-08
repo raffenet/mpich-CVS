@@ -456,7 +456,10 @@ class MPDMan(object):
                                   'cli_rank' : self.myRank }
                     if self.myRank == 0:
                         if self.conSock:
-                            self.conSock.send_dict_msg(msgToSend)
+                            try:
+                                self.conSock.send_dict_msg(msgToSend)
+                            except:
+                                pass
                     else:
                         if self.ring.rhsSock:
                             self.ring.rhsSock.send_dict_msg(msgToSend)
