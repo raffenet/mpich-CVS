@@ -654,6 +654,7 @@ EOF
 	if test "$ac_cv_prog_f77_cross" != "yes" ; then
 	    if ./conftest >/dev/null 2>&1 ; then
 		found_answer="yes"
+		pac_cv_prog_f77_cmdarg="GETARG adn IARGC"
 	        FXX_MODULE="$fxx_module"
 		F77_GETARGDECL="$f77_getargdecl"
 		F77_GETARG="$f77_getarg"
@@ -817,28 +818,35 @@ $flag"
 	   F77_IARGC="iargc()"
 	   MSG="getarg and iargc"
 	   ;;
-	3) # Posix alternative
+	3) # Fortran 2003
+	   FXX_MODULE=""
+	   F77_GETARGDECL="intrinsic get_command_argument"
+	   F77_GETARG="call get_command_argument(i,s)"
+	   F77_IARGC="command_argument_count()"
+	   MSG="get_command_argument and command_argument_count"
+	   ;;
+	4) # Posix alternative
 	   FXX_MODULE=""
 	   F77_GETARGDECL="external pxfgetarg"
 	   F77_GETARG="call pxfgetarg(i,s,l,ier)"
 	   F77_IARGC="ipxfargc()"
 	   MSG="pxfgetarg and ipxfargc"
 	   ;;
-	4) # Nag f90_unix_env module
+	5) # Nag f90_unix_env module
 	   FXX_MODULE="        use f90_unix_env"
 	   F77_GETARGDECL=""
 	   F77_GETARG="call getarg(i,s)"
 	   F77_IARGC="iargc()"
 	   MSG="f90_unix_env module"
 	   ;;
-        5) # Nag f90_unix module
+        6) # Nag f90_unix module
 	   FXX_MODULE="        use f90_unix"
 	   F77_GETARGDECL=""
 	   F77_GETARG="call getarg(i,s)"
 	   F77_IARGC="iargc()"
 	   MSG="f90_unix module"
 	   ;;
-	6) # user spec in a file
+	7) # user spec in a file
 	   if test -s f77argdef ; then
 		. ./f77argdef
 	       MSG="Using definitions in the file f77argdef"
@@ -847,7 +855,7 @@ $flag"
 		continue
 	   fi
 	   ;;
-	7) # gfortran won't find getarg if it is marked as external 
+	8) # gfortran won't find getarg if it is marked as external 
 	   FXX_MODULE=""
 	   F77_GETARGDECL="intrinsic GETARG"
 	   F77_GETARG="call GETARG(i,s)"
@@ -932,8 +940,15 @@ pac_cv_FXX_MODULE="$FXX_MODULE"
 ])
 if test "$found_cached" = "yes" ; then 
     AC_MSG_RESULT([$pac_cv_prog_f77_cmdarg])
-elif test -z "$pac_cv_F77_IARGC" ; then
+fi
+if test -n "$pac_cv_prog_f77_cmdarg" ; then
+    AC_DEFINE(HAVE_F77_GETARG, 1, [define if F77 can access the command line arguments])
+else
     AC_MSG_WARN([Could not find a way to access the command line from Fortran 77])
+    pac_cv_F77_GETARGDECL=""
+    pac_cv_F77_IARGC="0"
+    pac_cv_F77_GETARG="s = \"(unknown)\""
+    pac_cv_FXX_MODULE=""
 fi
 # Set the variable values based on pac_cv_prog_xxx
 F77_GETARGDECL="$pac_cv_F77_GETARGDECL"
