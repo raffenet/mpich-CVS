@@ -1802,7 +1802,15 @@ int smpd_launch_process(smpd_process_t *process, int priorityClass, int priority
     {
 	actual_exe = process->exe;
     }
-
+    /* Set the working directory of executable if not already set */
+    if(process->dir[0] == '\0')
+    {
+        if(!getcwd(process->dir, SMPD_MAX_EXE_LENGTH))
+        {
+            process->dir[0]='\0';
+	}
+    }
+    
     /* create argv from the command */
     i = 0;
     total = 0;
