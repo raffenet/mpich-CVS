@@ -50,6 +50,13 @@
 #endif
 #endif
 
+/* IBM AIX header files require unistd.h be included before sys/types.h if
+   _LARGE_FILE_API is defined, which is defined when automatically when
+   _ALL_SOURCE is defined (and probably other options as well) */
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -1280,8 +1287,11 @@ extern MPID_Comm MPID_Comm_direct[];
 /* Utility routines.  Where possible, these are kept in the source directory
    with the other comm routines (src/mpi/comm, in mpicomm.h).  However,
    to create a new communicator after a spawn or connect-accept operation, 
-   the device may need to create a new contextid */
+   the device may need to create a new contextid.  Likewise, the device may
+   need to free a contextid should an error occur during the establishment
+   of that new communicator. */
 int MPIR_Get_contextid( MPID_Comm * );
+void MPIR_Free_contextid( int );
 
 /* ------------------------------------------------------------------------- */
 
@@ -2105,12 +2115,54 @@ void MPIR_Err_print_stack(FILE *, int);
 #define MPID_Dev_comm_destroy_hook( a )
 #endif
 
+/*
+ * In addition to the create and destroy hook, MPID_DEV_COMM_FUNC_HOOK is
+ * available for advanced devices that need to track every aspect of
+ * communicator creation and destruction.  As with the create and destroy hooks
+ * above, a device is not required to define this hook.  In addition, this hook
+ * is not intended to replace the create and destroy hooks.  They serve
+ * different purposes.  As such, a device is permitted to define any or all of
+ * the hook as it needs.
+ *
+ * The signature of the hook is as follows.
+ *
+ *     MPID_DEV_COMM_FUNC_HOOK(func_, orig_comm_, new_comm_, mpi_errno_p_)
+ *
+ * The hook must be implemented as a C preprocessor macro.  It is passed the
+ * relevant portion of the function name from which it is called.  More
+ * specifically, the MPI_ prefix is removed, and all lowercase letters are
+ * converted to their uppercase equivalents.  For example, 'MPI_Comm_create'
+ * becomes 'COMM_CREATE'.  This allow the device's implementation of the macro
+ * to apply its own prefix and thus call an appropriate routine for the
+ * operation being performed.  In addition to the function name, the macro is
+ * passed pointers to the original and new communicator objects, as well as a
+ * pointer to the location in which the implementation must store the error
+ * code.
+ *
+ * The following semantics apply.
+ *
+ * ORDERING OF HOOKS: MPID_Dev_comm_create_hook() will always be called before
+ * MPID_DEV_COMM_FUNC_HOOK(), and MPID_Dev_comm_destroy_hook() will always be
+ * called after MPID_DEV_COMM_FUNC_HOOK().
+ *
+ * FAILURE DURING CREATION: If MPID_DEV_COMM_FUNC_HOOK() fails during the
+ * creation of a new communicator, it is responsible for reserving the effects
+ * of MPID_Dev_comm_create_hook().
+ *
+ * FAILURE DURING FREE: If MPID_DEV_COMM_FUNC_HOOK() fails when a communicator
+ * is being freed, the communicator will will _not_ be marked for deallocation,
+ * and MPI_Comm_free() will return an error code.
+ */
+
 /* ------------------------------------------------------------------------- */
 /* FIXME: What is the scope of these functions?  Can they be moved into
    src/mpi/pt2pt? */
 /* ------------------------------------------------------------------------- */
 
 /* Do not set MPI_ERROR (only set if ERR_IN_STATUS is returned */
+#if !defined(MPID_DEV_STATUS_SET_EMPTY_HOOK)
+#define MPID_DEV_STATUS_SET_EMPTY_HOOK(status_)
+#endif
 #define MPIR_Status_set_empty(status_)			\
 {							\
     if ((status_) != MPI_STATUS_IGNORE)			\
@@ -2119,10 +2171,14 @@ void MPIR_Err_print_stack(FILE *, int);
 	(status_)->MPI_TAG = MPI_ANY_TAG;		\
 	(status_)->count = 0;				\
 	(status_)->cancelled = FALSE;			\
+	MPID_DEV_STATUS_SET_EMPTY_HOOK(status_);	\
     }							\
 }
 /* See MPI 1.1, section 3.11, Null Processes */
 /* Do not set MPI_ERROR (only set if ERR_IN_STATUS is returned */
+#if !defined(MPID_DEV_STATUS_SET_PROCNULL_HOOK)
+#define MPID_DEV_STATUS_SET_PROCNULL_HOOK(status_)
+#endif
 #define MPIR_Status_set_procnull(status_)		\
 {							\
     if ((status_) != MPI_STATUS_IGNORE)			\
@@ -2131,21 +2187,28 @@ void MPIR_Err_print_stack(FILE *, int);
 	(status_)->MPI_TAG = MPI_ANY_TAG;		\
 	(status_)->count = 0;				\
 	(status_)->cancelled = FALSE;			\
+	MPID_DEV_STATUS_SET_PROCNULL_HOOK(status_);	\
     }							\
 }
 
-#define MPIR_Request_extract_status(request_ptr_, status_)								\
-{															\
-    if ((status_) != MPI_STATUS_IGNORE)											\
-    {															\
-	int error__;													\
-															\
-	/* According to the MPI 1.1 standard page 22 lines 9-12, the MPI_ERROR field may not be modified except by the	\
-	   functions in section 3.7.5 which return MPI_ERR_IN_STATUSES (MPI_Wait{all,some} and MPI_Test{all,some}). */	\
-	error__ = (status_)->MPI_ERROR;											\
-	*(status_) = (request_ptr_)->status;										\
-	(status_)->MPI_ERROR = error__;											\
-    }															\
+#if !defined(MPID_DEV_REQUEST_EXTRACT_STATUS_HOOK)
+#define MPID_DEV_REQUEST_EXTRACT_STATUS_HOOK(request_ptr_, status_)
+#endif
+#define MPIR_Request_extract_status(request_ptr_, status_)              \
+{                                                                       \
+    if ((status_) != MPI_STATUS_IGNORE)                                 \
+    {                                                                   \
+	int error__;                                                    \
+                                                                        \
+	/* According to the MPI 1.1 standard page 22 lines 9-12, the    \
+	   MPI_ERROR field may not be modified except by the functions  \
+	   in section 3.7.5 which return MPI_ERR_IN_STATUSES            \
+	   (MPI_Wait{all,some} and MPI_Test{all,some}). */              \
+	error__ = (status_)->MPI_ERROR;                                 \
+	*(status_) = (request_ptr_)->status;                            \
+	(status_)->MPI_ERROR = error__;                                 \
+	MPID_DEV_REQUEST_EXTRACT_STATUS_HOOK(request_ptr_, status_);    \
+    }                                                                   \
 }
 /* ------------------------------------------------------------------------- */
 
