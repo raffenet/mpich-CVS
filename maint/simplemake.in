@@ -90,7 +90,7 @@ $convert_Ldir_to_relative = 1; # set to 1 to convert -Ldir to ../../lib
 # <program>_DEPS = other program dependencies
 # DEPSALL = dependencies for *all* programs
 
-$make_depend = "gcc -MM -MT '_$$*.o $$*.o'";  
+$make_depend = "gcc -MM -MT '_$$*.o' -MT '$$*.o'";  
            # Set to command to create dependency list.  Include the
            # Profiling objects (_xxx.o).  If gcc includes -MF, we can
            # output directly: -MF '.deps/$*.d'
@@ -3247,7 +3247,7 @@ sub TargetTags {
     # By adding "Makefile" to TAGS, we ensure that the TAGS target
     # will be rebuilt anytime the package is reconfigured.  We
     # could also make TAGS always rebuild, to catch any source changes.
-    print FD "TAGS: Makefile";
+    print FD "TAGS: Makefile ";
     # Only generate a local etags call if there are local sources
     # This target is designed for VPATH builds to build a TAGS file in
     if ($has_headers || $has_sources) {
@@ -3726,6 +3726,7 @@ sub TargetInstall {
 	    print FD "\t(cd $extradir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) install)$newline";
 	}
     }
+    &TargetPostamble( "install" );
     print FD "$newline";
 
     # Install documentation
@@ -3990,7 +3991,7 @@ sub TargetDependenciesDynamic {
 		$ext =~ s/^.*\.//g;
 		$sourcebasename = $sourcefile;
 		$sourcebasename =~ s/\.\w*$//;
-		my $targetOpts = "-MT \'_$sourcebasename.o $sourcebasename.o\'";
+		my $targetOpts = "-MT \'_$sourcebasename.o\' -MT \'$sourcebasename.o\'";
 		if (!$found_profilelib) {
 		    $targetOpts = "";
 		}
@@ -4041,7 +4042,7 @@ in the build directory\n";
 		    if (! -s $sourcefile) {
 			$srcdirloc = '';
 		    }
-		    $targetOpts = "-MT \'_$sourcebasename.o $sourcebasename.o\'";
+		    $targetOpts = "-MT \'_$sourcebasename.o\' -MT \'$sourcebasename.o\'";
 		    if (!$found_profilelib) {
 			$targetOpts = "";
 		    }
