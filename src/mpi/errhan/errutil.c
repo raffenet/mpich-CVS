@@ -97,6 +97,10 @@ static int checkForUserErrcode( int errcode );
 #define checkForUserErrcode(_a) _a
 #endif
 
+/* When MPIR_Err_abort is set to true, the error code generation routine will
+   call abort() to produce a core file.  This core file allows the developer
+   to look at the state of the system at the time the error occurred. */
+static int MPIR_Err_abort = FALSE;
 
 /* ------------------------------------------------------------------------- */
 /* Provide the MPID_Errhandler space and the routines to free and set them
@@ -579,6 +583,12 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	if (fatal)
 	    errcode |= ERROR_FATAL_MASK;
     }
+
+    /* When MPIR_Err_abort is set to true, call abort() to produce a core
+       file.  The core file allows the developer to look at the state of the
+       system at the time the error occurred. */
+    if (MPIR_Err_abort) abort();
+    
     return errcode;
 #else
     return error_class;
@@ -1605,6 +1615,8 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	err_code |= ERROR_FATAL_MASK;
     }
     
+    if (MPIR_Err_abort) abort();
+    
     return err_code;
 }
 
@@ -1703,6 +1715,12 @@ static void MPIR_Err_stack_init( void )
     
     rc = MPIU_GetEnvBool( "MPICH_PRINT_ERROR_STACK", 
 			  &MPIR_Err_print_stack_flag );
+    
+    /* When MPICH_ABORT_ON_ERROR is set to true, the error code generation
+       routine will call abort() to produce a core file.  This core file
+       allows the developer to look at the state of the system at the time the
+       error occurred. */
+    rc = MPIU_GetEnvBool( "MPICH_ABORT_ON_ERROR", &MPIR_Err_abort );
     
     rc = MPIU_GetEnvInt( "MPICH_CHOP_ERROR_STACK", &n );
     if (rc == 1) {
