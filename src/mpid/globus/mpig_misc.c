@@ -1048,8 +1048,7 @@ void mpig_usage_finalize(void)
 		goto err;
 	    }
         
-	    result = globus_usage_stats_handle_init(&mpig_usage_handle, MPIG_USAGE_ID, MPIG_USAGE_PACKET_VERSION,
-		"mikelink.com:4811");
+	    result = globus_usage_stats_handle_init(&mpig_usage_handle, MPIG_USAGE_ID, MPIG_USAGE_PACKET_VERSION, NULL);
 	    if(result != GLOBUS_SUCCESS)
 	    {
 		globus_module_deactivate(GLOBUS_USAGE_MODULE);
