@@ -634,7 +634,7 @@ if ("$buildMakefile") {
     &AddFwrapDefs;
     print MAKEFD "\
 lib\${MPIFLIBNAME}_a_DIR = ROOTDIR/lib\
-lib\${MPIFLIBNAME}_a_SOURCES = \${mpi_sources} setbot.c setbotf.f\
+lib\${MPIFLIBNAME}_a_SOURCES = \${mpi_sources} setbot.c setbotf.f getcmdargsf.f \
 \
 HEADERS = fproto.h mpi_fortimpl.h\
 profilelib_\${MPIFLIBNAME} = \${PMPIFLIBNAME}\
@@ -2407,14 +2407,39 @@ sub build_specials {
     open( $OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
     $files[$#files+1] = $filename;
     &print_header( "MPI_Init", "init", "" );
+    print $OUTFD "
+#if defined(HAVE_STRING_H)
+#include <string.h>
+#endif
+";
+    # Command line arguments may need to  be gathered and passed to
+    # MPI_Init().  The following code inserts the declarations for the
+    # routines defined in getcmdargsf.f.in.
+    print $OUTFD "
+#if defined(HAVE_F77_GETARG)
+/* Get the correct versions of the argument programs */
+#if defined(F77_NAME_UPPER)
+#define mpir_iargc_ MPIR_IARGC
+#define mpir_getarg_ MPIR_GETARG
+#elif defined(F77_NAME_LOWER_2USCORE)
+#define mpir_iargc_ mpir_iargc__
+#define mpir_getarg_ mpir_getarg__
+#elif !defined(F77_NAME_LOWER_USCORE)
+#define mpir_iargc_ mpir_iargc
+#define mpir_getarg_ mpir_getarg
+#endif
 
+MPI_Fint mpir_iargc_(void);
+void mpir_getarg_(MPI_Fint *, char *, MPI_Fint);
+#endif
+\n";
     &print_routine_type_decl( $OUTFD, "init" );
     $args = "";
     &print_args( $OUTFD, $args, 0, "init" );
+    print $OUTFD "{\n";
     # If an attribute can be added before the code, then do that here.
     # Gcc only allows attributes on the prototypes, not the function
     # definitions
-    print $OUTFD "{\n";
     print $OUTFD "#ifndef F77_RUNTIME_VALUES
     /* any compile/link time values go here */
 #else
@@ -2423,7 +2448,63 @@ sub build_specials {
 ";
     # See the discussion on MPIR_F_NeedInit at the head of this file
     print $OUTFD "    mpirinitf_(); MPIR_F_NeedInit = 0;\n";
-    print $OUTFD "    *ierr = MPI_Init( 0, 0 );\n";
+    # Add code to extract the command line arguments, call the C
+    # implementation of MPI_Init, and then clean up the command
+    # line arguments
+    print $OUTFD "
+#   if defined(HAVE_F77_GETARG)
+    {
+        MPI_Fint i;
+        int j;
+        const MPI_Fint argsize = 1024;
+        MPI_Fint argc = 0;
+        char ** argv = NULL;
+        int argc_tmp;
+        char ** argv_tmp;
+
+        argc = mpir_iargc_() + 1;
+        argv = (char **) MPIU_Calloc(argc, sizeof(char *));
+        if (argv == NULL) goto fn_fail;
+    
+        for (i = 0; i < argc; i++) {
+            argv[i] = (char *) MPIU_Malloc(argsize + 1);
+            if (argv[i] == NULL) goto fn_fail;
+            argv[i][0] = '\\0';
+            
+            mpir_getarg_(&i, argv[i], argsize);
+            
+            for (j = argsize - 1; j >= 0; j--) {
+                if (argv[i][j] != ' ') {
+                    argv[i][j+1] = '\\0';
+                    break;
+                }
+            }
+            if (j == -1) argv[i][0] = '\\0';
+        }
+    
+        argc_tmp = (int) argc;
+        argv_tmp = argv;
+        *ierr = MPI_Init(&argc_tmp, &argv_tmp);
+    
+      fn_return:
+        if (argv != NULL) {
+            for (i = 0; i < argc; i++) {
+                MPIU_Free(argv[i]);
+            }
+            MPIU_Free(argv);
+        }
+        return;
+    
+      fn_fail:
+        *ierr = MPI_ERR_OTHER;
+        goto fn_return;
+    }
+#   else
+    {
+        *ierr = MPI_Init(NULL, NULL);
+    }
+#   endif
+";
     # Still to do:
     #   Initialize the Fortran versions of the predefined keyvals.
     #   Find the value of MPI_BOTTOM.  
@@ -2441,14 +2522,95 @@ sub build_specials {
     $files[$#files+1] = $filename;
     $args = "int, int *";
     &print_header( "MPI_Init_thread", "init_thread", $args );
+    print $OUTFD "
+#if defined(HAVE_STRING_H)
+#include <string.h>
+#endif
+";
+    # Command line arguments may need to  be gathered and passed to
+    # MPI_Init_thread().  The following code inserts the declarations
+    # for the routines defined in getcmdargsf.f.in.
+    print $OUTFD "
+#if defined(HAVE_F77_GETARG)
+/* Get the correct versions of the argument programs */
+#if defined(F77_NAME_UPPER)
+#define mpir_iargc_ MPIR_IARGC
+#define mpir_getarg_ MPIR_GETARG
+#elif defined(F77_NAME_LOWER_2USCORE)
+#define mpir_iargc_ mpir_iargc__
+#define mpir_getarg_ mpir_getarg__
+#elif !defined(F77_NAME_LOWER_USCORE)
+#define mpir_iargc_ mpir_iargc
+#define mpir_getarg_ mpir_getarg
+#endif
 
+MPI_Fint mpir_iargc_(void);
+void mpir_getarg_(MPI_Fint *, char *, MPI_Fint);
+#endif
+\n";
     &print_routine_type_decl( $OUTFD, "init_thread" );
     &print_args( $OUTFD, $args, 0, "init_thread" );
     print $OUTFD "{\n";
     # See the discussion on MPIR_F_NeedInit at the head of this file
     print $OUTFD "    mpirinitf_(); MPIR_F_NeedInit = 0;\n";
-    print $OUTFD "    *ierr = MPI_Init_thread( 0, 0, *v1, v2 );\n";
-    print $OUTFD "}\n";
+    # Add code to extract the command line arguments, call the C
+    # implementation of MPI_Init, and then clean up the command
+    # line arguments
+    print $OUTFD "
+#   if defined(HAVE_F77_GETARG)
+    {
+        MPI_Fint i;
+        int j;
+        const MPI_Fint argsize = 1024;
+        MPI_Fint argc = 0;
+        char ** argv = NULL;
+        int argc_tmp;
+        char ** argv_tmp;
+
+        argc = mpir_iargc_() + 1;
+        argv = (char **) MPIU_Calloc(argc, sizeof(char *));
+        if (argv == NULL) goto fn_fail;
+    
+        for (i = 0; i < argc; i++) {
+            argv[i] = (char *) MPIU_Malloc(argsize + 1);
+            if (argv[i] == NULL) goto fn_fail;
+            argv[i][0] = '\\0';
+            
+            mpir_getarg_(&i, argv[i], argsize);
+            
+            for (j = argsize - 1; j >= 0; j--) {
+                if (argv[i][j] != ' ') {
+                    argv[i][j+1] = '\\0';
+                    break;
+                }
+            }
+            if (j == -1) argv[i][0] = '\\0';
+        }
+    
+        argc_tmp = (int) argc;
+        argv_tmp = argv;
+        *ierr = MPI_Init_thread(&argc_tmp, &argv_tmp, *v1, v2);
+    
+      fn_return:
+        if (argv != NULL) {
+            for (i = 0; i < argc; i++) {
+                MPIU_Free(argv[i]);
+            }
+            MPIU_Free(argv);
+        }
+        return;
+    
+      fn_fail:
+        *ierr = MPI_ERR_OTHER;
+        goto fn_return;
+    }
+#   else
+    {
+        *ierr = MPI_Init_thread(NULL, NULL, *v1, v2);
+    }
+#   endif
+}
+";
     close ($OUTFD);
     &ReplaceIfDifferent( $filename, $filename . ".new" );
     &AddPrototype( "init_thread", $args );
