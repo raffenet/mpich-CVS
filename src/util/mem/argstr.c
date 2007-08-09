@@ -49,7 +49,7 @@ static int encode_buffer(char *dest, int dest_length, const char *src,
     while (src_length && dest_length)
     {
 	ch = *src;
-	num_used = MPIU_Snprintf(dest, dest_length, "%02X", 
+	num_used = MPIU_Snprintf(dest, (size_t) dest_length, "%02X", 
 				 (unsigned char)*src);
 	if (num_used < 0)
 	{
@@ -669,12 +669,6 @@ int MPIU_Str_add_string(char **str_ptr, int *maxlen_ptr, const char *val)
 	strchr(val, MPIU_STR_DELIM_CHAR))
     {
 	num_chars = quoted_printf(str, maxlen, val);
-	if (num_chars == maxlen)
-	{
-	    /* truncation, cleanup string */
-	    *str = '\0';
-	    return -1;
-	}
 	if (num_chars < maxlen - 1)
 	{
 	    str[num_chars] = MPIU_STR_SEPAR_CHAR;
@@ -683,19 +677,21 @@ int MPIU_Str_add_string(char **str_ptr, int *maxlen_ptr, const char *val)
 	}
 	else
 	{
-	    str[num_chars] = '\0';
+	    /* truncation, cleanup string */
+	    *str = '\0';
+	    return -1;
 	}
     }
     else
     {
 	if (*val == '\0')
 	{
-	    num_chars = MPIU_Snprintf(str, maxlen, 
-		      MPIU_STR_QUOTE_STR MPIU_STR_QUOTE_STR/*"\"\""*/);
+            num_chars = MPIU_Snprintf(str, (size_t) maxlen, MPIU_STR_QUOTE_STR
+                MPIU_STR_QUOTE_STR MPIU_STR_SEPAR_STR /*"\"\" "*/);
 	}
 	else
 	{
-	    num_chars = MPIU_Snprintf(str, maxlen, "%s%c", val, 
+	    num_chars = MPIU_Snprintf(str, (size_t) maxlen, "%s%c", val, 
 				      MPIU_STR_SEPAR_CHAR);
 	}
 	if (num_chars == maxlen)
@@ -756,7 +752,9 @@ int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen)
     str = (char*)first_token(str);
     if (str == NULL)
     {
-	return 0;
+        val[0] = '\0';
+        *str_ptr = NULL;
+        return 0;
     }
 
     /* copy the token */
@@ -823,7 +821,7 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag,
     }
     else
     {
-	num_chars = MPIU_Snprintf(*str_ptr, *maxlen_ptr, "%s", flag);
+	num_chars = MPIU_Snprintf(*str_ptr, (size_t) *maxlen_ptr, "%s", flag);
     }
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 1)
@@ -852,12 +850,13 @@ int MPIU_Str_add_string_arg(char **str_ptr, int *maxlen_ptr, const char *flag,
     {
 	if (*val == '\0')
 	{
-	    num_chars = MPIU_Snprintf(*str_ptr, *maxlen_ptr, 
-			      MPIU_STR_QUOTE_STR MPIU_STR_QUOTE_STR/*"\"\""*/);
+            num_chars = MPIU_Snprintf(*str_ptr, (size_t) *maxlen_ptr,
+                MPIU_STR_QUOTE_STR MPIU_STR_QUOTE_STR/*"\"\""*/);
 	}
 	else
 	{
-	    num_chars = MPIU_Snprintf(*str_ptr, *maxlen_ptr, "%s", val);
+	    num_chars = MPIU_Snprintf(*str_ptr, (size_t) *maxlen_ptr,
+                "%s", val);
 	}
     }
     *str_ptr = *str_ptr + num_chars;
@@ -962,7 +961,7 @@ int MPIU_Str_add_binary_arg(char **str_ptr, int *maxlen_ptr, const char *flag,
     }
     else
     {
-	num_chars = MPIU_Snprintf(*str_ptr, *maxlen_ptr, "%s", flag);
+	num_chars = MPIU_Snprintf(*str_ptr, (size_t) *maxlen_ptr, "%s", flag);
     }
     *maxlen_ptr = *maxlen_ptr - num_chars;
     if (*maxlen_ptr < 1)
