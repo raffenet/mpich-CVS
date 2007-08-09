@@ -257,6 +257,8 @@ void MPIU_Handle_obj_alloc_complete(MPIU_Object_alloc_t *objmem,
   MPI_Requests) and should not call any other routines in the common
   case.
   +*/
+#undef FUNCNAME
+#define FUNCNAME MPIU_Handle_obj_alloc
 void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
 {
     MPIU_Handle_common *ptr;
@@ -339,6 +341,8 @@ void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *objmem)
   This routine assumes that only a single thread calls it at a time; this
   is true for the SINGLE_CS approach to thread safety
   +*/
+#undef FUNCNAME
+#define FUNCNAME MPIU_Handle_obj_free
 void MPIU_Handle_obj_free( MPIU_Object_alloc_t *objmem, void *object )
 {
     MPIU_Handle_common *obj = (MPIU_Handle_common *)object;
