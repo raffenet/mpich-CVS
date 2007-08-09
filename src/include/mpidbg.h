@@ -100,8 +100,14 @@ enum MPIU_DBG_CLASS { MPIU_DBG_PT2PT         = 0x1,
 		      MPIU_DBG_REFCOUNT      = 0x200000,
 		      MPIU_DBG_ALL           = (~0) };   /* alias for all */
 
+/* Insure++ fails to link if variables are declared extern but not defined.
+   To prevent this from happening, the debugging variables below are only
+   declared if logging is enabled. */
+#ifdef USE_DBG_LOGGING
 extern int MPIU_DBG_ActiveClasses;
 extern int MPIU_DBG_MaxLevel;
+#endif
+
 int MPIU_DBG_Outevent(const char *, int, int, int, const char *, ...) 
                                         ATTRIBUTE((format(printf,5,6)));
 int MPIU_DBG_Init( int *, char ***, int, int, int );
