@@ -1,61 +1,37 @@
 * run autoconf on Intel test suite and push changes to configure out to TG machines
 
-* fix mpig_cm_vmpi_unregister_recv_any_source(), etc. so that single-thread builds work again
-
-* export topology discover informtion to fortran applications
-
-* no need to add MPI_ANY_SOURCE requests to the recvq when the communicator only contains VMPI processes
-
-* no need to post MPI_ANY_SOURCE requests to VMPI when the communicator only contains non-VMPI processes
-
-* fix XIO CM so that pe_wait() does not block when mpig_pe_wait_can_block() is FALSE
-
-* add configure test to extract the vendor MPI_VERSION and MPI_SUBVERSION.  use this information to determine expected
-  functionality that cannot be determined by runtime configure tests.
-
 
 ===================================================================================================================================
 						TO DO FOR FIRST OFFICIAL RELEASE
 ===================================================================================================================================
 
-* Web service version of mpig_pm interface  [NICK: ???, BRT: ???]
+* [1] Integration with MPICH2 trunk
 
-  - the interface to mpig_pm_get_app_num() has changed.  it now takes a business card so that the subjob id can be extracted for
-    any process.  the topology discovery code required this feature in order to determine if two processes are part of the same
-    "SAN" level (formerly called "HOST").
+  * track data types (was done but datatype code has changed)
 
-  - integrate Nick's cancel code
+  * commit top-level changes after getting approval [BRT & BILL G.: 1 day]
 
+  * ... haven't finished analysis ...
 
-* finish mpig_pm implementation.  this involves updating mpig_pm modules to provide a vtable.  [BRT: 3 hours]
+* Vendor MPI
 
+  * [3a] no need to add MPI_ANY_SOURCE requests to the recvq when the communicator only contains VMPI processes (done?)
 
-* Vendor MPI  [6+ days]
+  * [3b] no need to post MPI_ANY_SOURCE requests to VMPI when the communicator only contains non-VMPI processes (done?)
 
-  * track communicators created at the top-level  [BRT: 4-6 hours]
+  * [6] fix mpig_cm_vmpi_unregister_recv_any_source(), etc. so that single-thread builds work again
 
-  * track data types  [NICK: ??? (work with Rob R.)]
+  - [4] handle the case where the size of the vendor MPI's MPI_Aint differs from MPICH2's MPI_Aint (see discussion below)
 
-  * translate return codes (I think this is finished) [BRT: 15 minutes to check; 2 hours to implement/test if not]
-
-  * progress engine code
-
-    * VMPI request tracking  [BRT: 8-12 hours]
-
-    * integration with other CMs  [BRT & NICK: 8-16 hours]
-
-  *  handle MPI_ANY_SOURCE receives; requires some mods to mpig_recvq module  [BRT: 4-8 hours]
-
-  * completion of ADI3 routines  [BRT: 4 hours]
-
-  * Web services GT4 installation running on Nick's G5 for testing of multithread XIO and VMPI configuration  [NICK: ???]
-
-  - handle the case where the size of the vendor MPI's MPI_Aint differs from MPICH2's MPI_Aint (see below)
+  * [5] add configure test to extract the vendor MPI_VERSION and MPI_SUBVERSION.  use this information to determine expected
+    functionality that cannot be determined without runtime configure tests.
 
   * ... I feel like I am forgetting something important ...
 
 
-* FIX CM_XIO progress engine code [12-16 hours]
+* [7] FIX CM_XIO progress engine code
+
+  * fix XIO CM so that pe_wait() does not block when mpig_pe_wait_can_block() is FALSE (done?)
 
   * don't allow a req to be enqueued twice on the rcq!  this happens with send cancel.  can it happen any other time?
 
@@ -63,17 +39,18 @@
   
   - roll the RCQ and CM_XIO progress wait routines together so that multiple requests can be completed in a single call
 
-  o allow asynchronous errors to be return from through MPID_Progress_{wait,test,poke} [BRT: 2-3 additional hours]
+  - fix error reporting in XIO client-side connection establishment code (replace assert statements with real error messages)
+
+  - finish failed case in mpig_cm_xio_send_enq_sreq() to set the error code in the send request (what was this???)
+
+  o allow asynchronous errors to be returned from through MPID_Progress_{wait,test,poke}
 
 
-* commit top-level changes after getting approval [BRT & BILL G.: 2-4 hours]
-
-
-* Heterogenous data conversion [2-3 days]
+* [2] Heterogenous data conversion
 
   * integrate Nick's segment module that uses globus_dc
 
-    * complete module?  [NICK: ???]
+    * complete segment module?  [NICK]
 
     * create mapping of MPI Fortran types to C basic types  [BRT: 2-8 hours (depending on configure work required)]
 
@@ -81,24 +58,33 @@
 
   * handle communication and manipulation of MPI_PACKED data
 
-    * update XIO CM  [BRT: 2-3 hours]
+    * update XIO CM
 
-    * update VMPI CM ADI3 routines to detect and properly handle MPI_PACKED  [BRT: 1-2 hours]
+    * update VMPI CM ADI3 routines to detect and properly handle MPI_PACKED
 
-    * create path from top-level MPI_Pack(), etc. routines to device  [NICK: 2-3 hours??? (with Rob R.)
+    * create path from top-level MPI_Pack(), etc. routines to device
 
-
-*  cross platform testing (by hand; test suites can't handle heterogeneous platforms): [BRT & NICK: 1+ days]
-
-
-* adjust tunable parameters to more sane values (currently set to maximize code coverage during testing)  [BRT & NICK: 1 hour]
+  *  cross platform testing (by hand; test suites can't handle heterogeneous platforms)
 
 
-* add real error text to errnames.txt  [BRT/NICK: 3 hours]
+* Miscellaneous
+
+  * portability to selected to platforms (specific machines needeed)
+
+  o add real error text to errnames.txt, adjusting usage in code as appropriate
+
+  o export topology discovery informtion to fortran applications (need a solution that does not involve memory allocation)
 
 
-- fix error reporting in XIO client-side connection establishment code (replace assert statement with real error messages)
-  [BRT: 12-16 hours]
+* Testing
+
+  * general testing on selected machines (which?)
+
+  * web services GT4 testing; may require some work with teragrid folks
+
+  * adjust tunable parameters to more sane values (currently set to maximize code coverage during testing)
+
+  * performance testing, particularily VMPI overheads
 
 
 ===================================================================================================================================
@@ -110,7 +96,7 @@
   * complete disconnect/reconnect code in mpig_cm_xio_conn.i
 
   * fix GPID so that MPI_Intercomm_create/merge work with communicators containing processes outside of MPI_COMM_WORLD
-    [BRT: 8-10 hours (includes testing of CH3 device)]
+    [BRT: 1-1.5 days (includes testing of CH3 device)]
 
 
 o full visual inspection of error handling code, and fill in missing cases (particularly in CM XIO)
@@ -122,7 +108,7 @@ o add vendor MPI bypass for calling the vendor MPI directly for special predefin
 o clean up wrapping debugging output lines
 
 
-o update MPIG compiler scripts.  the current ones result in a few oddities while configuring MPIG.  presently, these oddities
+o update MPIg compiler scripts.  the current ones result in a few oddities while configuring MPIg.  presently, these oddities
   don't affect us because configure gives us what we need anyway, but that may not be true for all platforms.  here is one in
   particular:
 
@@ -203,8 +189,6 @@ o change module initialization errors to FATAL
   (preserving the same ordering).  -- this technique may improve performance slightly, but my gut feeling says that the receive
   queue contention is not that high.  it is probably best that we save this until later.
 
-- finish failed case in mpig_cm_xio_send_enq_sreq() to set the error code in the send request (what was this???)
-
 
 ===================================================================================================================================
 							   MPICH2 Issues
@@ -214,18 +198,18 @@ o change module initialization errors to FATAL
 
   * BRT will create a prototype
 
-- an interface is needed to tracking the creation and freeing of communicators so that MPIG may duplicate the operations in the
+- an interface is needed to tracking the creation and freeing of communicators so that MPIg may duplicate the operations in the
   vendor MPI.  what should the interface and semantics be?  allowing the return of error codes would be useful.
 
   * use existing hooks with new parameter list (ROUTINE_NAME, old_comm, new_comm, &mpi_errno, STMT)
 
-- an interface is need for tracking creation and freeing of datatypes so that MPIG may duplicate the operations in the vendor
+- an interface is need for tracking creation and freeing of datatypes so that MPIg may duplicate the operations in the vendor
   MPI.  what should the interface and semantics be?  allowing the return of error codes would be useful.
 
   * NICK will talk to Rob R., but something similar to comm hooks
 
 - a mechanism for specifying the size of MPI_Aint so that it matches the size used by the vendor MPI.  alternatively, we may be
-  able to performs cast where appropriate, but this seems risky.  what if we renamed MPICH2's MPI_Aint to MPIG_Aint, and then let
+  able to performs cast where appropriate, but this seems risky.  what if we renamed MPICH2's MPI_Aint to MPIg_Aint, and then let
   the cast occur naturally in mpig_vmpi.c?
 
 
@@ -234,7 +218,7 @@ o change module initialization errors to FATAL
 ===================================================================================================================================
 
 - support for long double and fixed sized integers (ex: uint32_t) in the Globus data conversion module.  fixed type support isn't
-  critical since MPIG provides its own routines for conversion of fixed types, but it would be nicer if all data conversion were
+  critical since MPIg provides its own routines for conversion of fixed types, but it would be nicer if all data conversion were
   provided by globus_dc.  this is something worth adding when support for long double is added, which is critical.
 
 
@@ -264,7 +248,7 @@ o change module initialization errors to FATAL
 
 - use globus_cond_timedwait() with vendor MPI; use a small timeout (1us?)
 
-- avoid linking against the vendor MPI when building an application/library against MPIG.  one option might be to build a library
+- avoid linking against the vendor MPI when building an application/library against MPIg.  one option might be to build a library
   for the vendor MPI interface functions, link it against the vendor MPI module, then strip the vendor symbols.  this might avoid
   the need to rename the symbols in MPICH and the application.
 
@@ -280,7 +264,7 @@ o change module initialization errors to FATAL
     - MPI-1
 
       - use environemnt variable in the RSL/XML job description to denote the communication method to be used when communicating
-        with an process in another subjob.  for example: MPIG_SUBJOB_COMM_METHOD="(1, TCP) (2, MOD-E), (3, UDT)".
+        with an process in another subjob.  for example: MPIg_SUBJOB_COMM_METHOD="(1, TCP) (2, MOD-E), (3, UDT)".
 
      - the method's vtable can be located by scanning the CM vtable array and comparing the name of each entry with that specified
        by the user.
