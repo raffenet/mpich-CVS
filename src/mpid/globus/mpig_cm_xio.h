@@ -130,7 +130,7 @@ struct mpig_cm_xio_request_cmu													\
     MPIU_Size_t stream_size;													\
     MPIU_Size_t stream_pos;													\
     MPIU_Size_t stream_max_pos;													\
-    MPID_Segment seg;														\
+    struct MPID_Segment * segp;                                                                                                 \
 																\
     /* the I/O vector defines the data to be transferred/received */								\
     MPIG_IOV_DECL(iov, MPIG_CM_XIO_IOV_NUM_ENTRIES);										\

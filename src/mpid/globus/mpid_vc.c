@@ -106,7 +106,7 @@ int MPID_VCRT_Add_ref(mpig_vcrt_t * vcrt)
  */
 #undef FUNCNAME
 #define FUNCNAME MPID_VCRT_Release
-int MPID_VCRT_Release(mpig_vcrt_t * vcrt)
+int MPID_VCRT_Release(mpig_vcrt_t * vcrt, int disconnecting)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     bool_t inuse;
@@ -114,6 +114,7 @@ int MPID_VCRT_Release(mpig_vcrt_t * vcrt)
     MPIG_STATE_DECL(MPID_STATE_MPID_VCRT_RELEASE);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_ARG(disconnecting);
 
     MPIG_FUNC_ENTER(MPID_STATE_MPID_VCRT_RELEASE);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_COMM, "entering: vcrt=" MPIG_PTR_FMT,

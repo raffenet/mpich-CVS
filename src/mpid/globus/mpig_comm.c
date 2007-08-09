@@ -72,7 +72,7 @@ int mpig_comm_finalize(void)
             MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM, "releasing communicator not freed by application: comm=" MPIG_HANDLE_FMT
                 ",commp=" MPIG_PTR_FMT, comm->handle, MPIG_PTR_CAST(comm)));
             comm->dev.app_ref = FALSE;
-            MPIR_Comm_release(comm);
+            MPIR_Comm_release(comm, FALSE);
         }
     }
     

@@ -343,6 +343,11 @@ static int mpig_cm_vmpi_pe_table_inc_size(void);
 
 #define mpig_cm_vmpi_dtp_get_vdt(dtp_) (dtp_->cms.vmpi.dt)
 
+#define mpig_cm_vmpi_dtp_set_vdt(dtp_, vdt_)    \
+{                                               \
+    dtp_->cms.vmpi.dt = (vdt_);                 \
+}
+
 #define mpig_cm_vmpi_dtp_get_vdt_ptr(dtp_) (&dtp_->cms.vmpi.dt)
 
 
@@ -1531,7 +1536,7 @@ int mpig_cm_vmpi_pe_wait(struct MPID_Progress_state * state)
 #       elif defined(MPIG_CM_VMPI_USE_WAITANY)
 	{
 	    /* some MPI implementations incorrectly return errors related to the communication operation via the error field in
-	       the status object.  the MPI standard says that that implementation shoudl only do so for MPI_Test/Waitsome and
+	       the status object.  the MPI standard says that that implementation should only do so for MPI_Test/Waitsome and
 	       MPI_Test/Waitall routines, and then only if MPI_ERR_IN_STATUS is return by those routines.  to detect the error in
 	       one of these erroneous implementations, we must reset the error value in the status structure; otherwise, we might
 	       falsely detect an error when using a correct implementation whose MPI_Test/Waitany routines do not modify the
@@ -1696,7 +1701,7 @@ int mpig_cm_vmpi_pe_test(void)
 	    int vcompleted;
 	    
 	    /* some MPI implementations incorrectly return errors related to the communication operation via the error field in
-	       the status object.  the MPI standard says that that implementation shoudl only do so for MPI_Test/Waitsome and
+	       the status object.  the MPI standard says that that implementation should only do so for MPI_Test/Waitsome and
 	       MPI_Test/Waitall routines, and then only if MPI_ERR_IN_STATUS is return by those routines.  to detect the error in
 	       one of these erroneous implementations, we must reset the error value in the status structure; otherwise, we might
 	       falsely detect an error when using a correct implementation whose MPI_Test/Waitany routines do not modify the
@@ -1920,7 +1925,7 @@ static int mpig_cm_vmpi_adi3_send(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_adi3_send);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,"entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
 	rank, tag, MPIG_PTR_CAST(comm), comm->context_id + ctxoff));
 
     mpig_cm_vmpi_send_macro(send, "MPI_Send", "MPI_Isend", buf, cnt, dt, rank, tag, comm, ctxoff, sreqp, &mpi_errno);
@@ -1956,7 +1961,7 @@ static int mpig_cm_vmpi_adi3_isend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_adi3_isend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
 	rank, tag, MPIG_PTR_CAST(comm), comm->context_id + ctxoff));
 
     mpig_cm_vmpi_isend_macro(send, "MPI_Isend", buf, cnt, dt, rank, tag, comm, ctxoff, sreqp, &mpi_errno);
@@ -1992,7 +1997,7 @@ static int mpig_cm_vmpi_adi3_rsend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_adi3_rsend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
 	rank, tag, MPIG_PTR_CAST(comm), comm->context_id + ctxoff));
 
     mpig_cm_vmpi_send_macro(rsend, "MPI_Rsend", "MPI_Irsend", buf, cnt, dt, rank, tag, comm, ctxoff, sreqp, &mpi_errno);
@@ -2028,7 +2033,7 @@ static int mpig_cm_vmpi_adi3_irsend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_adi3_irsend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
 	rank, tag, MPIG_PTR_CAST(comm), comm->context_id + ctxoff));
 
     mpig_cm_vmpi_isend_macro(rsend, "MPI_Irsend", buf, cnt, dt, rank, tag, comm, ctxoff, sreqp, &mpi_errno);
@@ -2064,7 +2069,7 @@ static int mpig_cm_vmpi_adi3_ssend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_adi3_ssend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
 	rank, tag, MPIG_PTR_CAST(comm), comm->context_id + ctxoff));
 
     mpig_cm_vmpi_send_macro(ssend, "MPI_Ssend", "MPI_Issend", buf, cnt, dt, rank, tag, comm, ctxoff, sreqp, &mpi_errno);
@@ -2100,7 +2105,7 @@ static int mpig_cm_vmpi_adi3_issend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_adi3_issend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
 	rank, tag, MPIG_PTR_CAST(comm), comm->context_id + ctxoff));
 
     mpig_cm_vmpi_isend_macro(ssend, "MPI_Issend", buf, cnt, dt, rank, tag, comm, ctxoff, sreqp, &mpi_errno);
@@ -2133,7 +2138,7 @@ static int mpig_cm_vmpi_adi3_recv(
     const int vrank = mpig_cm_vmpi_comm_get_remote_vrank(comm, rank);
     const int vtag = mpig_cm_vmpi_tag_get_vtag(tag);
     const mpig_vmpi_comm_t vcomm = mpig_cm_vmpi_comm_get_vcomm(comm, ctxoff);
-    const int ctx = comm->context_id + ctxoff;
+    const int recv_ctx = comm->recvcontext_id + ctxoff;
     MPID_Request * rreq = NULL;
     int vrc;
     int mpi_errno = MPI_SUCCESS;
@@ -2143,8 +2148,8 @@ static int mpig_cm_vmpi_adi3_recv(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_adi3_recv);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
-	rank, tag, MPIG_PTR_CAST(comm), ctx));
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", recv_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	rank, tag, MPIG_PTR_CAST(comm), recv_ctx));
 
     mpig_cm_vmpi_datatype_get_vdt(dt, &vdt);
 
@@ -2195,7 +2200,7 @@ static int mpig_cm_vmpi_adi3_recv(
 	/* create a new receive request */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "creating a new receive request"));
 	/* NOTE: mpig_request_create_irreq() jumps to fn_fail if failure occurs */
-	mpig_request_create_irreq(2, 1, buf, cnt, dt, rank, tag, ctx, comm, vc, &rreq);
+	mpig_request_create_irreq(2, 1, buf, cnt, dt, rank, tag, recv_ctx, comm, vc, &rreq);
 	mpig_cm_vmpi_request_construct(rreq);
 
 	/* start the nonblocking receive */
@@ -2251,7 +2256,7 @@ static int mpig_cm_vmpi_adi3_irecv(
     const int ctxoff, MPID_Request ** const rreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int recv_ctx = comm->recvcontext_id + ctxoff;
     mpig_vmpi_datatype_t vdt;
     const int vrank = mpig_cm_vmpi_comm_get_remote_vrank(comm, rank);
     const int vtag = mpig_cm_vmpi_tag_get_vtag(tag);
@@ -2266,15 +2271,15 @@ static int mpig_cm_vmpi_adi3_irecv(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_adi3_irecv);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
-	rank, tag, MPIG_PTR_CAST(comm), ctx));
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", recv_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	rank, tag, MPIG_PTR_CAST(comm), recv_ctx));
 
     mpig_cm_vmpi_datatype_get_vdt(dt, &vdt);
     
     /* create a new receive request */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "creating a new receive request"));
     /* NOTE: mpig_request_create_irreq() jumps to fn_fail if failure occurs */
-    mpig_request_create_irreq(2, 1, buf, cnt, dt, rank, tag, ctx, comm, vc, &rreq);
+    mpig_request_create_irreq(2, 1, buf, cnt, dt, rank, tag, recv_ctx, comm, vc, &rreq);
     mpig_cm_vmpi_request_construct(rreq);
 
     /* start the nonblocking receive */
@@ -2339,7 +2344,7 @@ static int mpig_cm_vmpi_adi3_probe(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_adi3_probe);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), comm->context_id + ctxoff,
+	MPIG_PTR_FMT ", recv_ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), comm->recvcontext_id + ctxoff,
 	MPIG_PTR_CAST(status)));
 
     if (mpig_pe_cm_owns_all_active_ops(&mpig_cm_vmpi_pe_info) || !mpig_pe_polling_required(&mpig_cm_vmpi_pe_info) == FALSE)
@@ -2395,7 +2400,7 @@ static int mpig_cm_vmpi_adi3_probe(
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), comm->context_id + ctxoff,
+	MPIG_PTR_FMT ", recv_ctx=%d, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), comm->recvcontext_id + ctxoff,
 	mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_probe);
     return mpi_errno;
@@ -2430,7 +2435,7 @@ static int mpig_cm_vmpi_adi3_iprobe(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_adi3_iprobe);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), comm->context_id + ctxoff,
+	MPIG_PTR_FMT ", recv_ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), comm->recvcontext_id + ctxoff,
 	MPIG_PTR_CAST(status)));
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "performing a nonblocking probe operation: vrank=%d, vtag=%d, vcomm="
@@ -2461,8 +2466,8 @@ static int mpig_cm_vmpi_adi3_iprobe(
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, found=%s, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), comm->context_id + ctxoff,
-	MPIG_BOOL_STR(vfound), mpi_errno));
+	MPIG_PTR_FMT ", recv_ctx=%d, found=%s, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), comm->recvcontext_id +
+        ctxoff, MPIG_BOOL_STR(vfound), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_adi3_iprobe);
     return mpi_errno;
 
@@ -2600,12 +2605,14 @@ int mpig_cm_vmpi_comm_dup_hook(MPID_Comm * const orig_comm, MPID_Comm * const ne
 		goto error_malloc_mtov;
 	    }   /* --END ERROR HANDLING-- */
 
-	    memcpy(new_comm->cms.vmpi.remote_ranks_mtov, orig_comm->cms.vmpi.remote_ranks_mtov, orig_comm->remote_size * sizeof(int));
+	    memcpy(new_comm->cms.vmpi.remote_ranks_mtov, orig_comm->cms.vmpi.remote_ranks_mtov,
+                orig_comm->remote_size * sizeof(int));
 
 	    /*
 	     * duplicate the VMPI to MPICH2 MPI remote rank mapping table
 	     */
-	    new_comm->cms.vmpi.remote_ranks_vtom = (int *) MPIU_Malloc(mpig_cm_vmpi_comm_get_remote_vsize(orig_comm) * sizeof(int));
+	    new_comm->cms.vmpi.remote_ranks_vtom =
+                (int *) MPIU_Malloc(mpig_cm_vmpi_comm_get_remote_vsize(orig_comm) * sizeof(int));
 	    if (new_comm->cms.vmpi.remote_ranks_mtov == NULL)
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: allocation of VMPI to MPICH2 rank "
@@ -2846,6 +2853,7 @@ int mpig_cm_vmpi_comm_split_hook(MPID_Comm * const orig_comm, MPID_Comm * const 
 		       intracommunicator asscociated with orig_comm.  VMPI_Intercomm_create is then used to combine the resulting
 		       local and remote groups of processes into a new intercommunicator. */
 		    int remote_leader;
+                    int tag;
 
 		    /* all processes must perform the VMPI_Comm_split (see new_comm == NULL case below) */
 		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM, "inter - calling VMPI_Comm_split: orig_comm=" MPIG_HANDLE_FMT
@@ -2859,14 +2867,15 @@ int mpig_cm_vmpi_comm_split_hook(MPID_Comm * const orig_comm, MPID_Comm * const 
 		    /* however, only the processes remain that are part of the new communicator need to participate in creating
 		       the new intercommunicator */
 		    remote_leader = mpig_comm_get_remote_vc(new_comm,
-			mpig_cm_vmpi_comm_get_remote_mrank(new_comm, 0))->cms.vmpi.cw_rank;
+                        mpig_cm_vmpi_comm_get_remote_mrank(new_comm, 0))->cms.vmpi.cw_rank;
+                    tag = (mpig_process.cms.vmpi.cw_rank < remote_leader) ? new_comm->context_id : new_comm->recvcontext_id;
 	    
 		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM, "inter - calling VMPI_Intercomm_create: orig_comm=" MPIG_HANDLE_FMT
 			", orig_comm_ctx=%d, local_leader=0, remote_leader=%d, tag=%d, new_comm=" MPIG_HANDLE_FMT
-			", new_comm_ctx=%d", orig_comm->handle, orig_comm->context_id, remote_leader, new_comm->context_id,
-			new_comm->handle, new_comm->context_id));
+			", new_comm_ctx=%d", orig_comm->handle, orig_comm->context_id, remote_leader, tag, new_comm->handle,
+                        new_comm->context_id));
     
-		    vrc = mpig_vmpi_intercomm_create(tmp_vcomm, 0, mpig_cm_vmpi_bridge_vcomm, remote_leader, new_comm->context_id,
+		    vrc = mpig_vmpi_intercomm_create(tmp_vcomm, 0, mpig_cm_vmpi_bridge_vcomm, remote_leader, tag,
 			mpig_cm_vmpi_comm_get_vcomm_ptr(new_comm, 0));
 		    MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Intercomm_create", &mpi_errno);
 	    
@@ -3015,7 +3024,6 @@ int mpig_cm_vmpi_intercomm_create_hook(MPID_Comm * const orig_comm, MPID_Comm * 
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int p;
     int vcnt;
-    int remote_leader;
     int ctxoff = 0;
     int vrc;
     int mpi_errno = MPI_SUCCESS;
@@ -3077,6 +3085,9 @@ int mpig_cm_vmpi_intercomm_create_hook(MPID_Comm * const orig_comm, MPID_Comm * 
 
     if (vcnt > 0)
     {
+        int remote_leader;
+        int tag;
+        
 	/*
 	 * if one or more of the remote processes can be communicated with using the vendor MPI, then construct the VMPI to
 	 * MPICH2 remote rank mapping table
@@ -3111,18 +3122,18 @@ int mpig_cm_vmpi_intercomm_create_hook(MPID_Comm * const orig_comm, MPID_Comm * 
 	 * from the remote group will be part of bridge communicator.
 	 */ 
 	remote_leader = mpig_comm_get_remote_vc(new_comm, mpig_cm_vmpi_comm_get_remote_mrank(new_comm, 0))->cms.vmpi.cw_rank;
+        tag = (mpig_process.cms.vmpi.cw_rank < remote_leader) ? new_comm->context_id : new_comm->recvcontext_id;
 	    
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM, "calling VMPI_Intercomm_create: orig_comm=" MPIG_HANDLE_FMT ", orig_comm_ctx=%d"
 	    ", local_leader=0, remote_leader=%d, tag=%d, new_comm=" MPIG_HANDLE_FMT ", new_comm_ctx=%d", orig_comm->handle,
-	    orig_comm->context_id, remote_leader, new_comm->context_id, new_comm->handle, new_comm->context_id));
+	    orig_comm->context_id, remote_leader, tag, new_comm->handle, new_comm->context_id));
     
 	for (ctxoff = 0; ctxoff < MPIG_COMM_NUM_CONTEXTS; ctxoff++)
 	{
 	    const mpig_vmpi_comm_t orig_vcomm0 = mpig_cm_vmpi_comm_get_vcomm(orig_comm, 0);
 	    mpig_vmpi_comm_t * const new_vcomm_p = mpig_cm_vmpi_comm_get_vcomm_ptr(new_comm, ctxoff);
 	    
-	    vrc = mpig_vmpi_intercomm_create(orig_vcomm0, 0, mpig_cm_vmpi_bridge_vcomm, remote_leader, new_comm->context_id,
-		new_vcomm_p);
+	    vrc = mpig_vmpi_intercomm_create(orig_vcomm0, 0, mpig_cm_vmpi_bridge_vcomm, remote_leader, tag, new_vcomm_p);
 	    MPIG_ERR_VMPI_CHKANDSTMT(vrc, "MPI_Intercomm_create", &mpi_errno, {goto error_intercomm_create;});
 	}
 	/* NOTE: ctxoff is used by the error handling code to determine how many communicators need to be freed.  therefore, it
@@ -3492,7 +3503,7 @@ static int mpig_cm_vmpi_comm_construct_localcomm(MPID_Comm * const orig_lcomm, M
     
     {   /* --BEGIN ERROR HANDLING-- */
       error_localcomm_vdup:
-	MPIR_Comm_release(new_comm->local_comm);
+	MPIR_Comm_release(new_comm->local_comm, FALSE);
 	new_comm->local_comm = NULL;
 	
       error_localcomm_create:
@@ -3534,8 +3545,14 @@ int mpig_cm_vmpi_type_contiguous_hook(const int cnt, const MPI_Datatype old_dt, 
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "calling MPIG_Type_contigous: cnt=%d, old_vdt=" MPIG_VMPI_DATATYPE_FMT,
 	cnt, MPIG_VMPI_DATATYPE_CAST(old_vdt)));
+    
     vrc = mpig_vmpi_type_contiguous(cnt, old_vdt, mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-    MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_contiguous", &mpi_errno);
+    if (vrc)
+    {   /* --BEGIN ERROR HANDLING-- */
+        mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+        MPIG_ERR_VMPI_SET(vrc, "MPI_Type_contiguous", &mpi_errno);
+    }   /* --END ERROR HANDLING-- */
+    
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "VMPI_Type_contigous returned: new_vdt=" MPIG_VMPI_DATATYPE_FMT,
 	MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_dtp_get_vdt(new_dtp))));
 
@@ -3574,8 +3591,14 @@ int mpig_cm_vmpi_type_vector_hook(const int cnt, const int blklen, const mpig_vm
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "calling MPIG_Type_vector: cnt=%d, blklen=%d, stride=" MPIG_AINT_FMT
 	    ", old_vdt=" MPIG_VMPI_DATATYPE_FMT, cnt, blklen, stride, MPIG_VMPI_DATATYPE_CAST(old_vdt)));
+        
 	vrc = mpig_vmpi_type_vector(cnt, blklen, (int) stride, old_vdt, mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-	MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_vector", &mpi_errno);
+        if (vrc)
+        {   /* --BEGIN ERROR HANDLING-- */
+            mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+            MPIG_ERR_VMPI_SET(vrc, "MPI_Type_vector", &mpi_errno);
+        }   /* --END ERROR HANDLING-- */
+
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "VMPI_Type_vector returned: new_vdt=" MPIG_VMPI_DATATYPE_FMT,
 	    MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_dtp_get_vdt(new_dtp))));
     }
@@ -3583,8 +3606,14 @@ int mpig_cm_vmpi_type_vector_hook(const int cnt, const int blklen, const mpig_vm
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "calling MPIG_Type_create_hvector: cnt=%d, blklen=%d, stride=" MPIG_AINT_FMT
 	    ", old_vdt=" MPIG_VMPI_DATATYPE_FMT, cnt, blklen, stride, MPIG_VMPI_DATATYPE_CAST(old_vdt)));
+        
 	vrc = mpig_vmpi_type_create_hvector(cnt, blklen, stride, old_vdt, mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-	MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_create_hvector", &mpi_errno);
+        if (vrc)
+        {   /* --BEGIN ERROR HANDLING-- */
+            mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+            MPIG_ERR_VMPI_SET(vrc, "MPI_Type_hvector", &mpi_errno);
+        }   /* --END ERROR HANDLING-- */
+
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "VMPI_Type_create_hvector returned: new_vdt=" MPIG_VMPI_DATATYPE_FMT,
 	    MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_dtp_get_vdt(new_dtp))));
     }
@@ -3625,13 +3654,21 @@ int mpig_cm_vmpi_type_indexed_hook(const int cnt, int * const blklens, void * co
     if (displs_in_bytes == FALSE)
     {
 	vrc = mpig_vmpi_type_indexed(cnt, blklens, (int *) displs, old_vdt, mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-	MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_indexed", &mpi_errno);
+        if (vrc)
+        {   /* --BEGIN ERROR HANDLING-- */
+            mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+            MPIG_ERR_VMPI_SET(vrc, "MPI_Type_indexed", &mpi_errno);
+        }   /* --END ERROR HANDLING-- */
     }
     else
     {
 	vrc = mpig_vmpi_type_create_hindexed(cnt, blklens, (mpig_vmpi_aint_t *) displs, old_vdt,
 	    mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-	MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_create_hindexed", &mpi_errno);
+        if (vrc)
+        {   /* --BEGIN ERROR HANDLING-- */
+            mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+            MPIG_ERR_VMPI_SET(vrc, "MPI_Type_hindexed", &mpi_errno);
+        }   /* --END ERROR HANDLING-- */
     }
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "entering: new_dt=" MPIG_HANDLE_FMT ", new_dtp=" MPIG_PTR_FMT
@@ -3674,7 +3711,11 @@ int mpig_cm_vmpi_type_blockindexed_hook(const int cnt, const int blklen, void * 
 	if (displs_in_bytes == FALSE)
 	{
 	    vrc = mpig_vmpi_type_create_indexed_block(cnt, blklen, (int *) displs, old_vdt, mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-	    MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_indexed", &mpi_errno);
+            if (vrc)
+            {   /* --BEGIN ERROR HANDLING-- */
+                mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+                    MPIG_ERR_VMPI_SET(vrc, "MPI_Type_create_indexed_block", &mpi_errno);
+            }   /* --END ERROR HANDLING-- */
 
 	    goto fn_return;
 	}
@@ -3690,13 +3731,21 @@ int mpig_cm_vmpi_type_blockindexed_hook(const int cnt, const int blklen, void * 
     if (displs_in_bytes == FALSE)
     {
 	vrc = mpig_vmpi_type_indexed(cnt, blklens, (int *) displs, old_vdt, mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-	MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_indexed", &mpi_errno);
+        if (vrc)
+        {   /* --BEGIN ERROR HANDLING-- */
+            mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+                MPIG_ERR_VMPI_SET(vrc, "MPI_Type_create_indexed", &mpi_errno);
+        }   /* --END ERROR HANDLING-- */
     }
     else
     {
 	vrc = mpig_vmpi_type_create_hindexed(cnt, blklens, (mpig_vmpi_aint_t *) displs, old_vdt,
 	    mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-	MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_create_hindexed", &mpi_errno);
+        if (vrc)
+        {   /* --BEGIN ERROR HANDLING-- */
+            mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+                MPIG_ERR_VMPI_SET(vrc, "MPI_Type_create_hindexed", &mpi_errno);
+        }   /* --END ERROR HANDLING-- */
     }
     
   fn_return:
@@ -3783,7 +3832,11 @@ int mpig_cm_vmpi_type_struct_hook(const int cnt, int * const blklens, mpig_vmpi_
     MPIG_PTR_FMT ", old_vdt=" MPIG_PTR_FMT, vcnt, MPIG_PTR_CAST(vblklens), MPIG_PTR_CAST(vdispls), MPIG_PTR_CAST(old_vdts)));
     
     vrc = mpig_vmpi_type_create_struct(vcnt, vblklens, vdispls, old_vdts, mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-    MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_create_struct", &mpi_errno);
+    if (vrc)
+    {   /* --BEGIN ERROR HANDLING-- */
+        mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+        MPIG_ERR_VMPI_SET(vrc, "MPI_Type_create_struct", &mpi_errno);
+    }   /* --END ERROR HANDLING-- */
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "VMPI_Type_create_struct returned: new_vdt=" MPIG_VMPI_DATATYPE_FMT,
 	MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_dtp_get_vdt(new_dtp))));
@@ -3829,7 +3882,11 @@ int mpig_cm_vmpi_type_create_resized_hook(const MPI_Datatype old_dt, const MPI_A
 #   if defined(HAVE_VMPI_TYPE_CREATE_RESIZED)
     {
 	vrc = mpig_vmpi_type_create_resized(old_vdt, lb, extent, mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-	MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Datatype_create_resized", &mpi_errno);
+        if (vrc)
+        {   /* --BEGIN ERROR HANDLING-- */
+            mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+            MPIG_ERR_VMPI_SET(vrc, "MPI_Type_create_resized", &mpi_errno);
+        }   /* --END ERROR HANDLING-- */
     }
 #   else
     {
@@ -3860,7 +3917,11 @@ int mpig_cm_vmpi_type_create_resized_hook(const MPI_Datatype old_dt, const MPI_A
 	    dts[2] = old_vdt;
 
 	    vrc = mpig_vmpi_type_create_struct(3, blklens, displs, dts, mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-	    MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_create_struct", &mpi_errno);
+            if (vrc)
+            {   /* --BEGIN ERROR HANDLING-- */
+                mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+                MPIG_ERR_VMPI_SET(vrc, "MPI_Type_create_struct", &mpi_errno);
+            }   /* --END ERROR HANDLING-- */
 	}
 	else
 	{
@@ -3906,8 +3967,14 @@ int mpig_cm_vmpi_type_dup_hook(const MPI_Datatype old_dt, MPID_Datatype * const 
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "calling MPIG_Type_dup: old_vdt=" MPIG_VMPI_DATATYPE_FMT,
 	MPIG_VMPI_DATATYPE_CAST(old_vdt)));
+    
     vrc = mpig_vmpi_type_dup(old_vdt, mpig_cm_vmpi_dtp_get_vdt_ptr(new_dtp));
-    MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_dup", &mpi_errno);
+    if (vrc)
+    {   /* --BEGIN ERROR HANDLING-- */
+        mpig_cm_vmpi_dtp_set_vdt(new_dtp, MPIG_VMPI_DATATYPE_NULL);
+        MPIG_ERR_VMPI_SET(vrc, "MPI_Type_dup", &mpi_errno);
+    }   /* --END ERROR HANDLING-- */
+    
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "VMPI_Type_dup returned: new_vdt=" MPIG_VMPI_DATATYPE_FMT,
 	MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_dtp_get_vdt(new_dtp))));
 
@@ -3972,14 +4039,21 @@ int mpig_cm_vmpi_type_free_hook(MPID_Datatype * const dtp)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "entering: dt=" MPIG_HANDLE_FMT ", dtp=" MPIG_PTR_FMT,
 	dtp->handle, MPIG_PTR_CAST(dtp)));
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "calling MPIG_Type_free: vdt=" MPIG_VMPI_DATATYPE_FMT,
-	MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_dtp_get_vdt(dtp))));
+    if (mpig_vmpi_datatype_is_null(mpig_cm_vmpi_dtp_get_vdt(dtp)) == FALSE)
+    {
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "calling MPIG_Type_free: vdt=" MPIG_VMPI_DATATYPE_FMT,
+            MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_dtp_get_vdt(dtp))));
 
-    vrc = mpig_vmpi_type_free(mpig_cm_vmpi_dtp_get_vdt_ptr(dtp));
-    MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_free", &mpi_errno);
+        vrc = mpig_vmpi_type_free(mpig_cm_vmpi_dtp_get_vdt_ptr(dtp));
+        MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Type_free", &mpi_errno);
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "VMPI_Type_free returned: vdt=" MPIG_VMPI_DATATYPE_FMT,
-	MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_dtp_get_vdt(dtp))));
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "VMPI_Type_free returned: vdt=" MPIG_VMPI_DATATYPE_FMT,
+            MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_dtp_get_vdt(dtp))));
+    }
+    else
+    {
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "VMPI datatype is NULL, likely a result of a previous creation failure."));
+    }
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "exiting: dt=" MPIG_HANDLE_FMT ", dtp=" MPIG_PTR_FMT
 	", mpi_errno=" MPIG_ERRNO_FMT, dtp->handle, MPIG_PTR_CAST(dtp), mpi_errno));
@@ -4015,7 +4089,7 @@ int mpig_cm_vmpi_iprobe_any_source(int tag, MPID_Comm * comm, int ctxoff, bool_t
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_iprobe_any_source);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: tag=%d, comm=" MPIG_HANDLE_FMT ", commp="
-	MPIG_PTR_FMT ", ctx=%d", tag, comm->handle, MPIG_PTR_CAST(comm), comm->context_id + ctxoff));
+	MPIG_PTR_FMT ", recv_ctx=%d", tag, comm->handle, MPIG_PTR_CAST(comm), comm->recvcontext_id + ctxoff));
 
     MPIU_Assert(mpig_cm_vmpi_comm_has_remote_vprocs(comm));
     
@@ -4045,8 +4119,8 @@ int mpig_cm_vmpi_iprobe_any_source(int tag, MPID_Comm * comm, int ctxoff, bool_t
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: tag=%d, comm=" MPIG_HANDLE_FMT ", commp="
-	MPIG_PTR_FMT ", ctx=%d, found=%s, mpi_errno=" MPIG_ERRNO_FMT, tag, comm->handle, MPIG_PTR_CAST(comm), comm->context_id +
-	ctxoff, MPIG_BOOL_STR(vfound), mpi_errno));
+	MPIG_PTR_FMT ", recv_ctx=%d, found=%s, mpi_errno=" MPIG_ERRNO_FMT, tag, comm->handle, MPIG_PTR_CAST(comm),
+        comm->recvcontext_id + ctxoff, MPIG_BOOL_STR(vfound), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_iprobe_any_source);
     return mpi_errno;
 
@@ -4169,8 +4243,8 @@ int mpig_cm_vmpi_register_recv_any_source(const mpig_msg_op_params_t * const ras
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_register_recv_any_source)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "entering: tag=%d, comm=" MPIG_HANDLE_FMT ", commp="
-	MPIG_PTR_FMT ", ctx=%d", ras_params->tag, ras_params->comm->handle, MPIG_PTR_CAST(ras_params->comm),
-	ras_params->comm->context_id + ras_params->ctxoff));
+	MPIG_PTR_FMT ", recv_ctx=%d", ras_params->tag, ras_params->comm->handle, MPIG_PTR_CAST(ras_params->comm),
+	ras_params->comm->recvcontext_id + ras_params->ctxoff));
 
     MPIU_Assert(mpig_cm_vmpi_comm_has_remote_vprocs(ras_params->comm));
     MPIU_Assert(mpig_cm_vmpi_thread_is_main());
@@ -4204,7 +4278,7 @@ int mpig_cm_vmpi_register_recv_any_source(const mpig_msg_op_params_t * const ras
 	mpig_vc_t * const vc = mpig_comm_get_remote_vc(ras_params->comm, mrank);
 	
 	mpig_request_construct_irreq(ras_req, 1, 0, ras_params->buf, ras_params->cnt, ras_params->dt,
-	    ras_params->rank, ras_params->tag, ras_params->comm->context_id + ras_params->ctxoff, ras_params->comm, vc);
+	    ras_params->rank, ras_params->tag, ras_params->comm->recvcontext_id + ras_params->ctxoff, ras_params->comm, vc);
 	mpig_cm_vmpi_request_status_vtom(ras_req, &vstatus, vrc);
 	/* mpig_request_complete(ras_req); -- completion counter set to zero during request construction above */
 	found = TRUE;
@@ -4231,9 +4305,9 @@ int mpig_cm_vmpi_register_recv_any_source(const mpig_msg_op_params_t * const ras
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: tag=%d, comm=" MPIG_HANDLE_FMT ", commp="
-	MPIG_PTR_FMT ", ctx=%d, found=%s, req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, ras_params->tag, ras_params->comm->handle,
-	MPIG_PTR_CAST(ras_params->comm), ras_params->comm->context_id + ras_params->ctxoff, MPIG_BOOL_STR(found),
-	MPIG_HANDLE_VAL(ras_req), MPIG_PTR_CAST(ras_req)));
+	MPIG_PTR_FMT ", recv_ctx=%d, found=%s, req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, ras_params->tag,
+        ras_params->comm->handle, MPIG_PTR_CAST(ras_params->comm), ras_params->comm->recvcontext_id + ras_params->ctxoff,
+        MPIG_BOOL_STR(found), MPIG_HANDLE_VAL(ras_req), MPIG_PTR_CAST(ras_req)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_register_recv_any_source);
     return mpi_errno;
 

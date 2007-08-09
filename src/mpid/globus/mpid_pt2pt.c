@@ -44,7 +44,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	{
 	    case MPIG_REQUEST_TYPE_RECV:
 	    {
-		rc = MPID_Irecv(buf, cnt, dt, rank, tag, preq->comm, ctx - preq->comm->context_id, &preq->partner_request);
+		rc = MPID_Irecv(buf, cnt, dt, rank, tag, preq->comm, ctx - preq->comm->recvcontext_id, &preq->partner_request);
 		break;
 	    }
 	    
@@ -127,7 +127,7 @@ int MPID_Startall(int count, MPID_Request * requests[])
 int MPID_Recv_init(void * buf, int cnt, MPI_Datatype dt, int rank, int tag, MPID_Comm * comm, int ctxoff, MPID_Request ** rreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int ctx = comm->recvcontext_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_MPID_RECV_INIT);
 
@@ -348,6 +348,12 @@ int mpig_adi3_cancel_recv(MPID_Request * rreq)
 
 	rreq->status.cancelled = TRUE;
 	rreq->status.count = 0;
+        /* 
+         * if (rreq->vc->cm->pe_end_op != NULL)
+         * {
+         *     rreq->vc->cm->pe_end_op();
+         * }
+         */
 	mpig_request_complete(rreq);
     }
     else

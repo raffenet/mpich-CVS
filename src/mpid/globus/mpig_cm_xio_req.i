@@ -25,6 +25,7 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
     (req_)->cmu.xio.buf_type = MPIG_CM_XIO_APP_BUF_TYPE_UNDEFINED;			\
     (req_)->cmu.xio.stream_pos = 0;							\
     (req_)->cmu.xio.stream_size = 0;							\
+    (req_)->cmu.xio.segp = NULL;							\
     mpig_iov_construct((req_)->cmu.xio.iov, MPIG_CM_XIO_IOV_NUM_ENTRIES);		\
     (req_)->cmu.xio.gcb = (globus_xio_iovec_callback_t) NULL;				\
     (req_)->cmu.xio.sreq_type = MPIG_REQUEST_TYPE_UNDEFINED;				\
@@ -44,6 +45,10 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
     (req_)->cmu.xio.buf_type = MPIG_CM_XIO_APP_BUF_TYPE_UNDEFINED;		\
     (req_)->cmu.xio.stream_pos = 0;						\
     (req_)->cmu.xio.stream_size = 0;						\
+    if ((req_)->cmu.xio.segp != NULL)                                           \
+    {                                                                           \
+        MPID_Segment_free((req_)->cmu.xio.segp);                                \
+    }                                                                           \
     mpig_iov_destruct((req_)->cmu.xio.iov);					\
     (req_)->cmu.xio.gcb = (globus_xio_iovec_callback_t) MPIG_INVALID_PTR;	\
     (req_)->cmu.xio.sreq_type = MPIG_REQUEST_TYPE_UNDEFINED;			\

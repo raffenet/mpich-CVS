@@ -86,7 +86,7 @@
     globus_size_t nbytes__ = (globus_size_t) mpig_iov_get_num_bytes((rreq_)->cmu.xio.iov);					\
 																\
     *(mpi_errno_p_) = MPI_SUCCESS;												\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "register writev: vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT ", rreqp="		\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "register readv: vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT ", rreqp="		\
 	MPIG_PTR_FMT ", handle=" MPIG_PTR_FMT ", nbytes=" MPIG_SIZE_FMT, MPIG_PTR_CAST(vc_), (rreq_)->handle,			\
 	MPIG_PTR_CAST(rreq_), MPIG_PTR_CAST(handle__), nbytes__));								\
     grc__ = globus_xio_register_readv(handle__, iov__, iov_cnt__, nbytes__, NULL, (rreq_)->cmu.xio.gcb, (void *) (vc_));	\

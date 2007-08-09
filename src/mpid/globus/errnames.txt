@@ -277,11 +277,9 @@
 **globus|connacc|port_connect %s %i %C:globus|connacc|port_connect -- %s %i %C
 **globus|connacc|port_vc_recv:globus|connacc|port_vc_recv
 **globus|connacc|port_vc_recv %p %p %d:globus|connacc|port_vc_recv -- %p %p %d
-**globus|connacc|port_vc_recv %p %p %s:globus|connacc|port_vc_recv -- %p %p %s
 **globus|connacc|port_vc_send:globus|connacc|port_vc_send
 **globus|connacc|port_vc_send %p:globus|connacc|port_vc_send -- %p
 **globus|connacc|port_vc_send %p %p %d:globus|connacc|port_vc_send -- %p %p %d
-**globus|connacc|port_vc_send %p %p %s:globus|connacc|port_vc_send -- %p %p %s
 **globus|connacc|vcrt_deserialize:globus|connacc|vcrt_deserialize
 **globus|connacc|vcrt_serialize:globus|connacc|vcrt_serialize
 **globus|connacc|vcrt_serialize %s %C %p:globus|connacc|vcrt_serialize -- %s %C %p

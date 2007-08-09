@@ -184,7 +184,7 @@ elif test -n "${MPIG_BUILDING_MPICH2}" ; then
     cc=$BCC
     cflags=$BCFLAGS
 elif test -n "$MPIG_VMPI_PREMAIN_LIB" -a -f "$MPIG_VMPI_PREMAIN_LIB" ; then
-    libs="$MPIG_VMPI_PREMAIN_LIB $libs"
+    link_args="$MPIG_VMPI_PREMAIN_LIB $link_args"
 fi
 
 if test $DoDependencies -eq 1 ; then

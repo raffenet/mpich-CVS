@@ -351,7 +351,7 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 {						\
     if (req->comm != NULL)			\
     {						\
-	MPIR_Comm_release(req->comm);		\
+	MPIR_Comm_release(req->comm, FALSE);    \
         req->comm = NULL;			\
     }						\
 }    

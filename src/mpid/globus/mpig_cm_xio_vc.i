@@ -415,7 +415,7 @@ static int mpig_cm_xio_adi3_isend(const void * const buf, const int cnt, const M
     const int rank, const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const sreqp)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int send_ctx = comm->context_id + ctxoff;
     MPID_Request * sreq = NULL;
     mpig_vc_t * const vc = mpig_comm_get_remote_vc(comm, rank);
     int mpi_errno = MPI_SUCCESS;
@@ -425,12 +425,12 @@ static int mpig_cm_xio_adi3_isend(const void * const buf, const int cnt, const M
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_adi3_isend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
-	rank, tag, MPIG_PTR_CAST(comm), ctx));
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	rank, tag, MPIG_PTR_CAST(comm), send_ctx));
 
     MPIU_Assert(mpig_vc_get_cm_module_type(vc) == MPIG_CM_TYPE_XIO);
 
-    mpig_request_create_isreq(MPIG_REQUEST_TYPE_SEND, 2, 1, (void *) buf, cnt, dt, rank, tag, ctx, comm, vc, &sreq);
+    mpig_request_create_isreq(MPIG_REQUEST_TYPE_SEND, 2, 1, (void *) buf, cnt, dt, rank, tag, send_ctx, comm, vc, &sreq);
     mpig_cm_xio_request_construct(sreq);
     mpig_cm_xio_request_set_cc(sreq, 1);
     
@@ -469,7 +469,7 @@ static int mpig_cm_xio_adi3_irsend(const void * const buf, const int cnt, const 
     const int rank, const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const sreqp)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int send_ctx = comm->context_id + ctxoff;
     MPID_Request * sreq = NULL;
     mpig_vc_t * const vc = mpig_comm_get_remote_vc(comm, rank);
     int mpi_errno = MPI_SUCCESS;
@@ -479,12 +479,12 @@ static int mpig_cm_xio_adi3_irsend(const void * const buf, const int cnt, const 
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_adi3_irsend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
-	rank, tag, MPIG_PTR_CAST(comm), ctx));
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	rank, tag, MPIG_PTR_CAST(comm), send_ctx));
 
     MPIU_Assert(mpig_vc_get_cm_module_type(vc) == MPIG_CM_TYPE_XIO);
 
-    mpig_request_create_isreq(MPIG_REQUEST_TYPE_RSEND, 2, 1, (void *) buf, cnt, dt, rank, tag, ctx, comm, vc, &sreq);
+    mpig_request_create_isreq(MPIG_REQUEST_TYPE_RSEND, 2, 1, (void *) buf, cnt, dt, rank, tag, send_ctx, comm, vc, &sreq);
     mpig_cm_xio_request_construct(sreq);
     mpig_cm_xio_request_set_cc(sreq, 1);
 
@@ -523,7 +523,7 @@ static int mpig_cm_xio_adi3_issend(const void * const buf, const int cnt, const 
     const int rank, const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const sreqp)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int send_ctx = comm->context_id + ctxoff;
     MPID_Request * sreq = NULL;
     mpig_vc_t * const vc = mpig_comm_get_remote_vc(comm, rank);
     int mpi_errno = MPI_SUCCESS;
@@ -533,12 +533,12 @@ static int mpig_cm_xio_adi3_issend(const void * const buf, const int cnt, const 
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_adi3_issend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
-	rank, tag, MPIG_PTR_CAST(comm), ctx));
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	rank, tag, MPIG_PTR_CAST(comm), send_ctx));
 
     MPIU_Assert(mpig_vc_get_cm_module_type(vc) == MPIG_CM_TYPE_XIO);
     
-    mpig_request_create_isreq(MPIG_REQUEST_TYPE_SSEND, 2, 1, (void *) buf, cnt, dt, rank, tag, ctx, comm, vc, &sreq);
+    mpig_request_create_isreq(MPIG_REQUEST_TYPE_SSEND, 2, 1, (void *) buf, cnt, dt, rank, tag, send_ctx, comm, vc, &sreq);
     mpig_cm_xio_request_construct(sreq);
     mpig_cm_xio_request_set_cc(sreq, 2);
 
@@ -604,7 +604,7 @@ static int mpig_cm_xio_adi3_irecv(void * const buf, const int cnt, const MPI_Dat
     const int rank, const int tag, MPID_Comm * const comm, const int ctxoff, MPID_Request ** const rreqp)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int recv_ctx = comm->recvcontext_id + ctxoff;
     MPID_Request * rreq;
     bool_t rreq_found = FALSE;
     mpig_vc_t * const vc = mpig_comm_get_remote_vc(comm, rank);
@@ -615,18 +615,18 @@ static int mpig_cm_xio_adi3_irecv(void * const buf, const int cnt, const MPI_Dat
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_adi3_irecv);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: buf=" MPIG_PTR_FMT
-	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
-	rank, tag, MPIG_PTR_CAST(comm), ctx));
+	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", recv_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
+	rank, tag, MPIG_PTR_CAST(comm), recv_ctx));
 
     MPIU_Assert(mpig_vc_get_cm_module_type(vc) == MPIG_CM_TYPE_XIO);
     
-    mpi_errno = mpig_recvq_deq_unexp_or_enq_posted(rank, tag, ctx, NULL, &rreq_found, &rreq);
+    mpi_errno = mpig_recvq_deq_unexp_or_enq_posted(rank, tag, recv_ctx, NULL, &rreq_found, &rreq);
     if (mpi_errno)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: receive queue operation failed; dequeue "
-	    "unexpected or enqueue posted: rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
+	    "unexpected or enqueue posted: rank=%d, tag=%d, recv_ctx=%d", rank, tag, recv_ctx));
 	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|recvq_deq_unexp_or_enq_posted",
-	    "**globus|recvq_deq_unexp_or_enq_posted %d %d %d", rank, tag, ctx);
+	    "**globus|recvq_deq_unexp_or_enq_posted %d %d %d", rank, tag, recv_ctx);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -650,7 +650,7 @@ static int mpig_cm_xio_adi3_irecv(void * const buf, const int cnt, const MPI_Dat
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "request allocated in posted queue: req=" MPIG_HANDLE_FMT ", reqp="
 	    MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
 	
-	mpig_request_construct_irreq(rreq, 2, 1, buf, cnt, dt, rank, tag, ctx, comm, vc);
+	mpig_request_construct_irreq(rreq, 2, 1, buf, cnt, dt, rank, tag, recv_ctx, comm, vc);
 	mpig_cm_xio_request_construct(rreq);
 	mpig_cm_xio_request_set_cc(rreq, 1);
 	mpig_cm_xio_request_set_state(rreq, MPIG_CM_XIO_REQ_STATE_RECV_RREQ_POSTED);
@@ -685,7 +685,7 @@ static int mpig_cm_xio_adi3_probe(
     const int rank, const int tag, MPID_Comm * const comm, const int ctxoff, MPI_Status * const status)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int recv_ctx = comm->recvcontext_id + ctxoff;
     bool_t found = FALSE;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_adi3_probe);
@@ -694,19 +694,19 @@ static int mpig_cm_xio_adi3_probe(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_adi3_probe);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), ctx, MPIG_PTR_CAST(status)));
+	MPIG_PTR_FMT ", recv_ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), recv_ctx, MPIG_PTR_CAST(status)));
 
     if (mpig_pe_cm_owns_all_active_ops(&mpig_cm_xio_pe_info) || !mpig_pe_polling_required(&mpig_cm_xio_pe_info) == FALSE)
     {
 	mpig_cm_xio_probe_start();
 	{
-	    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, ctx, &found, status);
+	    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
 	    while (found == FALSE)
 	    {
 		mpig_cm_xio_probe_wait();
 		
-		mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, ctx, &found, status);
+		mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
 		if (mpi_errno)
 		{   /* --BEGIN ERROR HANDLING-- */
 		    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
@@ -719,7 +719,7 @@ static int mpig_cm_xio_adi3_probe(
     }
     else
     {
-	mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, ctx, &found, status);
+	mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
 	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
 	while (found == FALSE)
 	{
@@ -729,14 +729,14 @@ static int mpig_cm_xio_adi3_probe(
 	    mpi_errno = MPID_Progress_poke();
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_poke");
 	    
-	    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, ctx, &found, status);
+	    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
 	}
     }
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), ctx, mpi_errno));
+	MPIG_PTR_FMT ", recv_ctx=%d, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), recv_ctx, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_adi3_probe);
     return mpi_errno;
 
@@ -757,7 +757,7 @@ static int mpig_cm_xio_adi3_iprobe(
     const int rank, const int tag, MPID_Comm * const comm, const int ctxoff, int * const found_p, MPI_Status * const status)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int recv_ctx = comm->recvcontext_id + ctxoff;
     bool_t found = FALSE;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_adi3_iprobe);
@@ -766,17 +766,17 @@ static int mpig_cm_xio_adi3_iprobe(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_adi3_iprobe);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), ctx, MPIG_PTR_CAST(status)));
+	MPIG_PTR_FMT ", recv_ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), recv_ctx, MPIG_PTR_CAST(status)));
 
-    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, ctx, &found, status);
+    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
 
     *found_p = found;
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, found=%s, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), ctx, MPIG_BOOL_STR(found),
-	mpi_errno));
+	MPIG_PTR_FMT ", recv_ctx=%d, found=%s, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), recv_ctx,
+        MPIG_BOOL_STR(found), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_adi3_iprobe);
     return mpi_errno;
 
@@ -804,7 +804,7 @@ static int mpig_cm_xio_adi3_cancel_send(MPID_Request * const sreq)
     bool_t sreq_complete = FALSE;
     int rank;
     int tag;
-    int ctx;
+    int send_ctx;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_adi3_cancel_send);
 
@@ -835,14 +835,14 @@ static int mpig_cm_xio_adi3_cancel_send(MPID_Request * const sreq)
 	    }
 	    else
 	    {
-		mpig_request_get_envelope(sreq, &rank, &tag, &ctx);
+		mpig_request_get_envelope(sreq, &rank, &tag, &send_ctx);
 		
 		/* if that fails, send a message to the remote process ask it to remove the message from its unexpected queue */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "sending cancel request to remote process: vc=" MPIG_PTR_FMT ", sreq="
-		    MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", rank=%d, tag=%d, ctx=%d", MPIG_PTR_CAST(vc), sreq->handle,
-		    MPIG_PTR_CAST(sreq), rank, tag, ctx));
+		    MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", rank=%d, tag=%d, send_ctx=%d", MPIG_PTR_CAST(vc), sreq->handle,
+		    MPIG_PTR_CAST(sreq), rank, tag, send_ctx));
 	    
-		mpi_errno = mpig_cm_xio_send_enq_cancel_send_msg(vc, sreq->comm->rank, tag, ctx, sreq->handle);
+		mpi_errno = mpig_cm_xio_send_enq_cancel_send_msg(vc, sreq->comm->rank, tag, send_ctx, sreq->handle);
 		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_cancel_send_msg");
 	
 		/* adjust the request's completion counters and reference count to insure the request lives until the response is

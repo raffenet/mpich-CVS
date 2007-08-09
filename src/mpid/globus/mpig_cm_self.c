@@ -25,7 +25,7 @@
 static mpig_vc_t * mpig_cm_self_vc = NULL;
 
 static int mpig_cm_self_send(
-    mpig_request_type_t type, const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, int ctx, MPID_Comm * comm,
+    mpig_request_type_t type, const void * buf, int cnt, MPI_Datatype dt, int rank, int tag, int ctxoff, MPID_Comm * comm,
     MPID_Request ** sreqp);
 
 static void mpig_cm_self_buffer_copy(
@@ -64,7 +64,8 @@ static mpig_cm_vtable_t mpig_cm_self_vtable =
     mpig_cm_self_construct_vc_contact_info,
     mpig_cm_self_destruct_vc_contact_info,
     mpig_cm_self_select_comm_method,
-    NULL, /*mpig_cm_self_get_vc_compatability */
+    NULL, /* mpig_cm_self_get_vc_compatability */
+    /* NULL, /\* mpig_cm_self_pe_cancel_op *\/ */
     mpig_cm_vtable_last_entry
 };
 
@@ -468,7 +469,7 @@ static int mpig_cm_self_adi3_send(
     const int ctxoff, MPID_Request ** const sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int send_ctx = comm->context_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_send);
 
@@ -476,10 +477,10 @@ static int mpig_cm_self_adi3_send(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_send);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
-	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d",
+	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), send_ctx));
 
-    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SEND, buf, cnt, dt, rank, tag, ctxoff, comm, sreqp);
 #   if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
     {
 	MPIU_ERR_CHKANDJUMP(((*sreqp)->cc != 0), mpi_errno, MPI_ERR_OTHER, "**dev|selfsenddeadlock");
@@ -510,7 +511,7 @@ static int mpig_cm_self_adi3_isend(
     const int ctxoff, MPID_Request ** const sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int send_ctx = comm->context_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_isend);
 
@@ -518,10 +519,10 @@ static int mpig_cm_self_adi3_isend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_isend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
-	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d",
+	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), send_ctx));
 
-    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SEND, buf, cnt, dt, rank, tag, ctxoff, comm, sreqp);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
 	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), MPIG_PTR_CAST(*sreqp), mpi_errno));
@@ -541,7 +542,7 @@ static int mpig_cm_self_adi3_rsend(
     const int ctxoff, MPID_Request ** const sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int send_ctx = comm->context_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_rsend);
 
@@ -549,10 +550,10 @@ static int mpig_cm_self_adi3_rsend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_rsend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
-	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d",
+	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), send_ctx));
 
-    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_RSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_RSEND, buf, cnt, dt, rank, tag, ctxoff, comm, sreqp);
 #   if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
     {
 	MPIU_ERR_CHKANDJUMP(((*sreqp)->cc != 0), mpi_errno, MPI_ERR_OTHER, "**dev|selfsenddeadlock");
@@ -583,7 +584,7 @@ static int mpig_cm_self_adi3_irsend(
     const int ctxoff, MPID_Request ** const sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int send_ctx = comm->context_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_irsend);
 
@@ -591,10 +592,10 @@ static int mpig_cm_self_adi3_irsend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_irsend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
-	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d",
+	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), send_ctx));
 
-    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_RSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_RSEND, buf, cnt, dt, rank, tag, ctxoff, comm, sreqp);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
 	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), MPIG_PTR_CAST(*sreqp), mpi_errno));
@@ -614,7 +615,7 @@ static int mpig_cm_self_adi3_ssend(
     const int ctxoff, MPID_Request ** const sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int send_ctx = comm->context_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_ssend);
 
@@ -622,10 +623,10 @@ static int mpig_cm_self_adi3_ssend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_ssend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
-	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d",
+	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), send_ctx));
 
-    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SSEND, buf, cnt, dt, rank, tag, ctxoff, comm, sreqp);
 #   if (MPICH_THREAD_LEVEL < MPI_THREAD_MULTIPLE)
     {
 	MPIU_ERR_CHKANDJUMP(((*sreqp)->cc != 0), mpi_errno, MPI_ERR_OTHER, "**dev|selfsenddeadlock");
@@ -656,7 +657,7 @@ static int mpig_cm_self_adi3_issend(
     const int ctxoff, MPID_Request ** const sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int send_ctx = comm->context_id + ctxoff;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_issend);
 
@@ -664,10 +665,10 @@ static int mpig_cm_self_adi3_issend(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_issend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
-	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", send_ctx=%d",
+	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), send_ctx));
 
-    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SSEND, buf, cnt, dt, rank, tag, ctx, comm, sreqp);
+    mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SSEND, buf, cnt, dt, rank, tag, ctxoff, comm, sreqp);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
 	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), MPIG_PTR_CAST(*sreqp), mpi_errno));
@@ -694,8 +695,8 @@ static int mpig_cm_self_adi3_recv(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_recv);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
-	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), comm->context_id + ctxoff));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", recv_ctx=%d",
+	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), comm->recvcontext_id + ctxoff));
 
     mpi_errno = mpig_cm_self_adi3_irecv(buf, cnt, dt, rank, tag, comm, ctxoff, rreqp);
     /* the status will be extracted by MPI_Recv() once the request is complete */
@@ -720,7 +721,7 @@ static int mpig_cm_self_adi3_irecv(
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * sreq = NULL;
     MPID_Request * rreq;
-    const int ctx = comm->context_id + ctxoff;
+    const int recv_ctx = comm->recvcontext_id + ctxoff;
     int rreq_found;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_irecv);
@@ -729,18 +730,18 @@ static int mpig_cm_self_adi3_irecv(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_irecv);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
-	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", ctx=%d",
-	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), ctx));
+	"entering: buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", recv_ctx=%d",
+	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), recv_ctx));
 
     MPIU_Assert(rank == comm->rank);
     
-    mpi_errno = mpig_recvq_deq_unexp_or_enq_posted(rank, tag, ctx, NULL, &rreq_found, &rreq);
+    mpi_errno = mpig_recvq_deq_unexp_or_enq_posted(rank, tag, recv_ctx, NULL, &rreq_found, &rreq);
     if (mpi_errno)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: receive queue operation failed; dequeue "
-	    "unexpected or enqueue posted: rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
+	    "unexpected or enqueue posted: rank=%d, tag=%d, recv_ctx=%d", rank, tag, recv_ctx));
 	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|recvq_deq_unexp_or_enq_posted",
-	    "**globus|recvq_deq_unexp_or_enq_posted %d %d %d", rank, tag, ctx);
+	    "**globus|recvq_deq_unexp_or_enq_posted %d %d %d", rank, tag, recv_ctx);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
     
@@ -797,7 +798,7 @@ static int mpig_cm_self_adi3_irecv(
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "request allocated in posted queue: req=" MPIG_HANDLE_FMT ", ptr=" MPIG_PTR_FMT,
 	    rreq->handle, MPIG_PTR_CAST(rreq)));
 
-	mpig_request_construct_irreq(rreq, 2, 1, buf, cnt, dt, rank, tag, ctx, comm, vc);
+	mpig_request_construct_irreq(rreq, 2, 1, buf, cnt, dt, rank, tag, recv_ctx, comm, vc);
     }
 
     *rreqp = rreq;
@@ -828,7 +829,7 @@ static int mpig_cm_self_adi3_probe(
     const int rank, const int tag, MPID_Comm * const comm, const int ctxoff, MPI_Status * const status)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int recv_ctx = comm->recvcontext_id + ctxoff;
     bool_t found;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_probe);
@@ -837,15 +838,15 @@ static int mpig_cm_self_adi3_probe(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_probe);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), ctx, MPIG_PTR_CAST(status)));
+	MPIG_PTR_FMT ", recv_ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), recv_ctx, MPIG_PTR_CAST(status)));
 
-    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, ctx, &found, status);
+    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
     MPIU_ERR_CHKANDJUMP((!found), mpi_errno, MPI_ERR_OTHER, "**globus|cm_self|probedeadlock");
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), ctx, mpi_errno));
+	MPIG_PTR_FMT ", recv_ctx=%d, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), recv_ctx, mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_probe);
     return mpi_errno;
 
@@ -866,7 +867,7 @@ static int mpig_cm_self_adi3_iprobe(
     const int rank, const int tag, MPID_Comm * const comm, const int ctxoff, int * const found_p, MPI_Status * const status)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    const int ctx = comm->context_id + ctxoff;
+    const int recv_ctx = comm->recvcontext_id + ctxoff;
     bool_t found = FALSE;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_iprobe);
@@ -875,17 +876,17 @@ static int mpig_cm_self_adi3_iprobe(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_iprobe);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), ctx, MPIG_PTR_CAST(status)));
+	MPIG_PTR_FMT ", recv_ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), recv_ctx, MPIG_PTR_CAST(status)));
 
-    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, ctx, &found, status);
+    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
 
     *found_p = found;
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rank=%d, tag=%d, comm="
-	MPIG_PTR_FMT ", ctx=%d, found=%s, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), ctx, MPIG_BOOL_STR(found),
-	mpi_errno));
+	MPIG_PTR_FMT ", recv_ctx=%d, found=%s, mpi_errno=" MPIG_ERRNO_FMT, rank, tag, MPIG_PTR_CAST(comm), recv_ctx,
+        MPIG_BOOL_STR(found), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_iprobe);
     return mpi_errno;
 
@@ -1024,9 +1025,11 @@ static int mpig_cm_self_vc_recv_any_source(mpig_vc_t * const vc, MPID_Request * 
 #define FUNCNAME mpig_cm_self_send
 static int mpig_cm_self_send(
     const mpig_request_type_t type, const void * const buf, const int cnt, MPI_Datatype dt, const int rank,
-    const int tag, const int ctx, MPID_Comm * const comm, MPID_Request ** const sreqp)
+    const int tag, const int ctxoff, MPID_Comm * const comm, MPID_Request ** const sreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    const int send_ctx = comm->context_id + ctxoff;
+    const int recv_ctx = comm->recvcontext_id + ctxoff;
     MPID_Request * sreq = NULL;
     MPID_Request * rreq = NULL;
     bool_t rreq_found;
@@ -1037,21 +1040,21 @@ static int mpig_cm_self_send(
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_send);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT,
-		       "entering: type=%s, buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm="
-		       MPIG_PTR_FMT ", ctx=%d", mpig_request_type_get_string(type), MPIG_PTR_CAST(buf), cnt, dt, rank, tag,
-		       MPIG_PTR_CAST(comm), ctx));
+        "entering: type=%s, buf=" MPIG_PTR_FMT ", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT
+        ", send_ctx=%d, recv_ctx=%d", mpig_request_type_get_string(type), MPIG_PTR_CAST(buf), cnt, dt, rank, tag,
+        MPIG_PTR_CAST(comm), send_ctx, recv_ctx));
 	
     MPIU_Assert(rank == comm->rank);
     
-    mpig_request_create_isreq(type, 2, 1, (void *) buf, cnt, dt, rank, tag, ctx, comm, mpig_cm_self_vc, &sreq);
+    mpig_request_create_isreq(type, 2, 1, (void *) buf, cnt, dt, rank, tag, send_ctx, comm, mpig_cm_self_vc, &sreq);
 
-    mpi_errno = mpig_recvq_deq_posted_or_enq_unexp(NULL, rank, tag, ctx, &rreq_found, &rreq);
+    mpi_errno = mpig_recvq_deq_posted_or_enq_unexp(NULL, rank, tag, recv_ctx, &rreq_found, &rreq);
     if (mpi_errno)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: receive queue operation failed; dequeue "
-	    "posted or enqueue unexpected: rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
+	    "posted or enqueue unexpected: rank=%d, tag=%d, recv_ctx=%d", rank, tag, recv_ctx));
 	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|recvq_deq_posted_or_enq_unexp",
-	    "**globus|recvq_deq_posted_or_enq_unexp %d %d %d", rank, tag, ctx);
+	    "**globus|recvq_deq_posted_or_enq_unexp %d %d %d", rank, tag, recv_ctx);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
     
@@ -1070,7 +1073,7 @@ static int mpig_cm_self_send(
 	    mpig_pe_end_ras_op();
 	}
 
-	/* mpig_request_set_envelope(rreq, rank, tag, ctx); */
+	/* mpig_request_set_envelope(rreq, rank, tag, recv_ctx); */
 	rreq->status.MPI_SOURCE = rank;
 	rreq->status.MPI_TAG = tag;
 	rreq->status.count = (int) data_size;
@@ -1094,7 +1097,7 @@ static int mpig_cm_self_send(
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
 			       "adding receive request to unexpected queue; attaching send request"));
-	    mpig_request_construct_irreq(rreq, 2, 1, NULL, 0, MPI_DATATYPE_NULL, rank, tag, ctx, comm, vc);
+	    mpig_request_construct_irreq(rreq, 2, 1, NULL, 0, MPI_DATATYPE_NULL, rank, tag, recv_ctx, comm, vc);
 	    rreq->status.MPI_SOURCE = rank;
 	    rreq->status.MPI_TAG = tag;
 	    mpig_request_set_remote_req_id(rreq, sreq->handle);
@@ -1112,7 +1115,7 @@ static int mpig_cm_self_send(
 			       "ready send unable to find matching recv req"));
 	    MPIU_ERR_SETANDSTMT2(err, MPI_ERR_OTHER, {;}, "**rsendnomatch", "**rsendnomatch %d %d", rank, tag);
 
-	    mpig_request_construct_irreq(rreq, 1, 0, NULL, 0, MPI_DATATYPE_NULL, rank, tag, ctx, comm, vc);
+	    mpig_request_construct_irreq(rreq, 1, 0, NULL, 0, MPI_DATATYPE_NULL, rank, tag, recv_ctx, comm, vc);
 	    rreq->status.MPI_SOURCE = rank;
 	    rreq->status.MPI_TAG = tag;
 	    rreq->status.MPI_ERROR = err;
@@ -1237,7 +1240,7 @@ static void mpig_cm_self_buffer_copy(
 
 	MPID_Segment_init(rbuf, rcnt, rdt, &seg, 0);
 	last = sdata_size;
-	MPID_Segment_unpack(&seg, (MPI_Aint) 0, (MPI_Aint *) &last, (const char *) sbuf + sdt_true_lb);
+	MPID_Segment_unpack(&seg, (MPI_Aint) 0, (MPI_Aint *) &last, (char *) sbuf + sdt_true_lb);
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "unpacked data in receive buffer: nbytes_moved=" MPIG_SIZE_FMT, last));
 	if (last != sdata_size)
 	{   /* --BEGIN ERROR HANDLING-- */

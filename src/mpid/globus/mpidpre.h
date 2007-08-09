@@ -83,6 +83,7 @@ typedef int bool_t;
 struct MPID_Comm;
 struct MPID_Datatype;
 struct MPID_Request;
+struct MPID_Segment;
 struct MPID_Progress_state;
 struct mpig_cm;
 struct mpig_bc;
@@ -331,6 +332,11 @@ typedef int (*mpig_cm_select_comm_method_fn_t)(struct mpig_cm * cm, struct mpig_
 typedef int (*mpig_cm_get_vc_compatability_fn_t)(struct mpig_cm * cm, const struct mpig_vc * vc1, const struct mpig_vc * vc2,
     unsigned levels_in, unsigned * levels_out);
 
+
+/* FIXME: document.  used to mark the completion of a progress engine operation as oppropriate for the communication method.
+   this is current used by the cancel receive code, which is presently CM agnostic. */
+typedef void (*mpig_cm_pe_end_op_fn_t)(void);
+
 typedef char * (*mpig_cm_vtable_last_entry_fn_t)(int foo, float bar, const short * baz, char bif);
 
 typedef struct mpig_cm_vtable
@@ -342,6 +348,7 @@ typedef struct mpig_cm_vtable
     mpig_cm_destruct_vc_contact_info_fn_t	destruct_vc_contact_info;
     mpig_cm_select_comm_method_fn_t		select_comm_method;
     mpig_cm_get_vc_compatability_fn_t		get_vc_compatability;
+    /* mpig_cm_pe_end_op_fn_t                      pe_end_op; */
     mpig_cm_vtable_last_entry_fn_t		vtable_last_entry;
 }
 mpig_cm_vtable_t;
@@ -364,29 +371,29 @@ mpig_cm_vtable_t;
 #if !defined(MPIG_CM_CMU_SELF_DECL)
 #define MPIG_CM_CMU_SELF_DECL
 #else
-#undef MPIG_CM_CMU_DECL_STRUCT_DEFINED
-#define MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#undef MPIG_CM_CMU_DECL_DEFINED
+#define MPIG_CM_CMU_DECL_DEFINED
 #endif
 #if !defined(MPIG_CM_CMU_VMPI_DECL)
 #define MPIG_CM_CMU_VMPI_DECL
 #else
-#undef MPIG_CM_CMU_DECL_STRUCT_DEFINED
-#define MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#undef MPIG_CM_CMU_DECL_DEFINED
+#define MPIG_CM_CMU_DECL_DEFINED
 #endif
 #if !defined(MPIG_CM_CMU_XIO_DECL)
 #define MPIG_CM_CMU_XIO_DECL
 #else
-#undef MPIG_CM_CMU_DECL_STRUCT_DEFINED
-#define MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#undef MPIG_CM_CMU_DECL_DEFINED
+#define MPIG_CM_CMU_DECL_DEFINED
 #endif
 #if !defined(MPIG_CM_CMU_OTHER_DECL)
 #define MPIG_CM_CMU_OTHER_DECL
 #else
-#undef MPIG_CM_CMU_DECL_STRUCT_DEFINED
-#define MPIG_CM_CMU_DECL_STRUCT_DEFINED
+#undef MPIG_CM_CMU_DECL_DEFINED
+#define MPIG_CM_CMU_DECL_DEFINED
 #endif
 
-#if defined(MPIG_CM_CMU_DECL_STRUCT_DEFINED)
+#if defined(MPIG_CM_CMU_DECL_DEFINED)
 #define MPIG_CM_CMU_DECL	\
     union			\
     {				\
@@ -449,29 +456,29 @@ mpig_comm_t;
 #if !defined(MPIG_COMM_CMS_SELF_DECL)
 #define MPIG_COMM_CMS_SELF_DECL
 #else
-#undef MPIG_COMM_CMS_DECL_STRUCT_DEFINED
-#define MPIG_COMM_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_COMM_CMS_DECL_DEFINED
+#define MPIG_COMM_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_COMM_CMS_VMPI_DECL)
 #define MPIG_COMM_CMS_VMPI_DECL
 #else
-#undef MPIG_COMM_CMS_DECL_STRUCT_DEFINED
-#define MPIG_COMM_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_COMM_CMS_DECL_DEFINED
+#define MPIG_COMM_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_COMM_CMS_XIO_DECL)
 #define MPIG_COMM_CMS_XIO_DECL
 #else
-#undef MPIG_COMM_CMS_DECL_STRUCT_DEFINED
-#define MPIG_COMM_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_COMM_CMS_DECL_DEFINED
+#define MPIG_COMM_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_COMM_CMS_OTHER_DECL)
 #define MPIG_COMM_CMS_OTHER_DECL
 #else
-#undef MPIG_COMM_CMS_DECL_STRUCT_DEFINED
-#define MPIG_COMM_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_COMM_CMS_DECL_DEFINED
+#define MPIG_COMM_CMS_DECL_DEFINED
 #endif
 
-#if defined(MPIG_COMM_CMS_DECL_STRUCT_DEFINED)
+#if defined(MPIG_COMM_CMS_DECL_DEFINED)
 #define MPIG_COMM_CMS_DECL		\
     struct				\
     {					\
@@ -519,29 +526,29 @@ mpig_ctype_t;
 #if !defined(MPIG_DATATYPE_CMS_SELF_DECL)
 #define MPIG_DATATYPE_CMS_SELF_DECL
 #else
-#undef MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
-#define MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_DATATYPE_CMS_DECL_DEFINED
+#define MPIG_DATATYPE_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_DATATYPE_CMS_VMPI_DECL)
 #define MPIG_DATATYPE_CMS_VMPI_DECL
 #else
-#undef MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
-#define MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_DATATYPE_CMS_DECL_DEFINED
+#define MPIG_DATATYPE_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_DATATYPE_CMS_XIO_DECL)
 #define MPIG_DATATYPE_CMS_XIO_DECL
 #else
-#undef MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
-#define MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_DATATYPE_CMS_DECL_DEFINED
+#define MPIG_DATATYPE_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_DATATYPE_CMS_OTHER_DECL)
 #define MPIG_DATATYPE_CMS_OTHER_DECL
 #else
-#undef MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
-#define MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_DATATYPE_CMS_DECL_DEFINED
+#define MPIG_DATATYPE_CMS_DECL_DEFINED
 #endif
 
-#if defined(MPIG_DATATYPE_CMS_DECL_STRUCT_DEFINED)
+#if defined(MPIG_DATATYPE_CMS_DECL_DEFINED)
 #define MPIG_DATATYPE_CMS_DECL		\
     struct				\
     {					\
@@ -637,31 +644,31 @@ typedef mpig_mutex_t mpig_request_mutex_t;
 #if !defined(MPIG_REQUEST_CMS_SELF_DECL)
 #define MPIG_REQUEST_CMS_SELF_DECL
 #else
-#undef MPIG_REQUEST_CMS_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMS_DECL_DEFINED
+#define MPIG_REQUEST_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_REQUEST_CMS_VMPI_DECL)
 #define MPIG_REQUEST_CMS_VMPI_DECL
 #else
-#undef MPIG_REQUEST_CMS_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMS_DECL_DEFINED
+#define MPIG_REQUEST_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_REQUEST_CMS_XIO_DECL)
 #define MPIG_REQUEST_CMS_XIO_DECL
 #else
-#undef MPIG_REQUEST_CMS_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMS_DECL_DEFINED
+#define MPIG_REQUEST_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_REQUEST_CMS_OTHER_DECL)
 #define MPIG_REQUEST_CMS_OTHER_DECL
 #else
-#undef MPIG_REQUEST_CMS_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CMS_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMS_DECL_DEFINED
+#define MPIG_REQUEST_CMS_DECL_DEFINED
 #endif
 
-#if defined(MPIG_REQUEST_CMS_DECL_UNION_DEFINED)
+#if defined(MPIG_REQUEST_CMS_DECL_DEFINED)
 #define MPIG_REQUEST_CMS_DECL		\
-    union				\
+    struct				\
     {					\
 	MPIG_REQUEST_CMS_SELF_DECL	\
 	MPIG_REQUEST_CMS_VMPI_DECL	\
@@ -676,29 +683,29 @@ typedef mpig_mutex_t mpig_request_mutex_t;
 #if !defined(MPIG_REQUEST_CMU_SELF_DECL)
 #define MPIG_REQUEST_CMU_SELF_DECL
 #else
-#undef MPIG_REQUEST_CMU_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CMU_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMU_DECL_DEFINED
+#define MPIG_REQUEST_CMU_DECL_DEFINED
 #endif
 #if !defined(MPIG_REQUEST_CMU_VMPI_DECL)
 #define MPIG_REQUEST_CMU_VMPI_DECL
 #else
-#undef MPIG_REQUEST_CMU_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CMU_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMU_DECL_DEFINED
+#define MPIG_REQUEST_CMU_DECL_DEFINED
 #endif
 #if !defined(MPIG_REQUEST_CMU_XIO_DECL)
 #define MPIG_REQUEST_CMU_XIO_DECL
 #else
-#undef MPIG_REQUEST_CMU_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CMU_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMU_DECL_DEFINED
+#define MPIG_REQUEST_CMU_DECL_DEFINED
 #endif
 #if !defined(MPIG_REQUEST_CMU_OTHER_DECL)
 #define MPIG_REQUEST_CMU_OTHER_DECL
 #else
-#undef MPIG_REQUEST_CMU_DECL_UNION_DEFINED
-#define MPIG_REQUEST_CMU_DECL_UNION_DEFINED
+#undef MPIG_REQUEST_CMU_DECL_DEFINED
+#define MPIG_REQUEST_CMU_DECL_DEFINED
 #endif
 
-#if defined(MPIG_REQUEST_CMU_DECL_UNION_DEFINED)
+#if defined(MPIG_REQUEST_CMU_DECL_DEFINED)
 #define MPIG_REQUEST_CMU_DECL		\
     union				\
     {					\
@@ -902,30 +909,30 @@ mpig_vc_vtable_t;
 #if !defined(MPIG_VC_CMU_SELF_DECL)
 #define MPIG_VC_CMU_SELF_DECL
 #else
-#undef MPIG_VC_CMU_DECL_UNION_DEFINED
-#define MPIG_VC_CMU_DECL_UNION_DEFINED
+#undef MPIG_VC_CMU_DECL_DEFINED
+#define MPIG_VC_CMU_DECL_DEFINED
 #endif
 #if !defined(MPIG_VC_CMU_VMPI_DECL)
 #define MPIG_VC_CMU_VMPI_DECL
 #else
-#undef MPIG_VC_CMU_DECL_UNION_DEFINED
-#define MPIG_VC_CMU_DECL_UNION_DEFINED
+#undef MPIG_VC_CMU_DECL_DEFINED
+#define MPIG_VC_CMU_DECL_DEFINED
 #endif
 #if !defined(MPIG_VC_CMU_XIO_DECL)
 #define MPIG_VC_CMU_XIO_DECL
 #else
-#undef MPIG_VC_CMU_DECL_UNION_DEFINED
-#define MPIG_VC_CMU_DECL_UNION_DEFINED
+#undef MPIG_VC_CMU_DECL_DEFINED
+#define MPIG_VC_CMU_DECL_DEFINED
 #endif
 #if !defined(MPIG_VC_CMU_OTHER_DECL)
 #define MPIG_VC_CMU_OTHER_DECL
 #else
-#undef MPIG_VC_CMU_DECL_UNION_DEFINED
-#define MPIG_VC_CMU_DECL_UNION_DEFINED
+#undef MPIG_VC_CMU_DECL_DEFINED
+#define MPIG_VC_CMU_DECL_DEFINED
 #endif
 
-#if defined(MPIG_VC_CMU_DECL_UNION_DEFINED)
-#define MPIG_VC_CMU_DECL		\
+#if defined(MPIG_VC_CMU_DECL_DEFINED)
+#define MPIG_VC_CMU_DECL        \
     union			\
     {				\
 	MPIG_VC_CMU_SELF_DECL	\
@@ -1090,29 +1097,29 @@ typedef unsigned long mpig_pe_count_t;
 #if !defined(MPIG_PE_STATE_CMS_SELF_DECL)
 #define MPIG_PE_STATE_CMS_SELF_DECL
 #else
-#undef MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
-#define MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CMS_DECL_DEFINED
+#define MPIG_PE_STATE_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_PE_STATE_CMS_VMPI_DECL)
 #define MPIG_PE_STATE_CMS_VMPI_DECL
 #else
-#undef MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
-#define MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CMS_DECL_DEFINED
+#define MPIG_PE_STATE_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_PE_STATE_CMS_XIO_DECL)
 #define MPIG_PE_STATE_CMS_XIO_DECL
 #else
-#undef MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
-#define MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CMS_DECL_DEFINED
+#define MPIG_PE_STATE_CMS_DECL_DEFINED
 #endif
 #if !defined(MPIG_PE_STATE_CMS_OTHER_DECL)
 #define MPIG_PE_STATE_CMS_OTHER_DECL
 #else
-#undef MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
-#define MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED
+#undef MPIG_PE_STATE_CMS_DECL_DEFINED
+#define MPIG_PE_STATE_CMS_DECL_DEFINED
 #endif
 
-#if defined(MPIG_PE_STATE_CMS_DECL_STRUCT_DEFINED)
+#if defined(MPIG_PE_STATE_CMS_DECL_DEFINED)
 #define MPIG_PE_STATE_CMS_DECL		\
     struct mpig_pe_state_cm		\
     {					\

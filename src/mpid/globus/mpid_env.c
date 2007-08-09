@@ -25,7 +25,7 @@ MPIG_STATIC mpig_cm_t * const mpig_cm_table_array[] =
 {
     &mpig_cm_self,
     &mpig_cm_vmpi,
-#if TRUE && defined(HAVE_GLOBUS_XIO_MODULE)
+#if defined(HAVE_GLOBUS_XIO_MODULE)
     &mpig_cm_xio_net_san,
     &mpig_cm_xio_net_lan,
     &mpig_cm_xio_net_wan,
@@ -416,7 +416,34 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     }
     /* --END ERROR HANDLING-- */
 }
-/* MPID_Init() */
+/* end MPID_Init() */
+
+
+/*
+ * MPID_InitCompleted()
+ */
+#undef FUNCNAME
+#define FUNCNAME MPID_InitCompleted
+int MPID_InitCompleted()
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_MPID_FINALIZE);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "entering"));
+
+    /* ... nothing to do ... */
+
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
+    return mpi_errno;
+}
+/* end MPID_InitCompleted() */
+
 
 /*
  * MPID_Finalize()
@@ -456,8 +483,8 @@ int MPID_Finalize()
     
     /* release the virtual connection reference tables allocated in MPID_Init() and associated with MPI_COMM_WORLD and
        MPI_COMM_SELF */
-    MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
-    MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);
+    MPID_VCRT_Release(MPIR_Process.comm_world->vcrt, FALSE);
+    MPID_VCRT_Release(MPIR_Process.comm_self->vcrt, FALSE);
     MPIR_Process.comm_world->vcrt = NULL;
     MPIR_Process.comm_self->vcrt = NULL;
     
@@ -534,7 +561,7 @@ int MPID_Finalize()
     /* --END ERROR HANDLING-- */
 #endif
 }
-/* MPID_Finalize() */
+/* end MPID_Finalize() */
 
 
 /*
@@ -607,7 +634,7 @@ int MPID_Abort(MPID_Comm * const comm, const int mpi_errno, const int exit_code,
     MPIG_FUNC_EXIT(MPID_STATE_MPID_ABORT);
     return mpi_errno;
 }
-/* MPID_Abort() */
+/* end MPID_Abort() */
 
 
 /*
@@ -640,7 +667,7 @@ int MPID_Comm_spawn_multiple(int count, char * array_of_commands[], char ** arra
     goto fn_return;
     /* --END ERROR HANDLING-- */
 }
-/* MPID_Comm_spawn_multiple() */
+/* end MPID_Comm_spawn_multiple() */
 
 
 /*
@@ -684,7 +711,7 @@ int MPID_Get_processor_name(char * name, int name_len, int * resultlen)
     goto fn_return;
     /* --END ERROR HANDLING-- */
 }
-/* MPID_Get_processor_name() */
+/* end MPID_Get_processor_name() */
 
 
 /*
@@ -720,7 +747,7 @@ int MPID_Get_universe_size(int  * universe_size)
     }   /* --END ERROR HANDLING-- */
 #endif
 }
-/* MPID_Get_universe_size() */
+/* end MPID_Get_universe_size() */
 
 
 /*
@@ -748,4 +775,4 @@ int MPID_GPID_Get(MPID_Comm * comm, int rank, int gpid[])
 
     return mpi_errno;
 }
-/* MPID_GPID_Get() */
+/* end MPID_GPID_Get() */

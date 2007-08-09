@@ -94,7 +94,7 @@ void mpig_debug_init(void)
 	MPIU_Snprintf(settings + len, MPIG_DEBUG_TMPSTR_SIZE - len, ",%s", timed_levels_uc);
     }
 
-    MPIU_DBG_Init(NULL, NULL, mpig_process.my_pg_rank);
+    MPIU_DBG_Init(NULL, NULL, FALSE, TRUE, mpig_process.my_pg_rank);
 
     globus_module_setenv("MPIG_DEBUG_GLOBUS_DEBUG_SETTINGS", settings);
     globus_debug_init("MPIG_DEBUG_GLOBUS_DEBUG_SETTINGS", MPIG_DEBUG_LEVEL_NAMES, &mpig_debug_handle);
