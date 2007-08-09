@@ -547,11 +547,9 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 
     /* Setup the communicator's vc table: local group.  This is
      just a duplicate of the local_comm's group */
-    MPID_VCRT_Create( comm_ptr->local_size, &newcomm_ptr->local_vcrt );
-    MPID_VCRT_Get_ptr( newcomm_ptr->local_vcrt, &newcomm_ptr->local_vcr );
-    for (i=0; i<comm_ptr->local_size; i++) {
-	MPID_VCR_Dup( comm_ptr->vcr[i], &newcomm_ptr->local_vcr[i] );
-    }
+    MPID_VCRT_Add_ref(comm_ptr->vcrt);
+    newcomm_ptr->local_vcrt = comm_ptr->vcrt;
+    newcomm_ptr->local_vcr = comm_ptr->vcr;
 
     /* Inherit the error handler (if any) */
     newcomm_ptr->errhandler = comm_ptr->errhandler;
@@ -562,6 +560,18 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     /* Notify the device of this new communicator */
     MPID_Dev_comm_create_hook( newcomm_ptr );
     
+    /*  Below is an _optional_ hook intended advanced devices that need to
+	track every aspect of communcator creation and destruction.  See the
+	notes concerning MPID_DEV_COMM_FUNC_HOOK in mpiimpl.h for more
+	details. */
+#   if defined(MPID_DEV_COMM_FUNC_HOOK)
+    {
+	MPID_DEV_COMM_FUNC_HOOK(INTERCOMM_CREATE, comm_ptr, newcomm_ptr,
+	    &mpi_errno);
+	if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    }
+#   endif
+
     *newintercomm = newcomm_ptr->handle;
 
     /* ... end of body of routine ... */

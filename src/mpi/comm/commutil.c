@@ -608,86 +608,107 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
     }
     /* --END ERROR HANDLING-- */
 
-    /* This is the local size, not the remote size, in the case of
-       an intercomm */
-    if (comm_ptr->rank >= size) {
-	*outcomm_ptr = 0;
-	goto fn_exit;
-    }
+    if (comm_ptr->rank < size) {
+        /* We're left with the processes that will have a non-null
+           communicator.  Create the object, initialize the data, and return
+           the result */
 
-    /* We're left with the processes that will have a non-null communicator.
-       Create the object, initialize the data, and return the result */
+        mpi_errno = MPIR_Comm_create( &newcomm_ptr );
+        if (mpi_errno) goto fn_fail;
 
-    mpi_errno = MPIR_Comm_create( &newcomm_ptr );
-    if (mpi_errno) goto fn_fail;
+        newcomm_ptr->context_id     = new_context_id;
+        newcomm_ptr->recvcontext_id = new_recvcontext_id;
 
-    newcomm_ptr->context_id     = new_context_id;
-    newcomm_ptr->recvcontext_id = new_recvcontext_id;
+        /* Save the kind of the communicator */
+        newcomm_ptr->comm_kind   = comm_ptr->comm_kind;
+        newcomm_ptr->local_comm  = 0;
 
-    /* Save the kind of the communicator */
-    newcomm_ptr->comm_kind   = comm_ptr->comm_kind;
-    newcomm_ptr->local_comm  = 0;
+        /* There are two cases here - size is the same as the old
+           communicator, or it is smaller.  If the size is the same, we can
+           just add a reference.  Otherwise, we need to create a new VCRT.
+           Note that this is the test that matches the test on rank
+           above. */
+        if (size == comm_ptr->local_size) {
+            /* Duplicate the VCRT references */
+            MPID_VCRT_Add_ref( comm_ptr->vcrt );
+            newcomm_ptr->vcrt = comm_ptr->vcrt;
+            newcomm_ptr->vcr  = comm_ptr->vcr;
+        }
+        else {
+            int i;
+            /* The "remote" vcr gets the shortened vcrt */
+            MPID_VCRT_Create( size, &newcomm_ptr->vcrt );
+            MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, 
+                &newcomm_ptr->vcr );
+            for (i=0; i<size; i++) {
+                /* For rank i in the new communicator, find the corresponding
+                   rank in the input communicator */
+                MPID_VCR_Dup( comm_ptr->vcr[i], &newcomm_ptr->vcr[i] );
+            }
+        }
 
-    /* There are two cases here - size is the same as the old communicator,
-       or it is smaller.  If the size is the same, we can just add a reference.
-       Otherwise, we need to create a new VCRT.  Note that this is the
-       test that matches the test on rank above. */
-    if (size == comm_ptr->local_size) {
-	/* Duplicate the VCRT references */
-	MPID_VCRT_Add_ref( comm_ptr->vcrt );
-	newcomm_ptr->vcrt = comm_ptr->vcrt;
-	newcomm_ptr->vcr  = comm_ptr->vcr;
+        /* If it is an intercomm, duplicate the local vcrt references */
+        if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+            MPID_VCRT_Add_ref( comm_ptr->local_vcrt );
+            newcomm_ptr->local_vcrt = comm_ptr->local_vcrt;
+            newcomm_ptr->local_vcr  = comm_ptr->local_vcr;
+        }
+
+        /* Set the sizes and ranks */
+        newcomm_ptr->rank        = comm_ptr->rank;
+        if (comm_ptr->comm_kind == MPID_INTERCOMM) {
+            newcomm_ptr->local_size  = comm_ptr->local_size;
+            newcomm_ptr->remote_size = comm_ptr->remote_size;
+        }
+        else {
+            newcomm_ptr->local_size  = size;
+            newcomm_ptr->remote_size = size;
+        }
+
+        /* Inherit the error handler (if any) */
+        newcomm_ptr->errhandler = comm_ptr->errhandler;
+        if (comm_ptr->errhandler) {
+            MPIR_Errhandler_add_ref( comm_ptr->errhandler );
+        }
+
+        /* Start with no attributes on this communicator.  This
+           initialization must be performed before notifying the device of
+           the new communicator since the device may wish to add
+           attributes. */
+        newcomm_ptr->attributes = 0;
+
+        /* Notify the device of the new communicator */
+        MPID_Dev_comm_create_hook(newcomm_ptr);
     }
     else {
-	int i;
-	/* The "remote" vcr gets the shortened vcrt */
-	MPID_VCRT_Create( size, &newcomm_ptr->vcrt );
-	MPID_VCRT_Get_ptr( newcomm_ptr->vcrt, 
-			   &newcomm_ptr->vcr );
-	for (i=0; i<size; i++) {
-	    /* For rank i in the new communicator, find the corresponding
-	       rank in the input communicator */
-	    MPID_VCR_Dup( comm_ptr->vcr[i], &newcomm_ptr->vcr[i] );
-	}
+        /* This is the local size, not the remote size, in the case of an
+           intercomm */
+	newcomm_ptr = 0;
     }
-
-    /* If it is an intercomm, duplicate the local vcrt references */
-    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-	MPID_VCRT_Add_ref( comm_ptr->local_vcrt );
-	newcomm_ptr->local_vcrt = comm_ptr->local_vcrt;
-	newcomm_ptr->local_vcr  = comm_ptr->local_vcr;
-    }
-
-    /* Set the sizes and ranks */
-    newcomm_ptr->rank        = comm_ptr->rank;
-    if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-	newcomm_ptr->local_size  = comm_ptr->local_size;
-	newcomm_ptr->remote_size = comm_ptr->remote_size;
-    }
-    else {
-	newcomm_ptr->local_size  = size;
-	newcomm_ptr->remote_size = size;
-    }
-
-    /* Inherit the error handler (if any) */
-    newcomm_ptr->errhandler = comm_ptr->errhandler;
-    if (comm_ptr->errhandler) {
-	MPIR_Errhandler_add_ref( comm_ptr->errhandler );
-    }
-
-    /* Notify the device of the new communicator */
-    MPID_Dev_comm_create_hook(newcomm_ptr);
 	    
-    /* Start with no attributes on this communicator */
-    newcomm_ptr->attributes = 0;
+    /*  Below is an _optional_ hook intended advanced devices that need to
+        track every aspect of communcator creation and destruction.  See the
+        notes concerning MPID_DEV_COMM_FUNC_HOOK in mpiimpl.h for more
+        details. */
+#   if defined(MPID_DEV_COMM_FUNC_HOOK)
+    {
+        MPID_DEV_COMM_FUNC_HOOK(COMM_DUP, comm_ptr, newcomm_ptr, &mpi_errno);
+        if (mpi_errno != MPI_SUCCESS)
+        {
+            MPIR_Comm_release(newcomm_ptr, FALSE);
+            goto fn_fail;
+        }
+    }
+#   endif
+    
     *outcomm_ptr = newcomm_ptr;
 
- fn_fail:
- fn_exit:
-
+  fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPIR_COMM_COPY);
-
     return mpi_errno;
+    
+ fn_fail:
+    goto fn_exit;
 }
 
 /* Release a reference to a communicator.  If there are no pending

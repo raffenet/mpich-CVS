@@ -126,6 +126,11 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
        MPIR_Attr_dup_list 
     */
     if (MPIR_Process.attr_dup) {
+        /* newcomm_ptr->attributes = 0; -- MPIR_Comm_copy() already sets
+           attributes to NULL.  Setting it to NULL again causes any
+           attributes added by the device during construction to be
+           disconnected from the communicator without releasing the handle
+           or any resources associated with the value. [BRT] */
 	mpi_errno = MPIR_Process.attr_dup( comm_ptr->handle, 
 					   comm_ptr->attributes, 
 					   &new_attributes );

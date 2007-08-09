@@ -73,7 +73,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Comm *newcomm_ptr;
-    int  local_high, remote_high, i, j, new_size, new_context_id;
+    int  local_high, remote_high, i, j, new_size, new_context_id = 0;
     MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INTERCOMM_MERGE);
 
@@ -245,6 +245,25 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 	}
     }
 
+    /* Below is an _optional_ hook intended advanced devices that need to
+       track every aspect of communcator creation and destruction.  See the
+       notes concerning MPID_DEV_COMM_FUNC_HOOK in mpiimpl.h for more
+       details.
+
+       NOTE: This really belongs at the end of the function, just after the
+       call to MPID_Dev_comm_create_hook().  However, in this routine, the
+       allocation of the context id involves communication using the _NEW_
+       communicator prior to it being completely constructed.  Since the
+       device may need to prepare the communicator prior to such
+       communication, the macro is called here. */
+#   if defined(MPID_DEV_COMM_FUNC_HOOK)
+    {
+        MPID_DEV_COMM_FUNC_HOOK(INTERCOMM_MERGE, comm_ptr, newcomm_ptr,
+            &mpi_errno);
+        if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    }
+#   endif
+
     /* We've setup a temporary context id, based on the context id
        used by the intercomm.  This allows us to perform the allreduce
        operations within the context id algorithm, since we already
@@ -276,6 +295,11 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
     {
+	if (new_context_id > 0)
+	{
+	    MPIR_Free_contextid(new_context_id);
+	}
+	
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 	    "**mpi_intercomm_merge",

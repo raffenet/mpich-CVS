@@ -4,10 +4,13 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-/* Function prototypes for communicator helper functions */
-/* The MPIR_Get_contextid routine is in mpiimpl.h so that the device 
-   may use it */
-/* int MPIR_Get_contextid( MPID_Comm * ); */
+/*
+ * Function prototypes for communicator helper functions
+ *
+ * The MPIR_Get_contextid and MPIR_Free_conntextid routines are declared in
+ * mpiimpl.h so that the device may use them.
+ *
+ * int MPIR_Get_contextid( MPID_Comm * );
+ * void MPIR_Free_contextid( int );
+ */
 int MPIR_Get_intercomm_contextid( MPID_Comm *, int *, int * );
-void MPIR_Free_contextid( int );
-

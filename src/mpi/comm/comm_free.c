@@ -114,6 +114,17 @@ int MPI_Comm_free(MPI_Comm *comm)
 
     /* ... body of routine ...  */
     
+    /*  Below is an _optional_ hook intended advanced devices that need to
+        track every aspect of communcator creation and destruction.  See the
+        notes concerning MPID_DEV_COMM_FUNC_HOOK in mpiimpl.h for more
+        details. */
+#   if defined(MPID_DEV_COMM_FUNC_HOOK)
+    {
+        MPID_DEV_COMM_FUNC_HOOK(COMM_FREE, comm_ptr, NULL, &mpi_errno);
+        if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    }
+#   endif
+
     mpi_errno = MPIR_Comm_release(comm_ptr, 0);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     

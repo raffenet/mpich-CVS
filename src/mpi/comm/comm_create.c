@@ -57,7 +57,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     int i, j, n, *mapping = 0, *remote_mapping = 0, remote_size = -1, 
-	new_context_id;
+	new_context_id = 0;
     MPID_Comm *newcomm_ptr;
     MPID_Group *group_ptr;
     MPIU_CHKLMEM_DECL(3);
@@ -310,7 +310,9 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     }
     else {
 	/* This process is not in the group */
-	MPIR_Free_contextid( new_context_id );
+        newcomm_ptr = NULL;
+        MPIR_Free_contextid( new_context_id );
+        new_context_id = 0;
 	*newcomm = MPI_COMM_NULL;
 
 	/* Dummy to complete collective ops in the intercomm case */
@@ -329,11 +331,23 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	}
     }
     
-    /* ... end of body of routine ... */
-
     /* mpi_errno = MPID_Comm_create(); */
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
+    /*  Below is an _optional_ hook intended advanced devices that need to
+        track every aspect of communcator creation and destruction.  See the
+        notes concerning MPID_DEV_COMM_FUNC_HOOK in mpiimpl.h for more
+        details. */
+#   if defined(MPID_DEV_COMM_FUNC_HOOK)
+    {
+        MPID_DEV_COMM_FUNC_HOOK(COMM_CREATE, comm_ptr, newcomm_ptr,
+            &mpi_errno);
+        if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    }
+#   endif
+
+    /* ... end of body of routine ... */
+    
   fn_exit:
     MPIU_CHKLMEM_FREEALL();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
@@ -344,8 +358,13 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
     {
-	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_create",
+	if (new_context_id > 0)
+	{
+	    MPIR_Free_contextid(new_context_id);
+	}
+	
+	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
+	    FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_create",
 	    "**mpi_comm_create %C %G %p", comm, group, newcomm);
     }
 #   endif

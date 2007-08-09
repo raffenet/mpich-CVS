@@ -121,6 +121,17 @@ int MPI_Comm_disconnect(MPI_Comm * comm)
 	MPID_Progress_end(&progress_state);
     }
     
+    /*  Below is an _optional_ hook intended advanced devices that need to
+        track every aspect of communcator creation and destruction.  See the
+        notes concerning MPID_DEV_COMM_FUNC_HOOK in mpiimpl.h for more
+        details. */
+#   if defined(MPID_DEV_COMM_FUNC_HOOK)
+    {
+        MPID_DEV_COMM_FUNC_HOOK(COMM_DISCONNECT, comm_ptr, NULL, &mpi_errno);
+        if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    }
+#   endif
+
     mpi_errno = MPID_Comm_disconnect(comm_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     

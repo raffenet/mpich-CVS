@@ -103,7 +103,7 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     int       rank, size, remote_size, i, new_size, new_remote_size, 
 	first_entry = 0, first_remote_entry = 0,
 	*last_ptr;
-    int       new_context_id, remote_context_id;
+    int       new_context_id = 0, remote_context_id;
     MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(4);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPLIT);
@@ -387,10 +387,24 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     }
     else {
 	/* color was MPI_UNDEFINED.  Free the context id */
-	*newcomm = MPI_COMM_NULL;
+        newcomm_ptr = NULL;
+        *newcomm = MPI_COMM_NULL;
 	MPIR_Free_contextid( new_context_id );
+        new_context_id = 0;
     }
     
+    /*  Below is an _optional_ hook intended advanced devices that need to
+        track every aspect of communcator creation and destruction.  See the
+        notes concerning MPID_DEV_COMM_FUNC_HOOK in mpiimpl.h for more
+        details. */
+#   if defined(MPID_DEV_COMM_FUNC_HOOK)
+    {
+        MPID_DEV_COMM_FUNC_HOOK(COMM_SPLIT, comm_ptr, newcomm_ptr,
+            &mpi_errno);
+        if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    }
+#   endif
+
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -403,7 +417,12 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
     {
-	mpi_errno = MPIR_Err_create_code(
+        if (new_context_id > 0)
+        {
+            MPIR_Free_contextid(new_context_id);
+        }
+
+        mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 	    "**mpi_comm_split",
 	    "**mpi_comm_split %C %d %d %p", comm, color, key, newcomm);
