@@ -93,7 +93,15 @@ double MPID_Wtick( void )
     return MPID_Generic_wtick();
 }
 #define MPICH_NEEDS_GENERIC_WTICK
-/* Rename the function so that we can access it */
+/* Rename the generic version of the function so that it can be accessed from
+ * the routine above.
+ *
+ * NOTE: Some devices, like the globus device, rename internal symbols to
+ * prevent collisions.  This means that a MPID_Wtick macro may already be
+ * defined.  For these cases, undefining and redefining MPID_Wtick shouldn't
+ * cause any problems since the symbol to which MPID_Wtick is mapped should
+ * also be in the table of symbols to rename. */
+#undef MPID_Wtick
 #define MPID_Wtick MPID_Generic_wtick
 
 #elif MPICH_TIMER_KIND == USE_GETTIMEOFDAY
