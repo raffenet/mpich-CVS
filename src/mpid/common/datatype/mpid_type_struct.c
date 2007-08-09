@@ -13,6 +13,13 @@
 #undef MPID_STRUCT_FLATTEN_DEBUG
 #undef MPID_STRUCT_DEBUG
 
+#if !defined(MPID_DEV_TYPE_STRUCT_HOOK)
+#define MPID_DEV_TYPE_STRUCT_HOOK(a, b, c, d, e, mpi_errno_p_)  \
+{                                                               \
+    *(mpi_errno_p_) = MPI_SUCCESS;                              \
+}
+#endif
+
 static int MPID_Type_struct_alignsize(int count,
 				      MPI_Datatype *oldtype_array,
 				      MPI_Aint *displacement_array);
@@ -401,8 +408,16 @@ int MPID_Type_struct(int count,
 	new_dtp->is_contig = 0;
     }
 
+    MPID_DEV_TYPE_STRUCT_HOOK(count, blocklength_array, displacement_array,
+	oldtype_array, new_dtp, &mpi_errno);
+    if (mpi_errno != MPI_SUCCESS)
+    {   /* --BEGIN ERROR HANDLING-- */
+        MPID_Datatype_free(new_dtp);
+        goto fn_fail;
+    }   /* --END ERROR HANDLING-- */
+
     *newtype = new_dtp->handle;
+    
+  fn_fail:
     return mpi_errno;
 }
-
-

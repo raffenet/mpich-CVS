@@ -11,6 +11,13 @@
 
 #undef MPID_TYPE_ALLOC_DEBUG
 
+#if !defined(MPID_DEV_TYPE_BLOCKINDEXED_HOOK)
+#define MPID_DEV_TYPE_BLOCKINDEXED_HOOK(a, b, c, d, e, f, mpi_errno_p_) \
+{                                                                       \
+    *(mpi_errno_p_) = MPI_SUCCESS;                                      \
+}
+#endif
+
 int MPIDI_Type_blockindexed_count_contig(int count,
 					 int blklen,
 					 void *disp_array,
@@ -189,7 +196,17 @@ int MPID_Type_blockindexed(int count,
 	new_dtp->is_contig = 0;
     }
 
+    MPID_DEV_TYPE_BLOCKINDEXED_HOOK(count, blocklength, displacement_array,
+	dispinbytes, oldtype, new_dtp, &mpi_errno);
+    if (mpi_errno != MPI_SUCCESS)
+    {   /* --BEGIN ERROR HANDLING-- */
+        MPID_Datatype_free(new_dtp);
+        goto fn_fail;
+    }   /* --END ERROR HANDLING-- */
+    
     *newtype = new_dtp->handle;
+
+  fn_fail:
     return mpi_errno;
 }
 

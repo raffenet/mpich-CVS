@@ -11,6 +11,13 @@
 
 /* #define MPID_TYPE_ALLOC_DEBUG */
 
+#if !defined(MPID_DEV_TYPE_CREATE_RESIZED_HOOK)
+#define MPID_DEV_TYPE_CREATE_RESIZED_HOOK(a, b, c, d, mpi_errno_p_)     \
+{                                                                       \
+    *(mpi_errno_p_) = MPI_SUCCESS;                                      \
+}
+#endif
+
 static int MPIDI_Type_create_resized_memory_error(void);
 
 int MPID_Type_create_resized(MPI_Datatype oldtype,
@@ -19,6 +26,7 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 			     MPI_Datatype *newtype_p)
 {
     MPID_Datatype *new_dtp;
+    int mpi_errno = MPI_SUCCESS;
 
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
     /* --BEGIN ERROR HANDLING-- */
@@ -86,12 +94,21 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	    (extent == old_dtp->size) ? old_dtp->is_contig : 0;
     }
 
-    *newtype_p = new_dtp->handle;
+    MPID_DEV_TYPE_CREATE_RESIZED_HOOK(oldtype, lb, extent,
+	new_dtp, &mpi_errno);
+    if (mpi_errno != MPI_SUCCESS)
+    {   /* --BEGIN ERROR HANDLING-- */
+        MPID_Datatype_free(new_dtp);
+        goto fn_fail;
+    }   /* --END ERROR HANDLING-- */
 
     MPIU_DBG_MSG_P(DATATYPE,VERBOSE,"resized type %x created.", 
 		   new_dtp->handle);
 
-    return MPI_SUCCESS;
+    *newtype_p = new_dtp->handle;
+
+  fn_fail:
+    return mpi_errno;
 }
 
 /* --BEGIN ERROR HANDLING-- */

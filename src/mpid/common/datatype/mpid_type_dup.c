@@ -14,6 +14,13 @@
 
 /* #define MPID_TYPE_ALLOC_DEBUG */
 
+#if !defined(MPID_DEV_TYPE_DUP_HOOK)
+#define MPID_DEV_TYPE_DUP_HOOK(a, b, mpi_errno_p_)      \
+{                                                       \
+    *(mpi_errno_p_) = MPI_SUCCESS;                      \
+}
+#endif
+
 /*@
   MPID_Type_dup - create a copy of a datatype
  
@@ -80,8 +87,6 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	new_dtp->hetero_dloop_size  = old_dtp->hetero_dloop_size;
 	new_dtp->hetero_dloop_depth = old_dtp->hetero_dloop_depth;
 
-	*newtype = new_dtp->handle;
-
 	if (old_dtp->is_committed) {
 	    MPIU_Assert(old_dtp->dataloop != NULL);
 	    MPID_Dataloop_dup(old_dtp->dataloop,
@@ -96,6 +101,15 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 				  &new_dtp->hetero_dloop);
 	    }
 	}
+
+        MPID_DEV_TYPE_DUP_HOOK(oldtype, new_dtp, &mpi_errno);
+        if (mpi_errno != MPI_SUCCESS)
+        {   /* --BEGIN ERROR HANDLING-- */
+            MPID_Datatype_free(new_dtp);
+            goto fn_fail;
+        }   /* --END ERROR HANDLING-- */
+
+        *newtype = new_dtp->handle;
     }
 
     MPIU_DBG_MSG_P(DATATYPE,VERBOSE,"dup type %x created.", new_dtp->handle);

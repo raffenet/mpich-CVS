@@ -8,6 +8,13 @@
 #include <mpid_dataloop.h>
 #include <stdlib.h>
 
+#if !defined(MPID_DEV_TYPE_COMMIT_HOOK)
+#define MPID_DEV_TYPE_COMMIT_HOOK(a, mpi_errno_p_)      \
+{                                                       \
+    *(mpi_errno_p_) = MPI_SUCCESS;                      \
+}
+#endif
+
 /*@
   MPID_Type_commit
  
@@ -82,6 +89,8 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
 #if 0
 	MPIDI_Dataloop_dot_printf(datatype_ptr->dataloop, 0, 1);
 #endif
+	
+	MPID_DEV_TYPE_COMMIT_HOOK(datatype_ptr, &mpi_errno);
     }
 
     return mpi_errno;

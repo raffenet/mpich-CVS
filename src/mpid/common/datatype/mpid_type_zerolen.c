@@ -11,6 +11,13 @@
 
 /* #define MPID_TYPE_ALLOC_DEBUG */
 
+#if !defined(MPID_DEV_TYPE_CONTIGUOUS_HOOK)
+#define MPID_DEV_TYPE_CONTIGUOUS_HOOK(a, b, c, mpi_errno_p_)    \
+{                                                               \
+    *(mpi_errno_p_) = MPI_SUCCESS;                              \
+}
+#endif
+
 /*@
   MPID_Type_zerolen - create an empty datatype
  
@@ -26,7 +33,7 @@
 
 int MPID_Type_zerolen(MPI_Datatype *newtype)
 {
-    int mpi_errno;
+    int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *new_dtp;
 
     /* allocate new datatype object and handle */
@@ -73,6 +80,15 @@ int MPID_Type_zerolen(MPI_Datatype *newtype)
     new_dtp->n_elements    = 0;
     new_dtp->is_contig     = 1;
 
+    MPID_DEV_TYPE_CONTIGUOUS_HOOK(0, MPI_BYTE, new_dtp, &mpi_errno);
+    if (mpi_errno != MPI_SUCCESS)
+    {   /* --BEGIN ERROR HANDLING-- */
+        MPID_Datatype_free(new_dtp);
+        goto fn_fail;
+    }   /* --END ERROR HANDLING-- */
+    
     *newtype = new_dtp->handle;
-    return MPI_SUCCESS;
+
+  fn_fail:
+    return mpi_errno;
 }

@@ -11,6 +11,10 @@
 
 /* #define MPID_TYPE_ALLOC_DEBUG */
 
+#if !defined(MPID_DEV_TYPE_FREE_HOOK)
+#define MPID_DEV_TYPE_FREE_HOOK(a)
+#endif
+
 /*@
 
   MPID_Datatype_free
@@ -51,5 +55,6 @@ void MPID_Datatype_free(MPID_Datatype *ptr)
 	MPID_Dataloop_free(&(ptr->hetero_dloop));
     }
 #endif /* MPID_HAS_HETERO */
+    MPID_DEV_TYPE_FREE_HOOK(ptr);
     MPIU_Handle_obj_free(&MPID_Datatype_mem, ptr);
 }

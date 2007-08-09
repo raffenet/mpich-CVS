@@ -11,6 +11,13 @@
 
 /* #define MPID_TYPE_ALLOC_DEBUG */
 
+#if !defined(MPID_DEV_TYPE_CONTIGUOUS_HOOK)
+#define MPID_DEV_TYPE_CONTIGUOUS_HOOK(a, b, c, mpi_errno_p_)    \
+{                                                               \
+    *(mpi_errno_p_) = MPI_SUCCESS;                              \
+}
+#endif
+
 /*@
   MPID_Type_contiguous - create a contiguous datatype
  
@@ -123,11 +130,19 @@ int MPID_Type_contiguous(int count,
 	new_dtp->is_contig    = old_dtp->is_contig;
     }
 
-    *newtype = new_dtp->handle;
-
+    MPID_DEV_TYPE_CONTIGUOUS_HOOK(count, oldtype, new_dtp, &mpi_errno);
+    if (mpi_errno != MPI_SUCCESS)
+    {   /* --BEGIN ERROR HANDLING-- */
+        MPID_Datatype_free(new_dtp);
+        goto fn_fail;
+    }   /* --END ERROR HANDLING-- */
+    
     MPIU_DBG_MSG_P(DATATYPE,VERBOSE,"contig type %x created.", 
 		   new_dtp->handle);
 
+    *newtype = new_dtp->handle;
+
+  fn_fail:
     return mpi_errno;
 }
 
