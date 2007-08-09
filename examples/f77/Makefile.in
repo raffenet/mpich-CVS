@@ -27,8 +27,8 @@ Makefile: ${srcdir}/Makefile.in
 	-cd ../../../ && \
 	if [ -x config.status ] ; then CONFIG_FILES=examples/f77/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
 clean:
-	-rm -f *.o ${srcdir}/*.o fpi
-	-rm -f fpi.exe
+	-rm -f *.o ${srcdir}/*.o fpi hellow
+	-rm -f fpi.exe hellow.exe
 	-rm -f *.lo ${srcdir}/*.lo
 	-rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
 distclean: clean
@@ -36,17 +36,19 @@ distclean: clean
 	-rm -f TAGS
 maintainerclean:
 
-all-redirect: fpi
+all-redirect: fpi hellow
 coverage:
 fpi: fpi.o  ../../lib/lib${MPILIBNAME}.a
 	$(F77_LINK) $(LDFLAGS) -o fpi fpi.o  ${LIBS}
+hellow: hellow.o  ../../lib/lib${MPILIBNAME}.a
+	$(F77_LINK) $(LDFLAGS) -o hellow hellow.o  ${LIBS}
 htmldoc:
 mandoc:
 latexdoc:
 # Dependencies
 dependencies:
 # End of Dependencies
-SOURCES =  fpi.f
+SOURCES =  fpi.f hellow.f
 tags: TAGS
 TAGS:${HEADERS} ${SOURCES}
 
