@@ -262,7 +262,7 @@ dnl --enable-fast
 AC_ARG_ENABLE(fast,
 [--enable-fast - pick the appropriate options for fast execution.  This
                 turns off error checking and timing collection],,
-enable_fast=no)
+enable_fast=default)
 dnl
 dnl We enable f77 and f90 if we can find compilers for them.
 dnl In addition, we check whether f77 and f90 can work together.
@@ -1422,6 +1422,38 @@ fi
 # compatibility (we need this because of the way we decide to generate
 # the Fortran 77 bindings)
 if test "$enable_f77" = yes ; then
+    if test ${MPID_REQUIRES_FORTRAN_CMDARGS:-no} = "yes" ; then
+        # This must occur before the test for name mangling since the results
+	# could affect the generation of symbol names.
+        PAC_PROG_F77_CMDARGS
+        if test -z "$pac_cv_F77_IARGC" ; then 
+            AC_MSG_ERROR([Command line access is required by the $device_name device])
+        fi
+        # F77_GETARG_FFLAGS is added to F77 instead of FFLAGS since the flags
+	# may change behavior of the compiler and thus must always be included
+	# as part of every compilation and link command.  Flags added to
+	# FFLAGS may affect the quality of the code produced, etc., but should
+	# never cause the compiler to produce code that would be incompatible
+	# with another module compiled without those flags.
+        pre_cmdargs_F77=$F77
+        F77="$F77 $F77_GETARG_FFLAGS"
+        FC="$FC $F77_GETARG_FFLAGS"
+	F77_OTHER_LIBS="$F77_OTHER_LIBS $F77_GETARG_LDFLAGS"
+    else
+	   F77_GETARGDECL=""
+	   F77_IARGC=0
+	   F77_GETARG="s = \"(unknown)\""
+	   FXX_MODULE=""
+	   F77_GETARG_FFLAGS=""
+	   F77_GETARG_LDFLAGS=""
+	   AC_SUBST(F77_GETARGDECL)
+	   AC_SUBST(F77_IARGC)
+	   AC_SUBST(F77_GETARG)
+	   AC_SUBST(FXX_MODULE)
+	   AC_SUBST(F77_GETARG_FFLAGS)
+	   AC_SUBST(F77_GETARG_LDFLAGS)
+    fi
+
     FLIBS_save="$FLIBS"
     FLIBS=""
     AC_F77_LIBRARY_LDFLAGS
@@ -1485,6 +1517,39 @@ if test "$enable_f90" = "default" -a "$enable_f77" = yes ; then
 	    AC_PROG_F77
 	    FFLAGS=$saveFFLAGS
 	fi
+
+        # This must occur before the compatibility test since the flags added
+	# to the F77 compiler may have caused it to be incompatible with the
+	# F90 compiler for name mangling since the results
+	# could affect the generation of symbol names.
+	if test ${MPID_REQUIRES_FORTRAN_CMDARGS:-no} = "yes" ; then
+	    if test "$F90" = "$pre_cmdargs_F77" ; then 
+		# If the F77 and F90 compilers are the same, then we can
+		# use the same flags discovered earlier.
+		pac_cv_prog_f90_cmdarg_fflags="$pac_cv_prog_f77_cmdarg_fflags"
+		pac_cv_prog_f90_cmdarg_ldflags="$pac_cv_prog_f77_cmdarg_ldflags"
+	    else
+		AC_MSG_WARN([FIXME: handle case where F77 and F90 are not the same compiler])
+		pac_cv_prog_f90_cmdarg_fflags="$pac_cv_prog_f77_cmdarg_fflags"
+		pac_cv_prog_f90_cmdarg_ldflags="$pac_cv_prog_f77_cmdarg_ldflags"
+	    fi
+
+	    F90_GETARG_FFLAGS="$pac_cv_prog_f90_cmdarg_fflags"
+	    F90_GETARG_LDFLAGS="$pac_cv_prog_f90_cmdarg_ldflags"
+	    AC_SUBST(F90_GETARG_FFLAGS)
+	    AC_SUBST(F90_GETARG_LDFLAGS)
+
+            # F90_GETARG_FFLAGS is added to F90 instead of F90FLAGS since the
+            # flags may change behavior of the compiler and thus must always be
+            # included as part of every compilation and link command.  Flags
+            # added to FFLAGS may affect the quality of the code produced,
+            # etc., but should never cause the compiler to produce code that
+            #  would be incompatible with another module compiled without those
+	    # flags.
+	    F90="$F90 $F90_GETARG_FFLAGS"
+	    F90_OTHER_LIBS="$F90_OTHER_LIBS $F90_GETARG_LDFLAGS"
+	fi
+
 	#
 	# If we allow multiple weak symbols, we should test a name
 	# that does not contain an underscore.  The Fortran binding uses
@@ -3122,16 +3187,19 @@ if test "$ac_cv_sizeof_float" = "4" ; then
     MPI_REAL4="0x4c000427"
     MPI_COMPLEX8="0x4c000828"
     MPIR_REAL4_CTYPE=float
+    export MPIR_REAL4_CTYPE
 fi
 if test "$ac_cv_sizeof_double" = "8" ; then
     MPI_REAL8="0x4c000829"
     MPI_COMPLEX16="0x4c00102a"
     MPIR_REAL8_CTYPE=double
+    export MPIR_REAL8_CTYPE
 fi
 if test "$ac_cv_sizeof_long_double" = "16" -a "$MPID_NO_LONG_DOUBLE" != yes ; then
     MPI_REAL16="0x4c00102b"
     MPI_COMPLEX32="0x4c00202c"
     MPIR_REAL16_CTYPE="long double"
+    export MPIR_REAL16_CTYPE
 fi
 if test -n "$MPIR_REAL4_CTYPE" ; then
     AC_DEFINE_UNQUOTED(MPIR_REAL4_CTYPE,$MPIR_REAL4_CTYPE,[C type to use for MPI_REAL4])
@@ -3155,26 +3223,31 @@ for type in char short int long long_long ; do
     1) if test "$MPI_INTEGER1" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER1="0x4c00012d"
 	   MPIR_INTEGER1_CTYPE="$ctype"
+	   export MPIR_INTEGER1_CTYPE
        fi
        ;;
     2) if test "$MPI_INTEGER2" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER2="0x4c00022f"
 	   MPIR_INTEGER2_CTYPE="$ctype"
+	   export MPIR_INTEGER2_CTYPE
        fi
        ;;
     4) if test "$MPI_INTEGER4" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER4="0x4c000430"
 	   MPIR_INTEGER4_CTYPE="$ctype"
+	   export MPIR_INTEGER4_CTYPE
        fi
        ;;
     8) if test "$MPI_INTEGER8" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER8="0x4c000831"
 	   MPIR_INTEGER8_CTYPE="$ctype"
+	   export MPIR_INTEGER8_CTYPE
        fi
        ;;
     16) if test "$MPI_INTEGER16" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER16="0x4c001032"
 	   MPIR_INTEGER16_CTYPE="$ctype"
+	   export MPIR_INTEGER16_CTYPE
        fi
        ;;
     *)
@@ -5536,6 +5609,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/binding/f77/Makefile \
 	  src/binding/f77/mpif.h \
 	  src/binding/f77/setbotf.f \
+	  src/binding/f77/getcmdargsf.f \
 	  src/binding/f90/Makefile \
 	  src/binding/f90/mpi_sizeofs.f90 \
 	  src/pkgconfig/mpich2-ch3.pc \
