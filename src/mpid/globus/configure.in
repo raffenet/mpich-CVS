@@ -784,8 +784,8 @@ AC_OUTPUT(Makefile examples/Makefile mpiexec mpiddefs.h.out:mpiddefs.h.in locald
     MPIG_RENAME_SYMBOLS=${MPIG_RENAME_SYMBOLS}
     if test "${MPIG_RENAME_SYMBOLS}" = "yes" ; then
         AC_MSG_NOTICE([Extracting symbols from the symbol map])
-        grep '^MPI_' ${srcdir}/mpig_symbol_map.txt | sed -e 's/^/#define /' >.mpig_symbol_map_public.h
-        grep '^PMPI_' ${srcdir}/mpig_symbol_map.txt | sed -e 's/^/#define /' >>.mpig_symbol_map_public.h
+        grep '^MPIX\?_' ${srcdir}/mpig_symbol_map.txt | sed -e 's/^/#define /' >.mpig_symbol_map_public.h
+        grep '^PMPIX\?_' ${srcdir}/mpig_symbol_map.txt | sed -e 's/^/#define /' >>.mpig_symbol_map_public.h
 	[grep '^\#[[:space:]]*define[[:space:]]\+P\?MPI_[[:alnum:]_]\+[[:space:]]\+MPI[RD][[:alnum:]_]\+' \
 	    $master_top_srcdir/src/include/mpi.h.in | sed -e 's/.*[[:space:]]\(.*\)/^\1[ ]/' >.mpig_symbol_map_public_extras.txt]
 	if test -s .mpig_symbol_map_public_extras.txt ; then
