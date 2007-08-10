@@ -13,10 +13,10 @@
  * - Does not need one process to create the file
  * - Does not need special handling for CREATE|EXCL
  */
-void ADIOI_SCALABLE_OpenColl(ADIO_File fd, int rank, 
+void ADIOI_SCALEABLE_OpenColl(ADIO_File fd, int rank, 
 		int access_mode, int *error_code)
 {    
-    int orig_amode_wronly, orig_amode_excl;
+    int orig_amode_wronly;
     int max_error_code;
     static char myname[] = "ADIOI_SCALABLE_OpenColl";
 
