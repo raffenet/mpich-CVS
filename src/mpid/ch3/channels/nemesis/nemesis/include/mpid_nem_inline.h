@@ -1034,6 +1034,7 @@ MPID_NEM_INLINE_DECL int
 MPID_nem_mpich2_blocking_recv(MPID_nem_cell_ptr_t *cell, int *in_fbox)
 {
     int mpi_errno = MPI_SUCCESS;
+    unsigned completions = MPIDI_CH3I_progress_completion_count;
 #ifndef ENABLE_NO_SCHED_YIELD
     int pollcount = 0;
 #endif
@@ -1084,9 +1085,16 @@ MPID_nem_mpich2_blocking_recv(MPID_nem_cell_ptr_t *cell, int *in_fbox)
 #endif /*USE_FASTBOX */
 
 	if ((MPID_NEM_NET_MODULE != MPID_NEM_NO_MODULE) && (MPID_nem_mem_region.ext_procs > 0))
-	{
+	{            
 	    mpi_errno = MPID_nem_network_poll (MPID_NEM_POLL_IN);
             if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+            if (completions != MPIDI_CH3I_progress_completion_count)
+            {
+                *cell = 0;
+                *in_fbox = 0;
+                goto exit_l;
+            }
 	}
 #ifndef ENABLE_NO_SCHED_YIELD
 	if (pollcount >= MPID_NEM_POLLS_BEFORE_YIELD)
