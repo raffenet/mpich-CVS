@@ -161,17 +161,6 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	goto fn_fail;
     }
 
-    /* if MPI_MODE_SEQUENTIAL requested, file systems cannot do explicit offset
-     * or independent file pointer accesses, leaving not much else aside from
-     * shared file pointer accesses. */
-    if ( !ADIO_Feature(fh, ADIO_SHARED_FP) && (amode & MPI_MODE_SEQUENTIAL)) 
-    {
-        error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-			                  myname, __LINE__, 
-					  MPI_ERR_UNSUPPORTED_OPERATION,
-					  "**iosequnsupported", 0);
-	goto fn_fail;
-    }
     /* --END ERROR HANDLING-- */
 
     /* strip off prefix if there is one, but only skip prefixes
@@ -194,6 +183,19 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode,
 	goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
+
+    /* if MPI_MODE_SEQUENTIAL requested, file systems cannot do explicit offset
+     * or independent file pointer accesses, leaving not much else aside from
+     * shared file pointer accesses. */
+    if ( !ADIO_Feature((*fh), ADIO_SHARED_FP) && (amode & MPI_MODE_SEQUENTIAL)) 
+    {
+        error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
+			                  myname, __LINE__, 
+					  MPI_ERR_UNSUPPORTED_OPERATION,
+					  "**iosequnsupported", 0);
+	ADIO_Close(*fh, &error_code);
+	goto fn_fail;
+    }
 
     /* determine name of file that will hold the shared file pointer */
     /* can't support shared file pointers on a file system that doesn't
