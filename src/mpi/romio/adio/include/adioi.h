@@ -204,7 +204,7 @@ struct ADIOI_Fns_struct {
 
 /* some of the ADIO functions are macro-replaced */
 
-#define ADIO_OpenColl(fd, rank, access_mode, error_code) \
+#define ADIOI_OpenColl(fd, rank, access_mode, error_code) \
 	(*(fd->fns->ADIOI_xxx_OpenColl))(fd, rank, access_mode, error_code)
 
 #define ADIO_ReadContig(fd,buf,count,datatype,file_ptr_type,offset,status,error_code) \
@@ -358,6 +358,8 @@ int ADIOI_GEN_aio_wait_fn(int count, void **array_of_states, double timeout,
 		ADIO_Status *status);
 int ADIOI_GEN_aio_query_fn(void *extra_state, ADIO_Status *status);
 int ADIOI_GEN_aio_free_fn(void *extra_state);
+int ADIOI_GEN_Feature(ADIO_File fd, int feature);
+
 void ADIOI_GEN_ReadStrided_naive(ADIO_File fd, void *buf, int count,
                        MPI_Datatype buftype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
