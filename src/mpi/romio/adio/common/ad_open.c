@@ -25,7 +25,7 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     MPI_File mpi_fh;
     ADIO_File fd;
     ADIO_cb_name_array array;
-    int orig_amode_excl, orig_amode_wronly, err, rank, procs;
+    int err, rank, procs;
     char *value;
     static char myname[] = "ADIO_OPEN";
     int rank_ct, max_error_code;
