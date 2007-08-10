@@ -634,7 +634,7 @@ class MPDSock(object):
 			# silent failure on pipe failure, as we usually
                         # just want to discard messages in this case 
                         # (We need to plan error handling more thoroughly)
-                        pass
+                        break  ## RMB: chgd from pass
                     elif errmsg[0] != EINTR:
                         raise socket.error, errmsg
             # end of While
