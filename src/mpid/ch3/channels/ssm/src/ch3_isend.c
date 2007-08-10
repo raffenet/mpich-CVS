@@ -149,6 +149,13 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt,
 	    MPIDI_CH3I_SendQ_enqueue(vcch, sreq);
 	}
     }
+    else if (vcch->state == MPIDI_CH3I_VC_STATE_CONNECTING) /* MT */
+    {
+	/* Queuing the data so it can be sent later. */
+	MPIDI_DBG_PRINTF((55, FCNAME, "connecting.  enqueuing request"));
+	update_request(sreq, pkt, pkt_sz, 0);
+	MPIDI_CH3I_SendQ_enqueue(vcch, sreq);
+    }
     else if (vcch->state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
 	/* Form a new connection, queuing the data so it can be sent later. */

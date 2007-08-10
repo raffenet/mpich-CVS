@@ -147,6 +147,15 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz,
 	    MPIDI_CH3I_SendQ_enqueue(vcch, sreq);
 	}
     }
+    else if (vcch->state == MPIDI_CH3I_VC_STATE_CONNECTING) /* MT */
+    {
+	MPIDI_DBG_PRINTF((55, FCNAME, "connecting.  enqueuing request"));
+	
+	/* queue the data so it can be sent after the connection is formed */
+	mpi_errno = createRequest( pkt, pkt_sz, 0, &sreq );
+	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	MPIDI_CH3I_SendQ_enqueue(vcch, sreq);
+    }
     else if (vcch->state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
 	MPIDI_DBG_PRINTF((55, FCNAME, "unconnected.  posting connect and enqueuing request"));
