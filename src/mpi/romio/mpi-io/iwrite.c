@@ -140,7 +140,7 @@ int MPIOI_File_iwrite(MPI_File mpi_fh,
 	else {
             /* to maintain strict atomicity semantics with other concurrent
               operations, lock (exclusive) and call blocking routine */
-	    if (ADIO_Feature(fd, ADIOI_LOCKS) )
+	    if (ADIO_Feature(fh, ADIO_LOCKS) )
 	    {
                 ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
 	    }
@@ -148,7 +148,7 @@ int MPIOI_File_iwrite(MPI_File mpi_fh,
             ADIO_WriteContig(fh, buf, count, datatype, file_ptr_type, off, 
 			     &status, &error_code);  
 
-	    if (ADIO_Feature(fd, ADIOI_LOCKS) )
+	    if (ADIO_Feature(fh, ADIO_LOCKS) )
 	    {
                 ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
 	    }
