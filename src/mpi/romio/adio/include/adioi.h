@@ -127,6 +127,8 @@ typedef struct ADIOI_Fl_node {
 
 struct ADIOI_Fns_struct {
     void (*ADIOI_xxx_Open) (ADIO_File fd, int *error_code);
+    void (*ADIOI_xxx_OpenColl) (ADIO_File fd, int rank, 
+		    int access_mode, int *error_code);
     void (*ADIOI_xxx_ReadContig) (ADIO_File fd, void *buf, int count, 
                    MPI_Datatype datatype, int file_ptr_type, 
                    ADIO_Offset offset, ADIO_Status *status, int *error_code);
@@ -204,6 +206,9 @@ struct ADIOI_Fns_struct {
 
 
 /* some of the ADIO functions are macro-replaced */
+
+#define ADIO_OpenColl(fd, rank, access_mode, error_code) \
+	(*(fd->fns->ADIOI_xxx_OpenColl))(fd, rank, access_mode, error_code)
 
 #define ADIO_ReadContig(fd,buf,count,datatype,file_ptr_type,offset,status,error_code) \
         (*(fd->fns->ADIOI_xxx_ReadContig))(fd,buf,count,datatype,file_ptr_type,offset,status,error_code)
@@ -316,6 +321,12 @@ void ADIOI_Get_byte_offset(ADIO_File fd, ADIO_Offset offset,
 void ADIOI_GEN_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
 		     int *error_code);
 void ADIOI_GEN_Flush(ADIO_File fd, int *error_code);
+void ADIOI_GEN_OpenColl(ADIO_File fd, int rank, 
+		int access_mode, int *error_code);
+void ADIOI_SCALEABLE_OpenColl(ADIO_File fd, int rank, 
+		int access_mode, int *error_code);
+void ADIOI_FAILSAFE_OpenColl(ADIO_File fd, int rank, 
+		int access_mode, int *error_code);
 void ADIOI_GEN_Delete(char *filename, int *error_code);
 void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count, 
 			  MPI_Datatype datatype, int file_ptr_type,

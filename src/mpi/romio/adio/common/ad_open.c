@@ -158,88 +158,13 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 	    }
     }
 
-    orig_amode_excl = access_mode;
+    /* actual opens start here */
+    /* generic open: one process opens to create the file, all others open */
+    /* nfs open: everybody opens or else you'll end up with "file not found"
+     * due to stupid nfs consistency semantics */
+    /* scalable open: one process opens and broadcasts results to everyone */
 
-    /* optimization: by having just one process create a file, close it, then
-     * have all N processes open it, we can possibly avoid contention for write
-     * locks on a directory for some file systems. 
-     *
-     * we used to special-case EXCL|CREATE, since when N processes are trying
-     * to create a file exclusively, only 1 will succeed and the rest will
-     * (spuriously) fail.   Since we are now carrying out the CREATE on one
-     * process anyway, the EXCL case falls out and we don't need to explicitly
-     * worry about it, other than turning off both the EXCL and CREATE flags 
-     */
-    /* it is actually more efficent for certain fs with scalable open if we
-     * skip this optimization */
-    if (access_mode & ADIO_CREATE && !ADIO_Feature(fd, ADIO_SCALABLE_OPEN)) {
-       if(rank == fd->hints->ranklist[0]) {
-	   /* remove delete_on_close flag if set */
-	   if (access_mode & ADIO_DELETE_ON_CLOSE)
-	       fd->access_mode = access_mode ^ ADIO_DELETE_ON_CLOSE;
-	   else 
-	       fd->access_mode = access_mode;
-	       
-	   (*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
-	   MPI_Bcast(error_code, 1, MPI_INT, \
-		     fd->hints->ranklist[0], fd->comm);
-	   /* if no error, close the file and reopen normally below */
-	   if (*error_code == MPI_SUCCESS) 
-	       (*(fd->fns->ADIOI_xxx_Close))(fd, error_code);
-
-	   fd->access_mode = access_mode; /* back to original */
-       }
-       else MPI_Bcast(error_code, 1, MPI_INT, fd->hints->ranklist[0], fd->comm);
-
-       if (*error_code != MPI_SUCCESS) {
-           goto fn_exit;
-       } 
-       else {
-           /* turn off CREAT (and EXCL if set) for real multi-processor open */
-           access_mode ^= ADIO_CREATE; 
-	   if (access_mode & ADIO_EXCL)
-		   access_mode ^= ADIO_EXCL;
-       }
-    }
-
-    /* if we are doing deferred open, non-aggregators should return now */
-    if (fd->hints->deferred_open ) {
-        if (fd->agg_comm == MPI_COMM_NULL) {
-            /* we might have turned off EXCL for the aggregators.
-             * restore access_mode that non-aggregators get the right
-             * value from get_amode */
-            fd->access_mode = orig_amode_excl;
-            *error_code = MPI_SUCCESS;
-            goto fn_exit;
-        }
-    }
-
-/* For writing with data sieving, a read-modify-write is needed. If 
-   the file is opened for write_only, the read will fail. Therefore,
-   if write_only, open the file as read_write, but record it as write_only
-   in fd, so that get_amode returns the right answer. */
-
-    orig_amode_wronly = access_mode;
-    if (access_mode & ADIO_WRONLY) {
-	access_mode = access_mode ^ ADIO_WRONLY;
-	access_mode = access_mode | ADIO_RDWR;
-    }
-    fd->access_mode = access_mode;
-
-    (*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
-
-    /* if error, may be it was due to the change in amode above. 
-       therefore, reopen with access mode provided by the user.*/ 
-    fd->access_mode = orig_amode_wronly;  
-    if (*error_code != MPI_SUCCESS) 
-        (*(fd->fns->ADIOI_xxx_Open))(fd, error_code);
-
-    /* if we turned off EXCL earlier, then we should turn it back on */
-    if (fd->access_mode != orig_amode_excl) fd->access_mode = orig_amode_excl;
-
-    /* for deferred open: this process has opened the file (because if we are
-     * not an aggregaor and we are doing deferred open, we returned earlier)*/
-    fd->is_open = 1;
+    ADIOI_OpenColl(fd, rank, access_mode, error_code);
 
  fn_exit:
     MPI_Allreduce(error_code, &max_error_code, 1, MPI_INT, MPI_MAX, comm);

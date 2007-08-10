@@ -12,6 +12,7 @@
 
 struct ADIOI_Fns_struct ADIO_UFS_operations = {
     ADIOI_UFS_Open, /* Open */
+    ADIOI_GEN_OpenColl, /* OpenColl */
     ADIOI_GEN_ReadContig, /* ReadContig */
     ADIOI_GEN_WriteContig, /* WriteContig */
     ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
