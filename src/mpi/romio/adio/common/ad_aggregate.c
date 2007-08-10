@@ -125,6 +125,10 @@ void ADIOI_Calc_file_domains(ADIO_Offset *st_offsets, ADIO_Offset
    done by (logically) dividing the file into file domains (FDs); each
    process may directly access only its own file domain. */
 
+	/* XXX: one idea: tweak the file domains so that no fd is smaller than
+	 * a threshold (one presumably well-suited to a file system).  We don't
+	 * do that, but this routine would be the place for it */
+
     ADIO_Offset min_st_offset, max_end_offset, *fd_start, *fd_end, fd_size;
     int i;
 

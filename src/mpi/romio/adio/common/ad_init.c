@@ -8,20 +8,6 @@
 #include "adio.h"
 
 ADIOI_Flatlist_node *ADIOI_Flatlist = NULL;
-ADIOI_Async_node *ADIOI_Async_list_head = NULL, *ADIOI_Async_list_tail = NULL;
-    /* list of outstanding asynchronous requests */
-ADIOI_Async_node *ADIOI_Async_avail_head = NULL,
-    *ADIOI_Async_avail_tail = NULL;
-    /* list of available (already malloced) nodes for above async list */
-ADIOI_Malloc_async *ADIOI_Malloc_async_head = NULL,
-    *ADIOI_Malloc_async_tail = NULL;
-  /* list of malloced areas for async_list, which must be freed in ADIO_End */
-
-ADIOI_Req_node *ADIOI_Req_avail_head = NULL, *ADIOI_Req_avail_tail = NULL;
-    /* list of available (already malloced) request objects */
-ADIOI_Malloc_req *ADIOI_Malloc_req_head = NULL, *ADIOI_Malloc_req_tail = NULL;
-    /* list of malloced areas for requests, which must be freed in ADIO_End */
-
 ADIOI_Datarep *ADIOI_Datarep_head = NULL;
     /* list of datareps registered by the user */
 
