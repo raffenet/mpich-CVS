@@ -635,7 +635,7 @@ class MPDSock(object):
                         # just want to discard messages in this case 
                         # (We need to plan error handling more thoroughly)
                         pass
-                    if errmsg[0] != EINTR:
+                    elif errmsg[0] != EINTR:
                         raise socket.error, errmsg
             # end of While
         except Exception, errmsg:
