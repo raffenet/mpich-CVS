@@ -39,4 +39,5 @@ struct ADIOI_Fns_struct ADIO_UFS_operations = {
     ADIOI_GEN_Flush, /* Flush */
     ADIOI_GEN_Resize, /* Resize */
     ADIOI_GEN_Delete, /* Delete */
+    ADIOI_GEN_Feature, /* Features */
 };
