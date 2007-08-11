@@ -29,13 +29,18 @@ and communication) through in-built loop-unrolling and buffer
 alignment.
 
 - Performance improvements for MPI_Gather when non-power-of-two
-processes are used, and when a non-zero root is performing the gather.
+processes are used, and when a non-zero ranked root is performing the
+gather.
 
-- MPI_Comm_create works for intercommunicators
+- MPI_Comm_create works for intercommunicators.
+
+- Enabled -O2 and equivalent compiler optimizations for supported
+compilers by default (including GNU, Intel, Portland, Sun, Absoft,
+IBM).
 
 - Many other bug fixes, memory leak fixes and code cleanup. A full
 list of changes is available at
-www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_6changes.htm .
+www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_6changes.htm.
 
 
 ===============================================================================
