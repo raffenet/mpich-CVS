@@ -1337,12 +1337,27 @@ EOF
         AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
         pac_tmp_compile_stdout="$CC $CFLAGS -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout.out"
         AC_TRY_EVAL(pac_tmp_compile_stdout)
-        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" ; then
+        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+		"`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
 	    AC_MSG_RESULT(no)
-	    AC_MSG_WARN([Compiler does not accept -O2 optimization])
-        elif test "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
-	    AC_MSG_RESULT(no)
-	    AC_MSG_WARN([Compiler does not accept -O2 optimization])
+
+	    AC_MSG_CHECKING([whether $CC accepts -xO2])
+	    pac_tmp_compile_stderr_opt="$CC $CFLAGS -xO2 -o conftest conftest.c 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+	    AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+	    pac_tmp_compile_stderr="$CC $CFLAGS -o conftest conftest.c 2> pac_tmp_compile_stderr.out > /dev/null"
+	    AC_TRY_EVAL(pac_tmp_compile_stderr)
+	    pac_tmp_compile_stdout_opt="$CC $CFLAGS -xO2 -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+	    AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+	    pac_tmp_compile_stdout="$CC $CFLAGS -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout.out"
+	    AC_TRY_EVAL(pac_tmp_compile_stdout)
+	    if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+		    "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+		    AC_MSG_RESULT(no)
+		    AC_MSG_WARN([Compiler does not accept -O2 or -xO2 optimization])
+	    else
+		AC_MSG_RESULT(yes)
+		CFLAGS="$CFLAGS -xO2"
+	    fi
         else
 	    AC_MSG_RESULT(yes)
 	    CFLAGS="$CFLAGS -O2"
@@ -1472,12 +1487,27 @@ EOF
         AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
         pac_tmp_compile_stdout="$F77 $FFLAGS -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout.out"
         AC_TRY_EVAL(pac_tmp_compile_stdout)
-        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" ; then
+        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+		"`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
             AC_MSG_RESULT(no)
-            AC_MSG_WARN([Compiler does not accept -O2 optimization])
-        elif test "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
-            AC_MSG_RESULT(no)
-            AC_MSG_WARN([Compiler does not accept -O2 optimization])
+
+            AC_MSG_CHECKING([whether $F77 accepts -xO2])
+            pac_tmp_compile_stderr_opt="$F77 $FFLAGS -xO2 -o conftest conftest.f 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+            pac_tmp_compile_stderr="$F77 $FFLAGS -o conftest conftest.f 2> pac_tmp_compile_stderr.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr)
+            pac_tmp_compile_stdout_opt="$F77 $FFLAGS -xO2 -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+            pac_tmp_compile_stdout="$F77 $FFLAGS -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout)
+            if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+                    "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+                    AC_MSG_RESULT(no)
+                    AC_MSG_WARN([Compiler does not accept -O2 or -xO2 optimization])
+	    else
+		AC_MSG_RESULT(yes)
+		FFLAGS="$FFLAGS -xO2"
+            fi
         else
             AC_MSG_RESULT(yes)
             FFLAGS="$FFLAGS -O2"
@@ -1606,12 +1636,27 @@ EOF
         AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
         pac_tmp_compile_stdout="$F90 $F90FLAGS -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout.out"
         AC_TRY_EVAL(pac_tmp_compile_stdout)
-        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" ; then
+        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+		"`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
             AC_MSG_RESULT(no)
-            AC_MSG_WARN([Compiler does not accept -O2 optimization])
-        elif test "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
-            AC_MSG_RESULT(no)
-            AC_MSG_WARN([Compiler does not accept -O2 optimization])
+
+            AC_MSG_CHECKING([whether $F90 accepts -xO2])
+            pac_tmp_compile_stderr_opt="$F90 $F90FLAGS -xO2 -o conftest conftest.f 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+            pac_tmp_compile_stderr="$F90 $F90FLAGS -o conftest conftest.f 2> pac_tmp_compile_stderr.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr)
+            pac_tmp_compile_stdout_opt="$F90 $F90FLAGS -xO2 -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+            pac_tmp_compile_stdout="$F90 $F90FLAGS -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout)
+            if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+                    "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+                    AC_MSG_RESULT(no)
+                    AC_MSG_WARN([Compiler does not accept -O2 or -xO2 optimization])
+            else
+                AC_MSG_RESULT(yes)
+                F90FLAGS="$F90FLAGS -xO2"
+            fi
         else
             AC_MSG_RESULT(yes)
             F90FLAGS="$F90FLAGS -O2"
@@ -2268,12 +2313,27 @@ EOF
         AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
         pac_tmp_compile_stdout="$CXX $CXXFLAGS -o conftest conftest.cpp 2> /dev/null > pac_tmp_compile_stdout.out"
         AC_TRY_EVAL(pac_tmp_compile_stdout)
-        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" ; then
+        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+		"`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
             AC_MSG_RESULT(no)
-            AC_MSG_WARN([Compiler does not accept -O2 optimization])
-        elif test "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
-            AC_MSG_RESULT(no)
-            AC_MSG_WARN([Compiler does not accept -O2 optimization])
+
+            AC_MSG_CHECKING([whether $CXX accepts -xO2])
+            pac_tmp_compile_stderr_opt="$CXX $CXXFLAGS -xO2 -o conftest conftest.cpp 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+            pac_tmp_compile_stderr="$CXX $CXXFLAGS -o conftest conftest.cpp 2> pac_tmp_compile_stderr.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr)
+            pac_tmp_compile_stdout_opt="$CXX $CXXFLAGS -xO2 -o conftest conftest.cpp 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+            pac_tmp_compile_stdout="$CXX $CXXFLAGS -o conftest conftest.cpp 2> /dev/null > pac_tmp_compile_stdout.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout)
+            if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+                    "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+                    AC_MSG_RESULT(no)
+                    AC_MSG_WARN([Compiler does not accept -O2 or -xO2 optimization])
+            else
+                AC_MSG_RESULT(yes)
+                CXXFLAGS="$CXXFLAGS -xO2"
+            fi
         else
             AC_MSG_RESULT(yes)
             CXXFLAGS="$CXXFLAGS -O2"
