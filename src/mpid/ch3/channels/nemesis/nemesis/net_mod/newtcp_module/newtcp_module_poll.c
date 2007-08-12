@@ -57,9 +57,6 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
 
             if (bytes_recvd == 0)
             {
-                //MPIU_Internal_error_printf("%d:%d->%d::recv error EOF\n", 
-                  //      getpid(), MPIDI_Process.my_pg_rank, sc->pg_rank);
-                goto fn_exit; //SAN-DBGa
                 MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**sock_closed");
             }
             else
