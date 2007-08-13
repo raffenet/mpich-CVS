@@ -56,8 +56,7 @@
 
 #ifdef HAVE_GCC_AND_PENTIUM_ASM
 #ifdef HAVE_GCC_ASM_AND_X86_SFENCE
-/*#define MPID_WRITE_BARRIER() __asm__ __volatile__  ( "sfence" ::: "memory" )*/
-#define MPID_WRITE_BARRIER()
+#define MPID_WRITE_BARRIER() __asm__ __volatile__  ( "sfence" ::: "memory" )
 #else
 #define MPID_WRITE_BARRIER()
 #endif
@@ -67,16 +66,14 @@
 #define MPID_READ_BARRIER()
 #endif
 #ifdef HAVE_GCC_ASM_AND_X86_MFENCE
-/*#define MPID_READ_WRITE_BARRIER() __asm__ __volatile__  ( ".byte 0x0f, 0xae, 0xf0" ::: "memory" )*/
-#define MPID_READ_WRITE_BARRIER()
+#define MPID_READ_WRITE_BARRIER() __asm__ __volatile__  ( ".byte 0x0f, 0xae, 0xf0" ::: "memory" )
 #else
 #define MPID_READ_WRITE_BARRIER()
 #endif
 
 #elif defined(HAVE___ASM_AND_PENTIUM_ASM)
 #ifdef HAVE___ASM_AND_X86_SFENCE
-/*#define MPID_WRITE_BARRIER() __asm sfence */
-#define MPID_WRITE_BARRIER()
+#define MPID_WRITE_BARRIER() __asm sfence
 #else
 #define MPID_WRITE_BARRIER()
 #endif
@@ -86,8 +83,7 @@
 #define MPID_READ_BARRIER()
 #endif
 #ifdef HAVE___ASM_AND_X86_MFENCE
-/*#define MPID_READ_WRITE_BARRIER() __asm __emit 0x0f __asm __emit 0xae __asm __emit 0xf0*/
-#define MPID_READ_WRITE_BARRIER()
+#define MPID_READ_WRITE_BARRIER() __asm __emit 0x0f __asm __emit 0xae __asm __emit 0xf0
 #else
 #define MPID_READ_WRITE_BARRIER()
 #endif
@@ -202,7 +198,7 @@ typedef struct MPIDI_CH3I_SHM_Packet_t
 {
     volatile int avail;
     /*char pad_avail[60];*/ /* keep the avail flag on a separate cache line */
-    int num_bytes;
+    volatile int num_bytes;
     int offset;
     /* insert stuff here to align data? */
     int pad;/*char pad_data[56];*/ /* cache align the data */
