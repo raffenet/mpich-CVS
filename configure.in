@@ -1319,52 +1319,48 @@ if test -z "$saveCFLAGS" -a -n "$CFLAGS" ; then
     CFLAGS=$saveCFLAGS
 fi
 
-if test -z "$saveCFLAGS" ; then
-    # The user did not set any CFLAGS.
-    # If requested for, set the default compiler optimizations.
-    if test "$compiler_optimizations" == "yes"; then
-        AC_MSG_CHECKING([whether $CC accepts -O2])
-	    rm -f conftest.c
-	    cat > conftest.c <<EOF
+if test "$compiler_optimizations" == "yes"; then
+   AC_MSG_CHECKING([whether $CC accepts -O2])
+   rm -f conftest.c
+   cat > conftest.c <<EOF
 #include <stdio.h>
 int main() { return 0; }
 EOF
-        pac_tmp_compile_stderr_opt="$CC $CFLAGS -O2 -o conftest conftest.c 2> pac_tmp_compile_stderr_opt.out > /dev/null"
-        AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
-        pac_tmp_compile_stderr="$CC $CFLAGS -o conftest conftest.c 2> pac_tmp_compile_stderr.out > /dev/null"
-        AC_TRY_EVAL(pac_tmp_compile_stderr)
-        pac_tmp_compile_stdout_opt="$CC $CFLAGS -O2 -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout_opt.out"
-        AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
-        pac_tmp_compile_stdout="$CC $CFLAGS -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout.out"
-        AC_TRY_EVAL(pac_tmp_compile_stdout)
-        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
-		"`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
-	    AC_MSG_RESULT(no)
+   pac_tmp_compile_stderr_opt="$CC $CFLAGS -O2 -o conftest conftest.c 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+   AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+   pac_tmp_compile_stderr="$CC $CFLAGS -o conftest conftest.c 2> pac_tmp_compile_stderr.out > /dev/null"
+   AC_TRY_EVAL(pac_tmp_compile_stderr)
+   pac_tmp_compile_stdout_opt="$CC $CFLAGS -O2 -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+   AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+   pac_tmp_compile_stdout="$CC $CFLAGS -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout.out"
+   AC_TRY_EVAL(pac_tmp_compile_stdout)
+   if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+	   "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+	   AC_MSG_RESULT(no)
 
-	    AC_MSG_CHECKING([whether $CC accepts -xO2])
-	    pac_tmp_compile_stderr_opt="$CC $CFLAGS -xO2 -o conftest conftest.c 2> pac_tmp_compile_stderr_opt.out > /dev/null"
-	    AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
-	    pac_tmp_compile_stderr="$CC $CFLAGS -o conftest conftest.c 2> pac_tmp_compile_stderr.out > /dev/null"
-	    AC_TRY_EVAL(pac_tmp_compile_stderr)
-	    pac_tmp_compile_stdout_opt="$CC $CFLAGS -xO2 -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout_opt.out"
-	    AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
-	    pac_tmp_compile_stdout="$CC $CFLAGS -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout.out"
-	    AC_TRY_EVAL(pac_tmp_compile_stdout)
-	    if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
-		    "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
-		    AC_MSG_RESULT(no)
-		    AC_MSG_WARN([Compiler does not accept -O2 or -xO2 optimization])
-	    else
+	   AC_MSG_CHECKING([whether $CC accepts -xO2])
+	   pac_tmp_compile_stderr_opt="$CC $CFLAGS -xO2 -o conftest conftest.c 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+	   AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+	   pac_tmp_compile_stderr="$CC $CFLAGS -o conftest conftest.c 2> pac_tmp_compile_stderr.out > /dev/null"
+	   AC_TRY_EVAL(pac_tmp_compile_stderr)
+	   pac_tmp_compile_stdout_opt="$CC $CFLAGS -xO2 -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+	   AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+	   pac_tmp_compile_stdout="$CC $CFLAGS -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout.out"
+	   AC_TRY_EVAL(pac_tmp_compile_stdout)
+	   if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+		   "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+		AC_MSG_RESULT(no)
+		AC_MSG_WARN([Compiler does not accept -O2 or -xO2 optimization])
+	   else
 		AC_MSG_RESULT(yes)
 		CFLAGS="$CFLAGS -xO2"
-	    fi
-        else
-	    AC_MSG_RESULT(yes)
-	    CFLAGS="$CFLAGS -O2"
-        fi
-        rm -f pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out
-        rm -f conftest*
-    fi
+	   fi
+   else
+	   AC_MSG_RESULT(yes)
+	   CFLAGS="$CFLAGS -O2"
+   fi
+   rm -f pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out
+   rm -f conftest*
 fi
 
 # Check whether shared libraries are enabled.  We need to know this
@@ -1469,9 +1465,7 @@ elif test "$enable_f77" = "yes" ; then
     FFLAGS=$saveFFLAGS
 fi
 
-if test -z "$saveFFLAGS" -a "$enable_f77" = yes ; then
-    # The user did not set any FFLAGS.
-    # If requested for, set the default compiler optimizations.
+if test "$enable_f77" = yes ; then
     if test "$compiler_optimizations" == "yes"; then
         AC_MSG_CHECKING([whether $F77 accepts -O2])
             rm -f conftest.f
@@ -1618,9 +1612,7 @@ if test "$enable_f90" = "yes" -a "$enable_f77" != "yes" ; then
    enable_f77=yes
 fi
 
-if test -z "$saveF90FLAGS" -a "$enable_f90" = yes ; then
-    # The user did not set any F90FLAGS.
-    # If requested for, set the default compiler optimizations.
+if test "$enable_f90" = yes ; then
     if test "$compiler_optimizations" == "yes"; then
         AC_MSG_CHECKING([whether $F90 accepts -O2])
             rm -f conftest.f
@@ -2295,9 +2287,7 @@ int main() {
 
 fi
 
-if test -z "$saveCXXFLAGS" -a "$enable_cxx" = yes; then
-    # The user did not set any CXXFLAGS.
-    # If requested for, set the default compiler optimizations.
+if test "$enable_cxx" = yes; then
     if test "$compiler_optimizations" == "yes"; then
         AC_MSG_CHECKING([whether $CXX accepts -O2])
             rm -f conftest.cpp
