@@ -22,7 +22,7 @@ nonblocking I/O in ROMIO.
   * Added backtrace support to MPE on Solaris and glibc based systems,
     e.g. Linux.  This improves the output error message from the 
     Collective/Datatype checking library.
-  * Fixed the CLOG2 format so it can be used in serial (non-MPI) loggig.
+  * Fixed the CLOG2 format so it can be used in serial (non-MPI) logging.
 
 - Performance improvements for derived datatypes (including packing
 and communication) through in-built loop-unrolling and buffer
