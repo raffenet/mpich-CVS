@@ -623,11 +623,12 @@ F90INCLUDES = \@F90INCFLAG\@.
 ";
 
 print MAKEFD "mpi_sources = create_f90_int.c create_f90_real.c \\\
-	create_f90_complex.c create_f90_util.c \\\
+	create_f90_complex.c \\\
         typef90cmplxf.c typef90realf.c typef90intf.c\n";
 
 # Add the C versions to the C library
-print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources} \
+print MAKEFD "lib\${MPILIBNAME}_a_SOURCES = \${mpi_sources} create_f90_util.c \
+profilelib_\${MPILIBNAME}_SOURCES = \${mpi_sources}
 profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
 INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\n";
 
