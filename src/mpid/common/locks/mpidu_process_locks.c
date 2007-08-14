@@ -9,7 +9,8 @@
 #ifdef USE_PROCESS_LOCKS
 
 #include <errno.h>
-#include <string.h>
+#include <string.h> 
+
 #ifdef HAVE_WINDOWS_H
 #include <winsock2.h>
 #include <windows.h>
