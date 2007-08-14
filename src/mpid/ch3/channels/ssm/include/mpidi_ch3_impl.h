@@ -14,6 +14,12 @@
 #include "ch3i_progress.h"
 #include "ch3usock.h"
 
+/* Redefine MPIU_CALL since the ssm channel should be self-contained.
+   This only affects the building of a dynamically loadable library for 
+   the sock channel, and then only when debugging is enabled */
+#undef MPIU_CALL
+#define MPIU_CALL(context,funccall) context##_##funccall
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
