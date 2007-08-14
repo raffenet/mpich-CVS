@@ -11,6 +11,12 @@
 #include "mpidimpl.h"
 #include "mpidu_process_locks.h"
 
+/* Redefine MPIU_CALL since the shm channel should be self-contained.
+   This only affects the building of a dynamically loadable library for 
+   the sock channel, and then only when debugging is enabled */
+#undef MPIU_CALL
+#define MPIU_CALL(context,funccall) context##_##funccall
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
