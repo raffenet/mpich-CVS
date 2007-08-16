@@ -6,7 +6,9 @@ C
 C This is a special test that requires an getarg/iargc routine 
 C
         program main
-        implicit none
+C     This implicit none is removed here because the iargc was not
+C     declared on the old sparc compilers
+C       implicit none
         include 'mpif.h'
         integer errs, err
         integer rank, size, rsize, i

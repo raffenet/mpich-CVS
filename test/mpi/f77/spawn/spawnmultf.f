@@ -8,7 +8,9 @@ C This tests spawn_mult by using the same executable but different
 C command-line options.
 C
        program main
-       implicit none
+C     This implicit none is removed here because the iargc was not
+C     declared on the old sparc compilers
+C       implicit none
        include 'mpif.h'
        integer errs, err
        integer rank, size, rsize, wsize, i
