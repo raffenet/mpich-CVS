@@ -24,8 +24,8 @@ C
         call mtest_init(ierr)
         call mpi_type_size( MPI_REAL, sizeofreal, ierr )
 C Make sure we pass in an integer of the correct type
-        aint = sizeofreal * 100 * 100
-        call mpi_alloc_mem( aint,MPI_INFO_NULL,p,ierr )
+        asize = sizeofreal * 100 * 100
+        call mpi_alloc_mem( asize,MPI_INFO_NULL,p,ierr )
 
         do i=1,100
             do j=1,100
