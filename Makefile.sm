@@ -146,6 +146,7 @@ dist-with-version:
 	( cd tmpdir/${PACKAGE}-${version}/src/pm && rm -rf forker rmpd ompd )
 	( cd tmpdir/$(PACKAGE)-$(version)/src/pm/mpd && rm -f Zeroconf.py)
 	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/ch3/channels && rm -rf ib rdma gasnet sshm)
+	( cd tmpdir/$(PACKAGE)-$(version)/src/pmi && rm -rf simple2)
 	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/ch3/channels/nemesis/nemesis/net_mod && rm -rf newtcp_module/* sctp_module/* ib_module/* psm_module/*)
 	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/ch3/channels/nemesis/nemesis/net_mod && \
 	echo "# Stub Makefile" > newtcp_module/Makefile.sm && \
