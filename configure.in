@@ -844,7 +844,7 @@ esac
 # Check that the requested thread level is available.
 threadLevelOK=yes
 if test -z "$MPID_MAX_THREAD_LEVEL" ; then
-    if test "$MPICH_THREAD_LEVEL" = "MPI_THREAD_MULTIPLE" -o "$MPICH_THREAD_LEVEL" = "MPI_THREAD_SERIALIZED ; then
+    if test "$MPICH_THREAD_LEVEL" = "MPI_THREAD_MULTIPLE" -o "$MPICH_THREAD_LEVEL" = "MPI_THREAD_SERIALIZED" ; then
         threadLevelOK=no
     fi
 else
