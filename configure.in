@@ -872,7 +872,7 @@ else
     esac
 fi
 if test "$threadLevelOK" != yes ; then
-   AC_MSG_ERROR([The device $with_device does not support MPI_THREAD_MULTIPLE])
+   AC_MSG_ERROR([The device $with_device does not support $MPICH_THREAD_LEVEL])
 fi
 
 export MPICH_THREAD_LEVEL
