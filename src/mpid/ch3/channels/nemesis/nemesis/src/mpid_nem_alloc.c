@@ -14,8 +14,6 @@
 #include <sys/shm.h>
 #endif
 
-int mkstemp(char*);
-
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_seg_create
 #undef FCNAME
