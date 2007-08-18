@@ -1,7 +1,7 @@
 #  Output Directory
 
-MAN_DIR  = ../man/man3
-HTML_DIR = ../html
+MAN_DIR  = ../man/man4
+HTML_DIR = ../html/www4
 
 #  Input Directory
 
