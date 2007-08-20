@@ -499,13 +499,7 @@ foreach $routine (keys(%mpi_choice_routines)) {
     print MPIFD "        END INTERFACE MPI_$ucname\n\n";
 }
 
-# # Add sizeof
-# print MPIFD "        PUBLIC :: MPI_SIZEOF\n";
-# print MPIFD "        INTERFACE MPI_SIZEOF\n";
-# print MPIFD "          MODULE PROCEDURE MPI_SIZEOF_T\n";
-# print MPIFD "        END INTERFACE ! MPI_SIZEOF\n\n";
-
-# print MPIFD "        CONTAINS\n\n";
+# MPI_Sizeof has its own module
 
 # For each choice routine, add the modules
 foreach $routine (keys(%mpi_choice_routines)) {
@@ -581,17 +575,7 @@ foreach $routine (keys(%mpi_choice_routines)) {
     print MPIFD "        END SUBROUTINE MPI_${ucname}_T\n\n";
 }
 
-# The base sizeof's are handled separately now.
-# # Add sizeof
-# print MPIFD "\
-#         SUBROUTINE MPI_SIZEOF_T( X, SIZE, IERROR )\
-#         <type> X\
-#         INTEGER SIZE, IERROR\
-#         IERROR = 0\
-#         SIZE = <typesize>\
-#         END SUBROUTINE MPI_SIZEOF_T\
-# ";
-# print MPIFD "\n";
+# The base sizeof's are handled separately now in their own file
 
 print MPIFD "        END MODULE MPI_t1_s\n";
 close MPIFD;
