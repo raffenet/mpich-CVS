@@ -4153,6 +4153,19 @@ EOF
     AC_SUBST(SIZEOF_F90_DOUBLE_PRECISION)
     AC_SUBST(SIZEOF_F90_CHARACTER)
 
+    # REQD is short for "real equal double precision" and is set to the
+    # Fortran 90 comment character if true.  This is necessary to
+    # allow the mpi_sizeofs module to be built, since if this part of the
+    # Fortran standard is violated by the compiler (unfortunately common,
+    # as some applications are written to require this non-standard 
+    # version), the double precision versions of the MPI_SIZEOF routine
+    # must be commented out of the module (!).
+    REQD=
+    if test "$SIZEOF_F90_REAL" = "$SIZEOF_F90_DOUBLE_PRECISION" ; then
+        REQD="!"
+    fi
+    AC_SUBST(REQD)
+
     # 
 
     AC_LANG_C
