@@ -3851,7 +3851,9 @@ if test "$enable_f77" = yes ; then
     if test "$MPI_FINT" = "int" ; then
         AC_DEFINE(HAVE_FINT_IS_INT,1,[Define if Fortran integer are the same size as C ints])
     elif test "$SIZEOF_F77_INTEGER" != "$ac_cv_sizeof_int" ; then
-        AC_MSG_WARN([Fortran integers and C ints are not the same size.  The current Fortran binding does not support this case])
+        # Make this fatal because we do not want to build a broken fortran
+	# interface
+        AC_MSG_ERROR([Fortran integers and C ints are not the same size.  The current Fortran binding does not support this case.  Either force the Fortran compiler to use integers of $ac_cv_sizeof_int bytes, or use --disable-f77 on the configure line for MPICH2.])
     fi
 
     #
