@@ -13,7 +13,7 @@ C
       integer disp
       integer win
       integer commsize
-C Include addsize defines aint as an address-sized integer
+C Include addsize defines asize as an address-sized integer
       include 'addsize.h'
 
       errs = 0
@@ -22,9 +22,9 @@ C Include addsize defines aint as an address-sized integer
       call mpi_comm_size( MPI_COMM_WORLD, commsize, ierr )
 
 C Create a window; then extract the values 
-      aint    = 1024
+      asize    = 1024
       disp = 4
-      call MPI_Win_create( base, aint, disp, MPI_INFO_NULL, 
+      call MPI_Win_create( base, asize, disp, MPI_INFO_NULL, 
      &  MPI_COMM_WORLD, win, ierr )
 C
 C In order to check the base, we need an address-of function.
@@ -54,10 +54,10 @@ C         endif
          errs = errs + 1
          print *, "Could not get WIN_SIZE"
       else
-        if (valout .ne. aint) then
+        if (valout .ne. asize) then
             errs = errs + 1
             print *, "Got incorrect value for WIN_SIZE (", valout, 
-     &        ", should be ", aint, ")"
+     &        ", should be ", asize, ")"
          endif
       endif
 

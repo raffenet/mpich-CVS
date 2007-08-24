@@ -844,7 +844,7 @@ esac
 # Check that the requested thread level is available.
 threadLevelOK=yes
 if test -z "$MPID_MAX_THREAD_LEVEL" ; then
-    if test "$MPICH_THREAD_LEVEL" = "MPI_THREAD_MULTIPLE" ; then
+    if test "$MPICH_THREAD_LEVEL" = "MPI_THREAD_MULTIPLE" -o "$MPICH_THREAD_LEVEL" = "MPI_THREAD_SERIALIZED" ; then
         threadLevelOK=no
     fi
 else
@@ -872,7 +872,7 @@ else
     esac
 fi
 if test "$threadLevelOK" != yes ; then
-   AC_MSG_ERROR([The device $with_device does not support MPI_THREAD_MULTIPLE])
+   AC_MSG_ERROR([The device $with_device does not support $MPICH_THREAD_LEVEL])
 fi
 
 export MPICH_THREAD_LEVEL
@@ -1271,6 +1271,9 @@ fi
 AC_SUBST(mpe_dir)
 AC_SUBST(other_install_dirs)
 
+AC_ARG_ENABLE(compiler-optimizations, [--enable-compiler-optimizations -- Turn on compiler optimizations by default],
+compiler_optimizations=$enableval,compiler_optimizations=yes)
+
 dnl
 dnl The recommended order for items in a configure.in file is
 dnl     check for programs
@@ -1314,6 +1317,50 @@ if test -z "$saveCFLAGS" -a -n "$CFLAGS" ; then
     # if the CFLAGS were decomposed into flags-that-change-the-language
     # that the compiler accepts from optimizations
     CFLAGS=$saveCFLAGS
+fi
+
+if test "$compiler_optimizations" == "yes"; then
+   AC_MSG_CHECKING([whether $CC accepts -O2])
+   rm -f conftest.c
+   cat > conftest.c <<EOF
+#include <stdio.h>
+int main() { return 0; }
+EOF
+   pac_tmp_compile_stderr_opt="$CC $CFLAGS -O2 -o conftest conftest.c 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+   AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+   pac_tmp_compile_stderr="$CC $CFLAGS -o conftest conftest.c 2> pac_tmp_compile_stderr.out > /dev/null"
+   AC_TRY_EVAL(pac_tmp_compile_stderr)
+   pac_tmp_compile_stdout_opt="$CC $CFLAGS -O2 -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+   AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+   pac_tmp_compile_stdout="$CC $CFLAGS -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout.out"
+   AC_TRY_EVAL(pac_tmp_compile_stdout)
+   if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+	   "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+	   AC_MSG_RESULT(no)
+
+	   AC_MSG_CHECKING([whether $CC accepts -xO2])
+	   pac_tmp_compile_stderr_opt="$CC $CFLAGS -xO2 -o conftest conftest.c 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+	   AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+	   pac_tmp_compile_stderr="$CC $CFLAGS -o conftest conftest.c 2> pac_tmp_compile_stderr.out > /dev/null"
+	   AC_TRY_EVAL(pac_tmp_compile_stderr)
+	   pac_tmp_compile_stdout_opt="$CC $CFLAGS -xO2 -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+	   AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+	   pac_tmp_compile_stdout="$CC $CFLAGS -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout.out"
+	   AC_TRY_EVAL(pac_tmp_compile_stdout)
+	   if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+		   "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+		AC_MSG_RESULT(no)
+		AC_MSG_WARN([Compiler does not accept -O2 or -xO2 optimization])
+	   else
+		AC_MSG_RESULT(yes)
+		CFLAGS="$CFLAGS -xO2"
+	   fi
+   else
+	   AC_MSG_RESULT(yes)
+	   CFLAGS="$CFLAGS -O2"
+   fi
+   rm -f pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out
+   rm -f conftest*
 fi
 
 # Check whether shared libraries are enabled.  We need to know this
@@ -1417,6 +1464,53 @@ elif test "$enable_f77" = "yes" ; then
     AC_PROG_F77
     FFLAGS=$saveFFLAGS
 fi
+
+if test "$enable_f77" = yes ; then
+    if test "$compiler_optimizations" == "yes"; then
+        AC_MSG_CHECKING([whether $F77 accepts -O2])
+            rm -f conftest.f
+            cat > conftest.f <<EOF
+program main
+end
+EOF
+        pac_tmp_compile_stderr_opt="$F77 $FFLAGS -O2 -o conftest conftest.f 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+        AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+        pac_tmp_compile_stderr="$F77 $FFLAGS -o conftest conftest.f 2> pac_tmp_compile_stderr.out > /dev/null"
+        AC_TRY_EVAL(pac_tmp_compile_stderr)
+        pac_tmp_compile_stdout_opt="$F77 $FFLAGS -O2 -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+        AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+        pac_tmp_compile_stdout="$F77 $FFLAGS -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout.out"
+        AC_TRY_EVAL(pac_tmp_compile_stdout)
+        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+		"`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+            AC_MSG_RESULT(no)
+
+            AC_MSG_CHECKING([whether $F77 accepts -xO2])
+            pac_tmp_compile_stderr_opt="$F77 $FFLAGS -xO2 -o conftest conftest.f 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+            pac_tmp_compile_stderr="$F77 $FFLAGS -o conftest conftest.f 2> pac_tmp_compile_stderr.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr)
+            pac_tmp_compile_stdout_opt="$F77 $FFLAGS -xO2 -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+            pac_tmp_compile_stdout="$F77 $FFLAGS -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout)
+            if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+                    "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+                    AC_MSG_RESULT(no)
+                    AC_MSG_WARN([Compiler does not accept -O2 or -xO2 optimization])
+	    else
+		AC_MSG_RESULT(yes)
+		FFLAGS="$FFLAGS -xO2"
+            fi
+        else
+            AC_MSG_RESULT(yes)
+            FFLAGS="$FFLAGS -O2"
+        fi
+        rm -f pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out
+        rm -f conftest*
+    fi
+fi
+
 #
 # We need to know the name mangling for Fortran before testing for F90
 # compatibility (we need this because of the way we decide to generate
@@ -1581,6 +1675,52 @@ if test "$enable_f90" = "yes" -a "$enable_f77" != "yes" ; then
    AC_MSG_WARN([Fortran 90 support requires compatible Fortran 77 support.  To force the use of the Fortran 90 compiler for Fortran 77, set the environment variable F77 to the name of the Fortran 90 compiler.])
    # We should probably do the compatibility test as well
    enable_f77=yes
+fi
+
+if test "$enable_f90" = yes ; then
+    if test "$compiler_optimizations" == "yes"; then
+        AC_MSG_CHECKING([whether $F90 accepts -O2])
+            rm -f conftest.f
+            cat > conftest.f <<EOF
+program main
+end
+EOF
+        pac_tmp_compile_stderr_opt="$F90 $F90FLAGS -O2 -o conftest conftest.f 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+        AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+        pac_tmp_compile_stderr="$F90 $F90FLAGS -o conftest conftest.f 2> pac_tmp_compile_stderr.out > /dev/null"
+        AC_TRY_EVAL(pac_tmp_compile_stderr)
+        pac_tmp_compile_stdout_opt="$F90 $F90FLAGS -O2 -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+        AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+        pac_tmp_compile_stdout="$F90 $F90FLAGS -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout.out"
+        AC_TRY_EVAL(pac_tmp_compile_stdout)
+        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+		"`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+            AC_MSG_RESULT(no)
+
+            AC_MSG_CHECKING([whether $F90 accepts -xO2])
+            pac_tmp_compile_stderr_opt="$F90 $F90FLAGS -xO2 -o conftest conftest.f 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+            pac_tmp_compile_stderr="$F90 $F90FLAGS -o conftest conftest.f 2> pac_tmp_compile_stderr.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr)
+            pac_tmp_compile_stdout_opt="$F90 $F90FLAGS -xO2 -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+            pac_tmp_compile_stdout="$F90 $F90FLAGS -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout)
+            if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+                    "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+                    AC_MSG_RESULT(no)
+                    AC_MSG_WARN([Compiler does not accept -O2 or -xO2 optimization])
+            else
+                AC_MSG_RESULT(yes)
+                F90FLAGS="$F90FLAGS -xO2"
+            fi
+        else
+            AC_MSG_RESULT(yes)
+            F90FLAGS="$F90FLAGS -O2"
+        fi
+        rm -f pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out
+        rm -f conftest*
+    fi
 fi
 
 # ----------------------------------------------------------------------------
@@ -2211,6 +2351,53 @@ int main() {
     AC_SUBST(MPIR_CXX_LONG_DOUBLE_COMPLEX)
 
 fi
+
+if test "$enable_cxx" = yes; then
+    if test "$compiler_optimizations" == "yes"; then
+        AC_MSG_CHECKING([whether $CXX accepts -O2])
+            rm -f conftest.cpp
+            cat > conftest.cpp <<EOF
+#include <iostream>
+int main() { return 0; }
+EOF
+        pac_tmp_compile_stderr_opt="$CXX $CXXFLAGS -O2 -o conftest conftest.cpp 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+        AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+        pac_tmp_compile_stderr="$CXX $CXXFLAGS -o conftest conftest.cpp 2> pac_tmp_compile_stderr.out > /dev/null"
+        AC_TRY_EVAL(pac_tmp_compile_stderr)
+        pac_tmp_compile_stdout_opt="$CXX $CXXFLAGS -O2 -o conftest conftest.cpp 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+        AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+        pac_tmp_compile_stdout="$CXX $CXXFLAGS -o conftest conftest.cpp 2> /dev/null > pac_tmp_compile_stdout.out"
+        AC_TRY_EVAL(pac_tmp_compile_stdout)
+        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+		"`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+            AC_MSG_RESULT(no)
+
+            AC_MSG_CHECKING([whether $CXX accepts -xO2])
+            pac_tmp_compile_stderr_opt="$CXX $CXXFLAGS -xO2 -o conftest conftest.cpp 2> pac_tmp_compile_stderr_opt.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr_opt)
+            pac_tmp_compile_stderr="$CXX $CXXFLAGS -o conftest conftest.cpp 2> pac_tmp_compile_stderr.out > /dev/null"
+            AC_TRY_EVAL(pac_tmp_compile_stderr)
+            pac_tmp_compile_stdout_opt="$CXX $CXXFLAGS -xO2 -o conftest conftest.cpp 2> /dev/null > pac_tmp_compile_stdout_opt.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout_opt)
+            pac_tmp_compile_stdout="$CXX $CXXFLAGS -o conftest conftest.cpp 2> /dev/null > pac_tmp_compile_stdout.out"
+            AC_TRY_EVAL(pac_tmp_compile_stdout)
+            if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
+                    "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
+                    AC_MSG_RESULT(no)
+                    AC_MSG_WARN([Compiler does not accept -O2 or -xO2 optimization])
+            else
+                AC_MSG_RESULT(yes)
+                CXXFLAGS="$CXXFLAGS -xO2"
+            fi
+        else
+            AC_MSG_RESULT(yes)
+            CXXFLAGS="$CXXFLAGS -O2"
+        fi
+        rm -f pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out
+        rm -f conftest*
+    fi
+fi
+
 # Copy the mpicxx.h file to the main include directory
 AC_OUTPUT_COMMANDS([if test $enable_cxx = yes ; then 
 if test "$bashWorks" = yes ; then cp -f src/env/mpicxx.bash src/env/mpicxx ; fi
@@ -3737,7 +3924,9 @@ if test "$enable_f77" = yes ; then
     if test "$MPI_FINT" = "int" ; then
         AC_DEFINE(HAVE_FINT_IS_INT,1,[Define if Fortran integer are the same size as C ints])
     elif test "$SIZEOF_F77_INTEGER" != "$ac_cv_sizeof_int" ; then
-        AC_MSG_WARN([Fortran integers and C ints are not the same size.  The current Fortran binding does not support this case])
+        # Make this fatal because we do not want to build a broken fortran
+	# interface
+        AC_MSG_ERROR([Fortran integers and C ints are not the same size.  The current Fortran binding does not support this case.  Either force the Fortran compiler to use integers of $ac_cv_sizeof_int bytes, or use --disable-f77 on the configure line for MPICH2.])
     fi
 
     #
@@ -4038,6 +4227,19 @@ EOF
     AC_SUBST(SIZEOF_F90_REAL)
     AC_SUBST(SIZEOF_F90_DOUBLE_PRECISION)
     AC_SUBST(SIZEOF_F90_CHARACTER)
+
+    # REQD is short for "real equal double precision" and is set to the
+    # Fortran 90 comment character if true.  This is necessary to
+    # allow the mpi_sizeofs module to be built, since if this part of the
+    # Fortran standard is violated by the compiler (unfortunately common,
+    # as some applications are written to require this non-standard 
+    # version), the double precision versions of the MPI_SIZEOF routine
+    # must be commented out of the module (!).
+    REQD=
+    if test "$SIZEOF_F90_REAL" = "$SIZEOF_F90_DOUBLE_PRECISION" ; then
+        REQD="!"
+    fi
+    AC_SUBST(REQD)
 
     # 
 

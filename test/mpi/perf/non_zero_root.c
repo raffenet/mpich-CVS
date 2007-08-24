@@ -35,16 +35,20 @@ int main(int argc, char* argv[])
 	/* Time when rank 0 gathers the data */
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
-	for (i = 0; i < ITER; i++)
+	for (i = 0; i < ITER; i++) {
 		MPI_Gather(sbuf, SIZE, MPI_BYTE, rbuf, SIZE, MPI_BYTE, 0, MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
 	t2 = MPI_Wtime();
 	t = (t2-t1)/ITER;
 
 	/* Time when rank 1 gathers the data */
 	MPI_Barrier(MPI_COMM_WORLD);
 	t1 = MPI_Wtime();
-	for (j = 0; j < ITER; j++)
+	for (j = 0; j < ITER; j++) {
 		MPI_Gather(sbuf, SIZE, MPI_BYTE, rbuf, SIZE, MPI_BYTE, 1, MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
 	t2 = MPI_Wtime();
 	ts = (t2-t1)/ITER;
 

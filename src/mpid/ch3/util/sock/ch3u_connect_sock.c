@@ -1045,9 +1045,13 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
     char val[MPIDI_MAX_KVS_VALUE_LEN];
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_SOCKCONNECT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_SOCKCONNECT);
+
+    MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
+    vcch->state = MPIDI_CH3I_VC_STATE_CONNECTING;
     
     mpi_errno = MPIDI_PG_GetConnString( vc->pg, vc->pg_rank, val, sizeof(val));
     if (mpi_errno != MPI_SUCCESS) {
@@ -1088,10 +1092,8 @@ int MPIDI_CH3I_Sock_connect( MPIDI_VC_t *vc, const char val[], int vallen )
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SOCK_CONNECT);
     
-    MPIU_Assert(vcch->state == MPIDI_CH3I_VC_STATE_UNCONNECTED);
+    MPIU_Assert(vcch->state == MPIDI_CH3I_VC_STATE_CONNECTING);  
     
-    MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
-    vcch->state = MPIDI_CH3I_VC_STATE_CONNECTING;
 
     mpi_errno = MPIDU_Sock_get_conninfo_from_bc( val, host_description,
 						 sizeof(host_description),

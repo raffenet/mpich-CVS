@@ -605,8 +605,8 @@ MPI Features:
                  filesystems ROMIO should support.  See README.romio.
 
   --enable-threads - Build MPICH2 with support for multi-threaded
-                 applications.  This is supported only for the sock
-                 channel and is the default for that channel.
+                 applications. Only the sock and nemesis channels support
+                 MPI_THREAD_MULTIPLE. 
 
   --with-thread-package - When used with --enable-threads, this option
                  specifies the thread package to use.  This option
@@ -698,5 +698,5 @@ can become an MPI process, is supported under the mpd process manager.
 Some routines, such as the intercommunicator extensions to the
 collective routines, have not been extensively tested.
 
-Only the sock channel supports MPI_THREAD_SERIALIZED and MPI_THREAD_MULTIPLE.
+Only the sock and nemesis channels support MPI_THREAD_MULTIPLE. 
 

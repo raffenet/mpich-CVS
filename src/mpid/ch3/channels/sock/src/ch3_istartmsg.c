@@ -149,6 +149,18 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * hdr, MPIDI_msg_sz_t hdr_sz,
 	    MPIDI_CH3I_SendQ_enqueue(vcch, sreq);
 	}
     }
+    else if (vcch->state == MPIDI_CH3I_VC_STATE_CONNECTING) /* MT */
+    {
+	MPIU_DBG_VCUSE(vc,
+		       "connecteding. enqueuing request");
+	
+	/* queue the data so it can be sent after the connection is formed */
+	sreq = create_request(hdr, hdr_sz, 0);
+	if (!sreq) {
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
+	}
+	MPIDI_CH3I_SendQ_enqueue(vcch, sreq);
+    }
     else if (vcch->state == MPIDI_CH3I_VC_STATE_UNCONNECTED) /* MT */
     {
 	MPIU_DBG_VCUSE(vc,

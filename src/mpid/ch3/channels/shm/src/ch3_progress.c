@@ -242,6 +242,7 @@ int MPIDI_CH3I_Progress(int is_blocking, MPID_Progress_state *state)
 		MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_YIELD);
 		MPIDU_Yield();
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_YIELD);
+		spin_count = 0;
 	    }
 	    spin_count++;
 	    break;

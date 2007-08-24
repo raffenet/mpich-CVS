@@ -180,6 +180,18 @@ int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int n_iov,
 	    MPIDI_CH3I_SendQ_enqueue(vcch, sreq);
 	}
     }
+    else if (vcch->state == MPIDI_CH3I_VC_STATE_CONNECTING)
+    {
+	MPIU_DBG_VCUSE(vc,
+		       "connecting.  enqueuing request");
+	
+	/* queue the data so it can be sent after the connection is formed */
+	sreq = create_request(iov, n_iov, 0, 0);
+	if (sreq == NULL) {
+	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
+	}
+	MPIDI_CH3I_SendQ_enqueue(vcch, sreq);
+    }
     else if (vcch->state == MPIDI_CH3I_VC_STATE_UNCONNECTED)
     {
 	MPIU_DBG_VCUSE(vc,

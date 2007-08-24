@@ -258,7 +258,12 @@ def mpd_sockpair():
     sock1.close()
     return (sock2,sock3)
 
-def mpd_which(execName,user_path=os.environ['PATH']):
+def mpd_which(execName,user_path=None):
+    if not user_path:
+        if os.environ.has_key('PATH'):
+            user_path = os.environ['PATH']
+        else:
+            return ''
     for d in user_path.split(os.pathsep):
         fpn = os.path.join(d,execName)
         if os.path.isdir(fpn):  # follows symlinks; dirs can have execute permission
@@ -634,8 +639,8 @@ class MPDSock(object):
 			# silent failure on pipe failure, as we usually
                         # just want to discard messages in this case 
                         # (We need to plan error handling more thoroughly)
-                        pass
-                    if errmsg[0] != EINTR:
+                        break  ## RMB: chgd from pass
+                    elif errmsg[0] != EINTR:
                         raise socket.error, errmsg
             # end of While
         except Exception, errmsg:

@@ -7,7 +7,8 @@
 !
       program main
       use mpi
-      integer ierr, i, type, count,errs
+      implicit none
+      integer ierr, i, j, type, count,errs
       parameter (count = 4)
       integer rank, size, xfersize
       integer status(MPI_STATUS_SIZE)

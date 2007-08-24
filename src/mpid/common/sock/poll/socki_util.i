@@ -804,7 +804,7 @@ static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock)
     pollinfo->sock    = NULL;
     pollinfo->sock_id = -1;
     pollinfo->type    = MPIDU_SOCKI_TYPE_FIRST;
-    pollinfo->state   = MPIDU_SOCKI_TYPE_FIRST;
+    pollinfo->state   = MPIDU_SOCKI_STATE_FIRST;
 #   ifdef MPICH_IS_THREADED
     {
 	pollinfo->pollfd_events = 0;

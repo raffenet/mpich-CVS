@@ -1695,7 +1695,7 @@ int iPMI_Spawn_multiple(int count,
     char key[100];
     char *iter, *iter2;
     int i, j, maxlen, maxlen2;
-    int path_specified = 0;
+    int path_specified = 0, wdir_specified = 0;
     char path[SMPD_MAX_PATH_LENGTH] = "";
     int *info_keyval_sizes;
     int total_num_processes;
@@ -1853,6 +1853,7 @@ int iPMI_Spawn_multiple(int count,
 	for (i=0; i<count; i++)
 	{
 	    path_specified = 0;
+	    wdir_specified = 0;
 	    buffer[0] = '\0';
 	    iter = buffer;
 	    maxlen = SMPD_MAX_CMD_LENGTH;
@@ -1886,6 +1887,10 @@ int iPMI_Spawn_multiple(int count,
 		}
 		else
 		{
+		    if(strcmp(info_keyval_vectors[i][j].key, "wdir") == 0)
+		    {
+		        wdir_specified = 1;
+		    }
 		    result = MPIU_Str_add_string_arg(&iter2, &maxlen2, info_keyval_vectors[i][j].key, info_keyval_vectors[i][j].val);
 		    if (result != MPIU_STR_SUCCESS)
 		    {
@@ -1915,7 +1920,7 @@ int iPMI_Spawn_multiple(int count,
 		result = MPIU_Str_add_string_arg(&iter2, &maxlen2, "path", path);
 		iter2--;
 		*iter2 = '\0';
-		sprintf(key, "%d", j);
+		sprintf(key, "%d", j++);
 		result = MPIU_Str_add_string_arg(&iter, &maxlen, key, keyval_buf);
 		if (result != MPIU_STR_SUCCESS)
 		{
@@ -1923,6 +1928,31 @@ int iPMI_Spawn_multiple(int count,
 		    return PMI_FAIL;
 		}
 		info_keyval_sizes[i]++;
+	    }
+	    if(!wdir_specified)
+	    {
+		char wdir[SMPD_MAX_DIR_LENGTH];
+		if(getcwd(wdir, SMPD_MAX_DIR_LENGTH))
+		{
+	            keyval_buf[0] = '\0';
+		    iter2 = keyval_buf;
+		    maxlen2 = SMPD_MAX_CMD_LENGTH;
+		    result = MPIU_Str_add_string_arg(&iter2, &maxlen2, "wdir", wdir);
+		    if(result != MPIU_STR_SUCCESS)
+		    {
+			pmi_err_printf("Unable to add wdir to keyval_buf\n");
+			return PMI_FAIL;
+		    }
+		    *(--iter2) = '\0';
+		    sprintf(key, "%d", j);
+		    result = MPIU_Str_add_string_arg(&iter, &maxlen, key, keyval_buf);
+		    if(result != MPIU_STR_SUCCESS)
+		    {
+			pmi_err_printf("unable to add %s=%s to the spawn command\n", key, keyval_buf);
+			return PMI_FAIL;
+		    }
+		    info_keyval_sizes[i]++;
+		}
 	    }
 	    if (iter != buffer)
 	    {

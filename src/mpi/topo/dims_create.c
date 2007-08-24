@@ -198,13 +198,30 @@ PMPI_LOCAL int MPIR_ChooseFactors( int nfactors, Factors factors[],
     }
     /* For each of the available factors, there are factors[].cnt 
        copies of each of the unique factors.  These are assigned in
-       round robin fashion to each of the "chosen" entries */
+       modified round robin fashion to each of the "chosen" entries.  
+       The modification is to combine with the smallest current term
+       Note that the factors are in decreasing order. */
+
     i = 0;  /* We don't reset the count so that the factors are 
 	       distributed among the dimensions */
     for (j=0; j<nfactors; j++) {
 	int cnt = factors[j].cnt;
 	int val = factors[j].val;
+	/* For each of the factors that we add, try to keep the 
+	   entries balanced. */
 	while (cnt--) {
+	    /* Find the smallest current entry */
+	    int ii, cMin, iMin;
+	    iMin = 0;
+	    cMin = chosen[0];
+	    for (ii=1; ii<needed; ii++) {
+		if (chosen[ii] < cMin) {
+		    cMin = chosen[ii];
+		    iMin = ii;
+		}
+	    }
+	    if (chosen[i] > iMin) i = iMin;
+
 	    chosen[i] *= val;
 	    i++;
 	    if (i >= needed) i = 0;
