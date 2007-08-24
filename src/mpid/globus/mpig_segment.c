@@ -459,7 +459,10 @@ MPIG_STATIC int MPID_Segment_contig_unpack_remote_format_to_buf(DLOOP_Offset *bl
 	and so trying to use them on Fortran datatypes is a little
 	tricky.  
 
-	First, we need to map the Fortran datatype to its equivalent 
+        Step 1: identifying the globus_dc_get function
+                (must match globus_dc_put function from sending side)
+
+        First, we need to map the Fortran datatype to its equivalent 
 	C-type from the *sending* side (e.g., learn that an MPI_REAL 
 	on the sending side is equivalent to a C-type float on the 
 	sending side.  This will determine which Globus data conversion 
@@ -470,6 +473,8 @@ MPIG_STATIC int MPID_Segment_contig_unpack_remote_format_to_buf(DLOOP_Offset *bl
 	globus_dc_get_float() will use the format to figure out how many 
 	bytes a 'float' is on the sending side.
 
+        Step 2: confirming application receive buffer is large enough
+        
 	Second, we need to take the size of the Fortran MPI datatype
 	on the receiving side and compare that to the size on the
 	receiving side of the C-type discovered in the first step.
@@ -594,7 +599,7 @@ MPIG_STATIC int MPID_Segment_contig_unpack_remote_format_to_buf(DLOOP_Offset *bl
         enum c_datatype remote_ctype    = NEED_FROM_BRIAN_mpi_to_remote_c_datatype(el_type, vc);
         int local_csize_of_remote_ctype = MPID_Segment_local_size_of_ctype(remote_ctype);
 
-	if (local_csize_of_remote_ctype == MPID_Datatype_get_basic_size(el_type))
+	if (local_csize_of_remote_ctype <= MPID_Datatype_get_basic_size(el_type))
 	{
 	    /* OK to receive directly into destination buffer */
 	    int m = (MPID_Segment_datatype_is_two_ident_language_types(el_type) ? 2 : 1);
@@ -705,15 +710,6 @@ MPIG_STATIC MPI_Aint MPIDI_Datatype_get_basic_size_globus_dc(MPI_Datatype el_typ
 
     MPIU_Assert(p);
     f = p->src_format;
-
-
-
-
-
-
-
-
-
 
 /* 
  * sizeof routines available from Globus ... see globus_dc.h 
