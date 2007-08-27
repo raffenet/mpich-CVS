@@ -274,14 +274,16 @@ For IBM MPI, e.g. quad.mcs.anl.gov, do
     make installcheck PREFIX=${MPE_INSTALL_DIR}
 
 
-For SUN MPI, do
+For SUN MPI CLuster Tools 7 and older versions, do
 
     setenv MPI_CC mpcc
     setenv MPI_F77 mpf90
-    ${MPE_SRC_DIR}/configure --with-mpilibs=-lmpi
+    ${MPE_SRC_DIR}/configure --with-mpilibs="-L${MPI_LIB_DIR} -lmpi"
     make
     make install PREFIX=${MPE_INSTALL_DIR}
     make installcheck PREFIX=${MPE_INSTALL_DIR}
+
+    without -L${MPI_LIB_DIR} in --with-mpilibs, mpe2 configure may fail.
 
 
 For HP-UX's MPI implementation,
