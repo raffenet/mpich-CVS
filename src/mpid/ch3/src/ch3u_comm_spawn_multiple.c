@@ -203,6 +203,11 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	MPIU_ERR_POP(mpi_errno);
     }
 
+    mpi_errno = NMPI_Bcast(errcodes, count, MPI_INT, root, comm_ptr->handle);
+    if (mpi_errno != MPI_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+
  fn_exit:
     if (info_keyval_vectors) {
 	free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
