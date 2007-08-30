@@ -5173,14 +5173,14 @@ Function GenBuild()
 	CreateObjs "ch3shm", f.GetFolder("src\mpid\common\locks"), trimlength, false, false
 	CreateObjs "ch3shm", f.GetFolder("src\mpid\ch3\util\shmbase"), trimlength, false, true
 
-	mfile.WriteLine
-	mfile.WriteLine("# ch3sshm")
-	mfile.WriteLine
-	outdir = "SSHM_OUTDIR"
-	CreateRules f.GetFolder("src\mpid\ch3\channels\sshm"), trimlength
-	CreateRules f.GetFolder("src\mpid\ch3\util\shm"), trimlength
-	CreateObjs "ch3sshm", f.GetFolder("src\mpid\ch3\channels\sshm"), trimlength, true, false
-	CreateObjs "ch3sshm", f.GetFolder("src\mpid\ch3\util\shm"), trimlength, false, true
+'	mfile.WriteLine
+'	mfile.WriteLine("# ch3sshm")
+'	mfile.WriteLine
+'	outdir = "SSHM_OUTDIR"
+'	CreateRules f.GetFolder("src\mpid\ch3\channels\sshm"), trimlength
+'	CreateRules f.GetFolder("src\mpid\ch3\util\shm"), trimlength
+'	CreateObjs "ch3sshm", f.GetFolder("src\mpid\ch3\channels\sshm"), trimlength, true, false
+'	CreateObjs "ch3sshm", f.GetFolder("src\mpid\ch3\util\shm"), trimlength, false, true
 
 '	mfile.WriteLine
 '	mfile.WriteLine("# ch3essm")
@@ -5195,12 +5195,12 @@ Function GenBuild()
 '	CreateObjs "ch3essm", f.GetFolder("src\util\events"), trimlength, false, false
 '	mfile.WriteLine(" \" & vbCrLf & "	$(ESSM_OUTDIR)\mpe_thread_win.obj")
 
-	mfile.WriteLine
-	mfile.WriteLine("# ch3ib")
-	mfile.WriteLine
-	outdir = "IB_OUTDIR"
-	CreateRules f.GetFolder("src\mpid\ch3\channels\ib"), trimlength
-	CreateObjs "ch3ib", f.GetFolder("src\mpid\ch3\channels\ib"), trimlength, true, true
+'	mfile.WriteLine
+'	mfile.WriteLine("# ch3ib")
+'	mfile.WriteLine
+'	outdir = "IB_OUTDIR"
+'	CreateRules f.GetFolder("src\mpid\ch3\channels\ib"), trimlength
+'	CreateObjs "ch3ib", f.GetFolder("src\mpid\ch3\channels\ib"), trimlength, true, true
 
 	mfile.WriteLine
 	mfile.WriteLine("!IF ""$(CHANNEL)"" == ""sock""")
