@@ -23,7 +23,6 @@ int start_send_thread(THREAD_RETURN_TYPE (*fn)(void *p))
     {
 	return GetLastError();
     }
-    CloseHandle(hThread);
     return 0;
 }
 
