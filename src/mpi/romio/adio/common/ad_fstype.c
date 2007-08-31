@@ -510,6 +510,7 @@ void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype,
     file_system = -1;
     tmp = strchr(filename, ':');
     if (!tmp) {
+	*error_code = MPI_SUCCESS;
 	/* no prefix; use system-dependent function call to determine type */
 	ADIO_FileSysType_fncall(filename, &file_system, &myerrcode);
 	if (myerrcode != MPI_SUCCESS) {
