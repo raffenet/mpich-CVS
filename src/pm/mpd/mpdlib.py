@@ -635,12 +635,14 @@ class MPDSock(object):
                     self.sendall( "%08d%s" % (len(pickledMsg),pickledMsg) )
                     break
                 except socket.error, errmsg:
-		    if errmsg[0] == EPIPE:
+		    if errmsg[0] == EPIPE  \
+                    or errmsg[0] == ECONNRESET \
+                    or errmsg[0] == EINTR:
 			# silent failure on pipe failure, as we usually
                         # just want to discard messages in this case 
                         # (We need to plan error handling more thoroughly)
                         break  ## RMB: chgd from pass
-                    elif errmsg[0] != EINTR:
+                    else:
                         raise socket.error, errmsg
             # end of While
         except Exception, errmsg:
