@@ -2377,7 +2377,7 @@ AC_SUBST(XARGS_NODATA_OPT)
 # Force ranlib to handle correctly (ranlib -c on some BSD and MAC OS platforms)
 # or force gcc to not generate common symbols if using gcc (-fno-common).
 # This autoconf macro checks for this.
-PAC_PROG_C_BROKEN_COMMON
+dnl PAC_PROG_C_BROKEN_COMMON
 #
 AC_PROG_INSTALL
 PAC_PROG_CHECK_INSTALL_WORKS
