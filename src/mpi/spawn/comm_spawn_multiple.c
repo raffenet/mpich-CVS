@@ -83,10 +83,6 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-	    for (i = 0; i < count; i++)
-	    {
-		MPIR_ERRTEST_INFO_OR_NULL(array_of_info[i], mpi_errno);
-	    }
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
@@ -105,6 +101,14 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) goto fn_fail;
+
+	    if (comm_ptr->rank == root) {
+		for (i = 0; i < count; i++)
+		{
+		    MPIR_ERRTEST_INFO_OR_NULL(array_of_info[i], mpi_errno);
+		}
+		if (mpi_errno) goto fn_fail;
+	    }
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -112,10 +116,12 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
 
     /* ... body of routine ...  */
     
-    MPIU_CHKLMEM_MALLOC(array_of_info_ptrs, MPID_Info **, count * sizeof(MPID_Info*), mpi_errno, "array of info pointers");
-    for (i=0; i<count; i++)
-    {
-        MPID_Info_get_ptr(array_of_info[i], array_of_info_ptrs[i]);
+    if (comm_ptr->rank == root) {
+	MPIU_CHKLMEM_MALLOC(array_of_info_ptrs, MPID_Info **, count * sizeof(MPID_Info*), mpi_errno, "array of info pointers");
+	for (i=0; i<count; i++)
+	{
+	    MPID_Info_get_ptr(array_of_info[i], array_of_info_ptrs[i]);
+	}
     }
 
     /* TODO: add error check to see if this collective function is

@@ -394,7 +394,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
     }
 
     /* Reset the state if we've failed to connect */
-    vcch->state = MPIDI_CH3I_VC_STATE_CONNECTING;
+    vcch->state = MPIDI_CH3I_VC_STATE_UNCONNECTED;
     mpi_errno = MPIDI_CH3I_Sock_connect( vc, val, sizeof(val) );
 #if 0
 /*    printf( "Attempting to connect through socket\n" );fflush(stdout); */

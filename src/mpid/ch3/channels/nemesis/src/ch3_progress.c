@@ -38,7 +38,7 @@ volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
 #ifdef MPICH_IS_THREADED
 volatile int MPIDI_CH3I_progress_blocked = FALSE;
 volatile int MPIDI_CH3I_progress_wakeup_signalled = FALSE;
-MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
+static MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
 static int MPIDI_CH3I_Progress_delay(unsigned int completion_count);
 static int MPIDI_CH3I_Progress_continue(unsigned int completion_count);
 #endif /* MPICH_IS_THREADED */

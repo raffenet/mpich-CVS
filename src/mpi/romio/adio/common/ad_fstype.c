@@ -503,18 +503,33 @@ tables in a reasonable way. -- Rob, 06/06/2001
 void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype, 
 			  ADIOI_Fns **ops, int *error_code)
 {
-    int myerrcode, file_system, min_code;
+    int myerrcode, file_system, min_code, max_code;
     char *tmp;
     static char myname[] = "ADIO_RESOLVEFILETYPE";
 
     file_system = -1;
     tmp = strchr(filename, ':');
     if (!tmp) {
+	*error_code = MPI_SUCCESS;
 	/* no prefix; use system-dependent function call to determine type */
 	ADIO_FileSysType_fncall(filename, &file_system, &myerrcode);
 	if (myerrcode != MPI_SUCCESS) {
 	    *error_code = myerrcode;
-	    return;
+	}
+
+	/* the check for file system type will hang if any process got
+	 * an error in ADIO_FileSysType_fncall.  Processes encountering
+	 * an error will return early, before the collective file system
+	 * type check below.  This case could happen if a full path
+	 * exists on one node but not on others, and no prefix like ufs:
+	 * was provided.  see discussion at
+	 * http://www.mcs.anl.gov/web-mail-archive/lists/mpich-discuss/2007/08/msg00042.html 
+	 */
+
+	MPI_Allreduce(error_code, &max_code, 1, MPI_INT, MPI_MAX, comm);
+	if (max_code != MPI_SUCCESS)  {
+		*error_code = max_code;
+		return;
 	}
 
 	/* ensure that everyone came up with the same file system type */

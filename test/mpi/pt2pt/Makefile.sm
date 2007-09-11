@@ -26,6 +26,7 @@ errinstatws_SOURCES  = errinstatws.c
 errinstatwa_SOURCES  = errinstatwa.c
 icsend_SOURCES       = icsend.c
 rqstatus_SOURCES     = rqstatus.c
+rqfreeb_SOURCES      = rqfreeb.c
 greq1_SOURCES        = greq1.c
 scancel_SOURCES      = scancel.c
 scancel2_SOURCES     = scancel2.c

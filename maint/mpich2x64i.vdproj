@@ -312,7 +312,7 @@
         "DisplayName" = "8:Release"
         "IsDebugOnly" = "11:FALSE"
         "IsReleaseOnly" = "11:TRUE"
-        "OutputFilename" = "8:ReleaseMSI\\mpich2x64.msi"
+        "OutputFilename" = "8:ReleaseMSIx64\\mpich2x64.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -1365,6 +1365,13 @@
         }
         "LaunchCondition"
         {
+            "{836E08B8-0285-4809-BA42-01DB6754A45D}:_37900E8ED3A84A63AB3CA75EB79059A9"
+            {
+            "Name" = "8:VisualStudio_RuntimeLibUnAvail"
+            "Condition" = "8:VSRUNTIMELIBEXISTS"
+            "Message" = "8:The version of C Runtime Library required to use MPICH2 is not currently installed. Please install Visual Studio C++ 2005 SP1 Redistributable package (x64) and try to re-install MPICH2."
+            "InstallUrl" = "8:http://www.microsoft.com"
+            }
             "{836E08B8-0285-4809-BA42-01DB6754A45D}:_42E99F81208D42DB8B5B5BBFCA1C2D32"
             {
             "Name" = "8:AdminCondition"
@@ -1375,6 +1382,21 @@
         }
         "Locator"
         {
+            "{39E1837C-0DB9-45A2-89C8-438377A77565}:_5490CA4D5FF54A2C86FEE8EDE92398C6"
+            {
+            "Name" = "8:VisualStudio_CRuntimeLib"
+            "Folder" = "8:[WindowsFolder]\\WinSxS"
+            "Depth" = "2:1"
+            "FileName" = "8:msvcr80.dll"
+            "MinVesion" = "8:8.00.50727.761"
+            "MaxVersion" = "8:"
+            "MinSize" = "8:"
+            "MaxSize" = "8:"
+            "MinDate" = "8:"
+            "MaxDate" = "8:"
+            "Languages" = "8:"
+            "Property" = "8:VSRUNTIMELIBEXISTS"
+            }
         }
         "MsiBootstrapper"
         {
@@ -1384,23 +1406,23 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MPICH2 64-bit"
-        "ProductCode" = "8:{88D2C7D7-CD0E-44F8-BCA1-324E8E815A57}"
-        "PackageCode" = "8:{1D78031D-0D5E-4788-BA83-B17B54F04631}"
+        "ProductCode" = "8:{B452F272-74F0-4224-B4AF-B458042B3A4B}"
+        "PackageCode" = "8:{26499CD9-FF82-43F4-8907-9D16168ADFBD}"
         "UpgradeCode" = "8:{2D5AD119-ABD9-443E-8D76-614393E05458}"
         "RestartWWWService" = "11:FALSE"
-        "RemovePreviousVersions" = "11:FALSE"
+        "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:1.0.6"
         "Manufacturer" = "8:Argonne National Laboratory"
         "ARPHELPTELEPHONE" = "8:"
-        "ARPHELPLINK" = "8:"
+        "ARPHELPLINK" = "8:www.mcs.anl.gov/mpi/mpich2"
         "Title" = "8:MPICH2 64-bit"
-        "Subject" = "8:"
+        "Subject" = "8:MPICH2 implementation of the MPI-2 standard"
         "ARPCONTACT" = "8:Argonne National Laboratory"
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:"
-        "ARPURLINFOABOUT" = "8:"
+        "ARPURLINFOABOUT" = "8:www.mcs.anl.gov/mpi/mpich2"
         "ARPPRODUCTICON" = "8:"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
