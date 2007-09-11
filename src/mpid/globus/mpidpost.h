@@ -722,6 +722,11 @@ typedef struct mpig_process
     /* mutex to protect and insure coherence of data in the process structure */
     mpig_mutex_t mutex;
 
+    /* mapping of MPI datatypes to C types and the local size of those C types */
+    char dt_ctype_map[MPIG_DATATYPE_MAX_BASIC_TYPES];
+    char dt_local_sizeof_ctype[MPIG_CTYPE_LAST];
+    char dt_ctype_size_multiplier[MPIG_DATATYPE_MAX_BASIC_TYPES];
+
     MPIG_PROCESS_CMS_DECL
     
 #   if defined(HAVE_GLOBUS_USAGE_MODULE)
@@ -731,6 +736,7 @@ typedef struct mpig_process
     int64_t vmpi_nbytes_sent;
     
     int function_count[MPIG_FUNC_CNT_NUMFUNCS];
+
 #   endif
 }
 mpig_process_t;

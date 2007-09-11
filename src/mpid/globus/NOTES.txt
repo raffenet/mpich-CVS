@@ -15,11 +15,11 @@
 
 * Vendor MPI
 
-  * [3a] no need to add MPI_ANY_SOURCE requests to the recvq when the communicator only contains VMPI processes (done?)
+  * [3a***] no need to add MPI_ANY_SOURCE requests to the recvq when the communicator only contains VMPI processes (done?)
 
   * [3b] no need to post MPI_ANY_SOURCE requests to VMPI when the communicator only contains non-VMPI processes (done?)
 
-  * [6] fix mpig_cm_vmpi_unregister_recv_any_source(), etc. so that single-thread builds work again
+  * [6****] fix mpig_cm_vmpi_unregister_recv_any_source(), etc. so that single-thread builds work again
 
   - [4] handle the case where the size of the vendor MPI's MPI_Aint differs from MPICH2's MPI_Aint (see discussion below)
 
@@ -56,7 +56,7 @@
 
     * change mpig_cm_xio_data module to use Nick's code  [BRT: 30 minutes]
 
-  * handle communication and manipulation of MPI_PACKED data
+  *** handle communication and manipulation of MPI_PACKED data
 
     * update XIO CM
 

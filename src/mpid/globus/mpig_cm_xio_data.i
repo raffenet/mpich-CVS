@@ -673,7 +673,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
     rreq_cmu->stream_max_pos = rreq_cmu->stream_size;
     rreq->status.count = 0;
 
-    if ((dt_contig && rreq_cmu->df == GLOBUS_DC_FORMAT_LOCAL) || cnt == 0)
+    if (FALSE && ((dt_contig && rreq_cmu->df == GLOBUS_DC_FORMAT_LOCAL) || cnt == 0))
     {
 	/* if the application buffer is contiguous, then receive data straight into the application buffer.  use of a segment is
 	   not required. */
@@ -683,8 +683,9 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
 	
 	rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_CONTIG;
     }
-    else if (cnt * dt_nblks <= (MPIU_Size_t) mpig_iov_get_num_free_entries(rreq_cmu->iov) ||
-	     dt_size / dt_nblks >= MPIG_CM_XIO_DATA_DENSITY_THRESHOLD / (MPIU_Size_t) mpig_iov_get_num_entries(rreq_cmu->iov))
+    else if (FALSE && rreq_cmu->df == GLOBUS_DC_FORMAT_LOCAL &&
+        (cnt * dt_nblks <= (MPIU_Size_t) mpig_iov_get_num_free_entries(rreq_cmu->iov) ||
+            dt_size / dt_nblks >= MPIG_CM_XIO_DATA_DENSITY_THRESHOLD / (MPIU_Size_t) mpig_iov_get_num_entries(rreq_cmu->iov)))
     {
 	/* if the application buffer is noncontiguous but the data is dense enough that an IOV can being used efficiently, then
 	   the data will be received straight into the application buffer */
@@ -707,12 +708,17 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
     }
     else
     {
-	/* if the application buffer is noncontiguous and the data density is rather sparse, then an intermediate buffer is used
-	   to first condense the data, allowing more data to be acquired in a single write operation.  the intermediate buffer is
-	   only allocated here if an unexpected buffer is not already attached to the request. */
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "sparse app buffer; initializing segment and allocating bufffer: rreq="
-	    MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", buf_size=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, rreq->handle,
-	    MPIG_PTR_CAST(rreq), rreq_cmu->buf_size, rreq_cmu->stream_size));
+	/* if the application buffer is noncontiguous and the data density is rather sparse or the data format of the remote
+	   process is not the same as the local format, then an intermediate buffer is used to first condense the data, allowing
+	   more data to be acquired in a single write operation.  the intermediate buffer is only allocated here if an unexpected
+	   buffer is not already attached to the request. */
+#       if defined(MPIG_DEBUG)
+        const char * const buf_desc = (FALSE && rreq_cmu->df == GLOBUS_DC_FORMAT_LOCAL) ? "sparse app buffer" : "foreign data format";
+#       endif
+        
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; initializing segment and allocating bufffer: rreq=" MPIG_HANDLE_FMT
+            ", rreqp=" MPIG_PTR_FMT ", buf_size=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, buf_desc, rreq->handle,
+            MPIG_PTR_CAST(rreq), rreq_cmu->buf_size, rreq_cmu->stream_size));
 
         rreq_cmu->segp = MPID_Segment_alloc();
         if (rreq_cmu->segp == NULL)
@@ -737,7 +743,14 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
 	    }   /* --END ERROR HANDLING-- */
 	}
 	
-	rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_SPARSE;
+        if (FALSE && rreq_cmu->df == GLOBUS_DC_FORMAT_LOCAL)
+        {
+            rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_SPARSE;
+        }
+        else
+        {
+            rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_FOREIGN;
+        }
     }
     
   fn_return:
@@ -1041,23 +1054,27 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 	    }
 	}
     }
-    else /* if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_SPARSE) */
+    else /* if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_SPARSE || rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_FOREIGN) */
     {
 	/* the application buffer is noncontiguous and the data density is rather sparse, or if data conversion is necessaary, so
 	   an intermediate buffer is used to receive the data in condensed form, allowing more data to be received by a single
 	   read operation */
+#       if defined(MPIG_DEBUG)
+        const char * const buf_desc = (FALSE && rreq_cmu->df == GLOBUS_DC_FORMAT_LOCAL) ? "sparse app buffer" : "foreign data format";
+#       endif
 	bool_t reload_iov = TRUE;
 	
-	MPIU_Assert(rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_SPARSE);
+	MPIU_Assert(rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_SPARSE ||
+            rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_FOREIGN);
 	
 	/* adjust the end of the data in the intermediate buffer if the IOV still describes data to be acquired */
 	nbytes = mpig_iov_get_num_bytes(rreq_cmu->iov);
 	if (nbytes > 0)
 	{
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "sparse app buffer; adjusting intermediate buffer EOD and IOV before "
-		"unpack: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", old_eod=" MPIG_SIZE_FMT ", new_eod=" MPIG_SIZE_FMT,
+	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; adjusting intermediate buffer EOD and IOV before unpack: rreq="
+                MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", old_eod=" MPIG_SIZE_FMT ", new_eod=" MPIG_SIZE_FMT, buf_desc,
 		rreq->handle, MPIG_PTR_CAST(rreq), mpig_databuf_get_eod(rreq_cmu->databuf),
-		mpig_databuf_get_eod(rreq_cmu->databuf) + nbytes));
+                mpig_databuf_get_eod(rreq_cmu->databuf) + nbytes));
 	    
 	    mpig_databuf_dec_eod(rreq_cmu->databuf, nbytes);
 	    mpig_iov_reset(rreq_cmu->iov, 0);
@@ -1067,14 +1084,22 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 	if (mpig_databuf_get_remaining_bytes(rreq_cmu->databuf) > 0)
 	{
 	    last = MPIG_MIN(rreq_cmu->stream_pos + mpig_databuf_get_remaining_bytes(rreq_cmu->databuf), rreq_cmu->stream_max_pos);
-	    MPID_Segment_unpack(rreq_cmu->segp, (MPI_Aint) rreq_cmu->stream_pos, (MPI_Aint *) &last,
-		mpig_databuf_get_base_ptr(rreq_cmu->databuf));
+            if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_SPARSE)
+            {
+                MPID_Segment_unpack(rreq_cmu->segp, (MPI_Aint) rreq_cmu->stream_pos, (MPI_Aint *) &last,
+                    mpig_databuf_get_base_ptr(rreq_cmu->databuf));
+            }
+            else /* if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_FOREIGN) */
+            {
+                mpig_segment_globus_dc_unpack(rreq_cmu->segp, (MPI_Aint) rreq_cmu->stream_pos, (MPI_Aint *) &last,
+                    mpig_databuf_get_base_ptr(rreq_cmu->databuf), rreq_cmu->df, mpig_request_get_vc(rreq));
+            }
 	
 	    if (last != rreq_cmu->stream_pos)
 	    {
-		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "sparse app buffer; unpack advanced position: rreq=" MPIG_HANDLE_FMT
-		    ", rreqp=" MPIG_PTR_FMT ", start=" MPIG_SIZE_FMT ", end=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT,
-		     rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos, last, rreq_cmu->stream_size));
+		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; unpack advanced position: rreq=" MPIG_HANDLE_FMT ", rreqp="
+                    MPIG_PTR_FMT ", start=" MPIG_SIZE_FMT ", end=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, buf_desc,
+                    rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos, last, rreq_cmu->stream_size));
 	    
 		/* update the intermediate buffer, status count, and stream position to reflect bytes consumed by the unpack */
 		mpig_databuf_inc_pos(rreq_cmu->databuf, last - rreq_cmu->stream_pos);
@@ -1097,17 +1122,17 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 
 		if (rreq_cmu->stream_pos == rreq_cmu->stream_size)
 		{
-		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "sparse app buffer; data acquisition complete: rreq="
-			MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", nbytes_received=" MPIG_SIZE_FMT, rreq->handle,
-			MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos));
+		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; data acquisition complete: rreq=" MPIG_HANDLE_FMT ", rreqp="
+                        MPIG_PTR_FMT ", nbytes_received=" MPIG_SIZE_FMT, buf_desc, rreq->handle, MPIG_PTR_CAST(rreq),
+                        rreq_cmu->stream_pos));
 		    
 		    reload_iov = FALSE;
 		}
 		else if (rreq_cmu->stream_pos + mpig_databuf_get_remaining_bytes(rreq_cmu->databuf) == rreq_cmu->stream_max_pos)
 		{
-		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "sparse app buffer; pos + buf = maxpos; skipping IOV reload: rreq="
-			MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", buf_data=" MPIG_SIZE_FMT ", max_pos"
-                        MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos,
+		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; pos + buf = maxpos; skipping IOV reload: rreq=" MPIG_HANDLE_FMT
+                        ", rreqp=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", buf_data=" MPIG_SIZE_FMT ", max_pos" MPIG_SIZE_FMT
+                        ", stream_size=" MPIG_SIZE_FMT, buf_desc, rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos,
                         mpig_databuf_get_remaining_bytes(rreq_cmu->databuf), rreq_cmu->stream_max_pos, rreq_cmu->stream_size));
 		    
 		    reload_iov = FALSE;
@@ -1120,10 +1145,10 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 		{
 		    /* if the intermediate buffer is not full and it does not have the remainder of the stream in it, then reload
 		       the IOV to acquire more data */
-		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "sparse app buffer; position did not advance; need more data: rreq="
-			 MPIG_HANDLE_FMT ", rreq_p=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT ", size="
-			 MPIG_SIZE_FMT,rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos, rreq_cmu->stream_max_pos,
-			 rreq_cmu->stream_size));
+		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; position did not advance; need more data: rreq="
+                        MPIG_HANDLE_FMT ", rreq_p=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT ", size="
+                        MPIG_SIZE_FMT, buf_desc, rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos, rreq_cmu->stream_max_pos,
+                        rreq_cmu->stream_size));
 		    
 		}
 		else if (rreq_cmu->stream_max_pos < rreq_cmu->stream_size)
@@ -1132,10 +1157,10 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 		       short because it was at the last basic type boundary before the maximum position.  for now reset the
 		       maximum position to the current position to prevent the system from trying to unpack again until the
 		       maximum position is advanced. */
-		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "sparse app buffer; position did not advance; resetting max_pos: "
-			"rreq=" MPIG_HANDLE_FMT ", rreq_p=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT
-			", size=" MPIG_SIZE_FMT, rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos,
-			rreq_cmu->stream_max_pos, rreq_cmu->stream_size));
+		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; position did not advance; resetting max_pos: rreq="
+                        MPIG_HANDLE_FMT ", rreq_p=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT ", size="
+                        MPIG_SIZE_FMT, buf_desc, rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos,
+                        rreq_cmu->stream_max_pos, rreq_cmu->stream_size));
 		    
 		    rreq_cmu->stream_max_pos = rreq_cmu->stream_pos;
 		    reload_iov = FALSE;
@@ -1144,10 +1169,10 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 		{
 		    /* if truncation has occurred, then call the truncation handler to populate the IOV to drain the next chunk
 		       of data from the network. */
-		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "sparse app buffer; position did not advance; handling truncation: "
-			"rreq=" MPIG_HANDLE_FMT ", rreq_p=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT
-			", size=" MPIG_SIZE_FMT, rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos,
-			rreq_cmu->stream_max_pos, rreq_cmu->stream_size));
+		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; position did not advance; handling truncation: rreq="
+                        MPIG_HANDLE_FMT ", rreq_p=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT ", size="
+                        MPIG_SIZE_FMT, buf_desc, rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos,
+                        rreq_cmu->stream_max_pos, rreq_cmu->stream_size));
 		    
 		    mpi_errno = mpig_cm_xio_stream_rreq_handle_truncation(rreq,
 			mpig_databuf_get_remaining_bytes(rreq_cmu->databuf));
@@ -1202,9 +1227,9 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
             mpig_iov_add_entry(rreq_cmu->iov, mpig_databuf_get_eod_ptr(rreq_cmu->databuf), nbytes);
             mpig_databuf_inc_eod(rreq_cmu->databuf, nbytes);
 
-            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "sparse app buffer; IOV loaded: rreq=" MPIG_HANDLE_FMT ", rreqp="
-                MPIG_PTR_FMT ", start=" MPIG_SIZE_FMT ", end=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, rreq->handle,
-                MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos, rreq_cmu->stream_pos + nbytes, rreq_cmu->stream_size));
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; IOV loaded: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", start="
+                MPIG_SIZE_FMT ", end=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, buf_desc, rreq->handle, MPIG_PTR_CAST(rreq),
+                rreq_cmu->stream_pos, rreq_cmu->stream_pos + nbytes, rreq_cmu->stream_size));
 	}
     }
 

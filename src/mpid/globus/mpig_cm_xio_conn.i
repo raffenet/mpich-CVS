@@ -3765,8 +3765,8 @@ static void mpig_cm_xio_disconnect_handle_close_temp(globus_xio_handle_t handle,
 	 * buffers could not be sent.  this seems serious, but should it be reported?  might such an error cause the remote
 	 * process to hang?  if so, then we need to report the error; otherwise ignoring it seems the safest bet.
 	 *
-	 * MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|disconnect_handle_close_temp",
-	 *    "**globus|disconnect_handle_close_temp %p %s", tmp_vc, mpig_get_globus_error_msg(op_grc));
+	 * MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_handle_close_temp",
+	 *    "**globus|cm_xio|disconnect_handle_close_temp %p %s", tmp_vc, mpig_get_globus_error_msg(op_grc));
 	 */
     }   /* --END ERROR HANDLING-- */
 
@@ -4099,7 +4099,7 @@ int mpig_port_accept(const char * const port_name, mpig_vc_t ** const port_vc_p)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: mpig_cm_xio_port_find_and_lock() failed:"
 	    "port_id=%s", port_id));
-	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio_port_find_and_lock", "**globus|cm_xio_port_find_and_lock %s",
+	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|port_find_and_lock", "**globus|cm_xio|port_find_and_lock %s",
 	    port_id);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
@@ -4405,8 +4405,8 @@ int mpig_port_vc_send(mpig_vc_t * const port_vc, void * const buf, const MPIU_Si
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: %s",
 	    "globus_xio_write", mpig_get_globus_error_msg(grc)));
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER,"**globus|cm_xio|xio_reg_close",
-	    "**globus|cm_xio|xio_write %p %s", port_vc, mpig_get_globus_error_msg(grc));
+	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER,"**globus|cm_xio|port_xio_write",
+	    "**globus|cm_xio|port_xio_write %p %s", port_vc, mpig_get_globus_error_msg(grc));
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -4472,8 +4472,8 @@ int mpig_port_vc_recv(mpig_vc_t * const port_vc, void * const buf, const MPIU_Si
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_CEMT, "ERROR: call to %s() failed: %s",
 	    "globus_xio_read", mpig_get_globus_error_msg(grc)));
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER,"**globus|cm_xio|xio_reg_close",
-	    "**globus|cm_xio|xio_read %p %s", port_vc, mpig_get_globus_error_msg(grc));
+	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER,"**globus|cm_xio|port_xio_read",
+	    "**globus|cm_xio|port_xio_read %p %s", port_vc, mpig_get_globus_error_msg(grc));
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 	
@@ -4597,7 +4597,8 @@ MPIG_STATIC int mpig_cm_xio_port_enqueue_vc(mpig_cm_xio_port_t * port, mpig_vc_t
 	MPIG_PTR_CAST(port), MPIG_PTR_CAST(vc)));
 
     rc = globus_fifo_enqueue(&port->vcq, vc);
-    MPIU_ERR_CHKANDJUMP((rc), mpi_errno, MPI_ERR_OTHER, "**globus|fifo_enq");
+    MPIU_ERR_CHKANDJUMP2((rc), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|port_enqueue_vc",
+        "**globus|cm_xio|port_enqueue_vc %p %p", port, vc);
     
     if (port->waiting > 0)
     {

@@ -137,42 +137,50 @@ int mpig_topology_comm_destruct(MPID_Comm * comm);
 /**********************************************************************************************************************************
 						     BEGIN DATATYPE SECTION
 **********************************************************************************************************************************/
-int mpig_datatype_set_my_bc(mpig_bc_t * bc);
-int mpig_datatype_process_bc(const mpig_bc_t * bc, mpig_vc_t * vc);
-void mpig_datatype_get_src_ctype(const mpig_vc_t * vc, const MPID_Datatype dt, mpig_ctype_t * ctype);
-void mpig_datatype_get_my_ctype(const MPI_Datatype dt, mpig_ctype_t * ctype);
+int mpig_datatype_init(void);
 
-#define mpig_datatype_get_src_ctype(/* mpig_vc_t ptr */ vc_, /* MPI_Datatype */ dt_, /* mpig_ctype_t ptr */ ctype_p_)	\
-{															\
-    int mpig_datatype_get_src_ctype_dt_id__;										\
-															\
-    MPIU_Assert(HANDLE_GET_KIND(dt_) == MPI_KIND_BUILTIN && HANDLE_GET_MPI_KIND(dt_) == MPID_DATATYPE);			\
-    MPID_Datatype_get_basic_id(dt_, mpig_datatype_get_src_ctype_dt_id__);						\
-    MPIU_Assert(mpig_datatype_get_src_ctype_dt_id__ < MPIG_DATATYPE_MAX_BASIC_TYPES);					\
-    *(ctype_p_) = (mpig_ctype_t) (vc_)->dt_cmap[mpig_datatype_get_src_ctype_dt_id__];					\
-}
+int mpig_datatype_finalize(void);
 
-#define mpig_datatype_get_my_ctype(/* MPI_Datatype */ dt_, /* mpig_ctype_t ptr */ ctype_p_)		\
-{													\
-    const mpig_vc_t * mpig_datatype_get_my_ctype_vc__;							\
-													\
-    mpig_pg_get_vc(mpig_process.my_pg, mpig_process.my_pg_rank, &mpig_datatype_get_my_ctype_vc__);	\
-    mpig_datatype_get_src_ctype(mpig_datatype_get_my_ctype_vc__, (dt_), (ctype_p_));			\
-}
+int mpig_datatype_add_info_to_bc(mpig_bc_t * bc);
 
-#define mpig_datatype_get_size(dt_, dt_size_p_)				\
-{									\
-    if (HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN)			\
-    {									\
-	*(dt_size_p_) = MPID_Datatype_get_basic_size(dt_);		\
-    }									\
-    else								\
-    {									\
-	MPID_Datatype * mpig_datatype_get_size_dtp__;			\
-									\
-	MPID_Datatype_get_ptr((dt_), mpig_datatype_get_size_dtp__);	\
-	*(dt_size_p_) = mpig_datatype_get_size_dtp__->size;		\
-    }									\
+int mpig_datatype_extract_info_from_bc(mpig_vc_t * vc);
+
+mpig_ctype_t mpig_datatype_get_remote_ctype(const mpig_vc_t * vc, const MPID_Datatype dt);
+
+mpig_ctype_t mpig_datatype_get_local_ctype(const MPI_Datatype dt);
+
+int mpig_datatype_get_local_sizeof_ctype(mpig_ctype_t ctype);
+
+#if defined(HAVE_GLOBUS_DC_MODULE)
+void mpig_segment_globus_dc_unpack(struct DLOOP_Segment * segp, DLOOP_Offset first, DLOOP_Offset * lastp,
+    DLOOP_Buffer unpack_buffer, int src_format, mpig_vc_t * vc);
+#endif
+
+#define mpig_datatype_get_remote_ctype(/* mpig_vc_t ptr */ vc_, /* MPI_Datatype */ dt_) \
+    ((mpig_ctype_t) (vc_)->dt_ctype_map[MPID_Datatype_get_basic_id(dt_)])
+
+#define mpig_datatype_get_local_ctype(/* MPI_Datatype */ dt_)  \
+    ((mpig_ctype_t) mpig_process.dt_ctype_map[MPID_Datatype_get_basic_id(dt_)])
+
+#define mpig_datatype_get_local_sizeof_ctype(/* mpig_ctype_t */ ctype_) \
+    ((int) mpig_process.dt_local_sizeof_ctype[ctype_])
+
+#define mpig_datatype_get_ctype_size_multiplier(/* MPI_Datatype */ dt_) \
+    ((int) mpig_process.dt_ctype_size_multiplier[MPID_Datatype_get_basic_id(dt_)])
+
+#define mpig_datatype_get_local_size(dt_, dt_size_p_)                           \
+{                                                                               \
+    if (HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN)                            \
+    {                                                                           \
+	*(dt_size_p_) = MPID_Datatype_get_basic_size(dt_);                      \
+    }                                                                           \
+    else                                                                        \
+    {                                                                           \
+	MPID_Datatype * mpig_datatype_get_local_size_dtp__;                     \
+                                                                                \
+	MPID_Datatype_get_ptr((dt_), mpig_datatype_get_local_size_dtp__);	\
+	*(dt_size_p_) = mpig_datatype_get_local_size_dtp__->size;               \
+    }                                                                           \
 }
 
 #define mpig_datatype_get_info(/* MPI_Datatype */ dt_, /* bool_t ptr */ dt_contig_, /* MPIU_Size_t ptr */ dt_size_,	\
@@ -1820,8 +1828,8 @@ void mpig_usage_finalize(void);
 #undef MPIG_INLINE_HDEF
 #endif /* end if/else __GNUC__ */
 #else
-#define MPIG_INLINE_HDECL
-#undef MPIG_INLINE_HDEF
+#undef MPIG_INLINE_HDECL
+#define MPIG_INLINE_HDEF
 #define MPIG_INLINE
 #endif /* end if/else defined(HAVE_C_INLINE) */
 

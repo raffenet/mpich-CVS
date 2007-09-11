@@ -83,6 +83,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpig_pm_ws.c		\
     mpig_recvq.c		\
     mpig_request.c		\
+    mpig_segment.c		\
     mpig_topology.c		\
     mpig_vmpi.c			\
 

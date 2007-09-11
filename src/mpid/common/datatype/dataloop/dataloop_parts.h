@@ -327,7 +327,9 @@ void PREPEND_PREFIX(Dataloop_update)(DLOOP_Dataloop *dataloop,
 				     DLOOP_Offset ptrdiff);
 DLOOP_Offset
 PREPEND_PREFIX(Dataloop_stream_size)(DLOOP_Dataloop *dl_p,
-				     DLOOP_Offset (*sizefn)(DLOOP_Type el_type));
+                                     DLOOP_Offset (*sizefn)(DLOOP_Type el_type,
+                                                            void * v_paramp),
+                                     void * v_paramp);
 void PREPEND_PREFIX(Dataloop_print)(DLOOP_Dataloop *dataloop,
 				    int depth);
 
@@ -397,8 +399,9 @@ PREPEND_PREFIX(Segment_manipulate)(DLOOP_Segment *segp,
 						   DLOOP_Offset rel_off,
 						   DLOOP_Buffer bufp,
 						   void *v_paramp),
-				   DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
-				   void *pieceparams);
+                                   DLOOP_Offset (*sizefn) (DLOOP_Type el_type,                                   
+                                                           void *v_paramp),
+                                   void *pieceparams);
 
 /* Common segment operations (segment_ops.c) */
 void PREPEND_PREFIX(Segment_count_contig_blocks)(DLOOP_Segment *segp,

@@ -188,7 +188,11 @@ int mpig_comm_destruct(MPID_Comm * const comm)
 
     /* if this communicator was created by MPIR_Setup_intercomm_localcomm(), then skip the rest of the destruction process.  see
        comments below. */
-    if (mpig_genq_entry_get_value(&comm->dev.active_list) == NULL) goto fn_return;
+    if (mpig_genq_entry_get_value(&comm->dev.active_list) == NULL)
+    {
+        mpig_genq_entry_destruct(&comm->dev.active_list);
+        goto fn_return;
+    }
     
     /* call the VMPI CM's hook, allowing it to free the associated vendor communicators */
 #   if defined(MPIG_VMPI)
@@ -200,9 +204,9 @@ int mpig_comm_destruct(MPID_Comm * const comm)
 
     /* a local intracommunicator may be attached to an intercommunicator.  this intracommunicator is created locally (meaning not
        collectively) by MPIR_Setup_intercomm_localcomm() when needed.  the device is not notified of its creation and thus has
-       not intialized any of the device information.  we set the active list previous and next fields of the local
-       intracommunicator to point at itself so that we can detect when one of these local intracommuncators is being destroyed
-       and skip the destruction process. */
+       not intialized any of the device information.  we set the value of queue entry's pointer to the communicator object to
+       NULL so that we can detect when one of these local intracommuncators is being destroyed and skip the destruction
+       process. */
     if (comm->comm_kind == MPID_INTERCOMM)
     {
 	MPID_Comm * const local_comm = comm->local_comm;

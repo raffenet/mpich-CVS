@@ -56,7 +56,8 @@ static external32_basic_size_t external32_basic_size_array[] =
     { MPI_LONG_LONG, 8 }
 };
 
-MPI_Aint MPIDI_Datatype_get_basic_size_external32(MPI_Datatype el_type)
+MPI_Aint MPIDI_Datatype_get_basic_size_external32(MPI_Datatype el_type,
+                                                  void * v_paramp)
 {
     MPI_Aint ret = (MPI_Aint) 0;
     int i = 0;
@@ -75,7 +76,7 @@ MPI_Aint MPIDI_Datatype_get_basic_size_external32(MPI_Datatype el_type)
 MPI_Aint MPID_Datatype_size_external32(MPI_Datatype type)
 {
     if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
-	return MPIDI_Datatype_get_basic_size_external32(type);
+	return MPIDI_Datatype_get_basic_size_external32(type, NULL);
     }
     else {
 	MPID_Dataloop *dlp = NULL;
@@ -83,7 +84,8 @@ MPI_Aint MPID_Datatype_size_external32(MPI_Datatype type)
 	MPID_Datatype_get_loopptr_macro(type, dlp, MPID_DATALOOP_HETEROGENEOUS);
 
 	return MPID_Dataloop_stream_size(dlp,
-					 MPIDI_Datatype_get_basic_size_external32);
+                                         MPIDI_Datatype_get_basic_size_external32,
+                                         NULL);
     }
 }
 

@@ -1477,7 +1477,7 @@ static void mpig_cm_vmpi_pe_complete_reqs(const int num_reqs_completed, const bo
     }																\
 }
 
-#define MPIG_CM_VMPI_USE_WAITANY 1
+#define MPIG_CM_VMPI_USE_WAITSOME 1
 
 /*
  * <mpi_errno> mpig_cm_vmpi_pe_wait([IN/OUT] state)
@@ -1856,7 +1856,7 @@ int mpig_cm_vmpi_pe_test(void)
     }																 \
 																 \
     /* add to usage bytes sent counter */											 \
-    mpig_datatype_get_size((dt_), &mpig_cm_vmpi_send_dt_size__);								 \
+    mpig_datatype_get_local_size((dt_), &mpig_cm_vmpi_send_dt_size__);								 \
     MPIG_USAGE_INC_VMPI_NBYTES_SENT(mpig_cm_vmpi_send_dt_size__ * (cnt_));							 \
 }
 
@@ -1903,7 +1903,7 @@ int mpig_cm_vmpi_pe_test(void)
     *(sreqp_) = mpig_cm_vmpi_isend_sreq__;											\
 																\
     /* add to usage bytes sent counter */											\
-    mpig_datatype_get_size((dt_), &mpig_cm_vmpi_isend_dt_size__);								\
+    mpig_datatype_get_local_size((dt_), &mpig_cm_vmpi_isend_dt_size__);								\
     MPIG_USAGE_INC_VMPI_NBYTES_SENT(mpig_cm_vmpi_isend_dt_size__ * (cnt_));							\
 }
 

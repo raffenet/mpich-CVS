@@ -2920,6 +2920,7 @@ if test "$MPID_NO_LONG_DOUBLE" != "yes" ; then
     pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
     if test "$pac_cv_have_long_double" = "yes" ; then
         AC_DEFINE(HAVE_LONG_DOUBLE,1,[Define if long double is supported])
+        AC_DEFINE(HAVE_MPI_LONG_DOUBLE,1,[Define if MPI_LONG_DOUBLE is a valid datatype])
     fi
 fi
 if test "$MPID_NO_LONG_LONG" != "yes" ; then
@@ -2929,6 +2930,7 @@ if test "$MPID_NO_LONG_LONG" != "yes" ; then
     pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
     if test "$pac_cv_have_long_long" = "yes" ; then
         AC_DEFINE(HAVE_LONG_LONG_INT,1,[Define if long long is supported])
+        AC_DEFINE(HAVE_MPI_LONG_LONG,1,[Define if MPI_LONG_LONG is a valid datatype])
     fi
 fi
 # ----------------------------------------------------------------------------
@@ -3373,29 +3375,17 @@ export MPI_INTEGER16
 if test "$ac_cv_sizeof_float" = "4" ; then
     MPI_REAL4="0x4c000427"
     MPI_COMPLEX8="0x4c000828"
-    MPIR_REAL4_CTYPE=float
-    export MPIR_REAL4_CTYPE
+    MPIR_F77_REAL4_CTYPE=float
 fi
 if test "$ac_cv_sizeof_double" = "8" ; then
     MPI_REAL8="0x4c000829"
     MPI_COMPLEX16="0x4c00102a"
-    MPIR_REAL8_CTYPE=double
-    export MPIR_REAL8_CTYPE
+    MPIR_F77_REAL8_CTYPE=double
 fi
 if test "$ac_cv_sizeof_long_double" = "16" -a "$MPID_NO_LONG_DOUBLE" != yes ; then
     MPI_REAL16="0x4c00102b"
     MPI_COMPLEX32="0x4c00202c"
-    MPIR_REAL16_CTYPE="long double"
-    export MPIR_REAL16_CTYPE
-fi
-if test -n "$MPIR_REAL4_CTYPE" ; then
-    AC_DEFINE_UNQUOTED(MPIR_REAL4_CTYPE,$MPIR_REAL4_CTYPE,[C type to use for MPI_REAL4])
-fi
-if test -n "$MPIR_REAL8_CTYPE" ; then
-    AC_DEFINE_UNQUOTED(MPIR_REAL8_CTYPE,$MPIR_REAL8_CTYPE,[C type to use for MPI_REAL8])
-fi
-if test -n "$MPIR_REAL16_CTYPE" ; then
-    AC_DEFINE_UNQUOTED(MPIR_REAL16_CTYPE,$MPIR_REAL16_CTYPE,[C type to use for MPI_REAL16])
+    MPIR_F77_REAL16_CTYPE="long double"
 fi
 # For complex 8/16/32, we assume that these are 2 consequetive real4/8/16
 #
@@ -3409,32 +3399,27 @@ for type in char short int long long_long ; do
     case $len in 
     1) if test "$MPI_INTEGER1" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER1="0x4c00012d"
-	   MPIR_INTEGER1_CTYPE="$ctype"
-	   export MPIR_INTEGER1_CTYPE
+	   MPIR_F77_INTEGER1_CTYPE="$ctype"
        fi
        ;;
     2) if test "$MPI_INTEGER2" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER2="0x4c00022f"
-	   MPIR_INTEGER2_CTYPE="$ctype"
-	   export MPIR_INTEGER2_CTYPE
+	   MPIR_F77_INTEGER2_CTYPE="$ctype"
        fi
        ;;
     4) if test "$MPI_INTEGER4" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER4="0x4c000430"
-	   MPIR_INTEGER4_CTYPE="$ctype"
-	   export MPIR_INTEGER4_CTYPE
+	   MPIR_F77_INTEGER4_CTYPE="$ctype"
        fi
        ;;
     8) if test "$MPI_INTEGER8" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER8="0x4c000831"
-	   MPIR_INTEGER8_CTYPE="$ctype"
-	   export MPIR_INTEGER8_CTYPE
+	   MPIR_F77_INTEGER8_CTYPE="$ctype"
        fi
        ;;
     16) if test "$MPI_INTEGER16" = "MPI_DATATYPE_NULL" ; then
            MPI_INTEGER16="0x4c001032"
-	   MPIR_INTEGER16_CTYPE="$ctype"
-	   export MPIR_INTEGER16_CTYPE
+	   MPIR_F77_INTEGER16_CTYPE="$ctype"
        fi
        ;;
     *)
@@ -3442,23 +3427,6 @@ for type in char short int long long_long ; do
     esac
     fi
 done
-#
-# Add the definitions of these types
-if test -n "$MPIR_INTEGER1_CTYPE" ; then
-    AC_DEFINE_UNQUOTED(MPIR_INTEGER1_CTYPE,$MPIR_INTEGER1_CTYPE,[C type to use for MPI_INTEGER1])
-fi
-if test -n "$MPIR_INTEGER2_CTYPE" ; then
-   AC_DEFINE_UNQUOTED(MPIR_INTEGER2_CTYPE,$MPIR_INTEGER2_CTYPE,[C type to use for MPI_INTEGER2])
-fi
-if test -n "$MPIR_INTEGER4_CTYPE" ; then
-   AC_DEFINE_UNQUOTED(MPIR_INTEGER4_CTYPE,$MPIR_INTEGER4_CTYPE,[C type to use for MPI_INTEGER4])
-fi
-if test -n "$MPIR_INTEGER8_CTYPE" ; then
-   AC_DEFINE_UNQUOTED(MPIR_INTEGER8_CTYPE,$MPIR_INTEGER8_CTYPE,[C type to use for MPI_INTEGER8])
-fi
-if test -n "$MPIR_INTEGER16_CTYPE" ; then
-   AC_DEFINE_UNQUOTED(MPIR_INTEGER16_CTYPE,$MPIR_INTEGER16_CTYPE,[C type to use for MPI_INTEGER16])
-fi
 
 # ----------------------------------------------------------------------------
 # We can now create the Fortran versions of the datatype values, along with
@@ -3493,6 +3461,68 @@ if test "$enable_f77" = yes ; then
     PAC_PROG_F77_CHECK_SIZEOF_EXT(integer,$CROSS_F77_SIZEOF_INTEGER)
     PAC_PROG_F77_CHECK_SIZEOF_EXT(real,$CROSS_F77_SIZEOF_REAL)
     PAC_PROG_F77_CHECK_SIZEOF_EXT(double precision,$CROSS_F77_SIZEOF_DOUBLE_PRECISION)
+    #
+    # map basic Fortran types to C types
+    #
+    MPIR_F77_CHARACTER_CTYPE=char
+    AC_DEFINE_UNQUOTED(MPIR_F77_CHARACTER_CTYPE,$MPIR_F77_CHARACTER_CTYPE,[C type to use for MPI_CHARACTER])
+    export MPIR_F77_CHARACTER_CTYPE
+
+    AC_MSG_CHECKING([for C type that matches Fortran INTEGER])
+    for type in char short int long long_long ; do
+        ctype=`echo $type | sed 's/_/ /'`
+	eval clen=\$ac_cv_sizeof_$type
+        if test ${clen:-0} -eq ${pac_cv_f77_sizeof_integer} -a ${clen:-0} != 0 ; then
+	    MPIR_F77_INTEGER_CTYPE="$ctype"
+	    break
+	fi
+    done
+    if test -n "$MPIR_F77_INTEGER_CTYPE" ; then
+	MPIR_F77_LOGICAL_CTYPE=$MPIR_F77_INTEGER_CTYPE
+        AC_DEFINE_UNQUOTED(MPIR_F77_INTEGER_CTYPE,$MPIR_F77_INTEGER_CTYPE,[C type to use for MPI_INTEGER])
+        AC_DEFINE_UNQUOTED(MPIR_F77_LOGICAL_CTYPE,$MPIR_F77_INTEGER_CTYPE,[C type to use for MPI_LOGICAL])
+        export MPIR_F77_INTEGER_CTYPE
+        export MPIR_F77_LOGICAL_CTYPE
+	AC_MSG_RESULT([$MPIR_F77_INTEGER_CTYPE])
+    else
+	AC_MSG_RESULT([none])
+    fi
+
+    AC_MSG_CHECKING([for C type that matches Fortran REAL])
+    for type in float double long_double ; do
+        ctype=`echo $type | sed 's/_/ /'`
+	eval clen=\$ac_cv_sizeof_$type
+        if test ${clen:-0} -eq ${pac_cv_f77_sizeof_real} -a ${clen:-0} != 0 ; then
+	    MPIR_F77_REAL_CTYPE="$ctype"
+	    break
+	fi
+    done
+    if test -n "$MPIR_F77_REAL_CTYPE" ; then
+        AC_DEFINE_UNQUOTED(MPIR_F77_REAL_CTYPE,$MPIR_F77_REAL_CTYPE,[C type to use for MPI_REAL])
+        export MPIR_F77_REAL_CTYPE
+	AC_MSG_RESULT([$MPIR_F77_REAL_CTYPE])
+    else
+	AC_MSG_RESULT([none])
+    fi
+
+    AC_MSG_CHECKING([for C type that matches Fortran DOUBLE PRECISION])
+    for type in float double long_double ; do
+        ctype=`echo $type | sed 's/_/ /'`
+	eval clen=\$ac_cv_sizeof_$type
+        if test ${clen:-0} -eq ${pac_cv_f77_sizeof_double_precision} -a ${clen:-0} != 0 ; then
+	    MPIR_F77_DOUBLE_PRECISION_CTYPE="$ctype"
+	    break
+	fi
+    done
+    if test -n "$MPIR_F77_DOUBLE_PRECISION_CTYPE" ; then
+        AC_DEFINE_UNQUOTED(MPIR_F77_DOUBLE_PRECISION_CTYPE,$MPIR_F77_DOUBLE_PRECISION_CTYPE,
+	    [C type to use for MPI_DOUBLE_PRECISION])
+	export MPIR_F77_DOUBLE_PRECISION_CTYPE
+	AC_MSG_RESULT([$MPIR_F77_DOUBLE_PRECISION_CTYPE])
+    else
+	AC_MSG_RESULT([none])
+    fi
+
     AC_LANG_FORTRAN77
     # If we have sizes for real and double, we do not need to call 
     # mpir_get_fsize at run time.
@@ -3502,34 +3532,102 @@ if test "$enable_f77" = yes ; then
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*1 i])],
          pac_cv_fort_integer1=yes,
          pac_cv_fort_integer1=no)])
+    if test "$pac_cv_fort_integer1" = "yes" -a "$MPI_INTEGER1" != "MPI_DATATYPE_NULL" ; then
+        AC_DEFINE(HAVE_MPI_INTEGER1,1,[define if MPI_INTEGER1 is a valid datatype])
+    fi
     AC_CACHE_CHECK([whether integer*2 is supported],pac_cv_fort_integer2,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*2 i])],
         pac_cv_fort_integer2=yes,
         pac_cv_fort_integer2=no)])
+    if test "$pac_cv_fort_integer2" = "yes" -a "$MPI_INTEGER2" != "MPI_DATATYPE_NULL" ; then
+        AC_DEFINE(HAVE_MPI_INTEGER2,1,[define if MPI_INTEGER2 is a valid datatype])
+    fi
     AC_CACHE_CHECK([whether integer*4 is supported],pac_cv_fort_integer4,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*4 i])],
         pac_cv_fort_integer4=yes,
         pac_cv_fort_integer4=no)])
+    if test "$pac_cv_fort_integer4" = "yes" -a "$MPI_INTEGER4" != "MPI_DATATYPE_NULL" ; then
+        AC_DEFINE(HAVE_MPI_INTEGER4,1,[define if MPI_INTEGER4 is a valid datatype])
+    fi
     AC_CACHE_CHECK([whether integer*8 is supported],pac_cv_fort_integer8,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*8 i])],
         pac_cv_fort_integer8=yes,
         pac_cv_fort_integer8=no)])
+    if test "$pac_cv_fort_integer8" = "yes" -a "$MPI_INTEGER8" != "MPI_DATATYPE_NULL" ; then
+        AC_DEFINE(HAVE_MPI_INTEGER8,1,[define if MPI_INTEGER8 is a valid datatype])
+    fi
     AC_CACHE_CHECK([whether integer*16 is supported],pac_cv_fort_integer16,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*16 i])],
         pac_cv_fort_integer16=yes,
         pac_cv_fort_integer16=no)])
+    if test "$pac_cv_fort_integer16" = "yes" -a "$MPI_INTEGER16" != "MPI_DATATYPE_NULL" ; then
+        AC_DEFINE(HAVE_MPI_INTEGER16,1,[define if MPI_INTEGER16 is a valid datatype])
+    fi
     AC_CACHE_CHECK([whether real*4 is supported],pac_cv_fort_real4,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      real*4 a])],
         pac_cv_fort_real4=yes,
         pac_cv_fort_real4=no)])
+    if test "$pac_cv_fort_real4" = "yes" -a "$MPI_REAL4" != "MPI_DATATYPE_NULL" ; then
+        AC_DEFINE(HAVE_MPI_REAL4,1,[define if MPI_REAL4 is a valid datatype])
+    fi
     AC_CACHE_CHECK([whether real*8 is supported],pac_cv_fort_real8,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      real*8 a])],
         pac_cv_fort_real8=yes,
         pac_cv_fort_real8=no)])
+    if test "$pac_cv_fort_real8" = "yes" -a "$MPI_REAL8" != "MPI_DATATYPE_NULL" ; then
+        AC_DEFINE(HAVE_MPI_REAL8,1,[define if MPI_REAL8 is a valid datatype])
+    fi
     AC_CACHE_CHECK([whether real*16 is supported],pac_cv_fort_real16,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      real*16 a])],
         pac_cv_fort_real16=yes,
         pac_cv_fort_real16=no)])
+    if test "$pac_cv_fort_real16" = "yes" -a "$MPI_REAL16" != "MPI_DATATYPE_NULL" ; then
+        AC_DEFINE(HAVE_MPI_REAL16,1,[define if MPI_REAL16 is a valid datatype])
+    fi
+    #
+    # map Fortran fixed sized types to C types
+    #
+    if test "$pac_cv_fort_integer1" = "yes" -a -n "$MPIR_F77_INTEGER1_CTYPE" ; then
+        AC_DEFINE_UNQUOTED(MPIR_INTEGER1_CTYPE,$MPIR_F77_INTEGER1_CTYPE,[C type to use for MPI_INTEGER1])
+        AC_DEFINE_UNQUOTED(MPIR_F77_INTEGER1_CTYPE,$MPIR_F77_INTEGER1_CTYPE,[C type to use for MPI_INTEGER1])
+        export MPIR_F77_INTEGER1_CTYPE
+    fi
+    if test "$pac_cv_fort_integer2" = "yes" -a -n "$MPIR_F77_INTEGER2_CTYPE" ; then
+       AC_DEFINE_UNQUOTED(MPIR_INTEGER2_CTYPE,$MPIR_F77_INTEGER2_CTYPE,[C type to use for MPI_INTEGER2])
+       AC_DEFINE_UNQUOTED(MPIR_F77_INTEGER2_CTYPE,$MPIR_F77_INTEGER2_CTYPE,[C type to use for MPI_INTEGER2])
+        export MPIR_F77_INTEGER2_CTYPE
+    fi
+    if test "$pac_cv_fort_integer4" = "yes" -a -n "$MPIR_F77_INTEGER4_CTYPE" ; then
+       AC_DEFINE_UNQUOTED(MPIR_INTEGER4_CTYPE,$MPIR_F77_INTEGER4_CTYPE,[C type to use for MPI_INTEGER4])
+       AC_DEFINE_UNQUOTED(MPIR_F77_INTEGER4_CTYPE,$MPIR_F77_INTEGER4_CTYPE,[C type to use for MPI_INTEGER4])
+        export MPIR_F77_INTEGER4_CTYPE
+    fi
+    if test "$pac_cv_fort_integer8" = "yes" -a -n "$MPIR_F77_INTEGER8_CTYPE" ; then
+       AC_DEFINE_UNQUOTED(MPIR_INTEGER8_CTYPE,$MPIR_F77_INTEGER8_CTYPE,[C type to use for MPI_INTEGER8])
+       AC_DEFINE_UNQUOTED(MPIR_F77_INTEGER8_CTYPE,$MPIR_F77_INTEGER8_CTYPE,[C type to use for MPI_INTEGER8])
+        export MPIR_F77_INTEGER8_CTYPE
+    fi
+    if test "$pac_cv_fort_integer16" = "yes" -a -n "$MPIR_F77_INTEGER16_CTYPE" ; then
+       AC_DEFINE_UNQUOTED(MPIR_INTEGER16_CTYPE,$MPIR_F77_INTEGER16_CTYPE,[C type to use for MPI_INTEGER16])
+       AC_DEFINE_UNQUOTED(MPIR_F77_INTEGER16_CTYPE,$MPIR_F77_INTEGER16_CTYPE,[C type to use for MPI_INTEGER16])
+        export MPIR_F77_INTEGER16_CTYPE
+    fi
+
+    if test "$pac_cv_fort_real4" = "yes" -a -n "$MPIR_F77_REAL4_CTYPE" ; then
+        AC_DEFINE_UNQUOTED(MPIR_REAL4_CTYPE,$MPIR_F77_REAL4_CTYPE,[C type to use for MPI_REAL4])
+        AC_DEFINE_UNQUOTED(MPIR_F77_REAL4_CTYPE,$MPIR_F77_REAL4_CTYPE,[C type to use for MPI_REAL4])
+        export MPIR_F77_REAL4_CTYPE
+    fi
+    if test "$pac_cv_fort_real8" = "yes" -a -n "$MPIR_F77_REAL8_CTYPE" ; then
+        AC_DEFINE_UNQUOTED(MPIR_REAL8_CTYPE,$MPIR_F77_REAL8_CTYPE,[C type to use for MPI_REAL8])
+        AC_DEFINE_UNQUOTED(MPIR_F77_REAL8_CTYPE,$MPIR_F77_REAL8_CTYPE,[C type to use for MPI_REAL8])
+        export MPIR_F77_REAL8_CTYPE
+    fi
+    if test "$pac_cv_fort_real16" = "yes" -a -n "$MPIR_F77_REAL16_CTYPE" ; then
+        AC_DEFINE_UNQUOTED(MPIR_REAL16_CTYPE,$MPIR_F77_REAL16_CTYPE,[C type to use for MPI_REAL16])
+        AC_DEFINE_UNQUOTED(MPIR_F77_REAL16_CTYPE,$MPIR_F77_REAL16_CTYPE,[C type to use for MPI_REAL16])
+        export MPIR_F77_REAL16_CTYPE
+    fi
 
     # Create the default datatype names for the standard MPI Fortran types
     MPI_CHARACTER=0x4c00011a

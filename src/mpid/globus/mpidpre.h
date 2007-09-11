@@ -509,15 +509,21 @@ mpig_comm_t;
 
 typedef enum mpig_ctype
 {
-    MPIG_CTYPE_NONE = 0,
+    MPIG_CTYPE_INVALID = 0,
+    MPIG_CTYPE_FLOAT,
+    MPIG_CTYPE_DOUBLE,
+    MPIG_CTYPE_LONG_DOUBLE,
     MPIG_CTYPE_CHAR,
+    MPIG_CTYPE_WCHAR,
     MPIG_CTYPE_SHORT,
     MPIG_CTYPE_INT,
     MPIG_CTYPE_LONG,
     MPIG_CTYPE_LONG_LONG,
-    MPIG_CTYPE_FLOAT,
-    MPIG_CTYPE_DOUBLE,
-    MPIG_CTYPE_LONG_DOUBLE,
+    MPIG_CTYPE_UNSIGNED_CHAR,
+    MPIG_CTYPE_UNSIGNED_SHORT,
+    MPIG_CTYPE_UNSIGNED_INT,
+    MPIG_CTYPE_UNSIGNED_LONG,
+    MPIG_CTYPE_UNSIGNED_LONG_LONG,
     MPIG_CTYPE_LAST
 }
 mpig_ctype_t;
@@ -1016,7 +1022,7 @@ typedef struct mpig_vc
     bool_t initialized;
     
     /* map of MPI datatypes to basic C types */
-    unsigned char dt_cmap[MPIG_DATATYPE_MAX_BASIC_TYPES];
+    unsigned char dt_ctype_map[MPIG_DATATYPE_MAX_BASIC_TYPES];
 }
 mpig_vc_t;
 /**********************************************************************************************************************************

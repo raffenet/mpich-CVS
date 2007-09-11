@@ -303,6 +303,7 @@ typedef enum mpig_cm_xio_app_buf_type
     MPIG_CM_XIO_APP_BUF_TYPE_CONTIG,
     MPIG_CM_XIO_APP_BUF_TYPE_DENSE,
     MPIG_CM_XIO_APP_BUF_TYPE_SPARSE,
+    MPIG_CM_XIO_APP_BUF_TYPE_FOREIGN,
     MPIG_CM_XIO_APP_BUF_TYPE_LAST
 }
 mpig_cm_xio_app_buf_type_t;

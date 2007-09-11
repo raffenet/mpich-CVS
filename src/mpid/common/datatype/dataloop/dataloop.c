@@ -575,7 +575,9 @@ void PREPEND_PREFIX(Dataloop_dup)(DLOOP_Dataloop *old_loop,
 @*/
 DLOOP_Offset
 PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
-				     DLOOP_Offset (*sizefn)(DLOOP_Type el_type))
+                                     DLOOP_Offset (*sizefn)(DLOOP_Type el_type,
+                                                            void * v_paramp),
+                                     void * v_paramp)
 {
     DLOOP_Offset ret;
 
@@ -586,7 +588,8 @@ PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
 	for (i=0; i < dl_p->loop_params.s_t.count; i++) {
 	    ret += dl_p->loop_params.s_t.blocksize_array[i] *
 		PREPEND_PREFIX(Dataloop_stream_size)(dl_p->loop_params.s_t.dataloop_array[i],
-						     sizefn);
+                                                     sizefn,
+                                                     v_paramp);
 	}
     }
     else {
@@ -644,7 +647,7 @@ PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
 	}
 
 	/* call fn for size using bottom type, or use size if fnptr is NULL */
-	tmp_sz = ((sizefn) ? sizefn(dl_p->el_type) : dl_p->el_size);
+	tmp_sz = ((sizefn) ? sizefn(dl_p->el_type, v_paramp) : dl_p->el_size);
 
 	ret = tmp_sz * tmp_ct;
     }

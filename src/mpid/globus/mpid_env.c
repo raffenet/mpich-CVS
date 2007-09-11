@@ -127,6 +127,10 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     mpi_errno = mpig_recvq_init();
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_init");
     
+    /* initialize the datatype processing module */
+    mpi_errno = mpig_datatype_init();
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_init");
+    
     /* initialize the process management module which interfaces with globus */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3, "initializing process management module"));
     mpi_errno = mpig_pm_init(argc, argv);
@@ -167,6 +171,11 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	}
     }
 
+    /* add information about local datatype sizes, etc.  NOTE: it might be better add to this information only if one of the
+       communication methods will require the information. */
+    mpi_errno = mpig_datatype_add_info_to_bc(&bc);
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_add_info_to_bc");
+    
     /* add the LAN identification string to the business card (if one is defined) */
     lan_id = getenv("MPIG_LAN_ID");
     if (lan_id == NULL)
@@ -246,6 +255,11 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 		mpi_errno = mpig_bc_copy(&bcs[p], mpig_vc_get_bc(vc));
 		MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|bc_copy");
 
+                /* extract information about remote datatype sizes, etc.  NOTE: this should probably only be done if the selected
+                   communication method needs the information. */
+                mpi_errno = mpig_datatype_extract_info_from_bc(vc);
+                MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_extract_info_from_bc");
+    
 		/* extract the contact information from the business card contained within the VC object.  the information is
 		   extracted from the business card because it is used each time a communicator is created to construct the
 		   topology information.  since the gathering of data from the business card is not necessarily efficient, the
@@ -428,18 +442,18 @@ int MPID_InitCompleted()
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_MPID_FINALIZE);
+    MPIG_STATE_DECL(MPID_STATE_MPID_INITCOMPLETED);
 
     MPIG_UNUSED_VAR(fcname);
 
-    MPIG_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
+    MPIG_FUNC_ENTER(MPID_STATE_MPID_INITCOMPLETED);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "entering"));
 
     /* ... nothing to do ... */
 
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
+    MPIG_FUNC_EXIT(MPID_STATE_MPID_INITCOMPLETED);
     return mpi_errno;
 }
 /* end MPID_InitCompleted() */
@@ -513,6 +527,10 @@ int MPID_Finalize()
     /* shutdown the process management module */
     mrc = mpig_pm_finalize();
     MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|pm_finalize");
+    
+    /* shutdown the datatype processing module */
+    mrc = mpig_datatype_finalize();
+    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|datatype_finalize");
     
     /* shutdown the receive queue module */
     mrc = mpig_recvq_finalize();

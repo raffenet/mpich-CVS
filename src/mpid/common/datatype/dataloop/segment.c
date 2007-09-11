@@ -371,7 +371,8 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 							DLOOP_Offset rel_off,
 							DLOOP_Buffer bufp,
 							void *v_paramp),
-					DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
+                                        DLOOP_Offset (*sizefn) (DLOOP_Type el_type,
+							void *v_paramp),
 					void *pieceparams)
 {
     /* these four are the "local values": cur_sp, valid_sp, last, stream_off */
@@ -456,7 +457,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 	     */
 	    local_el_size  = cur_elmp->loop_p->el_size;
 	    el_type        = cur_elmp->loop_p->el_type;
-	    stream_el_size = (sizefn) ? sizefn(el_type) : local_el_size;
+	    stream_el_size = (sizefn) ? sizefn(el_type, pieceparams) : local_el_size;
 
 	    /* calculate number of elem. types to work on and function to use.
 	     * default is to use the contig piecefn (if there is one).
