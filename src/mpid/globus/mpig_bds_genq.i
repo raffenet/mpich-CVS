@@ -21,13 +21,13 @@ typedef bool_t (*mpig_genq_compare_values_fn_t)(const void * value1, const void 
 
 #if defined(MPIG_INLINE_HDECL)
 
-MPIG_INLINE_HDECL int mpig_genq_entry_create(mpig_genq_entry_t ** entry_p);
-
-MPIG_INLINE_HDECL void mpig_genq_entry_destroy(mpig_genq_entry_t * entry);
-
 MPIG_INLINE_HDECL void mpig_genq_entry_construct(mpig_genq_entry_t * entry);
 
 MPIG_INLINE_HDECL void mpig_genq_entry_destruct(mpig_genq_entry_t * entry);
+
+MPIG_INLINE_HDECL int mpig_genq_entry_create(mpig_genq_entry_t ** entry_p);
+
+MPIG_INLINE_HDECL void mpig_genq_entry_destroy(mpig_genq_entry_t * entry);
 
 MPIG_INLINE_HDECL mpig_genq_entry_t * mpig_genq_entry_get_prev(const mpig_genq_entry_t * entry);
 
@@ -43,6 +43,11 @@ MPIG_INLINE_HDECL void mpig_genq_destruct(mpig_genq_t * queue, mpig_genq_destroy
 
 MPIG_INLINE_HDECL bool_t mpig_genq_is_empty(const mpig_genq_t * queue);
 
+MPIG_INLINE_HDECL mpig_genq_entry_t * mpig_genq_find_entry(const mpig_genq_t * queue, const void * value,
+    mpig_genq_compare_values_fn_t compare_fn);
+
+MPIG_INLINE_HDECL void mpig_genq_remove_entry(mpig_genq_t * queue, mpig_genq_entry_t * entry);
+
 MPIG_INLINE_HDECL void mpig_genq_enqueue_head_entry(mpig_genq_t * queue, mpig_genq_entry_t * entry);
 
 MPIG_INLINE_HDECL void mpig_genq_enqueue_tail_entry(mpig_genq_t * queue, mpig_genq_entry_t * entry);
@@ -55,15 +60,44 @@ MPIG_INLINE_HDECL mpig_genq_entry_t * mpig_genq_dequeue_head_entry(mpig_genq_t *
 
 MPIG_INLINE_HDECL mpig_genq_entry_t * mpig_genq_dequeue_tail_entry(mpig_genq_t * queue);
 
-MPIG_INLINE_HDECL mpig_genq_entry_t * mpig_genq_find_entry(const mpig_genq_t * queue, const void * value,
-    mpig_genq_compare_values_fn_t compare_fn);
-
-MPIG_INLINE_HDECL void mpig_genq_remove_entry(mpig_genq_t * queue, mpig_genq_entry_t * entry);
-
 #endif /* defined(MPIG_INLINE_HDECL) */
 
 #if defined(MPIG_INLINE_HDEF)
 
+#undef FUNCNAME
+#undef FCNAME
+#define FUNCNAME mpig_genq_entry_construct
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_INLINE_HDEF void mpig_genq_entry_construct(mpig_genq_entry_t * const entry)
+{
+#   if defined(MPIG_DEBUG)
+    {
+        entry->value = NULL;
+        entry->prev = NULL;
+        entry->next = NULL;
+    }
+#   endif
+}
+
+#undef FUNCNAME
+#undef FCNAME
+#define FUNCNAME mpig_genq_entry_destruct
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_INLINE_HDEF void mpig_genq_entry_destruct(mpig_genq_entry_t * const entry)
+{
+#   if defined(MPIG_DEBUG)
+    {
+        entry->value = MPIG_INVALID_PTR;
+        entry->prev = MPIG_INVALID_PTR;
+        entry->next = MPIG_INVALID_PTR;
+    }
+#   endif
+}
+
+/* NOTE: the following routine uses mpig_genq_entry_construct().  the gcc 3.2 compiler seg faults when emitting the externally
+   accessible (non-inline) versions of routines if routine A references routine B before routine B is defined, even if routine B
+   has previously been declared.  therefore, one must be careful about the order in which routines are defined when dependencies
+   exist :-(. */
 #undef FUNCNAME
 #undef FCNAME
 #define FUNCNAME mpig_genq_entry_create
@@ -96,36 +130,6 @@ MPIG_INLINE_HDEF void mpig_genq_entry_destroy(mpig_genq_entry_t * const entry)
 {
     mpig_genq_entry_destruct(entry);
     MPIU_Free(entry);
-}
-
-#undef FUNCNAME
-#undef FCNAME
-#define FUNCNAME mpig_genq_entry_construct
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_INLINE_HDEF void mpig_genq_entry_construct(mpig_genq_entry_t * const entry)
-{
-#   if defined(MPIG_DEBUG)
-    {
-        entry->value = NULL;
-        entry->prev = NULL;
-        entry->next = NULL;
-    }
-#   endif
-}
-
-#undef FUNCNAME
-#undef FCNAME
-#define FUNCNAME mpig_genq_entry_destruct
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_INLINE_HDEF void mpig_genq_entry_destruct(mpig_genq_entry_t * const entry)
-{
-#   if defined(MPIG_DEBUG)
-    {
-        entry->value = MPIG_INVALID_PTR;
-        entry->prev = MPIG_INVALID_PTR;
-        entry->next = MPIG_INVALID_PTR;
-    }
-#   endif
 }
 
 #undef FUNCNAME
@@ -203,6 +207,61 @@ MPIG_INLINE_HDEF void mpig_genq_destruct(mpig_genq_t * const queue, const mpig_g
 MPIG_INLINE_HDEF bool_t mpig_genq_is_empty(const mpig_genq_t * const queue)
 {
     return (queue->head == NULL) ? TRUE : FALSE;
+}
+
+#undef FUNCNAME
+#undef FCNAME
+#define FUNCNAME mpig_genq_find_entry
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_INLINE_HDEF mpig_genq_entry_t * mpig_genq_find_entry(const mpig_genq_t * const queue, const void * const value,
+    const mpig_genq_compare_values_fn_t compare_fn)
+{
+    mpig_genq_entry_t * entry;
+    
+    entry = queue->head;
+    while (entry != NULL)
+    {
+        if (compare_fn(value, entry->value))
+        {
+            break;
+        }
+
+        entry = entry->next;
+    }
+
+    return entry;
+}
+
+#undef FUNCNAME
+#undef FCNAME
+#define FUNCNAME mpig_genq_remove_entry
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+MPIG_INLINE_HDEF void mpig_genq_remove_entry(mpig_genq_t * const queue, mpig_genq_entry_t * const entry)
+{
+    if (entry->prev != NULL)
+    {
+        entry->prev->next = entry->next;
+    }
+    else
+    {
+        queue->head = entry->next;
+    }
+    if (entry->next != NULL)
+    {
+        entry->next->prev = entry->prev;
+    }
+    else
+    {
+        queue->tail = entry->prev;
+    }
+
+#   if defined(MPIG_DEBUG)
+    {
+        entry->value = MPIG_INVALID_PTR;
+        entry->prev = MPIG_INVALID_PTR;
+        entry->next = MPIG_INVALID_PTR;
+    }
+#   endif
 }
 
 #undef FUNCNAME
@@ -295,61 +354,6 @@ MPIG_INLINE_HDEF mpig_genq_entry_t * mpig_genq_dequeue_tail_entry(mpig_genq_t * 
     entry = queue->tail;
     if (entry) mpig_genq_remove_entry(queue, entry);
     return entry;
-}
-
-#undef FUNCNAME
-#undef FCNAME
-#define FUNCNAME mpig_genq_find_entry
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_INLINE_HDEF mpig_genq_entry_t * mpig_genq_find_entry(const mpig_genq_t * const queue, const void * const value,
-    const mpig_genq_compare_values_fn_t compare_fn)
-{
-    mpig_genq_entry_t * entry;
-    
-    entry = queue->head;
-    while (entry != NULL)
-    {
-        if (compare_fn(value, entry->value))
-        {
-            break;
-        }
-
-        entry = entry->next;
-    }
-
-    return entry;
-}
-
-#undef FUNCNAME
-#undef FCNAME
-#define FUNCNAME mpig_genq_remove_entry
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-MPIG_INLINE_HDEF void mpig_genq_remove_entry(mpig_genq_t * const queue, mpig_genq_entry_t * const entry)
-{
-    if (entry->prev != NULL)
-    {
-        entry->prev->next = entry->next;
-    }
-    else
-    {
-        queue->head = entry->next;
-    }
-    if (entry->next != NULL)
-    {
-        entry->next->prev = entry->prev;
-    }
-    else
-    {
-        queue->tail = entry->prev;
-    }
-
-#   if defined(MPIG_DEBUG)
-    {
-        entry->value = MPIG_INVALID_PTR;
-        entry->prev = MPIG_INVALID_PTR;
-        entry->next = MPIG_INVALID_PTR;
-    }
-#   endif
 }
 
 #undef FUNCNAME
