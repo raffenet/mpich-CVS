@@ -852,9 +852,9 @@ int mpig_recvq_deq_posted_or_enq_unexp(mpig_vc_t * const vc, const int rank, con
     bool_t recvq_locked = FALSE;
     bool_t found;
     MPID_Request * rreq;
-    int rreq_rank;
-    int rreq_tag;
-    int rreq_ctx;
+    int rreq_rank = -1;
+    int rreq_tag = -1;
+    int rreq_ctx = -1;
     int rank_mask;
     int tag_mask;
     int mpi_errno = MPI_SUCCESS;
