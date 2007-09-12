@@ -293,7 +293,8 @@ if [ $mode = link ] ; then
         # Typically -Wl,-h,$soName
 	# FIXME: C_LINK_SHL knows the options for shared libraries,
 	# but not the args for setting the soname.
-	$Show ${C_LINK_SHL} -o $realName -Wl,-h,$soName .tmp/*.o
+	$Show ${C_LINK_SHL} -o $realName -Wl,-h,$soName .tmp/*.o 
+	# Do we need to add $dependentLibs ?
 	;;
     esac
     if [ -n "$altNames" ] ; then
