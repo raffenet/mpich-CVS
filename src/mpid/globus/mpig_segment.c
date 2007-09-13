@@ -247,6 +247,43 @@
  * (3) we never convert MPI_BYTE.
  */
 
+/* mpig_segment_piece_params
+ *
+ * this structure is used to pass internal information into and out of our segment processing functions as they are called by the
+ * MPID segment processing subsystem.
+ *
+ * NOTE: src_ctype_map and src_sizeof_ctype may be different than those of the last processs to send the message.  this can occur
+ * when a packed message originated at a machine having a different format than that of the last process to forward the message.
+ */
+struct mpig_segment_piece_params 
+{
+    char * src_buffer;
+    char * src_ctype_map;
+    char * src_sizeof_ctypes;
+};
+/* 
+ * mpig_segment_sizeof_source_datatype() - compute the size of a datatype at the source process
+ */
+#undef FUNCNAME 
+#define FUNCNAME mpig_segment_sizeof_source_datatype
+static MPI_Aint mpig_segment_sizeof_source_datatype(MPI_Datatype el_type, void *v_paramp)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    struct mpig_segment_piece_params * p = (struct mpig_segment_piece_params *) v_paramp;
+    mpig_ctype_t remote_ctype = mpig_datatype_get_ctype(el_type, p->src_ctype_map);
+    int remote_sizeof_ctype = mpig_ctype_get_sizeof(remote_ctype, p->src_sizeof_ctypes);
+    int mult = mpig_datatype_get_num_ctypes(el_type);
+    MPI_Aint size = (MPI_Aint) mult * remote_sizeof_ctype;
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIU_Assert(size > 0);
+
+    return size;
+
+}
+/* end mpig_segment_globus_dc_sizeof_source_datatype() */
+
 /*
  * GLOBUS_DC - segment processing routines that use the globus data conversion module
  */
@@ -254,831 +291,324 @@
 
 /* mpig_segment_globus_dc_piece_params
  *
- * This structure is used to pass function-specific parameters into our segment processing function.  This allows us to get
- * additional parameters to the functions it calls without changing the prototype.
+ * this is an extension to mpig_segment_piece_params structure that contains information using by the globus data conversion
+ * module.
+ *
+ * NOTE: and src_gdc_format may be different than those of the last processs to send the message.  this can occur when a packed
+ * message originated at a machine having a different format than that of the last process to forward the message.
  */
 struct mpig_segment_globus_dc_piece_params 
 {
-    globus_byte_t *src_buffer;
-    int src_format;
-    mpig_vc_t *vc;
-}; /* end struct mpig_segment_globus_dc_piece_params */
+    struct mpig_segment_piece_params common;
+    struct
+    {
+        int src_gdc_format;
+    }
+    globus;
+};
+/* end struct mpig_segment_globus_dc_piece_params */
 
 /*******************/
 /* LOCAL FUNCTIONS */
 /*******************/
 /* 
- * data conversion routines available from Globus ... see globus_dc.h globus_dc_get_{byte, char, short, int, long, long_long,
- * float, double} globus_dc_get_u_{char, short, int, long}
+ * mpig_segment_globus_dc_unpack_contig() - unpack data from a stream into a contiguous buffer using the globus data conversion
+ * routines
+ *
+ * NOTE: Globus data conversion routines available are declared and documented in globus_dc.h.  The following routines are used.
+ *
+ *     globus_dc_get_{byte, char, short, int, long, long_long, float, double}
+ *     globus_dc_get_u_{char, short, int, long}
+ *     nexus_dc_get_u_long_long
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_segment_globus_dc_unpack_contig
 static int mpig_segment_globus_dc_unpack_contig(
-    DLOOP_Offset * blocks_p, /* count */
-    DLOOP_Type el_type,
-    DLOOP_Offset rel_off,  /* dest */
-    void * bufp,            /* dest */
+    DLOOP_Offset * blocks_p,      /* count */
+    DLOOP_Type el_type,           /* MPI basic datatype */
+    DLOOP_Offset dest_rel_off,    /* dest buffer relative offset */
+    void * dest_bufp,             /* dest buffer */
     void * v_paramp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     struct mpig_segment_globus_dc_piece_params * p = v_paramp;
-    globus_byte_t ** s = &(p->src_buffer);    /* src        */
-    char * d  = ((char *) bufp) + rel_off;    /* dest       */
-    int f = p->src_format;                    /* src format */
-    unsigned long c  = *blocks_p;             /* count      */
-    mpig_vc_t * vc = p->vc;
-    MPIG_STATE_DECL(MPID_STATE_mpig_segment_globus_dc_unpack_contig);
-    
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_segment_globus_dc_unpack_contig);
+    globus_byte_t ** src = (globus_byte_t **) &(p->common.src_buffer);
+    char * dest = ((char *) dest_bufp) + dest_rel_off;
+    unsigned long count = *blocks_p;
+    mpig_ctype_t remote_ctype = mpig_datatype_get_ctype(el_type, p->common.src_ctype_map);
+    int local_sizeof_remote_ctype = mpig_ctype_get_local_sizeof(remote_ctype);
+    int mult = mpig_datatype_get_num_ctypes(el_type);
+    int df = p->globus.src_gdc_format;
+    int mpi_errno = MPI_SUCCESS;
 
     MPIG_UNUSED_VAR(fcname);
 
-    switch (el_type)
+    if (FALSE && local_sizeof_remote_ctype <= MPID_Datatype_get_basic_size(el_type))
     {
-        /* NICK: questionable types found in mpi.h.in: MPI_LB, MPI_UB */
-        /*********************************************/
-        /* Elementary C datatypes defined in MPI 1.1 */
-        /*********************************************/
-        case MPI_FLOAT:
+        /* OK to receive directly into destination buffer */
+        switch (remote_ctype)
         {
-            globus_dc_get_float(s, (float *) d, c, f);
-            break;
-        }
-        case MPI_DOUBLE:
-        {
-            globus_dc_get_double(s, (double *) d, c, f);
-            break;
-        }
-#if defined(HAVE_MPI_LONG_DOUBLE)
-        case MPI_LONG_DOUBLE:
-        {
-            /* NOTE: this datatype is not supported by the Globus data conversion library.  for that reason, this datatype is
-               disabled by mpich2prereq-globus. */
-            break;
-        }
-#endif
-        case MPI_CHAR:
-        {
-            globus_dc_get_char(s, (char *) d, c, f);
-            break;
-        }
-        case MPI_SHORT:
-        {
-            globus_dc_get_short(s, (short *) d, c, f);
-            break;
-        }
-        case MPI_INT:
-        {
-            globus_dc_get_int(s, (int *) d, c, f);
-            break;
-        }
-        case MPI_LONG:
-        {
-            globus_dc_get_long(s, (long *) d, c, f);
-            break;
-        }
-#if defined(HAVE_MPI_LONG_LONG)
-        case MPI_LONG_LONG:
-        {
-            globus_dc_get_long_long(s, (long long *) d, c, f);
-            break;
-        }
-#endif
-        case MPI_UNSIGNED_CHAR:
-        {
-            globus_dc_get_u_char(s, (unsigned char *) d, c, f);
-            break;
-        }
-        case MPI_UNSIGNED_SHORT:
-        {
-            globus_dc_get_u_short(s, (unsigned short *) d, c, f);
-            break;
-        }
-        case MPI_UNSIGNED:
-        {
-            globus_dc_get_u_int(s, (unsigned int *) d, c, f);
-            break;
-        }
-        case MPI_UNSIGNED_LONG:
-        {
-            globus_dc_get_u_long(s, (unsigned long *) d, c, f);
-            break;
-        }
-        /* BOTH OF THESE MUST BE A MEMCPY, (i.e., NOT CONVERTED) */
-        case MPI_PACKED:
-        case MPI_BYTE:
-        {
-               memcpy((void *) d, (void *) *s, c);
-               (*s) += c;
-               break;
-        }
-
-        /*******************************************/
-        /* Optional C datatypes defined in MPI 1.1 */
-        /*******************************************/
-#if FALSE && defined(HAVE_MPI_LONG_LONG)
-        /* MPICH2 defined MPI_LONG_LONG and MPI_LONG_LONG_INT as the same thing */
-        case MPI_LONG_LONG_INT:
-        {
-            globus_dc_get_long_long  (s, (long long *) d, c, f);
-            break;
-        }            
-#endif
-
-        /**********************************************************/
-        /* C datatypes for reduction functions defined in MPI 1.1 */
-        /**********************************************************/
-
-        /* 
-         * NOTE: MPI_{FLOAT,DOUBLE,LONG,SHORT,LONG_DOUBLE}_INT are all constructed during intialization as derived datatypes and
-         * are therefore decomposed by the segment code and eventually handled by this function as elementary datatypes ... in
-         * other words, this function does NOT need to handle those cases explicitly.
-         */
-        case MPI_2INT:
-        {
-            globus_dc_get_int(s, (int *) d, 2*c, f);
-            break;
-        }
-
-        /*************************************************/
-        /* New Elementary C datatypes defined in MPI 2.0 */
-        /*************************************************/
-        case MPI_WCHAR:
-        {
-            /* TODO: add conversion for wide characters (is wchar_t always a fixed width integer?) */
-            MPIU_Assertp(FALSE && "MPI_WCHAR conversion not implemented");
-            break;
-        }
-        case MPI_SIGNED_CHAR:
-        {
-            globus_dc_get_char    (s, (char *) d, c, f);
-            break;
-        }
-#if defined(HAVE_MPI_LONG_LONG)
-        case MPI_UNSIGNED_LONG_LONG:
-        {
-            nexus_dc_get_u_long_long(s, (unsigned long long *) d, c, f);
-            break;
-        }
-#endif
-
-#ifdef HAVE_FORTRAN_BINDING
-        /*
-         * The Globus data conversion routines work only on C datatypes and so trying to use them on Fortran datatypes is a
-         * little tricky.
-         *
-         * Step 1: identifying the globus_dc_get function (must match globus_dc_put function from sending side)
-         *
-         * First, we need to map the Fortran datatype to its equivalent C-type from the *sending* side (e.g., learn that an
-         * MPI_REAL on the sending side is equivalent to a C-type float on the sending side.  This will determine which Globus
-         * data conversion routine to call (e.g., if the C-type is a float on the sending side then we will call
-         * globus_dc_get_float()).  This is required because we pass the format to the Globus data conversion routines and so if
-         * we call globus_dc_get_float() and pass the format then globus_dc_get_float() will use the format to figure out how
-         * many bytes a 'float' is on the sending side.
-         *
-         * Step 2: confirming application receive buffer is large enough
-         *
-         * Second, we need to take the size of the Fortran MPI datatype on the receiving side and compare that to the size on the
-         * receiving side of the C-type discovered in the first step.  For example, if the MPI datatype is MPI_REAL and we learn
-         * that an MPI_REAL on the sending side corresponds to a C-type float on the sending side then we must compare the size
-         * of a C-type float on the receiving side to the size of an MPI_REAL on the receiving side.
-         *
-         * Sending side    |     Receiving side
-         * ----------------+--------------------
-         * |     MPI datatype
-         * |       |    |   |
-         * C-type <-------+-------+    |   +--------+
-         * |            |            V            |
-         * +------------+---> local  local     (if the two local
-         * |     size   size       sizes are NOT equal)
-         * |                         |
-         * |                         v
-         * |                       C-type
-         *
-         * If the two sizes match then it is safe to make ONE call to the Globus data conversion routine passing a pointer to the
-         * source, a pointer to the destination, and the count (e.g., converting a source float to a source float) thus
-         * converting the entire buffer (i.e., all 'count' elements) in a single function call.
-         *
-         * If, on the other hand, the two sizes do NOT match then we must create a temporary C variable of the same C-type as the
-         * C-type representation of the Fortran datatype on the sending side (i.e., what we discovered in the first step) and
-         * learn the C-type equivlaent of the MPI Fortran datatype on the receiving side (e.g., an MPI_REAL is a C-type float on
-         * the receiving side).  We then convert the entire buffer by converting the elements one at a time into the temporary
-         * variable and then assigning the temp variable to the destination buffer with the appropriate cast.  For example, if an
-         * MPI_REAL is a C-type double (which forces us to call globus_dc_get_double()) that is 8 bytes on the sending side but a
-         * C-type float having only 4 bytes on the receiving side then we would have to convert the entire buffer like this:
-         * double *s = src_buff; double temp; float *d = dest_buff; for (i = 0; i < count; i ++) { globus_dc_get_double(s, &temp,
-         * 1, format); *d = (float) temp; d ++; }
-         *
-         * This is all necessary because the Globus data conversion routines expect the destination buffer to be a C-type that
-         * matches the function (e.g., globus_dc_get_float() requires a float destination buffer).
-         *
-         * NOTE: everything described above applies to both integer and floating point datatypes.
-         */
-
-        /***************************************************/
-        /* Elementary FORTRAN datatypes defined in MPI 1.1 */
-        /***************************************************/
-        case MPI_LOGICAL:          case MPI_INTEGER: case MPI_REAL:
-        case MPI_DOUBLE_PRECISION: case MPI_COMPLEX: case MPI_CHARACTER:
-        /* MPI_{BYTE, PACKED} handled above in C cases */
-        /*************************************************/
-        /* Optional FORTRAN datatypes defined in MPI 1.1 */
-        /*************************************************/
-        case MPI_DOUBLE_COMPLEX:
-#if defined(HAVE_MPI_INTEGER1)
-        case MPI_INTEGER1:
-#endif
-#if defined(HAVE_MPI_INTEGER2)
-        case MPI_INTEGER2:
-#endif
-#if defined(HAVE_MPI_INTEGER4)
-        case MPI_INTEGER4:
-#endif
-#if defined(HAVE_MPI_INTEGER8)
-        case MPI_INTEGER8:
-#endif
-#if defined(HAVE_MPI_INTEGER16)
-        case MPI_INTEGER16
-#endif
-#if defined(HAVE_MPI_REAL2)
-            case MPI_REAL2:
-#endif
-        /************************************************************/
-        /* Additional optional FORTRAN datatypes defined in MPI 2.0 */
-        /************************************************************/
-#if defined(HAVE_MPI_REAL4)
-        case MPI_REAL4:
-#endif
-#if defined(HAVE_MPI_REAL8)
-        case MPI_REAL8:
-#endif
-#if defined(HAVE_MPI_REAL16)
-        case MPI_REAL16:
-#endif
-#if defined(HAVE_MPI_REAL4)
-        case MPI_COMPLEX8:
-#endif
-#if defined(HAVE_MPI_REAL8)
-        case MPI_COMPLEX16:
-#endif
-#if defined(HAVE_MPI_REAL16)
-        case MPI_COMPLEX32:
-#endif
-        /****************************************************************/
-        /* FORTRAN datatypes for reduction functions defined in MPI 1.1 */
-        /****************************************************************/
-        case MPI_2REAL: case MPI_2DOUBLE_PRECISION: case MPI_2INTEGER:
-
-        /*****************************************************************/
-        /* FORTRAN datatypes for reduction functions defined in mpi.h.in */
-        /*****************************************************************/
-        case MPI_2COMPLEX: case MPI_2DOUBLE_COMPLEX: 
-        { 
-            /* *ALL* the Fortran datatype cases are handled by the code in this block */
-            int m = mpig_datatype_get_ctype_size_multiplier(el_type);
-            mpig_ctype_t remote_ctype = mpig_datatype_get_remote_ctype(vc, el_type);
-            int local_csize_of_remote_ctype = mpig_datatype_get_local_sizeof_ctype(remote_ctype);
-
-            if (FALSE && local_csize_of_remote_ctype <= MPID_Datatype_get_basic_size(el_type))
+            case MPIG_CTYPE_FLOAT:
             {
-                /* OK to receive directly into destination buffer */
-                switch (remote_ctype)
-                {
-                    case MPIG_CTYPE_FLOAT:
-                    {
-                        globus_dc_get_float(s, (float *) d, m * c, f);
-                        break;
-                    }
-                    case MPIG_CTYPE_DOUBLE:
-                    {
-                        globus_dc_get_double(s, (double *) d, m * c, f);
-                        break;
-                    }
-                    case MPIG_CTYPE_CHAR:
-                    {
-                        globus_dc_get_char(s, (char *) d, m * c, f);
-                        break;
-                    }
-                    case MPIG_CTYPE_SHORT:
-                    {
-                        globus_dc_get_short(s, (short *) d, m * c, f);
-                        break;
-                    }
-                    case MPIG_CTYPE_INT:
-                    {
-                        globus_dc_get_int(s, (int *) d, m * c, f);
-                        break;
-                    }
-                    case MPIG_CTYPE_LONG:
-                    {
-                        globus_dc_get_long(s, (long *) d, m * c, f);
-                        break;
-                    }
-                    case MPIG_CTYPE_LONG_LONG:
-                    {
-                        globus_dc_get_long_long(s, (long long *) d, m * c, f);
-                        break;
-                    }
-                    case MPIG_CTYPE_UNSIGNED_CHAR:
-                    {
-                        globus_dc_get_u_char(s, (unsigned char *) d, m * c, f);
-                        break;
-                    }
-                    case MPIG_CTYPE_UNSIGNED_SHORT:
-                    {
-                        globus_dc_get_u_short(s, (unsigned short *) d, m * c, f);
-                        break;
-                    }
-                    case MPIG_CTYPE_UNSIGNED_INT:
-                    {
-                        globus_dc_get_u_int(s, (unsigned int *) d, m * c, f);
-                        break;
-                    }
-                    case MPIG_CTYPE_UNSIGNED_LONG:
-                    {
-                        globus_dc_get_u_long(s, (unsigned long *) d, m * c, f);
-                        break;
-                    }
-                    case MPIG_CTYPE_UNSIGNED_LONG_LONG:
-                    {
-                        nexus_dc_get_u_long_long(s, (unsigned long long *) d, m * c, f);
-                        break;
-                    }
-                    default:
-                    {
-                        char err_str[256];
-
-                        /* TODO: generate returnable error code rather than aborting */
-                        MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPIG_CTYPE, remote_ctype=%d", remote_ctype);
-                        MPID_Abort(NULL, MPI_SUCCESS, 13, err_str);
-                        break;
-                    }
-                } /* end switch() */
+                globus_dc_get_float(src, (float *) dest, mult * count, df);
+                break;
             }
-            else /* (local_csize_of_remote_ctype > MPID_Datatype_get_basic_size(el_type)) */
+            case MPIG_CTYPE_DOUBLE:
             {
-                /* 
-                   --NOT-- OK to receive directly into destination buffer  ...
-                   ... need to convert one at a time
-                */
-                mpig_ctype_t local_ctype = mpig_datatype_get_local_ctype(el_type);
-                unsigned i;
-                /* single-instance temp buffs */
-                union
-                {
-                    float t_float;
-                    double t_double;
-                    char t_char;
-                    short t_short;
-                    int t_int;
-                    long t_long;
-                    long long t_long_long;
-                    unsigned char t_unsigned_char;
-                    unsigned short t_unsigned_short;
-                    unsigned int t_unsigned_int;
-                    unsigned long t_unsigned_long;
-                    unsigned long long t_unsigned_long_long;
-                }
-                tmp_buf;
-                void * tmp_buf_p = NULL;
+                globus_dc_get_double(src, (double *) dest, mult * count, df);
+                break;
+            }
+            case MPIG_CTYPE_CHAR:
+            {
+                globus_dc_get_char(src, (char *) dest, mult * count, df);
+                break;
+            }
+            case MPIG_CTYPE_SHORT:
+            {
+                globus_dc_get_short(src, (short *) dest, mult * count, df);
+                break;
+            }
+            case MPIG_CTYPE_INT:
+            {
+                globus_dc_get_int(src, (int *) dest, mult * count, df);
+                break;
+            }
+            case MPIG_CTYPE_LONG:
+            {
+                globus_dc_get_long(src, (long *) dest, mult * count, df);
+                break;
+            }
+            case MPIG_CTYPE_LONG_LONG:
+            {
+                globus_dc_get_long_long(src, (long long *) dest, mult * count, df);
+                break;
+            }
+            case MPIG_CTYPE_UNSIGNED_CHAR:
+            {
+                globus_dc_get_u_char(src, (unsigned char *) dest, mult * count, df);
+                break;
+            }
+            case MPIG_CTYPE_UNSIGNED_SHORT:
+            {
+                globus_dc_get_u_short(src, (unsigned short *) dest, mult * count, df);
+                break;
+            }
+            case MPIG_CTYPE_UNSIGNED_INT:
+            {
+                globus_dc_get_u_int(src, (unsigned int *) dest, mult * count, df);
+                break;
+            }
+            case MPIG_CTYPE_UNSIGNED_LONG:
+            {
+                globus_dc_get_u_long(src, (unsigned long *) dest, mult * count, df);
+                break;
+            }
+            case MPIG_CTYPE_UNSIGNED_LONG_LONG:
+            {
+                nexus_dc_get_u_long_long(src, (unsigned long long *) dest, mult * count, df);
+                break;
+            }
+            default:
+            {
+                char err_str[256];
 
-                for (i = 0; i < m * c; i ++)
-                {
-                    switch (remote_ctype)
-                    {
-                        case MPIG_CTYPE_FLOAT:
-                        {
-                            globus_dc_get_float(s, &tmp_buf.t_float, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_float;
-                            break;
-                        }
-                        case MPIG_CTYPE_DOUBLE:
-                        {
-                            globus_dc_get_double(s, &tmp_buf.t_double, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_double;
-                            tmp_buf_p = &tmp_buf.t_double;
-                            break;
-                        }
-                        case MPIG_CTYPE_CHAR:
-                        {
-                            globus_dc_get_char(s, &tmp_buf.t_char, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_char;
-                            break;
-                        }
-                        case MPIG_CTYPE_SHORT:
-                        {
-                            globus_dc_get_short(s, &tmp_buf.t_short, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_short;
-                            break;
-                        }
-                        case MPIG_CTYPE_INT:
-                        {
-                            globus_dc_get_int(s, &tmp_buf.t_int, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_int;
-                            break;
-                        }
-                        case MPIG_CTYPE_LONG:
-                        {
-                            globus_dc_get_long(s, &tmp_buf.t_long, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_long;
-                            break;
-                        }
-                        case MPIG_CTYPE_LONG_LONG:
-                        {
-                            globus_dc_get_long_long(s, &tmp_buf.t_long_long, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_long_long;
-                            break;
-                        }
-                        case MPIG_CTYPE_UNSIGNED_CHAR:
-                        {
-                            globus_dc_get_u_char(s, &tmp_buf.t_unsigned_char, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_unsigned_char;
-                            break;
-                        }
-                        case MPIG_CTYPE_UNSIGNED_SHORT:
-                        {
-                            globus_dc_get_u_short(s, &tmp_buf.t_unsigned_short, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_unsigned_short;
-                            break;
-                        }
-                        case MPIG_CTYPE_UNSIGNED_INT:
-                        {
-                            globus_dc_get_u_int(s, &tmp_buf.t_unsigned_int, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_unsigned_int;
-                            break;
-                        }
-                        case MPIG_CTYPE_UNSIGNED_LONG:
-                        {
-                            globus_dc_get_u_long(s, &tmp_buf.t_unsigned_long, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_unsigned_long;
-                            break;
-                        }
-                        case MPIG_CTYPE_UNSIGNED_LONG_LONG:
-                        {
-                            nexus_dc_get_u_long_long(s, &tmp_buf.t_unsigned_long_long, 1, f);
-                            tmp_buf_p = (void *) &tmp_buf.t_unsigned_long_long;
-                            break;
-                        }
-                        default:
-                        {
-                            char err_str[256];
-                            
-                            /* TODO: generate returnable error code rather than aborting */
-                            MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPIG_CTYPE, remote_ctype=%d", remote_ctype);
-                            MPID_Abort(NULL, MPI_SUCCESS, 13, err_str);
-                            break;
-                        }
-                    } /* end switch(remote_ctype) */
-
-                    switch (local_ctype)
-                    {
-                        case MPIG_CTYPE_FLOAT:
-                        {
-                            *((float *) d) = *((float *) tmp_buf_p);
-                            d += sizeof(float);
-                            break;
-                        }
-                        case MPIG_CTYPE_DOUBLE:
-                        {
-                            *((double *) d) = *((double *) tmp_buf_p);
-                            d += sizeof(double);
-                            break;
-                        }
-                        case MPIG_CTYPE_CHAR:
-                        {
-                            *((char *) d) = *((char *) tmp_buf_p);
-                            d += sizeof(char);
-                            break;
-                        }
-                        case MPIG_CTYPE_SHORT:
-                        {
-                            *((short *) d) = *((short *) tmp_buf_p);
-                            d += sizeof(short);
-                            break;
-                        }
-                        case MPIG_CTYPE_INT:
-                        {
-                            *((int *) d) =  *((int *) tmp_buf_p);
-                            d += sizeof(int);
-                            break;
-                        }
-                        case MPIG_CTYPE_LONG:
-                        {
-                            *((long *) d) = *((long *) tmp_buf_p);
-                            d += sizeof(long);
-                            break;
-                        }
-                        case MPIG_CTYPE_LONG_LONG:
-                        {
-                            *((long long *) d) = *((long long *) tmp_buf_p);
-                            d += sizeof(long long);
-                            break;
-                        }
-                        case MPIG_CTYPE_UNSIGNED_CHAR:
-                        {
-                            *((unsigned char *) d) = *((unsigned char *) tmp_buf_p);
-                            d += sizeof(unsigned char);
-                            break;
-                        }
-                        case MPIG_CTYPE_UNSIGNED_SHORT:
-                        {
-                            *((unsigned short *) d) = *((unsigned short *) tmp_buf_p);
-                            d += sizeof(unsigned short);
-                            break;
-                        }
-                        case MPIG_CTYPE_UNSIGNED_INT:
-                        {
-                            *((unsigned int *) d) = *((unsigned int *) tmp_buf_p);
-                            d += sizeof(unsigned int);
-                            break;
-                        }
-                        case MPIG_CTYPE_UNSIGNED_LONG:
-                        {
-                            *((unsigned long *) d) = *((unsigned long *) tmp_buf_p);
-                            d += sizeof(unsigned long);
-                            break;
-                        }
-                        case MPIG_CTYPE_UNSIGNED_LONG_LONG:
-                        {
-                            *((unsigned long *) d) = *((unsigned long long *) tmp_buf_p);
-                            d += sizeof(unsigned long long);
-                            break;
-                        }
-                        default:
-                        {
-                            char err_str[256];
-
-                            /* TODO: generate returnable error code rather than aborting */
-                            MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPIG_CTYPE, local_ctype=%d", local_ctype);
-                            MPID_Abort(NULL, MPI_SUCCESS, 13, err_str);
-                            break;
-                        }
-                    }
-                    /* end switch(local_ctype) */
-                                                
-                } /* end for (i = 0; i < m * c; i ++) */
-            } /* end if/else (local_csize_of_remote_ctype <= MPID_Datatype_get_basic_size(el_type)) */
-        } /* end all Fortran dataype cases */
-        break;
-#endif
-        default:
-        {
-            char err_str[256];
-            
-            /* TODO: generate returnable error code rather than aborting */
-            MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPI datatype, el_type=" MPIG_HANDLE_FMT, el_type);
-            MPID_Abort(NULL, MPI_SUCCESS, 13, err_str);
-            break;
+                /* TODO: generate returnable error code rather than aborting */
+                MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPIG_CTYPE, dt=" MPIG_HANDLE_FMT ", remote_ctype=%d",
+                    el_type, remote_ctype);
+                MPID_Abort(NULL, MPI_SUCCESS, 13, err_str);
+                break;
+            }
         }
-    } /* end switch(el_type) */
-
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_segment_globus_dc_unpack_contig);
-    return 0;
-
-} /* end mpig_segment_unpack_contig_globus_dc() */
-
-/* 
- * sizeof routines available from Globus ... see globus_dc.h 
- *  globus_dc_sizeof_remote_{byte, char, short, int, long, long_long, float, double}
- *  globus_dc_sizeof_remote_u_{char, short, int, long}
- *
- * FIXME: it would be simpler to get the sizes from the remote host and stick them in an array attached to the VC.  doing this
- * would likely improve performance as well.
- */
-
-#undef FUNCNAME
-#define FUNCNAME mpig_segment_globus_dc_sizeof_datatype
-static MPI_Aint mpig_segment_globus_dc_sizeof_datatype(MPI_Datatype el_type, void *v_paramp)
-{
-    const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_segment_globus_dc_piece_params *p = (struct mpig_segment_globus_dc_piece_params *) v_paramp;
-    int c = mpig_datatype_get_ctype_size_multiplier(el_type);
-    int f = p->src_format;
-    mpig_vc_t * vc = p->vc;
-    MPI_Aint size = (MPI_Aint) -1; /* element size */
-    MPIG_STATE_DECL(MPID_STATE_mpig_segment_globus_dc_sizeof_datatype);
-    
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_segment_globus_dc_sizeof_datatype);
-
-    MPIG_UNUSED_VAR(fcname);
-    /* 
-     * sizeof routines available from Globus ... see globus_dc.h 
-     *  globus_dc_sizeof_remote_{byte, char, short, int, long, long_long, float, double}
-     *  globus_dc_sizeof_remote_u_{char, short, int, long}
-     */
-    switch (el_type)
+        /* end switch(remote_ctype) */
+    }
+    else /* (local_csize_of_remote_ctype > MPID_Datatype_get_basic_size(el_type)) */
     {
-        /*********************************************/
-        /* Elementary C datatypes defined in MPI 1.1 */
-        /*********************************************/
-        case MPI_CHAR:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_char(c,f);
-            break;
-        }
-        case MPI_SHORT:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_short(c,f);
-            break;
-        }
-        case MPI_INT:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_int(c,f);
-            break;
-        }
-        case MPI_LONG:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_long(c,f);
-            break;
-        }
-#if defined(HAVE_MPI_LONG_LONG)
-        case MPI_LONG_LONG:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_long_long(c,f);
-            break;
-        }
-#endif
-        case MPI_UNSIGNED_CHAR:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_u_char(c,f);
-            break;
-        }
-        case MPI_UNSIGNED_SHORT:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_u_short(c,f);
-            break;
-        }
-        case MPI_UNSIGNED:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_u_int(c,f);
-            break;
-        }
-        case MPI_UNSIGNED_LONG:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_u_long(c,f);
-            break;
-        }
-        case MPI_FLOAT:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_float(c,f);
-            break;
-        }
-        case MPI_DOUBLE:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_double(c,f);
-            break;
-        }
-#if defined(HAVE_MPI_LONG_DOUBLE)
-        case MPI_LONG_DOUBLE:
-        {
-            /* NOTE: this datatype is not supported by the Globus data conversion library.  for that reason, this datatype is
-               disabled by mpich2prereq-globus. */
-            break;
-        }
-#endif
-        case MPI_PACKED:
-        case MPI_BYTE:
-        {
-            /* BOTH OF THESE MUST BE A MEMCPY, (i.e., NOT CONVERTED) */
-               size = (MPI_Aint) 1;
-               break;
-        }
-
-        /*******************************************/
-        /* Optional C datatypes defined in MPI 1.1 */
-        /*******************************************/
-#if FALSE && defined(HAVE_MPI_LONG_LONG)
-        /* MPICH2 defined MPI_LONG_LONG and MPI_LONG_LONG_INT as the same thing */
-        case MPI_LONG_LONG_INT:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_long_long(c,f);
-            break;
-        }
-#endif
-
-        /**********************************************************/
-        /* C datatypes for reduction functions defined in MPI 1.1 */
-        /**********************************************************/
-
         /* 
-         * NOTE: MPI_{FLOAT,DOUBLE,LONG,SHORT,LONG_DOUBLE}_INT are all constructed during intialization as derived datatypes
-         * and are therefore decomposed by the segment code and eventually handled by this function as elementary datatypes
-         * ... in other words, this function does NOT need to handle those cases explicitly.
-         */
-        case MPI_2INT:
+           --NOT-- OK to receive directly into destination buffer  ...
+           ... need to convert one at a time
+        */
+        mpig_ctype_t local_ctype = mpig_datatype_get_local_ctype(el_type);
+        unsigned i;
+        /* single-instance temp buffs */
+        union
         {
-            size = (MPI_Aint) globus_dc_sizeof_remote_int(c,f);
-            break;
+            float t_float;
+            double t_double;
+            char t_char;
+            short t_short;
+            int t_int;
+            long t_long;
+            long long t_long_long;
+            unsigned char t_unsigned_char;
+            unsigned short t_unsigned_short;
+            unsigned int t_unsigned_int;
+            unsigned long t_unsigned_long;
+            unsigned long long t_unsigned_long_long;
         }
+        tmp_buf;
+        void * tmp_buf_p = NULL;
 
-        /*************************************************/
-        /* New Elementary C datatypes defined in MPI 2.0 */
-        /*************************************************/
-        case MPI_WCHAR:
+        for (i = 0; i < mult * count; i ++)
         {
-            /* TODO: add conversion for wide characters (is wchar_t always a fixed width integer?) */
-            MPIU_Assertp(FALSE && "MPI_WCHAR conversion not implemented");
-            break;
-        }
-        case MPI_SIGNED_CHAR:
-        {
-            size = (MPI_Aint) globus_dc_sizeof_remote_char(c,f);
-            break;
-        }
-#if defined(HAVE_MPI_LONG_LONG)
-        case MPI_UNSIGNED_LONG_LONG:
-        {
-            size = (MPI_Aint) nexus_dc_sizeof_remote_u_long_long(c,f);
-            break;
-        }
-#endif
-
-#ifdef HAVE_FORTRAN_BINDING
-        /***************************************************/
-        /* Elementary FORTRAN datatypes defined in MPI 1.1 */
-        /***************************************************/
-        case MPI_LOGICAL:          case MPI_INTEGER: case MPI_REAL:
-        case MPI_DOUBLE_PRECISION: case MPI_COMPLEX: case MPI_CHARACTER:
-        /* MPI_{BYTE, PACKED} handled above in C cases */
-
-        /*************************************************/
-        /* Optional FORTRAN datatypes defined in MPI 1.1 */
-        /*************************************************/
-        case MPI_DOUBLE_COMPLEX:
-
-        /****************************************************************/
-        /* FORTRAN datatypes for reduction functions defined in MPI 1.1 */
-        /****************************************************************/
-        case MPI_2REAL: case MPI_2DOUBLE_PRECISION: case MPI_2INTEGER:
-
-        /*****************************************************************/
-        /* FORTRAN datatypes for reduction functions defined in mpi.h.in */
-        /*****************************************************************/
-        case MPI_2COMPLEX: case MPI_2DOUBLE_COMPLEX: 
-        { 
-            /* *ALL* the Fortran datatype cases are handled by the code in this block */
-            mpig_ctype_t remote_ctype = mpig_datatype_get_remote_ctype(vc, el_type);
-
             switch (remote_ctype)
             {
                 case MPIG_CTYPE_FLOAT:
                 {
-                    size = (MPI_Aint) globus_dc_sizeof_remote_float(c,f);
+                    globus_dc_get_float(src, &tmp_buf.t_float, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_float;
                     break;
                 }
                 case MPIG_CTYPE_DOUBLE:
                 {
-                    size = (MPI_Aint) globus_dc_sizeof_remote_double(c,f);
+                    globus_dc_get_double(src, &tmp_buf.t_double, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_double;
+                    tmp_buf_p = &tmp_buf.t_double;
                     break;
                 }
                 case MPIG_CTYPE_CHAR:
                 {
-                    size = (MPI_Aint) globus_dc_sizeof_remote_char(c,f);
+                    globus_dc_get_char(src, &tmp_buf.t_char, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_char;
                     break;
                 }
                 case MPIG_CTYPE_SHORT:
                 {
-                    size = (MPI_Aint) globus_dc_sizeof_remote_short(c,f);
+                    globus_dc_get_short(src, &tmp_buf.t_short, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_short;
                     break;
                 }
                 case MPIG_CTYPE_INT:
                 {
-                    size = (MPI_Aint) globus_dc_sizeof_remote_int(c,f);
+                    globus_dc_get_int(src, &tmp_buf.t_int, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_int;
                     break;
                 }
                 case MPIG_CTYPE_LONG:
                 {
-                    size = (MPI_Aint) globus_dc_sizeof_remote_long(c,f);
+                    globus_dc_get_long(src, &tmp_buf.t_long, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_long;
                     break;
                 }
                 case MPIG_CTYPE_LONG_LONG:
                 {
-                    size = (MPI_Aint) globus_dc_sizeof_remote_long_long(c,f);
+                    globus_dc_get_long_long(src, &tmp_buf.t_long_long, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_long_long;
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_CHAR:
                 {
-                    size = (MPI_Aint) globus_dc_sizeof_remote_u_char(c,f);
+                    globus_dc_get_u_char(src, &tmp_buf.t_unsigned_char, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_unsigned_char;
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_SHORT:
                 {
-                    size = (MPI_Aint) globus_dc_sizeof_remote_u_short(c,f);
+                    globus_dc_get_u_short(src, &tmp_buf.t_unsigned_short, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_unsigned_short;
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_INT:
                 {
-                    size = (MPI_Aint) globus_dc_sizeof_remote_u_int(c,f);
+                    globus_dc_get_u_int(src, &tmp_buf.t_unsigned_int, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_unsigned_int;
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_LONG:
                 {
-                    size = (MPI_Aint) globus_dc_sizeof_remote_u_long(c,f);
+                    globus_dc_get_u_long(src, &tmp_buf.t_unsigned_long, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_unsigned_long;
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_LONG_LONG:
                 {
-                    size = (MPI_Aint) nexus_dc_sizeof_remote_u_long_long(c,f);
+                    nexus_dc_get_u_long_long(src, &tmp_buf.t_unsigned_long_long, 1, df);
+                    tmp_buf_p = (void *) &tmp_buf.t_unsigned_long_long;
+                    break;
+                }
+                default:
+                {
+                    char err_str[256];
+                            
+                    /* TODO: generate returnable error code rather than aborting */
+                    MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPIG_CTYPE, dt=" MPIG_HANDLE_FMT ", remote_ctype=%d",
+                        el_type, remote_ctype);
+                    MPID_Abort(NULL, MPI_SUCCESS, 13, err_str);
+                    break;
+                }
+            } /* end switch(remote_ctype) */
+
+            switch (local_ctype)
+            {
+                case MPIG_CTYPE_FLOAT:
+                {
+                    *((float *) dest) = *((float *) tmp_buf_p);
+                    dest += sizeof(float);
+                    break;
+                }
+                case MPIG_CTYPE_DOUBLE:
+                {
+                    *((double *) dest) = *((double *) tmp_buf_p);
+                    dest += sizeof(double);
+                    break;
+                }
+                case MPIG_CTYPE_CHAR:
+                {
+                    *((char *) dest) = *((char *) tmp_buf_p);
+                    dest += sizeof(char);
+                    break;
+                }
+                case MPIG_CTYPE_SHORT:
+                {
+                    *((short *) dest) = *((short *) tmp_buf_p);
+                    dest += sizeof(short);
+                    break;
+                }
+                case MPIG_CTYPE_INT:
+                {
+                    *((int *) dest) =  *((int *) tmp_buf_p);
+                    dest += sizeof(int);
+                    break;
+                }
+                case MPIG_CTYPE_LONG:
+                {
+                    *((long *) dest) = *((long *) tmp_buf_p);
+                    dest += sizeof(long);
+                    break;
+                }
+                case MPIG_CTYPE_LONG_LONG:
+                {
+                    *((long long *) dest) = *((long long *) tmp_buf_p);
+                    dest += sizeof(long long);
+                    break;
+                }
+                case MPIG_CTYPE_UNSIGNED_CHAR:
+                {
+                    *((unsigned char *) dest) = *((unsigned char *) tmp_buf_p);
+                    dest += sizeof(unsigned char);
+                    break;
+                }
+                case MPIG_CTYPE_UNSIGNED_SHORT:
+                {
+                    *((unsigned short *) dest) = *((unsigned short *) tmp_buf_p);
+                    dest += sizeof(unsigned short);
+                    break;
+                }
+                case MPIG_CTYPE_UNSIGNED_INT:
+                {
+                    *((unsigned int *) dest) = *((unsigned int *) tmp_buf_p);
+                    dest += sizeof(unsigned int);
+                    break;
+                }
+                case MPIG_CTYPE_UNSIGNED_LONG:
+                {
+                    *((unsigned long *) dest) = *((unsigned long *) tmp_buf_p);
+                    dest += sizeof(unsigned long);
+                    break;
+                }
+                case MPIG_CTYPE_UNSIGNED_LONG_LONG:
+                {
+                    *((unsigned long *) dest) = *((unsigned long long *) tmp_buf_p);
+                    dest += sizeof(unsigned long long);
                     break;
                 }
                 default:
@@ -1086,124 +616,19 @@ static MPI_Aint mpig_segment_globus_dc_sizeof_datatype(MPI_Datatype el_type, voi
                     char err_str[256];
 
                     /* TODO: generate returnable error code rather than aborting */
-                    MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPIG_CTYPE, remote_ctype=%d", remote_ctype);
+                    MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPIG_CTYPE, dt=" MPIG_HANDLE_FMT ", local_ctype=%d",
+                        el_type, local_ctype);
                     MPID_Abort(NULL, MPI_SUCCESS, 13, err_str);
-                    size = (MPI_Aint) 0;
                     break;
                 }
-            } /* end switch(remote_ctype) */
-                    
-            break;
-        } /* end all variable sized Fortran dataype cases */
+            }
+            /* end switch(local_ctype) */
+        } /* end for (i = 0; i < mult * count; i ++) */
+    } /* end if/else (local_csize_of_remote_ctype <= MPID_Datatype_get_basic_size(el_type)) */
 
-        /************************************************************/
-        /* Optional fixed size FORTRAN datatypes defined in MPI 1.1 */
-        /************************************************************/
-#if defined(HAVE_MPI_INTEGER1)
-        case MPI_INTEGER1:
-        {
-            size = (MPI_Aint) 1;
-            break;
-        }
-#endif
-#if defined(HAVE_MPI_INTEGER2)
-        case MPI_INTEGER2:
-        {
-            size = (MPI_Aint) 2;
-            break;
-        }
-#endif
-#if defined(HAVE_MPI_INTEGER4)
-        case MPI_INTEGER4:
-        {
-            size = (MPI_Aint) 4;
-            break;
-        }
-#endif
-#if defined(HAVE_MPI_INTEGER8)
-        case MPI_INTEGER8:
-        {
-            size = (MPI_Aint) 8;
-            break;
-        }
-#endif
-#if defined(HAVE_MPI_INTEGER16)
-        case MPI_INTEGER16
-        {
-            size = (MPI_Aint) 16;
-            break;
-        }
-#endif
-#if defined(HAVE_MPI_REAL2)
-            case MPI_REAL2:
-        {
-            size = (MPI_Aint) 2;
-            break;
-        }
-#endif
-        /************************************************************/
-        /* Additional optional FORTRAN datatypes defined in MPI 2.0 */
-        /************************************************************/
-#if defined(HAVE_MPI_REAL4)
-        case MPI_REAL4:
-        {
-            size = (MPI_Aint) 4;
-            break;
-        }
-#endif
-#if defined(HAVE_MPI_REAL8)
-        case MPI_REAL8:
-        {
-            size = (MPI_Aint) 8;
-            break;
-        }
-#endif
-#if defined(HAVE_MPI_REAL16)
-        case MPI_REAL16:
-        {
-            size = (MPI_Aint) 16;
-            break;
-        }
-#endif
-#if defined(HAVE_MPI_REAL4)
-        case MPI_COMPLEX8:
-        {
-            size = (MPI_Aint) 8;
-            break;
-        }
-#endif
-#if defined(HAVE_MPI_REAL8)
-        case MPI_COMPLEX16:
-        {
-            size = (MPI_Aint) 16;
-            break;
-        }
-#endif
-#if defined(HAVE_MPI_REAL16)
-        case MPI_COMPLEX32:
-        {
-            size = (MPI_Aint) 32;
-            break;
-        }
-#endif
-#endif
-        default:
-        {
-            char err_str[256];
-            
-            /* TODO: generate returnable error code rather than aborting */
-            MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPI datatype, el_type=" MPIG_HANDLE_FMT, el_type);
-            MPID_Abort(NULL, MPI_SUCCESS, 13, err_str);
-            break;
-        }
-    } /* end switch() */
-
-    /* MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_CONTIG_UNPACK_EXTERNAL32_TO_BUF); */
-
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_segment_globus_dc_sizeof_datatype);
-    return size;
-
-} /* end mpig_segment_globus_dc_sizeof_datatype() */
+    return mpi_errno;
+}
+/* end mpig_segment_globus_dc_unpack_contig() */
 
 /********************************/
 /* EXTERNALLY VISIBLE FUNCTIONS */
@@ -1215,17 +640,19 @@ void mpig_segment_globus_dc_unpack(
     DLOOP_Offset first,         /* src  */
     DLOOP_Offset *lastp,        /* src  */
     DLOOP_Buffer unpack_buffer, /* src  */
-    int src_format, 
-    mpig_vc_t *vc)
+    char * src_ctype_map,
+    char * src_sizeof_ctypes,
+    int src_gdc_format)
 {
     struct mpig_segment_globus_dc_piece_params unpack_params;
     /* MPIDI_STATE_DECL(MPID_STATE_mpig_segment_globus_dc_unpack); */
     
     /* MPIDI_FUNC_ENTER(MPID_STATE_mpig_segment_globus_dc_unpack); */
 
-    unpack_params.src_buffer = unpack_buffer;
-    unpack_params.src_format = src_format;
-    unpack_params.vc         = vc;
+    unpack_params.common.src_buffer = unpack_buffer;
+    unpack_params.common.src_ctype_map = src_ctype_map;
+    unpack_params.common.src_sizeof_ctypes = src_sizeof_ctypes;
+    unpack_params.globus.src_gdc_format = src_gdc_format;
 
     MPID_Segment_manipulate(
         segp,
@@ -1254,7 +681,7 @@ void mpig_segment_globus_dc_unpack(
            (i.e., what the segment does NOT point to).  in our case, data sizes 
            of MPI datatypes on the sending side.
         */
-        mpig_segment_globus_dc_sizeof_datatype,
+        mpig_segment_sizeof_source_datatype,
         (void *) &unpack_params);
 
     /* MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_UNPACK_EXTERNAL); */

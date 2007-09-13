@@ -20,7 +20,7 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
     (vc_)->cmu.xio.state = MPIG_CM_XIO_VC_STATE_UNCONNECTED;			\
     mpig_cm_xio_vc_set_contact_string((vc_), NULL);				\
     (vc_)->cmu.xio.endian = MPIG_ENDIAN_UNKNOWN;				\
-    (vc_)->cmu.xio.df = -1;							\
+    (vc_)->cmu.xio.gdc_df = -1;                                                \
     (vc_)->cmu.xio.handle = NULL;						\
     (vc_)->cmu.xio.conn_seqnum = 0;						\
     (vc_)->cmu.xio.active_sreq = NULL;						\
@@ -42,7 +42,7 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
     MPIU_Free(mpig_cm_xio_vc_get_contact_string(vc_));			\
     mpig_cm_xio_vc_set_contact_string(vc_, MPIG_INVALID_PTR);		\
     (vc_)->cmu.xio.endian = MPIG_ENDIAN_UNKNOWN;			\
-    (vc_)->cmu.xio.df = -1;						\
+    (vc_)->cmu.xio.gdc_df = -1;						\
     (vc_)->cmu.xio.handle = MPIG_INVALID_PTR;				\
     (vc_)->cmu.xio.conn_seqnum = 0;					\
     (vc_)->cmu.xio.active_sreq = MPIG_INVALID_PTR;			\
@@ -112,12 +112,12 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
 
 #define mpig_cm_xio_vc_set_data_format(vc_, df_)								\
 {														\
-    (vc_)->cmu.xio.df = (df_);											\
+    (vc_)->cmu.xio.gdc_df = (df_);                                                                              \
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC, "VC - setting XIO VC data format: vc=" MPIG_PTR_FMT ", df=%d",	\
 	MPIG_PTR_CAST(vc_), (df_)));										\
 }
 
-#define mpig_cm_xio_vc_get_data_format(vc_) ((vc_)->cmu.xio.df)
+#define mpig_cm_xio_vc_get_data_format(vc_) ((vc_)->cmu.xio.gdc_df)
 
 #define mpig_cm_xio_vc_get_state_class(vc_)								\
     ((mpig_cm_xio_vc_state_classes_t)									\

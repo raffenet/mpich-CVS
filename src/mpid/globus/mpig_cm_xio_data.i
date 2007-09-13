@@ -172,7 +172,7 @@
 }
 
 #define mpig_cm_xio_msg_hdr_local_sizeof_data_size(vc_) (nexus_dc_sizeof_u_long_long(1))
-#define mpig_cm_xio_msg_hdr_remote_sizeof_data_size(vc_) (nexus_dc_sizeof_remote_u_long_long(1, (vc_)->cmu.xio.df))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_data_size(vc_) (nexus_dc_sizeof_remote_u_long_long(1, (vc_)->cmu.xio.gdc_df))
 
 #define mpig_cm_xio_msg_hdr_put_data_size(vc_, msgbuf_, data_size_);						\
 {														\
@@ -188,7 +188,7 @@
 {														\
     unsigned long long data_size__;										\
     nexus_byte_t * ptr__ = (nexus_byte_t *) mpig_databuf_get_pos_ptr(msgbuf_);					\
-    nexus_dc_get_u_long_long(&ptr__, &data_size__, 1, (vc_)->cmu.xio.df);					\
+    nexus_dc_get_u_long_long(&ptr__, &data_size__, 1, (vc_)->cmu.xio.gdc_df);					\
     *(data_size_p_) = data_size__;										\
     MPIU_Assertp(data_size__ == *(data_size_p_));								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", data_size=" MPIG_SIZE_FMT,	\
@@ -665,15 +665,15 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
     rreq_cmu->buf_size = cnt * dt_size;
     rreq_cmu->buf_true_lb = dt_true_lb;
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "df=%d, local_df=%d, buf_size=" MPIG_SIZE_FMT, rreq_cmu->df, GLOBUS_DC_FORMAT_LOCAL,
-		       rreq_cmu->buf_size));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "remote_gdc_df=%d, local_gdc_df=%d, buf_size=" MPIG_SIZE_FMT, rreq_cmu->gdc_df,
+        GLOBUS_DC_FORMAT_LOCAL, rreq_cmu->buf_size));
     
     /* rreq_cmu->stream_size -- must be set prior to calling this routine */
     rreq_cmu->stream_pos = 0;
     rreq_cmu->stream_max_pos = rreq_cmu->stream_size;
     rreq->status.count = 0;
 
-    if (FALSE && ((dt_contig && rreq_cmu->df == GLOBUS_DC_FORMAT_LOCAL) || cnt == 0))
+    if (FALSE && ((dt_contig && rreq_cmu->gdc_df == GLOBUS_DC_FORMAT_LOCAL) || cnt == 0))
     {
 	/* if the application buffer is contiguous, then receive data straight into the application buffer.  use of a segment is
 	   not required. */
@@ -683,7 +683,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
 	
 	rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_CONTIG;
     }
-    else if (FALSE && rreq_cmu->df == GLOBUS_DC_FORMAT_LOCAL &&
+    else if (FALSE && rreq_cmu->gdc_df == GLOBUS_DC_FORMAT_LOCAL &&
         (cnt * dt_nblks <= (MPIU_Size_t) mpig_iov_get_num_free_entries(rreq_cmu->iov) ||
             dt_size / dt_nblks >= MPIG_CM_XIO_DATA_DENSITY_THRESHOLD / (MPIU_Size_t) mpig_iov_get_num_entries(rreq_cmu->iov)))
     {
@@ -713,7 +713,8 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
 	   more data to be acquired in a single write operation.  the intermediate buffer is only allocated here if an unexpected
 	   buffer is not already attached to the request. */
 #       if defined(MPIG_DEBUG)
-        const char * const buf_desc = (FALSE && rreq_cmu->df == GLOBUS_DC_FORMAT_LOCAL) ? "sparse app buffer" : "foreign data format";
+        const char * const buf_desc = (FALSE && rreq_cmu->gdc_df == GLOBUS_DC_FORMAT_LOCAL) ? "sparse app buffer" :
+            "foreign data format";
 #       endif
         
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; initializing segment and allocating bufffer: rreq=" MPIG_HANDLE_FMT
@@ -743,7 +744,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
 	    }   /* --END ERROR HANDLING-- */
 	}
 	
-        if (FALSE && rreq_cmu->df == GLOBUS_DC_FORMAT_LOCAL)
+        if (FALSE && rreq_cmu->gdc_df == GLOBUS_DC_FORMAT_LOCAL)
         {
             rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_SPARSE;
         }
@@ -1060,7 +1061,8 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 	   an intermediate buffer is used to receive the data in condensed form, allowing more data to be received by a single
 	   read operation */
 #       if defined(MPIG_DEBUG)
-        const char * const buf_desc = (FALSE && rreq_cmu->df == GLOBUS_DC_FORMAT_LOCAL) ? "sparse app buffer" : "foreign data format";
+        const char * const buf_desc = (FALSE && rreq_cmu->gdc_df == GLOBUS_DC_FORMAT_LOCAL) ? "sparse app buffer" :
+            "foreign data format";
 #       endif
 	bool_t reload_iov = TRUE;
 	
@@ -1092,7 +1094,8 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
             else /* if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_FOREIGN) */
             {
                 mpig_segment_globus_dc_unpack(rreq_cmu->segp, (MPI_Aint) rreq_cmu->stream_pos, (MPI_Aint *) &last,
-                    mpig_databuf_get_base_ptr(rreq_cmu->databuf), rreq_cmu->df, mpig_request_get_vc(rreq));
+                    mpig_databuf_get_base_ptr(rreq_cmu->databuf), rreq_cmu->src_ctype_map, rreq_cmu->src_sizeof_ctypes,
+                    rreq_cmu->gdc_df);
             }
 	
 	    if (last != rreq_cmu->stream_pos)

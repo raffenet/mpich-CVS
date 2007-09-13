@@ -153,20 +153,29 @@ int mpig_datatype_get_local_sizeof_ctype(mpig_ctype_t ctype);
 
 #if defined(HAVE_GLOBUS_DC_MODULE)
 void mpig_segment_globus_dc_unpack(struct DLOOP_Segment * segp, DLOOP_Offset first, DLOOP_Offset * lastp,
-    DLOOP_Buffer unpack_buffer, int src_format, mpig_vc_t * vc);
+    DLOOP_Buffer unpack_buffer, char * src_ctype_map, char * src_sizeof_ctypes, int src_dc_format);
 #endif
 
-#define mpig_datatype_get_remote_ctype(/* mpig_vc_t ptr */ vc_, /* MPI_Datatype */ dt_) \
-    ((mpig_ctype_t) (vc_)->dt_ctype_map[MPID_Datatype_get_basic_id(dt_)])
+#define mpig_datatype_get_ctype(dt_, ctype_map_p_) \
+    ((mpig_ctype_t) (ctype_map_p_)[MPID_Datatype_get_basic_id(dt_)])
 
-#define mpig_datatype_get_local_ctype(/* MPI_Datatype */ dt_)  \
-    ((mpig_ctype_t) mpig_process.dt_ctype_map[MPID_Datatype_get_basic_id(dt_)])
+#define mpig_ctype_get_sizeof(ctype_, sizeof_ctypes_p_) \
+    ((int) (sizeof_ctypes_p_)[ctype_])
 
-#define mpig_datatype_get_local_sizeof_ctype(/* mpig_ctype_t */ ctype_) \
-    ((int) mpig_process.dt_local_sizeof_ctype[ctype_])
+#define mpig_datatype_get_remote_ctype(dt_, vc_) \
+    (mpig_datatype_get_ctype((dt_), mpig_vc_get_ctype_map_ptr(vc_)))
 
-#define mpig_datatype_get_ctype_size_multiplier(/* MPI_Datatype */ dt_) \
-    ((int) mpig_process.dt_ctype_size_multiplier[MPID_Datatype_get_basic_id(dt_)])
+#define mpig_ctype_get_remote_sizeof(ctype_, vc_) \
+    (mpig_ctype_get_sizeof((ctype_), mpig_vc_get_sizeof_ctypes_ptr(vc_)))
+
+#define mpig_datatype_get_local_ctype(dt_) \
+    (mpig_datatype_get_ctype((dt_), mpig_process.dt_ctype_map))
+
+#define mpig_ctype_get_local_sizeof(ctype_) \
+    (mpig_ctype_get_sizeof((ctype_), mpig_process.dt_sizeof_ctypes))
+
+#define mpig_datatype_get_num_ctypes(dt_) \
+    ((int) mpig_process.dt_num_ctypes[MPID_Datatype_get_basic_id(dt_)])
 
 #define mpig_datatype_get_local_size(dt_, dt_size_p_)                           \
 {                                                                               \
@@ -1335,6 +1344,10 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
 #define mpig_vc_get_app_num(vc_) ((vc_)->cms.app_num)
 
 #define mpig_vc_get_lan_id(vc_) ((vc_)->cms.lan_id)
+
+#define mpig_vc_get_ctype_map_ptr(vc_) ((vc_)->dt_ctype_map)
+
+#define mpig_vc_get_sizeof_ctypes_ptr(vc_) ((vc_)->dt_sizeof_ctypes)
 
 /* Thread safety and release consistency macros */
 #define mpig_vc_mutex_construct(vc_)	mpig_mutex_construct(&(vc_)->mutex)

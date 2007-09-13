@@ -724,8 +724,8 @@ typedef struct mpig_process
 
     /* mapping of MPI datatypes to C types and the local size of those C types */
     char dt_ctype_map[MPIG_DATATYPE_MAX_BASIC_TYPES];
-    char dt_local_sizeof_ctype[MPIG_CTYPE_LAST];
-    char dt_ctype_size_multiplier[MPIG_DATATYPE_MAX_BASIC_TYPES];
+    char dt_sizeof_ctypes[MPIG_CTYPE_LAST];
+    char dt_num_ctypes[MPIG_DATATYPE_MAX_BASIC_TYPES];
 
     MPIG_PROCESS_CMS_DECL
     

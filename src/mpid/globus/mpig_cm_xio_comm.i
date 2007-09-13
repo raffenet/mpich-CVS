@@ -1583,12 +1583,15 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
     mpig_cm_xio_request_set_sreq_type(rreq, sreq_type);
     mpig_request_set_remote_req_id(rreq, sreq_id);
     mpig_cm_xio_stream_set_size(rreq, stream_size);
-    rreq_cmu->df = vc_cmu->df; /* XXX: NEED TO DEAL WITH DATA THAT WAS SENT AS MPI_PACKED! */
+    /* XXX: NEED TO DEAL WITH DATA THAT WAS SENT AS MPI_PACKED! */
+    rreq_cmu->gdc_df = vc_cmu->gdc_df;
+    rreq_cmu->src_ctype_map = mpig_vc_get_ctype_map_ptr(vc);
+    rreq_cmu->src_sizeof_ctypes = mpig_vc_get_sizeof_ctypes_ptr(vc);
     
     /* fill in the status fields */
     rreq->status.MPI_SOURCE = rank;
     rreq->status.MPI_TAG = tag;
-    rreq->status.mpig_dc_format = vc_cmu->df;  /* XXX: may be different that local format if data was sent using MPI_PACKED */
+    rreq->status.mpig_dc_format = rreq_cmu->gdc_df;
     /* rreq->status.count is set by the stream unpack routines if the message was posted */
     
     if (rreq_found)
@@ -1887,12 +1890,15 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
     mpig_cm_xio_request_set_sreq_type(rreq, sreq_type);
     mpig_request_set_remote_req_id(rreq, sreq_id);
     mpig_cm_xio_stream_set_size(rreq, stream_size);
-    rreq_cmu->df = vc_cmu->df; /* XXX: NEED TO DEAL WITH DATA THAT WAS SENT AS MPI_PACKED! */
+    /* XXX: NEED TO DEAL WITH DATA THAT WAS SENT AS MPI_PACKED! */
+    rreq_cmu->gdc_df = vc_cmu->gdc_df;
+    rreq_cmu->src_ctype_map = mpig_vc_get_ctype_map_ptr(vc);
+    rreq_cmu->src_sizeof_ctypes = mpig_vc_get_sizeof_ctypes_ptr(vc);
     
     /* fill in the status fields */
     rreq->status.MPI_SOURCE = rank;
     rreq->status.MPI_TAG = tag;
-    rreq->status.mpig_dc_format = vc_cmu->df;  /* XXX: may be different that local format if data was sent using MPI_PACKED */
+    rreq->status.mpig_dc_format = rreq_cmu->gdc_df;
     /* rreq->status.count is set by the stream unpack routines if the message was posted */
     
     if (rreq_found)

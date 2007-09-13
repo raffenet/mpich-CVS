@@ -71,7 +71,7 @@ struct mpig_cm_xio_vc_cmu					\
     char * contact_string;					\
 								\
     /* data format of remote machine */				\
-    int df;							\
+    int gdc_df;							\
     mpig_endian_t endian;					\
 								\
     /* handle to the XIO connection */				\
@@ -145,7 +145,9 @@ struct mpig_cm_xio_request_cmu													\
     MPIG_DATABUF_DECL(msgbuf, MPIG_CM_XIO_REQUEST_MSGBUF_SIZE);									\
 																\
     /* format of the message data in databuf */											\
-    int df;															\
+    char * src_ctype_map;                                                                                                       \
+    char * src_sizeof_ctypes;                                                                                                   \
+    int gdc_df;															\
 																\
     /* temporary data storage used for things like unexpected eager messages and packing/unpacking buffers */			\
     struct mpig_databuf * databuf;												\

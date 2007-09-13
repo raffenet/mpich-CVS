@@ -972,22 +972,22 @@ mpig_vc_vtable_t;
 #define MPIG_VC_CMS_OTHER_DECL
 #endif
 
-#define MPIG_VC_CMS_DECL					\
-    struct							\
-    {								\
-	/* contact information successfully initialized */	\
-	bool_t ci_initialized;					\
-								\
-	/* topology information */				\
-	int topology_num_levels;				\
-	unsigned topology_levels;				\
-	int app_num;						\
-	char * lan_id;						\
-								\
-	MPIG_VC_CMS_SELF_DECL					\
-	MPIG_VC_CMS_VMPI_DECL					\
-	MPIG_VC_CMS_XIO_DECL					\
-	MPIG_VC_CMS_OTHER_DECL					\
+#define MPIG_VC_CMS_DECL                                        \
+    struct                                                      \
+    {                                                           \
+	/* contact information successfully initialized */      \
+	bool_t ci_initialized;                                  \
+                                                                \
+	/* topology information */                              \
+	int topology_num_levels;                                \
+	unsigned topology_levels;                               \
+	int app_num;                                            \
+	char * lan_id;                                          \
+                                                                \
+	MPIG_VC_CMS_SELF_DECL                                   \
+	MPIG_VC_CMS_VMPI_DECL                                   \
+	MPIG_VC_CMS_XIO_DECL                                    \
+	MPIG_VC_CMS_OTHER_DECL                                  \
     } cms;
 
 typedef mpig_mutex_t mpig_vc_mutex_t;
@@ -1018,11 +1018,12 @@ typedef struct mpig_vc
     /* business card containing information on how to connect to the remote process */
     mpig_bc_t bc;
 
+    /* map of MPI datatypes to basic C types */
+    char dt_ctype_map[MPIG_DATATYPE_MAX_BASIC_TYPES];
+    char dt_sizeof_ctypes[MPIG_CTYPE_LAST];
+
     /* status of the VC */
     bool_t initialized;
-    
-    /* map of MPI datatypes to basic C types */
-    unsigned char dt_ctype_map[MPIG_DATATYPE_MAX_BASIC_TYPES];
 }
 mpig_vc_t;
 /**********************************************************************************************************************************

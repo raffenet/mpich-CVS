@@ -30,7 +30,7 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
     (req_)->cmu.xio.gcb = (globus_xio_iovec_callback_t) NULL;				\
     (req_)->cmu.xio.sreq_type = MPIG_REQUEST_TYPE_UNDEFINED;				\
     mpig_databuf_construct((req_)->cmu.xio.msgbuf, MPIG_CM_XIO_REQUEST_MSGBUF_SIZE);	\
-    (req_)->cmu.xio.df = NEXUS_DC_FORMAT_UNKNOWN;					\
+    (req_)->cmu.xio.gdc_df = NEXUS_DC_FORMAT_UNKNOWN;					\
     (req_)->cmu.xio.databuf = NULL;							\
     (req_)->cmu.xio.sendq_next = NULL;							\
 											\
@@ -53,7 +53,7 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
     (req_)->cmu.xio.gcb = (globus_xio_iovec_callback_t) MPIG_INVALID_PTR;	\
     (req_)->cmu.xio.sreq_type = MPIG_REQUEST_TYPE_UNDEFINED;			\
     mpig_databuf_destruct((req_)->cmu.xio.msgbuf);				\
-    (req_)->cmu.xio.df = NEXUS_DC_FORMAT_UNKNOWN;				\
+    (req_)->cmu.xio.gdc_df = NEXUS_DC_FORMAT_UNKNOWN;				\
     if ((req_)->cmu.xio.databuf != NULL)					\
     {										\
 	mpig_databuf_destroy((req_)->cmu.xio.databuf);				\

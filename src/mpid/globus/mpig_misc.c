@@ -332,16 +332,16 @@ void mpig_debug_app_printf(const char * const filename, const char * const funcn
     mpig_process.dt_ctype_map[MPID_Datatype_get_basic_id(dt_)] = (char)(ctype_);                                                \
 }
 
-#define mpig_datatype_set_ctype_size_multiplier(dt_, mult_)                                                                     \
+#define mpig_datatype_set_num_ctypes(dt_, num_)                                                                                 \
 {                                                                                                                               \
     MPIU_Assert(HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN && HANDLE_GET_MPI_KIND(dt_) == MPID_DATATYPE);                      \
     MPIU_Assert(MPID_Datatype_get_basic_id(dt_) >= 0 && MPID_Datatype_get_basic_id(dt_) < MPIG_DATATYPE_MAX_BASIC_TYPES);       \
-    mpig_process.dt_ctype_size_multiplier[MPID_Datatype_get_basic_id(dt_)] = (char)(mult_);                                     \
+    mpig_process.dt_num_ctypes[MPID_Datatype_get_basic_id(dt_)] = (char)(num_);                                                 \
 }
 
 #define mpig_datatype_set_local_sizeof_ctype(ctype_, size_)     \
 {                                                               \
-    mpig_process.dt_local_sizeof_ctype[ctype_] = (char)(size_); \
+    mpig_process.dt_sizeof_ctypes[ctype_] = (char)(size_);      \
 }
 
 /*
@@ -362,123 +362,7 @@ int mpig_datatype_init(void)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_datatype_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "entering"));
 
-    for (i = 0; i < MPIG_CTYPE_LAST; i++)
-    {
-        mpig_process.dt_local_sizeof_ctype[i] = (char) 0;
-    }
-    
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_FLOAT, sizeof(float));
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_DOUBLE, sizeof(double));
-#   if defined(HAVE_LONG_DOUBLE)
-    {
-        mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_LONG_DOUBLE, sizeof(double));
-    }
-#   endif
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_CHAR, sizeof(char));
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_WCHAR, sizeof(wchar_t));
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_SHORT, sizeof(short));
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_INT, sizeof(int));
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_LONG, sizeof(long));
-#   if defined(HAVE_LONG_LONG)
-    {
-        mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_LONG_LONG, sizeof(long long));
-    }
-#   endif
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_UNSIGNED_CHAR, sizeof(unsigned char));
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_UNSIGNED_SHORT, sizeof(unsigned short));
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_UNSIGNED_INT, sizeof(unsigned int));
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_UNSIGNED_LONG, sizeof(unsigned long));
-#   if defined(HAVE_LONG_LONG)
-    {
-        mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_UNSIGNED_LONG_LONG, sizeof(unsigned long long));
-    }
-#   endif
-    
-    for (i = 0; i < MPIG_DATATYPE_MAX_BASIC_TYPES; i++)
-    {
-        mpig_process.dt_ctype_size_multiplier[i] = 1;
-    }
-
-    mpig_datatype_set_ctype_size_multiplier(MPI_2INT, 2);
-    mpig_datatype_set_ctype_size_multiplier(MPI_2INTEGER, 2);
-    mpig_datatype_set_ctype_size_multiplier(MPI_2REAL, 2);
-    mpig_datatype_set_ctype_size_multiplier(MPI_2DOUBLE_PRECISION, 2);
-    mpig_datatype_set_ctype_size_multiplier(MPI_COMPLEX, 2);
-    mpig_datatype_set_ctype_size_multiplier(MPI_DOUBLE_COMPLEX, 2);
-#   if defined(HAVE_MPI_REAL4)
-    {
-        mpig_datatype_set_ctype_size_multiplier(MPI_COMPLEX8, 2);
-    }
-#   endif 
-#   if defined(HAVE_MPI_REAL8)
-    {
-        mpig_datatype_set_ctype_size_multiplier(MPI_COMPLEX16, 2);
-    }
-#   endif 
-#   if defined(HAVE_MPI_REAL16)
-    {
-        mpig_datatype_set_ctype_size_multiplier(MPI_COMPLEX32, 2);
-    }
-#   endif
-    mpig_datatype_set_ctype_size_multiplier(MPI_2COMPLEX, 4);
-    mpig_datatype_set_ctype_size_multiplier(MPI_2DOUBLE_COMPLEX, 4);
-    
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "exiting"));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_datatype_init);
-    return mpi_errno;
-}
-/* end mpig_datatype_init() */
-
-/*
- * <mpi_errno> mpig_datatype_finalize(void)
- *
- * Returns: a MPI error code
- */
-#undef FUNCNAME
-#define FUNCNAME mpig_datatype_finalize
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-int mpig_datatype_finalize(void)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_datatype_finalize);
-
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_datatype_finalize);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "entering"));
-
-    /* ... nothing to do ... */
-    
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "exiting"));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_datatype_finalize);
-    return mpi_errno;
-}
-/* end mpig_datatype_finalize() */
-
-/*
- * <mpi_errno> mpig_datatype_add_info_to_bc([IN/MOD] bc)
- *
- * Paramters:
- *
- *   bc - [IN/MOD] business card to augment with datatype information
- *
- * Returns: a MPI error code
- */
-#undef FUNCNAME
-#define FUNCNAME mpig_datatype_add_info_to_bc
-#undef FCNAME
-#define FCNAME MPIG_QUOTE(FUNCNAME)
-int mpig_datatype_add_info_to_bc(mpig_bc_t * const bc)
-{
-    int i;
-    char ctype_map_str[MPIG_DATATYPE_MAX_BASIC_TYPES + 1];
-    int mpi_errno = MPI_SUCCESS;
-    MPIG_STATE_DECL(MPID_STATE_mpig_datatype_add_info_to_bc);
-
-    MPIG_FUNC_ENTER(MPID_STATE_mpig_datatype_add_info_to_bc);
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DT, "entering: bc=" MPIG_PTR_FMT,
-	MPIG_PTR_CAST(bc)));
-
-    /* create mapping information for the local process */
+    /* create MPI datatype to C type mapping information for the local process */
     for (i = 0; i < MPIG_DATATYPE_MAX_BASIC_TYPES; i++)
     {
 	mpig_process.dt_ctype_map[i] = MPIG_CTYPE_INVALID;
@@ -590,18 +474,160 @@ int mpig_datatype_add_info_to_bc(mpig_bc_t * const bc)
     }
 #   endif
 
-    /* prepare a text version of the mappings */
-    MPIU_Assertp(MPIG_CTYPE_LAST <= 26);
+    /* set the local size of each C type in the sizof_ctypes array */
+    for (i = 0; i < MPIG_CTYPE_LAST; i++)
+    {
+        mpig_process.dt_sizeof_ctypes[i] = (char) 0;
+    }
+    
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_FLOAT, sizeof(float));
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_DOUBLE, sizeof(double));
+#   if defined(HAVE_LONG_DOUBLE)
+    {
+        mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_LONG_DOUBLE, sizeof(long double));
+    }
+#   endif
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_CHAR, sizeof(char));
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_WCHAR, sizeof(wchar_t));
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_SHORT, sizeof(short));
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_INT, sizeof(int));
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_LONG, sizeof(long));
+#   if defined(HAVE_LONG_LONG)
+    {
+        mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_LONG_LONG, sizeof(long long));
+    }
+#   endif
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_UNSIGNED_CHAR, sizeof(unsigned char));
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_UNSIGNED_SHORT, sizeof(unsigned short));
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_UNSIGNED_INT, sizeof(unsigned int));
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_UNSIGNED_LONG, sizeof(unsigned long));
+#   if defined(HAVE_LONG_LONG)
+    {
+        mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_UNSIGNED_LONG_LONG, sizeof(unsigned long long));
+    }
+#   endif
+
+    /* set the number of C types needed to represent each MPI datatype */
     for (i = 0; i < MPIG_DATATYPE_MAX_BASIC_TYPES; i++)
     {
-	ctype_map_str[i] = 'a' + (char) mpig_process.dt_ctype_map[i];
+        if (mpig_process.dt_ctype_map[i] != MPIG_CTYPE_INVALID)
+        {
+            mpig_process.dt_num_ctypes[i] = 1;
+        }
+        else
+        {
+            mpig_process.dt_num_ctypes[i] = 0;
+        }
     }
-    ctype_map_str[MPIG_DATATYPE_MAX_BASIC_TYPES] = '\0';
+
+    mpig_datatype_set_num_ctypes(MPI_2INT, 2);
+    mpig_datatype_set_num_ctypes(MPI_2INTEGER, 2);
+    mpig_datatype_set_num_ctypes(MPI_2REAL, 2);
+    mpig_datatype_set_num_ctypes(MPI_2DOUBLE_PRECISION, 2);
+    mpig_datatype_set_num_ctypes(MPI_COMPLEX, 2);
+    mpig_datatype_set_num_ctypes(MPI_DOUBLE_COMPLEX, 2);
+#   if defined(HAVE_MPI_REAL4)
+    {
+        mpig_datatype_set_num_ctypes(MPI_COMPLEX8, 2);
+    }
+#   endif 
+#   if defined(HAVE_MPI_REAL8)
+    {
+        mpig_datatype_set_num_ctypes(MPI_COMPLEX16, 2);
+    }
+#   endif 
+#   if defined(HAVE_MPI_REAL16)
+    {
+        mpig_datatype_set_num_ctypes(MPI_COMPLEX32, 2);
+    }
+#   endif
+    mpig_datatype_set_num_ctypes(MPI_2COMPLEX, 4);
+    mpig_datatype_set_num_ctypes(MPI_2DOUBLE_COMPLEX, 4);
+    
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "exiting"));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_datatype_init);
+    return mpi_errno;
+}
+/* end mpig_datatype_init() */
+
+/*
+ * <mpi_errno> mpig_datatype_finalize(void)
+ *
+ * Returns: a MPI error code
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_datatype_finalize
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+int mpig_datatype_finalize(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_datatype_finalize);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_datatype_finalize);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "entering"));
+
+    /* ... nothing to do ... */
+    
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "exiting"));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_datatype_finalize);
+    return mpi_errno;
+}
+/* end mpig_datatype_finalize() */
+
+/*
+ * <mpi_errno> mpig_datatype_add_info_to_bc([IN/MOD] bc)
+ *
+ * Paramters:
+ *
+ *   bc - [IN/MOD] business card to augment with datatype information
+ *
+ * Returns: a MPI error code
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_datatype_add_info_to_bc
+#undef FCNAME
+#define FCNAME MPIG_QUOTE(FUNCNAME)
+int mpig_datatype_add_info_to_bc(mpig_bc_t * const bc)
+{
+    int i;
+    char ctype_map_str[MPIG_DATATYPE_MAX_BASIC_TYPES * 2 + 1];
+    char ctype_sizes_str[MPIG_CTYPE_LAST * 2 + 1];
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_datatype_add_info_to_bc);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_datatype_add_info_to_bc);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DT, "entering: bc=" MPIG_PTR_FMT,
+	MPIG_PTR_CAST(bc)));
+
+    /* prepare a text version of the MPI datatype to C type mappings */
+    for (i = 0; i < MPIG_DATATYPE_MAX_BASIC_TYPES; i++)
+    {
+        char str[3];
+	MPIU_Snprintf(str, 3, "%02x", (int) mpig_process.dt_ctype_map[i]);
+        ctype_map_str[i*2] = str[0];
+        ctype_map_str[i*2+1] = str[1];
+    }
+    ctype_map_str[MPIG_DATATYPE_MAX_BASIC_TYPES * 2] = '\0';
 
     /* add mappings to the business card */
     mpi_errno = mpig_bc_add_contact(bc, "DATATYPE_CTYPE_MAP", ctype_map_str);
     MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_add_ctype_map");
-    
+
+    /* prepare a text version of the local C type size array */
+    for (i = 0; i < MPIG_CTYPE_LAST; i++)
+    {
+        char str[3];
+	MPIU_Snprintf(str, 3, "%02x", (int) mpig_process.dt_sizeof_ctypes[i]);
+        ctype_sizes_str[i*2] = str[0];
+        ctype_sizes_str[i*2+1] = str[1];
+    }
+    ctype_sizes_str[MPIG_CTYPE_LAST * 2] = '\0';
+
+    /* add the local C type sizes to the business card */
+    mpi_errno = mpig_bc_add_contact(bc, "DATATYPE_CTYPE_SIZES", ctype_sizes_str);
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_add_ctype_sizes");
+
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DT, "exiting: bc=" MPIG_PTR_FMT
 	", mpi_errno=" MPIG_ERRNO_FMT,  MPIG_PTR_CAST(bc), mpi_errno));
@@ -631,7 +657,8 @@ int mpig_datatype_add_info_to_bc(mpig_bc_t * const bc)
 int mpig_datatype_extract_info_from_bc(mpig_vc_t * const vc)
 {
     mpig_bc_t * bc = mpig_vc_get_bc(vc);
-    char * cmap_str = NULL;
+    char * ctype_map_str = NULL;
+    char * ctype_sizes_str = NULL;
     int i;
     bool_t found;
     int mpi_errno = MPI_SUCCESS;
@@ -641,27 +668,44 @@ int mpig_datatype_extract_info_from_bc(mpig_vc_t * const vc)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DT, "entering: bc=" MPIG_PTR_FMT
 	"vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(bc), MPIG_PTR_CAST(vc)));
 
-    mpi_errno = mpig_bc_get_contact(bc, "DATATYPE_CTYPE_MAP", &cmap_str, &found);
+    mpi_errno = mpig_bc_get_contact(bc, "DATATYPE_CTYPE_MAP", &ctype_map_str, &found);
     MPIU_ERR_CHKANDJUMP2((mpi_errno || found == FALSE), mpi_errno, MPI_ERR_INTERN, "**globus|datatype_extract_ctype_map",
 	"**globus|datatype_extract_ctype_map %s %d", mpig_vc_get_pg(vc), mpig_vc_get_pg_rank(vc));
 
-    MPIU_Assert(strlen(cmap_str) <= MPIG_DATATYPE_MAX_BASIC_TYPES);
+    mpi_errno = mpig_bc_get_contact(bc, "DATATYPE_CTYPE_SIZES", &ctype_sizes_str, &found);
+    MPIU_ERR_CHKANDJUMP2((mpi_errno || found == FALSE), mpi_errno, MPI_ERR_INTERN, "**globus|datatype_extract_ctype_sizes",
+	"**globus|datatype_extract_ctype_sizes %s %d", mpig_vc_get_pg(vc), mpig_vc_get_pg_rank(vc));
+
+    MPIU_Assert(strlen(ctype_map_str) == MPIG_DATATYPE_MAX_BASIC_TYPES * 2);
+    MPIU_Assert(strlen(ctype_sizes_str) == MPIG_CTYPE_LAST * 2);
     
-    /* create mapping information and store in my VC */
+    /* extract the MPI datatype to C type mapping information and store in the VC */
     for (i = 0; i < MPIG_DATATYPE_MAX_BASIC_TYPES; i++)
     {
-	vc->dt_ctype_map[i] = MPIG_CTYPE_INVALID;
+        char str[3];
+        int ctype;
+        str[0] = ctype_map_str[i*2];
+        str[1] = ctype_map_str[i*2+1];
+        str[2] = '\0';
+        sscanf(str, "%02x", &ctype);
+	vc->dt_ctype_map[i] = (char) ctype;
     }
-
-    i = 0;
-    while (cmap_str[i] != '\0')
+    
+    /* extract the C type size information and store in the VC */
+    for (i = 0; i < MPIG_CTYPE_LAST; i++)
     {
-	vc->dt_ctype_map[i] = cmap_str[i] - 'a';
-        i += 1;
+        char str[3];
+        int size;
+        str[0] = ctype_sizes_str[i*2];
+        str[1] = ctype_sizes_str[i*2+1];
+        str[2] = '\0';
+        sscanf(str, "%02x", &size);
+	vc->dt_sizeof_ctypes[i] = (char) size;
     }
     
   fn_return:
-    if (cmap_str != NULL) mpig_bc_free_contact(cmap_str);
+    if (ctype_map_str != NULL) mpig_bc_free_contact(ctype_map_str);
+    if (ctype_sizes_str != NULL) mpig_bc_free_contact(ctype_sizes_str);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DT, "exiting: bc=" MPIG_PTR_FMT
 	"vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(bc), MPIG_PTR_CAST(vc), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_datatype_extract_info_from_bc);
