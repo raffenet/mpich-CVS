@@ -89,7 +89,20 @@ export MPICH2_INCLUDE_FLAGS
 if [ ! -d $mybuild/src/mpid/common/locks ] ; then 
     mkdir $mybuild/src/mpid/common/locks
 fi
-( CPPFLAGS="$CPPFLAGS -DUSE_PROCESS_LOCKS" ; export CPPFLAGS ; \
+# Note that we also need to run the setup in the locks directory
+locksSetup=$mympich2/src/mpid/common/locks/setup
+if [ ! -f $locksSetup ] ; then 
+    echo "Cannot find $locksSetup , needed to build process locks"
+    exit 1
+fi
+
+( MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/common/datatype" ; \
+MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$mympich2/src/mpid/ch3/channels/shm/include" ; \
+MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I../../ch3/channels/shm/include" ; \
+MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I../../ch3/include" ; \
+export MPICH2_INCLUDE_FLAGS ; \
+CPPFLAGS="$CPPFLAGS -DUSE_PROCESS_LOCKS" ; export CPPFLAGS ; \
+  . $locksSetup ; \
 cd $mybuild/src/mpid/common/locks && \
     $mympich2/src/mpid/common/locks/configure --enable-sharedlibs=$shlibtype \
     --prefix=$prefix --libdir=$libdir --exec-prefix=$exec_prefix )
