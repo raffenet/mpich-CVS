@@ -1045,12 +1045,46 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
     char val[MPIDI_MAX_KVS_VALUE_LEN];
+    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_VC_POST_SOCKCONNECT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_VC_POST_SOCKCONNECT);
 
     /* MPIDI_PG_GetConnString() can block & release the lock for 
-     * the current thread */
+     * the current thread. Prevent other threads from trying to
+     * obtain the ConnString by setting the VC to *CONNECTING.
+     */
+    if(vcch->state == MPIDI_CH3I_VC_STATE_UNCONNECTED){ 
+    	MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
+    	vcch->state = MPIDI_CH3I_VC_STATE_CONNECTING;
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"vc=(%p) Going ahead to obtain connstring", vc);
+    }else{
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"MT: vc=(%p) is already connecting/ed", vc);
+	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Aborting posting a connect");
+	/*************** MT *****************/
+	/* There are 3 cases here,
+         * 1) Another thread posted a connect while the current thread
+         *    was blocked in MPIDI_PG_GetConnString()
+         *    VC state = MPIDI_CH3I_VC_STATE_CONNECTING
+         * 2) Another thread posted a connect and completed the 
+         *    connection while the current thread was blocked in 
+         *    MPIDI_PG_GetConnString()
+         *    VC state = MPIDI_CH3I_VC_STATE_CONNECTED
+         * 3) Another thread received a connect from the same proc we
+         *    are connecting to and opened a connection while the 
+         *    current thread was blocked in MPIDI_PG_GetConnString()
+         *    VC state = MPIDI_CH3I_VC_STATE_CONNECTING or
+         *    VC state = MPIDI_CH3I_VC_STATE_CONNECTED
+         * If we bail out here, in all the cases above the other thread
+         * will handle the connection. In particular in the 3rd case
+         * if we proceed to post a connect before the VC state is set
+         * by the thread processing the remote connect,
+         * the code for head-to-head conn resolution will take care of
+         * discarding one of the connections
+         */
+	 mpi_errno = MPI_SUCCESS;
+         goto fn_exit;
+    }
     mpi_errno = MPIDI_PG_GetConnString( vc->pg, vc->pg_rank, val, sizeof(val));
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
@@ -1090,29 +1124,18 @@ int MPIDI_CH3I_Sock_connect( MPIDI_VC_t *vc, const char val[], int vallen )
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SOCK_CONNECT);
     
-    if(vcch->state == MPIDI_CH3I_VC_STATE_UNCONNECTED){ 
-    	MPIU_DBG_VCCHSTATECHANGE(vc,VC_STATE_CONNECTING);
-    	vcch->state = MPIDI_CH3I_VC_STATE_CONNECTING;
+    if(vcch->state == MPIDI_CH3I_VC_STATE_CONNECTING){ 
 	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"Posting a connect for vc=(%p)", vc);
     }else{
-	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"MT: vc=(%p) is already connecting/ed", vc);
+	MPIU_DBG_MSG_P(CH3_CONNECT,TYPICAL,"MT: vc=(%p) is already connected", vc);
 	MPIU_DBG_MSG(CH3_CONNECT,TYPICAL,"Aborting posting a connect");
 	/*************** MT *****************/
-	/* There are 3 cases here,
-         * 1) Another thread posted a connect while the current thread
-         *    was blocked in MPIDI_PG_GetConnString()
-         *    VC state = MPIDI_CH3I_VC_STATE_CONNECTING
-         * 2) Another thread posted a connect and completed the 
-         *    connection while the current thread was blocked in 
-         *    MPIDI_PG_GetConnString()
+        /* 1) Another thread received a connect from the same proc
+         *    the current thread is connecting to and opened a 
+	 *    connection while the current thread was blocked in 
+	 *    MPIDI_PG_GetConnString()
          *    VC state = MPIDI_CH3I_VC_STATE_CONNECTED
-         * 3) Another thread received a connect from the same proc we
-         *    are connecting to and opened a connection while the 
-         *    current thread was blocked in MPIDI_PG_GetConnString()
-         *    VC state = MPIDI_CH3I_VC_STATE_CONNECTING or
-         *    VC state = MPIDI_CH3I_VC_STATE_CONNECTED
-         * If we bail out here, in all the cases above the other thread
-         * will handle the connection. In particular in the 3rd case
+         * If we bail out here, the other thread will handle the connection. 
          * if we proceed to post a connect before the VC state is set
          * by the thread processing the remote connect,
          * the code for head-to-head conn resolution will take care of
