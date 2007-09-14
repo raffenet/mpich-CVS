@@ -22,7 +22,7 @@
     #define SMPD_CS_ENTER()
     #define SMPD_CS_EXIT()
 #else
-    #define SMPD_CS_ENTER() \ 
+    #define SMPD_CS_ENTER() \
 	MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex)
     #define SMPD_CS_EXIT()  \
 	MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex)
