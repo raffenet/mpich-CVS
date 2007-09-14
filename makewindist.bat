@@ -1,6 +1,6 @@
 IF "%1" == "" GOTO HELP
 IF "%1" == "--help" GOTO HELP
-IF "%CVS_HOST%" == "" set CVS_HOST=harley.mcs.anl.gov
+IF "%CVS_HOST%" == "" set CVS_HOST=shakey.mcs.anl.gov
 GOTO AFTERHELP
 :HELP
 REM
