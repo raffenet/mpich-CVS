@@ -369,10 +369,10 @@ int mpig_datatype_init(void)
     }
 
     mpig_datatype_set_ctype_map(MPI_CHAR, MPIG_CTYPE_CHAR);
-    mpig_datatype_set_ctype_map(MPI_UNSIGNED_CHAR, MPIG_CTYPE_UNSIGNED_CHAR);
     mpig_datatype_set_ctype_map(MPI_SIGNED_CHAR, MPIG_CTYPE_CHAR);
+    mpig_datatype_set_ctype_map(MPI_UNSIGNED_CHAR, MPIG_CTYPE_UNSIGNED_CHAR);
     mpig_datatype_set_ctype_map(MPI_BYTE, MPIG_CTYPE_CHAR);
-    mpig_datatype_set_ctype_map(MPI_WCHAR, MPIG_CTYPE_WCHAR);
+    mpig_datatype_set_ctype_map(MPI_WCHAR, MPIG_C_WCHAR_T_CTYPE);
     mpig_datatype_set_ctype_map(MPI_SHORT, MPIG_CTYPE_SHORT);
     mpig_datatype_set_ctype_map(MPI_UNSIGNED_SHORT, MPIG_CTYPE_UNSIGNED_SHORT);
     mpig_datatype_set_ctype_map(MPI_INT, MPIG_CTYPE_INT);
@@ -399,78 +399,37 @@ int mpig_datatype_init(void)
     mpig_datatype_set_ctype_map(MPI_2INT, MPIG_CTYPE_INT);
 #   if defined(HAVE_FORTRAN_BINDING)
     {
-        mpig_datatype_set_ctype_map(MPI_COMPLEX, MPIG_F77_REAL_CTYPE);
-        mpig_datatype_set_ctype_map(MPI_DOUBLE_COMPLEX, MPIG_F77_DOUBLE_PRECISION_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_CHARACTER, MPIG_F77_CHARACTER_CTYPE);
         mpig_datatype_set_ctype_map(MPI_LOGICAL, MPIG_F77_LOGICAL_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_INTEGER, MPIG_F77_INTEGER_CTYPE);
         mpig_datatype_set_ctype_map(MPI_REAL, MPIG_F77_REAL_CTYPE);
         mpig_datatype_set_ctype_map(MPI_DOUBLE_PRECISION, MPIG_F77_DOUBLE_PRECISION_CTYPE);
-        mpig_datatype_set_ctype_map(MPI_INTEGER, MPIG_F77_INTEGER_CTYPE);
-        mpig_datatype_set_ctype_map(MPI_2INTEGER, MPIG_F77_INTEGER_CTYPE);
-        mpig_datatype_set_ctype_map(MPI_2COMPLEX, MPIG_F77_REAL_CTYPE);
-        mpig_datatype_set_ctype_map(MPI_2DOUBLE_COMPLEX, MPIG_F77_DOUBLE_PRECISION_CTYPE);
-        mpig_datatype_set_ctype_map(MPI_2REAL, MPIG_F77_REAL_CTYPE);
-        mpig_datatype_set_ctype_map(MPI_2DOUBLE_PRECISION, MPIG_F77_DOUBLE_PRECISION_CTYPE);
-        mpig_datatype_set_ctype_map(MPI_CHARACTER, MPIG_F77_CHARACTER_CTYPE);
-#       if defined(HAVE_MPI_REAL2)
-        {
-            mpig_datatype_set_ctype_map(MPI_REAL2, MPIG_F77_REAL2_CTYPE);
-        }
-#       endif
-#       if defined(HAVE_MPI_REAL4)
-        {
-            mpig_datatype_set_ctype_map(MPI_REAL4, MPIG_F77_REAL4_CTYPE);
-        }
-#       endif
-#       if defined(HAVE_MPI_REAL8)
-        {
-            mpig_datatype_set_ctype_map(MPI_REAL8, MPIG_F77_REAL8_CTYPE);
-        }
-#       endif
-#       if defined(HAVE_MPI_REAL16)
-        {
-            mpig_datatype_set_ctype_map(MPI_REAL16, MPIG_F77_REAL16_CTYPE);
-        }
-#       endif
-#       if defined(HAVE_MPI_REAL4)
-        {
-            mpig_datatype_set_ctype_map(MPI_COMPLEX8, MPIG_F77_REAL4_CTYPE);
-        }
-#       endif
-#       if defined(HAVE_MPI_REAL8)
-        {
-            mpig_datatype_set_ctype_map(MPI_COMPLEX16, MPIG_F77_REAL8_CTYPE);
-        }
-#       endif
-#       if defined(HAVE_MPI_REAL16)
-        {
-            mpig_datatype_set_ctype_map(MPI_COMPLEX32, MPIG_F77_REAL16_CTYPE);
-        }
-#       endif
-#       if defined(HAVE_MPI_INTEGER1)
-        {
-            mpig_datatype_set_ctype_map(MPI_INTEGER1, MPIG_F77_INTEGER1_CTYPE);
-        }
-#       endif
-#       if defined(HAVE_MPI_INTEGER2)
-        {
-            mpig_datatype_set_ctype_map(MPI_INTEGER2, MPIG_F77_INTEGER2_CTYPE);
-        }
-#       endif
-#       if defined(HAVE_MPI_INTEGER4)
-        {
-            mpig_datatype_set_ctype_map(MPI_INTEGER4, MPIG_F77_INTEGER4_CTYPE);
-        }
-#       endif
-#       if defined(HAVE_MPI_INTEGER8)
-        {
-            mpig_datatype_set_ctype_map(MPI_INTEGER8, MPIG_F77_INTEGER8_CTYPE);
-        }
-#       endif
-#       if defined(HAVE_MPI_INTEGER16)
-        {
-            mpig_datatype_set_ctype_map(MPI_INTEGER16, MPIG_F77_INTEGER16_CTYPE);
-        }
-#       endif
+        mpig_datatype_set_ctype_map(MPI_COMPLEX, MPIG_F77_COMPLEX_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_DOUBLE_COMPLEX, MPIG_F77_DOUBLE_COMPLEX_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_2INTEGER, MPIG_F77_2INTEGER_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_2REAL, MPIG_F77_2REAL_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_2DOUBLE_PRECISION, MPIG_F77_2DOUBLE_PRECISION_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_2COMPLEX, MPIG_F77_2COMPLEX_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_2DOUBLE_COMPLEX, MPIG_F77_2DOUBLE_COMPLEX_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_INTEGER1, MPIG_F77_INTEGER1_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_INTEGER2, MPIG_F77_INTEGER2_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_INTEGER4, MPIG_F77_INTEGER4_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_INTEGER8, MPIG_F77_INTEGER8_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_INTEGER16, MPIG_F77_INTEGER16_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_REAL4, MPIG_F77_REAL4_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_REAL8, MPIG_F77_REAL8_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_REAL16, MPIG_F77_REAL16_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_COMPLEX8, MPIG_F77_COMPLEX8_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_COMPLEX16, MPIG_F77_COMPLEX16_CTYPE);
+        mpig_datatype_set_ctype_map(MPI_COMPLEX32, MPIG_F77_COMPLEX32_CTYPE);
+    }
+#   endif
+
+#   if defined(HAVE_CXX_BINDING)
+    {
+        /*
+         * FIXME: add C++ to C type mappings for MPI::BOOL, MPI::COMPLEX, MPI::DOUBLE_COMPLEX, and MPI::LONG_DOUBLE_COMPLEX
+         */
     }
 #   endif
 
@@ -488,7 +447,6 @@ int mpig_datatype_init(void)
     }
 #   endif
     mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_CHAR, sizeof(char));
-    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_WCHAR, sizeof(wchar_t));
     mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_SHORT, sizeof(short));
     mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_INT, sizeof(int));
     mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_LONG, sizeof(long));

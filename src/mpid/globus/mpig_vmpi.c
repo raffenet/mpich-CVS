@@ -298,153 +298,135 @@ int mpig_vmpi_init(int * argc_p, char *** argv_p)
     /* c basic datatypes */
     *(MPI_Datatype *) &mpig_vmpi_dt_byte = MPI_BYTE;
     *(MPI_Datatype *) &mpig_vmpi_dt_char = MPI_CHAR;
-#   if defined(HAVE_C_VMPI_SIGNED_CHAR)
-    *(MPI_Datatype *) &mpig_vmpi_dt_signed_char = MPI_SIGNED_CHAR;
-#   else    
+    *(MPI_Datatype *) &mpig_vmpi_dt_signed_char = MPIG_VMPI_SIGNED_CHAR_DTMAP;
     *(MPI_Datatype *) &mpig_vmpi_dt_signed_char = MPI_CHAR;
-#   endif    
     *(MPI_Datatype *) &mpig_vmpi_dt_unsigned_char = MPI_UNSIGNED_CHAR;
-#   if defined(HAVE_C_VMPI_WCHAR)    
-    *(MPI_Datatype *) &mpig_vmpi_dt_wchar = MPI_WCHAR;
-#   elif (SIZEOF_WCHAR_T == SIZEOF_CHAR)
-    *(MPI_Datatype *) &mpig_vmpi_dt_wchar = MPI_UNSIGNED_CHAR;
-#   elif (SIZEOF_WCHAR_T == SIZEOF_SHORT)
-    *(MPI_Datatype *) &mpig_vmpi_dt_wchar = MPI_UNSIGNED_SHORT;
-#   elif (SIZEOF_WCHAR_T == SIZEOF_INT)
-    *(MPI_Datatype *) &mpig_vmpi_dt_wchar = MPI_UNSIGNED;
-#   elif (SIZEOF_WCHAR_T == SIZEOF_LONG)
-    *(MPI_Datatype *) &mpig_vmpi_dt_wchar = MPI_UNSIGNED_LONG;
-#   else    
-    *(MPI_Datatype *) &mpig_vmpi_dt_wchar = MPI_DATATYPE_NULL;
-#   endif    
+    *(MPI_Datatype *) &mpig_vmpi_dt_wchar = MPIG_VMPI_WCHAR_DTMAP;
     *(MPI_Datatype *) &mpig_vmpi_dt_short = MPI_SHORT;
     *(MPI_Datatype *) &mpig_vmpi_dt_unsigned_short = MPI_UNSIGNED_SHORT;
     *(MPI_Datatype *) &mpig_vmpi_dt_int = MPI_INT;
     *(MPI_Datatype *) &mpig_vmpi_dt_unsigned = MPI_UNSIGNED;
     *(MPI_Datatype *) &mpig_vmpi_dt_long = MPI_LONG;
     *(MPI_Datatype *) &mpig_vmpi_dt_unsigned_long = MPI_UNSIGNED_LONG;
-#   if defined(HAVE_C_VMPI_LONG_LONG)
-    *(MPI_Datatype *) &mpig_vmpi_dt_long_long = MPI_LONG_LONG;
-#   elif defined(HAVE_C_VMPI_LONG_LONG_INT)
-    *(MPI_Datatype *) &mpig_vmpi_dt_long_long = MPI_LONG_LONG_INT;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_long_long = MPI_DATATYPE_NULL;
-#   endif
-#   if defined(HAVE_C_VMPI_LONG_LONG_INT)
-    *(MPI_Datatype *) &mpig_vmpi_dt_long_long_int = MPI_LONG_LONG_INT;
-#   elif defined(HAVE_C_VMPI_LONG_LONG)
-    *(MPI_Datatype *) &mpig_vmpi_dt_long_long_int = MPI_LONG_LONG;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_long_long_int = MPI_DATATYPE_NULL;
-#   endif
-#   if defined(HAVE_C_VMPI_UNSIGNED_LONG_LONG)
-    *(MPI_Datatype *) &mpig_vmpi_dt_unsigned_long_long = MPI_UNSIGNED_LONG_LONG;
-#   elif defined(HAVE_C_VMPI_LONG_LONG)
-    /* NOTE: the vendor MPI is assumed to be running on a homogeneous system.  therefore, we ignore the possibility of corrupting
-       the unsigned value if sign extension were to occur from a size change. */
-    *(MPI_Datatype *) &mpig_vmpi_dt_unsigned_long_long = MPI_LONG_LONG;
-#   elif defined(HAVE_C_VMPI_LONG_LONG_INT)
-    /* NOTE: the vendor MPI is assumed to be running on a homogeneous system.  therefore, we ignore the possibility of corrupting
-       the unsigned value if sign extension were to occur from a size change. */
-    *(MPI_Datatype *) &mpig_vmpi_dt_unsigned_long_long = MPI_LONG_LONG_INT;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_unsigned_long_long = MPI_DATATYPE_NULL;
-#   endif
+    *(MPI_Datatype *) &mpig_vmpi_dt_long_long = MPIG_VMPI_LONG_LONG_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_long_long_int = MPIG_VMPI_LONG_LONG_INT_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_unsigned_long_long = MPIG_VMPI_UNSIGNED_LONG_LONG_DTMAP;
     *(MPI_Datatype *) &mpig_vmpi_dt_float = MPI_FLOAT;
     *(MPI_Datatype *) &mpig_vmpi_dt_double = MPI_DOUBLE;
-#   if defined(HAVE_C_VMPI_LONG_DOUBLE)
-    *(MPI_Datatype *) &mpig_vmpi_dt_long_double = MPI_LONG_DOUBLE;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_long_double = MPI_DATATYPE_NULL;
-#   endif
+    *(MPI_Datatype *) &mpig_vmpi_dt_long_double = MPIG_VMPI_LONG_DOUBLE_DTMAP;
+
     /* c paired datatypes used predominantly for minloc/maxloc reduce operations */
     *(MPI_Datatype *) &mpig_vmpi_dt_short_int = MPI_SHORT_INT;
     *(MPI_Datatype *) &mpig_vmpi_dt_2int = MPI_2INT;
     *(MPI_Datatype *) &mpig_vmpi_dt_long_int = MPI_LONG_INT;
     *(MPI_Datatype *) &mpig_vmpi_dt_float_int = MPI_FLOAT_INT;
     *(MPI_Datatype *) &mpig_vmpi_dt_double_int = MPI_DOUBLE_INT;
-#   if defined(HAVE_C_VMPI_LONG_DOUBLE_INT)
-    *(MPI_Datatype *) &mpig_vmpi_dt_long_double_int = MPI_LONG_DOUBLE_INT;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_long_double_int = MPI_DATATYPE_NULL;
-#   endif
+    *(MPI_Datatype *) &mpig_vmpi_dt_long_double_int = MPIG_VMPI_LONG_DOUBLE_INT_DTMAP;
     /* fortran basic datatypes */
-    *(MPI_Datatype *) &mpig_vmpi_dt_logical = MPI_LOGICAL;
-    *(MPI_Datatype *) &mpig_vmpi_dt_character = MPI_CHARACTER;
-    *(MPI_Datatype *) &mpig_vmpi_dt_integer = MPI_INTEGER;
-    *(MPI_Datatype *) &mpig_vmpi_dt_real = MPI_REAL;
-    *(MPI_Datatype *) &mpig_vmpi_dt_double_precision = MPI_DOUBLE_PRECISION;
-    *(MPI_Datatype *) &mpig_vmpi_dt_complex = MPI_COMPLEX;
-#   if defined(HAVE_C_VMPI_DOUBLE_COMPLEX)
-    *(MPI_Datatype *) &mpig_vmpi_dt_double_complex = MPI_DOUBLE_COMPLEX;
+    *(MPI_Datatype *) &mpig_vmpi_dt_character = MPIG_VMPI_CHARACTER_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_logical = MPIG_VMPI_LOGICAL_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_integer = MPIG_VMPI_INTEGER_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_real = MPIG_VMPI_REAL_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_double_precision = MPIG_VMPI_DOUBLE_PRECISION_DTMAP;
+#   if !defined(MPIG_VMPI_MUST_CONSTRUCT_MPI_COMPLEX)
+    {
+        *(MPI_Datatype *) &mpig_vmpi_dt_complex = MPIG_VMPI_COMPLEX_DTMAP;
+    }
 #   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_double_complex = MPI_DATATYPE_NULL;
+    {
+        MPI_Type_contiguous(2, MPIG_VMPI_COMPLEX_DTMAP, (MPI_Datatype *) &mpig_vmpi_dt_complex);
+    }
+#   endif
+#   if !defined(MPIG_VMPI_MUST_CONSTRUCT_MPI_DOUBLE_COMPLEX)
+    {
+        *(MPI_Datatype *) &mpig_vmpi_dt_double_complex = MPIG_VMPI_DOUBLE_COMPLEX_DTMAP;
+    }
+#   else
+    {
+        MPI_Type_contiguous(2, MPIG_VMPI_DOUBLE_COMPLEX_DTMAP, (MPI_Datatype *) &mpig_vmpi_dt_double_complex);
+    }
 #   endif
     /* fortran paired datatypes used predominantly for minloc/maxloc reduce operations */
-    *(MPI_Datatype *) &mpig_vmpi_dt_2integer = MPI_2INTEGER;
-    *(MPI_Datatype *) &mpig_vmpi_dt_2complex = MPI_2COMPLEX;
-    *(MPI_Datatype *) &mpig_vmpi_dt_2real = MPI_2REAL;
-    *(MPI_Datatype *) &mpig_vmpi_dt_2double_precision = MPI_2DOUBLE_PRECISION;
-#   if defined(HAVE_C_VMPI_2DOUBLE_COMPLEX)
-    *(MPI_Datatype *) &mpig_vmpi_dt_2double_complex = MPI_2DOUBLE_COMPLEX;
+#   if !defined(MPIG_VMPI_MUST_CONSTRUCT_MPI_2INTEGER)
+    {
+        *(MPI_Datatype *) &mpig_vmpi_dt_2integer = MPIG_VMPI_2INTEGER_DTMAP;
+    }
 #   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_2double_complex = MPI_DATATYPE_NULL;
+    {
+        MPI_Type_contiguous(2, MPIG_VMPI_2INTEGER_DTMAP, (MPI_Datatype *) &mpig_vmpi_dt_2integer);
+    }
+#   endif
+#   if !defined(MPIG_VMPI_MUST_CONSTRUCT_MPI_2REAL)
+    {
+        *(MPI_Datatype *) &mpig_vmpi_dt_2real = MPIG_VMPI_2REAL_DTMAP;
+    }
+#   else
+    {
+        MPI_Type_contiguous(2, MPIG_VMPI_2REAL_DTMAP, (MPI_Datatype *) &mpig_vmpi_dt_2real);
+    }
+#   endif
+#   if !defined(MPIG_VMPI_MUST_CONSTRUCT_MPI_2DOUBLE_PRECISION)
+    {
+        *(MPI_Datatype *) &mpig_vmpi_dt_2double_precision = MPIG_VMPI_2DOUBLE_PRECISION_DTMAP;
+    }
+#   else
+    {
+        MPI_Type_contiguous(2, MPIG_VMPI_2DOUBLE_PRECISION_DTMAP, (MPI_Datatype *) &mpig_vmpi_dt_2double_precision);
+    }
+#   endif
+#   if !defined(MPIG_VMPI_MUST_CONSTRUCT_MPI_2COMPLEX)
+    {
+        *(MPI_Datatype *) &mpig_vmpi_dt_2complex = MPIG_VMPI_2COMPLEX_DTMAP;
+    }
+#   else
+    {
+        MPI_Type_contiguous(4, MPIG_VMPI_2COMPLEX_DTMAP, (MPI_Datatype *) &mpig_vmpi_dt_2complex);
+    }
+#   endif
+#   if !defined(MPIG_VMPI_MUST_CONSTRUCT_MPI_2DOUBLE_COMPLEX)
+    {
+        *(MPI_Datatype *) &mpig_vmpi_dt_2double_complex = MPIG_VMPI_2DOUBLE_COMPLEX_DTMAP;
+    }
+#   else
+    {
+        MPI_Type_contiguous(4, MPIG_VMPI_2DOUBLE_COMPLEX_DTMAP, (MPI_Datatype *) &mpig_vmpi_dt_2double_complex);
+    }
 #   endif
     /* fortran size specific datatypes */
-#   if defined(HAVE_C_VMPI_INTEGER1)
-    *(MPI_Datatype *) &mpig_vmpi_dt_integer1 = MPI_INTEGER1;
+    *(MPI_Datatype *) &mpig_vmpi_dt_integer1 = MPIG_VMPI_INTEGER1_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_integer2 = MPIG_VMPI_INTEGER2_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_integer4 = MPIG_VMPI_INTEGER4_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_integer8 = MPIG_VMPI_INTEGER8_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_integer16 = MPIG_VMPI_INTEGER16_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_real4 = MPIG_VMPI_REAL4_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_real8 = MPIG_VMPI_REAL8_DTMAP;
+    *(MPI_Datatype *) &mpig_vmpi_dt_real16 = MPIG_VMPI_REAL16_DTMAP;
+#   if !defined(MPIG_VMPI_MUST_CONSTRUCT_MPI_COMPLEX8)
+    {
+        *(MPI_Datatype *) &mpig_vmpi_dt_complex8 = MPIG_VMPI_COMPLEX8_DTMAP;
+    }
 #   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_integer1 = MPI_DATATYPE_NULL;
+    {
+        MPI_Type_contiguous(2, MPIG_VMPI_COMPLEX8_DTMAP, (MPI_Datatype *) &mpig_vmpi_dt_complex8);
+    }
 #   endif
-#   if defined(HAVE_C_VMPI_INTEGER2)
-    *(MPI_Datatype *) &mpig_vmpi_dt_integer2 = MPI_INTEGER2;
+#   if !defined(MPIG_VMPI_MUST_CONSTRUCT_MPI_COMPLEX16)
+    {
+        *(MPI_Datatype *) &mpig_vmpi_dt_complex16 = MPIG_VMPI_COMPLEX16_DTMAP;
+    }
 #   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_integer4 = MPI_DATATYPE_NULL;
+    {
+        MPI_Type_contiguous(2, MPIG_VMPI_COMPLEX16_DTMAP, (MPI_Datatype *) &mpig_vmpi_dt_complex16);
+    }
 #   endif
-#   if defined(HAVE_C_VMPI_INTEGER4)
-    *(MPI_Datatype *) &mpig_vmpi_dt_integer4 = MPI_INTEGER4;
+#   if !defined(MPIG_VMPI_MUST_CONSTRUCT_MPI_COMPLEX32)
+    {
+        *(MPI_Datatype *) &mpig_vmpi_dt_complex32 = MPIG_VMPI_COMPLEX32_DTMAP;
+    }
 #   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_integer4 = MPI_DATATYPE_NULL;
-#   endif
-#   if defined(HAVE_C_VMPI_INTEGER8)
-    *(MPI_Datatype *) &mpig_vmpi_dt_integer8 = MPI_INTEGER8;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_integer8 = MPI_DATATYPE_NULL;
-#   endif
-#   if defined(HAVE_C_VMPI_INTEGER16)
-    *(MPI_Datatype *) &mpig_vmpi_dt_integer16 = MPI_INTEGER16;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_integer16 = MPI_DATATYPE_NULL;
-#   endif
-#   if defined(HAVE_C_VMPI_REAL4)
-    *(MPI_Datatype *) &mpig_vmpi_dt_real4 = MPI_REAL4;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_real4 = MPI_DATATYPE_NULL;
-#   endif
-#   if defined(HAVE_C_VMPI_REAL8)
-    *(MPI_Datatype *) &mpig_vmpi_dt_real8 = MPI_REAL8;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_real8 = MPI_DATATYPE_NULL;
-#   endif
-#   if defined(HAVE_C_VMPI_REAL16)
-    *(MPI_Datatype *) &mpig_vmpi_dt_real16 = MPI_REAL16;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_real16 = MPI_DATATYPE_NULL;
-#   endif
-#   if defined(HAVE_C_VMPI_COMPLEX8)
-    *(MPI_Datatype *) &mpig_vmpi_dt_complex8 = MPI_COMPLEX8;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_complex8 = MPI_DATATYPE_NULL;
-#   endif
-#   if defined(HAVE_C_VMPI_COMPLEX16)
-    *(MPI_Datatype *) &mpig_vmpi_dt_complex16 = MPI_COMPLEX16;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_complex16 = MPI_DATATYPE_NULL;
-#   endif
-#   if defined(HAVE_C_VMPI_COMPLEX32)
-    *(MPI_Datatype *) &mpig_vmpi_dt_complex32 = MPI_COMPLEX32;
-#   else
-    *(MPI_Datatype *) &mpig_vmpi_dt_complex32 = MPI_DATATYPE_NULL;
+    {
+        MPI_Type_contiguous(2, MPIG_VMPI_COMPLEX32_DTMAP, (MPI_Datatype *) &mpig_vmpi_dt_complex32);
+    }
 #   endif
     /* type representing a packed application buffer */
     *(MPI_Datatype *) &mpig_vmpi_dt_packed = MPI_PACKED;
