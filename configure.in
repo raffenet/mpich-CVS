@@ -511,6 +511,11 @@ AC_SUBST(MPICXXLIBNAME)
 
 # We'll set FORTRAN_BINDING to 1 if we support Fortran 
 FORTRAN_BINDING=0
+export FORTRAN_BINDING
+
+# We'll set CXX_BINDING to 1 if we support C++
+CXX_BINDING=0
+export CXX_BINDING
 
 # ----------------------------------------------------------------------------
 # Process any enable or with values
@@ -2280,6 +2285,7 @@ int main() {
     bindings="$bindings cxx"
     bindings_dirs="$bindings_dirs src/binding/cxx"
     AC_DEFINE(HAVE_CXX_BINDING,1,[Define if C++ is supported])
+    CXX_BINDING=1
     INCLUDE_MPICXX_H='#include "mpicxx.h"'
     AC_SUBST(INCLUDE_MPICXX_H)
 
