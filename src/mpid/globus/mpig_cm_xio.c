@@ -285,11 +285,11 @@ static int mpig_cm_xio_module_finalize(void)
     mpig_pe_start_op();				\
 }
 
-#define mpig_cm_xio_pe_end_op(req_)												\
+#define mpig_cm_xio_pe_end_op(was_ras_req_)                                                                                     \
 {																\
     /* if the request was posted as a receive any source, then do not decrement the XIO active op count since it was never	\
        incremented */														\
-    if (mpig_request_get_rank(req_) != MPI_ANY_SOURCE)										\
+    if (was_ras_req_)                                                                                                           \
     {																\
 	mpig_cm_xio_pe_info.active_ops -= 1;											\
 	mpig_pe_end_op();													\
@@ -337,8 +337,14 @@ int mpig_cm_xio_pe_wait(struct MPID_Progress_state * state)
 
 	while (req != NULL)
 	{
-	    mpig_cm_xio_pe_end_op(req);
-	    mpig_request_complete(req);
+            bool_t was_ras_req = (mpig_request_get_rank(req) == MPI_ANY_SOURCE);
+            bool_t req_completed;
+            
+	    mpig_request_complete(req, &req_completed);
+            if (req_completed)
+            {
+                mpig_cm_xio_pe_end_op(was_ras_req);
+            }
 
 	    mpi_errno = mpig_cm_xio_rcq_deq_test(&req);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");
@@ -387,8 +393,14 @@ int mpig_cm_xio_pe_test(void)
 
     while (req != NULL)
     {
-	mpig_cm_xio_pe_end_op(req);
-	mpig_request_complete(req);
+        bool_t was_ras_req = (mpig_request_get_rank(req) == MPI_ANY_SOURCE);
+        bool_t req_completed;
+            
+        mpig_request_complete(req, &req_completed);
+        if (req_completed)
+        {
+            mpig_cm_xio_pe_end_op(was_ras_req);
+        }
 	
 	mpi_errno = mpig_cm_xio_rcq_deq_test(&req);
 	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");

@@ -169,14 +169,15 @@ MPIG_STATIC int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * c
     {
 	/* a connection to the remote process exists.  enqueue the send request.  if no other request is actively being sent,
 	   then start sending the request at the head of the queue. */
-	mpig_cm_xio_sendq_enq_tail(vc, sreq);
+	mpig_cm_xio_sendq_enq_tail(vc, sreq, &mpi_errno);
+        if (mpi_errno) goto fn_fail;
+        
 	if (vc->cmu.xio.active_sreq == NULL)
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "VC is connected and send engine is inactive; starting send; vc="
 		MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle,
 		MPIG_PTR_CAST(sreq)));
 		    
-	    MPIU_Assert(mpig_cm_xio_sendq_head(vc) == sreq);
 	    mpi_errno = mpig_cm_xio_send_next_sreq(vc);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_next_sreq");
 	}
@@ -193,7 +194,8 @@ MPIG_STATIC int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * c
 	   connection establishment is complete. */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "VC connecting; enqueuing request; vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
 	    ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
-	mpig_cm_xio_sendq_enq_tail(vc, sreq);
+	mpig_cm_xio_sendq_enq_tail(vc, sreq, &mpi_errno);
+        if (mpi_errno) goto fn_fail;
     }
     else if (mpig_cm_xio_vc_is_disconnecting(vc))
     {
@@ -202,14 +204,15 @@ MPIG_STATIC int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * c
 	   class is called "disconnecting"; however, communication still needs to proceed to perform the disconnect protocol.
 	   once it is no longer safe to send messages, the VC state is switch to the "closing" class of states, and messages are
 	   enqueued.  see below. */
-	mpig_cm_xio_sendq_enq_tail(vc, sreq);
+	mpig_cm_xio_sendq_enq_tail(vc, sreq, &mpi_errno);
+        if (mpi_errno) goto fn_fail;
+
 	if (vc->cmu.xio.active_sreq == NULL)
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "VC is disconnecting and send engine is inactive; starting send; vc="
 		MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle,
 		MPIG_PTR_CAST(sreq)));
 		    
-	    MPIU_Assert(mpig_cm_xio_sendq_head(vc) == sreq);
 	    mpi_errno = mpig_cm_xio_send_next_sreq(vc);
 	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_next_sreq");
 	}
@@ -227,13 +230,15 @@ MPIG_STATIC int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * c
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "VC is closing; send state machine suspended; enqueuing request; vc="
 	    MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp="  MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle,
 	    MPIG_PTR_CAST(sreq)));
-	mpig_cm_xio_sendq_enq_tail(vc, sreq);
+	mpig_cm_xio_sendq_enq_tail(vc, sreq, &mpi_errno);
+        if (mpi_errno) goto fn_fail;
     }
     else if (mpig_cm_xio_vc_is_unconnected(vc))
     {
 	/* no connection exists for this VC or the connecting is being closed.  enqueue the send request so that it may be sent
 	   after a new connection is established */
-	mpig_cm_xio_sendq_enq_tail(vc, sreq);
+	mpig_cm_xio_sendq_enq_tail(vc, sreq, &mpi_errno);
+        if (mpi_errno) goto fn_fail;
 
 	if (mpig_cm_xio_vc_get_state(vc) == MPIG_CM_XIO_VC_STATE_UNCONNECTED)
 	{
@@ -250,6 +255,8 @@ MPIG_STATIC int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * c
     }
     else if (mpig_cm_xio_vc_has_failed(vc))
     {
+        int mrc;
+        
 	/* connection failed.  mark request as failed and complete. */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "VC in failed state; return error; vc=" MPIG_PTR_FMT
 	    ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
@@ -259,7 +266,15 @@ MPIG_STATIC int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * c
 	    "**globus|cm_xio|vc_connection %s %d %s", mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc),
 	    mpig_cm_xio_vc_get_contact_string(vc));
 	mpig_cm_xio_request_set_cc(sreq, 0);
-	mpig_cm_xio_rcq_enq(sreq);
+        mrc = mpig_cm_xio_rcq_enq(sreq);
+        if (mrc)
+        {
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure occurred "
+                "while attempting to enqueue sreq on the completion queue, vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
+                ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_sreq");
+            goto fn_fail;
+        }
     }
     else if (mpig_cm_xio_vc_is_undefined(vc))
     {   /* --BEGIN ERROR HANDLING-- */
@@ -1043,7 +1058,20 @@ MPIG_STATIC void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_
   fn_return:
     {
 	/* if all tasks associated with the request have completed, then added it to the completion queue */
-	if (sreq_complete) mpig_cm_xio_rcq_enq(sreq);
+	if (sreq_complete)
+        {
+            int mrc;
+            
+            mrc = mpig_cm_xio_rcq_enq(sreq);
+            if (mrc)
+            {
+                MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
+                    "occurred while attempting to enqueue sreq on the completion queue, vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
+                    ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
+                MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_sreq");
+                goto fn_fail;
+            }
+        }
     
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
 	    ", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq),
@@ -1773,7 +1801,17 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 	   waiting in MPI_Probe() :-((. */
 	if (rreq_complete)
 	{
-	    mpig_cm_xio_rcq_enq(rreq);
+            int mrc;
+            
+            mrc = mpig_cm_xio_rcq_enq(rreq);
+            if (mrc)
+            {
+                MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
+                    "occurred while attempting to enqueue rreq on the completion queue, vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
+                    ", rreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), rreq->handle, MPIG_PTR_CAST(rreq)));
+                MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_rreq");
+                goto fn_fail;
+            }
 	}
 	else if (!rreq_found)
 	{
@@ -2178,7 +2216,20 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_rndv_data_msg(mpig_vc_t * const vc)
     rreq_locked = FALSE;
 
     /* if all tasks associated with the request have completed, then added it to the completion queue */
-    if (rreq_complete) mpig_cm_xio_rcq_enq(rreq);
+    if (rreq_complete)
+    {
+        int mrc;
+            
+        mrc = mpig_cm_xio_rcq_enq(rreq);
+        if (mrc)
+        {
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
+                "occurred while attempting to enqueue rreq on the completion queue, vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
+                ", rreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), rreq->handle, MPIG_PTR_CAST(rreq)));
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_rreq");
+            goto fn_fail;
+        }
+    }
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting; vc= " MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
@@ -2250,7 +2301,20 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_ssend_ack_msg(mpig_vc_t * const vc)
     mpig_request_mutex_unlock(sreq);
     
     /* if all tasks associated with the request have completed, then added it to the completion queue */
-    if (sreq_complete) mpig_cm_xio_rcq_enq(sreq);
+    if (sreq_complete)
+    {
+        int mrc;
+            
+        mrc = mpig_cm_xio_rcq_enq(sreq);
+        if (mrc)
+        {
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
+                "occurred while attempting to enqueue sreq on the completion queue, vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
+                ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_sreq");
+            goto fn_fail;
+        }
+    }
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting; vc= " MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
@@ -2463,7 +2527,20 @@ MPIG_STATIC int mpig_cm_xio_recv_handle_cancel_send_resp_msg(mpig_vc_t * const v
     mpig_request_mutex_unlock(sreq);
     
     /* if all tasks associated with the request have completed, then added it to the completion queue */
-    if (sreq_complete) mpig_cm_xio_rcq_enq(sreq);
+    if (sreq_complete)
+    {
+        int mrc;
+            
+        mrc = mpig_cm_xio_rcq_enq(sreq);
+        if (mrc)
+        {
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
+                "occurred while attempting to enqueue sreq on the completion queue, vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
+                ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_sreq");
+            goto fn_fail;
+        }
+    }
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: vc= " MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,
@@ -2776,7 +2853,20 @@ MPIG_STATIC void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t
 
   fn_return:
     /* if all tasks associated with the request have completed, then added it to the completion queue */
-    if (rreq_complete) mpig_cm_xio_rcq_enq(rreq);
+    if (rreq_complete)
+    {
+        int mrc;
+            
+        mrc = mpig_cm_xio_rcq_enq(rreq);
+        if (mrc)
+        {
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
+                "occurred while attempting to enqueue rreq on the completion queue, vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
+                ", rreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), rreq->handle, MPIG_PTR_CAST(rreq)));
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_rreq");
+            goto fn_fail;
+        }
+    }
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exit state: vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
 	", rreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), rreq->handle, MPIG_PTR_CAST(rreq)));

@@ -32,7 +32,6 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
     mpig_databuf_construct((req_)->cmu.xio.msgbuf, MPIG_CM_XIO_REQUEST_MSGBUF_SIZE);	\
     (req_)->cmu.xio.gdc_df = NEXUS_DC_FORMAT_UNKNOWN;					\
     (req_)->cmu.xio.databuf = NULL;							\
-    (req_)->cmu.xio.sendq_next = NULL;							\
 											\
     (req_)->dev.cm_destruct = mpig_cm_xio_request_destruct_fn;				\
 }
@@ -59,7 +58,6 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
 	mpig_databuf_destroy((req_)->cmu.xio.databuf);				\
 	(req_)->cmu.xio.databuf = MPIG_INVALID_PTR;				\
     }										\
-    (req_)->cmu.xio.sendq_next = MPIG_INVALID_PTR;				\
 }
 
 #define mpig_cm_xio_request_set_cc(req_, cc_)										\
@@ -255,8 +253,7 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
 **********************************************************************************************************************************/
 #if !defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS)
 
-MPIG_STATIC MPID_Request * mpig_cm_xio_rcq_head = NULL;
-MPIG_STATIC MPID_Request * mpig_cm_xio_rcq_tail = NULL;
+MPIG_STATIC mpig_genq_t mpig_cm_xio_rcq;
 MPIG_STATIC mpig_mutex_t mpig_cm_xio_rcq_mutex;
 MPIG_STATIC mpig_cond_t mpig_cm_xio_rcq_cond;
 MPIG_STATIC int mpig_cm_xio_rcq_blocked = FALSE;
@@ -266,7 +263,7 @@ MPIG_STATIC int mpig_cm_xio_rcq_init(void);
 
 MPIG_STATIC int mpig_cm_xio_rcq_finalize(void);
 
-MPIG_STATIC void mpig_cm_xio_rcq_enq(MPID_Request * req);
+MPIG_STATIC int mpig_cm_xio_rcq_enq(MPID_Request * req);
 
 MPIG_STATIC int mpig_cm_xio_rcq_deq_wait(MPID_Request ** req);
 
@@ -290,6 +287,8 @@ MPIG_STATIC int mpig_cm_xio_rcq_init(void)
 
     MPIG_UNUSED_VAR(fcname);
 
+    mpig_genq_construct(&mpig_cm_xio_rcq);
+
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_rcq_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "entering"));
 
@@ -311,8 +310,7 @@ MPIG_STATIC int mpig_cm_xio_rcq_init(void)
     }
     /* --END ERROR HANDLING-- */
 }
-/* mpig_cm_xio_rcq_init() */
-
+/* end mpig_cm_xio_rcq_init() */
 
 /*
  * <mpi_errno> mpig_cm_xio_rcq_finalize(void)
@@ -331,6 +329,8 @@ MPIG_STATIC int mpig_cm_xio_rcq_finalize(void)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_rcq_finalize);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "entering"));
     
+    mpig_genq_destruct(&mpig_cm_xio_rcq, NULL);
+
     rc = mpig_mutex_destruct(&mpig_cm_xio_rcq_mutex);
     MPIU_ERR_CHKANDSTMT((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|mutex_destroy")
     
@@ -342,17 +342,18 @@ MPIG_STATIC int mpig_cm_xio_rcq_finalize(void)
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_rcq_finalize);
     return mpi_errno;
 }
-/* mpig_cm_xio_rcq_finalize() */
-
+/* end mpig_cm_xio_rcq_finalize() */
 
 /*
  * <void> mpig_cm_xio_rcq_enq([IN/MOD] req)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_rcq_enq
-MPIG_STATIC void mpig_cm_xio_rcq_enq(MPID_Request * const req)
+MPIG_STATIC int mpig_cm_xio_rcq_enq(MPID_Request * const req)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    mpig_genq_entry_t * rcq_entry;
+    int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_rcq_enq);
 
     MPIG_UNUSED_VAR(fcname);
@@ -360,19 +361,16 @@ MPIG_STATIC void mpig_cm_xio_rcq_enq(MPID_Request * const req)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_rcq_enq);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "entering: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT,
 	req->handle, MPIG_PTR_CAST(req)));
+
+    mpi_errno = mpig_genq_entry_create(&rcq_entry);
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_entry_create");
+
+    mpig_genq_entry_set_value(rcq_entry, req);
     
     mpig_mutex_lock(&mpig_cm_xio_rcq_mutex);
     {
-	if (mpig_cm_xio_rcq_head == NULL)
-	{
-	    mpig_cm_xio_rcq_head = req;
-	}
-	else
-	{
-	    mpig_cm_xio_rcq_tail->dev.next = req;
-	}
-	mpig_cm_xio_rcq_tail = req;
-
+        mpig_genq_enqueue_tail_entry(&mpig_cm_xio_rcq, rcq_entry);
+        
 	/* MT-RC-NOTE: on machines with release consistent memory semantics, the unlock of the RCQ mutex will force changes made
 	   to the request to be committed (released), so there is no need to perform an explicit acq/rel. */
 	req->dev.next = NULL;
@@ -387,14 +385,21 @@ MPIG_STATIC void mpig_cm_xio_rcq_enq(MPID_Request * const req)
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PROGRESS | MPIG_DEBUG_LEVEL_REQ, "req enqueued on the completion queue: req="
 	MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, req->handle, MPIG_PTR_CAST(req)));
-    
+
+  fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "exiting: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT,
 	req->handle, MPIG_PTR_CAST(req)));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_rcq_enq);
-    return;
-}
-/* mpig_cm_xio_rcq_enq() */
+    return mpi_errno;
 
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
+
+    
+}
+/* end mpig_cm_xio_rcq_enq() */
 
 /*
  * <mpi_errno> mpig_cm_xio_rcq_deq_wait([OUT] reqp)
@@ -404,6 +409,7 @@ MPIG_STATIC void mpig_cm_xio_rcq_enq(MPID_Request * const req)
 MPIG_STATIC int mpig_cm_xio_rcq_deq_wait(MPID_Request ** const reqp)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    mpig_genq_entry_t * rcq_entry;
     MPID_Request * req = NULL;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_rcq_deq_wait);
@@ -417,35 +423,36 @@ MPIG_STATIC int mpig_cm_xio_rcq_deq_wait(MPID_Request ** const reqp)
     
     mpig_mutex_lock(&mpig_cm_xio_rcq_mutex);
     {
-	while (mpig_cm_xio_rcq_head == NULL && !mpig_cm_xio_rcq_wakeup_pending)
-	{
-	    /* XXX: check for registered asynchronous errors.  if any, return them.  should this be done before calling poll()? */
-	    
-	    mpig_cm_xio_rcq_blocked = TRUE;
-	    mpig_cond_wait(&mpig_cm_xio_rcq_cond, &mpig_cm_xio_rcq_mutex);
-	    mpig_cm_xio_rcq_blocked = FALSE;
-	}
-	mpig_cm_xio_rcq_wakeup_pending = FALSE;
-	
-	req = mpig_cm_xio_rcq_head;
-	if (req != NULL)
-	{
-	    mpig_cm_xio_rcq_head = mpig_cm_xio_rcq_head->dev.next;
-	    if (mpig_cm_xio_rcq_head == NULL)
-	    {
-		mpig_cm_xio_rcq_tail = NULL;
-	    }
-	    req->dev.next = NULL;
-	    
-	    /* MT-RC-NOTE: on machines with release consistent memory semantics, the unlock of the RCQ mutex will force changes
-	       made to the request to be committed (released), so there is no need to perform an explicit acq/rel. */
-	}
+        while(TRUE)
+        {
+            /* XXX: check for registered asynchronous errors.  if any, return them.  should this be done before attempting to
+               dequeue a completed request? */
+            rcq_entry = mpig_genq_dequeue_head_entry(&mpig_cm_xio_rcq);
+            if (rcq_entry != NULL || mpig_cm_xio_rcq_wakeup_pending) break;
+
+            mpig_cm_xio_rcq_blocked = TRUE;
+            mpig_cond_wait(&mpig_cm_xio_rcq_cond, &mpig_cm_xio_rcq_mutex);
+            mpig_cm_xio_rcq_blocked = FALSE;
+        }
+
+        if (rcq_entry != NULL)
+        {
+            req = mpig_genq_entry_get_value(rcq_entry);
+            mpig_genq_entry_destroy(rcq_entry);
+
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PROGRESS | MPIG_DEBUG_LEVEL_REQ, "req dequeued from the completion queue, req="
+                MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, MPIG_HANDLE_VAL(req), MPIG_PTR_CAST(req)));
+        }
+        else
+        {
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PROGRESS | MPIG_DEBUG_LEVEL_REQ, "wakeup event caught"));
+        }
+        
+        mpig_cm_xio_rcq_wakeup_pending = FALSE;
     }
     mpig_mutex_unlock(&mpig_cm_xio_rcq_mutex);
 
     *reqp = req;
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PROGRESS | MPIG_DEBUG_LEVEL_REQ, "req dequeued from the completion queue, req="
-	MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, MPIG_HANDLE_VAL(*reqp), MPIG_PTR_CAST(*reqp)));
 
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "exiting: reqp=" MPIG_PTR_FMT "mpi_errno="
@@ -453,7 +460,7 @@ MPIG_STATIC int mpig_cm_xio_rcq_deq_wait(MPID_Request ** const reqp)
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_rcq_deq_wait);
     return mpi_errno;
 }
-
+/* end mpig_cm_xio_rcq_deq_wait() */
 
 /*
  * <mpi_errno> mpig_cm_xio_rcq_deq_test([OUT] reqp)
@@ -463,6 +470,8 @@ MPIG_STATIC int mpig_cm_xio_rcq_deq_wait(MPID_Request ** const reqp)
 MPIG_STATIC int mpig_cm_xio_rcq_deq_test(MPID_Request ** reqp)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    mpig_genq_entry_t * rcq_entry;
+    MPID_Request * req = NULL;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_rcq_deq_test);
 
@@ -473,27 +482,21 @@ MPIG_STATIC int mpig_cm_xio_rcq_deq_test(MPID_Request ** reqp)
 
     mpig_mutex_lock(&mpig_cm_xio_rcq_mutex);
     {
-	/* XXX: check for registered asynchronous errors.  if any, return them.  should the be done before calling poll()? */
-    
-	*reqp = mpig_cm_xio_rcq_head;
-	
-	if (mpig_cm_xio_rcq_head != NULL)
-	{
-	    mpig_cm_xio_rcq_head = mpig_cm_xio_rcq_head->dev.next;
-	    if (mpig_cm_xio_rcq_head == NULL)
-	    {
-		mpig_cm_xio_rcq_tail = NULL;
-	    }
-
-	    /* MT-RC-NOTE: on machines with release consistent memory semantics, the unlock of the RCQ mutex will force changes
-	       made to the request to be committed (released), so there is no need to perform an explicit acq/rel. */
-	    (*reqp)->dev.next = NULL;
+        /* XXX: check for registered asynchronous errors.  if any, return them.  should this be done before attempting to dequeue
+           a completed request? */
+        rcq_entry = mpig_genq_dequeue_head_entry(&mpig_cm_xio_rcq);
+        if (rcq_entry != NULL)
+        {
+            req = mpig_genq_entry_get_value(rcq_entry);
+            mpig_genq_entry_destroy(rcq_entry);
 	    
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PROGRESS | MPIG_DEBUG_LEVEL_REQ, "req dequeued from the completion queue, req="
-		MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, (*reqp)->handle, MPIG_PTR_CAST(*reqp)));
-	}
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PROGRESS | MPIG_DEBUG_LEVEL_REQ, "req dequeued from the completion queue, req="
+                MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT, MPIG_HANDLE_VAL(req), MPIG_PTR_CAST(req)));
+        }
 
-	mpig_cm_xio_rcq_wakeup_pending = FALSE;
+        mpig_cm_xio_rcq_wakeup_pending = FALSE;
+
+	*reqp = req;
     }
     mpig_mutex_unlock(&mpig_cm_xio_rcq_mutex);
 
@@ -502,8 +505,7 @@ MPIG_STATIC int mpig_cm_xio_rcq_deq_test(MPID_Request ** reqp)
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_rcq_deq_test);
     return mpi_errno;
 }
-/* mpig_cm_xio_rcq_deq_test() */
-
+/* end mpig_cm_xio_rcq_deq_test() */
 
 /*
  * void mpig_cm_xio_rcq_wakeup([IN/MOD] req)
@@ -525,6 +527,8 @@ MPIG_STATIC void mpig_cm_xio_rcq_wakeup(void)
 	if (mpig_cm_xio_rcq_blocked)
 	{
 	    mpig_cond_signal(&mpig_cm_xio_rcq_cond);
+
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PROGRESS | MPIG_DEBUG_LEVEL_REQ, "wakeup event signalled"));
 	}
     }
     mpig_mutex_unlock(&mpig_cm_xio_rcq_mutex);
@@ -533,7 +537,7 @@ MPIG_STATIC void mpig_cm_xio_rcq_wakeup(void)
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_rcq_wakeup);
     return;
 }
-/* mpig_cm_xio_rcq_wakeup() */
+/* end mpig_cm_xio_rcq_wakeup() */
 
 #endif /* MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS */
 /**********************************************************************************************************************************

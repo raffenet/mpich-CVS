@@ -1403,8 +1403,10 @@ static void mpig_cm_vmpi_pe_complete_reqs(const int num_reqs_completed, const bo
 	/* if the MPICH2 request is still valid, then extract the status from the vendor request and complete MPICH2 request */
 	if (mreq)
 	{
+            bool_t mreq_completed;
+            
 	    mpig_cm_vmpi_request_status_vtom(mreq, vstatus, verror);
-	    mpig_request_complete(mreq);
+	    mpig_request_complete(mreq, &mreq_completed);
 	}
     }
     /* end for (i = 0; i < reqs_completed; i++) */
@@ -4190,8 +4192,10 @@ int mpig_cm_vmpi_cancel_recv_any_source(MPID_Request * const ras_req, bool_t * c
 	    
 	    if (!vcancelled)
 	    {
+                bool_t ras_req_completed;
+                
 		mpig_cm_vmpi_request_status_vtom(ras_req, &vstatus, vrc_test);
-		mpig_request_complete(ras_req);
+		mpig_request_complete(ras_req, &ras_req_completed);
 		/* mpig_pe_end_ras_op() should only be called when the request wasn't cancelled.  in the case where it is
 		   cancelled, mpig_adi3_cancel_recv() will make the call, and it must do so since it doesn't know that vendor MPI
 		   exists. */
@@ -4280,7 +4284,8 @@ int mpig_cm_vmpi_register_recv_any_source(const mpig_msg_op_params_t * const ras
 	mpig_request_construct_irreq(ras_req, 1, 0, ras_params->buf, ras_params->cnt, ras_params->dt,
 	    ras_params->rank, ras_params->tag, ras_params->comm->recvcontext_id + ras_params->ctxoff, ras_params->comm, vc);
 	mpig_cm_vmpi_request_status_vtom(ras_req, &vstatus, vrc);
-	/* mpig_request_complete(ras_req); -- completion counter set to zero during request construction above */
+	/* mpig_request_complete(ras_req, &ras_req_completed); -- completion counter set to zero during request construction
+           above */
 	found = TRUE;
     }
     else
@@ -4402,11 +4407,12 @@ int mpig_cm_vmpi_unregister_recv_any_source(mpig_recvq_ras_op_t * const ras_op)
 	    const int vrank = mpig_vmpi_status_get_source(&vstatus);
 	    const int mrank = mpig_cm_vmpi_comm_get_remote_mrank(ras_req->comm, vrank);
 	    mpig_vc_t * const vc = mpig_comm_get_remote_vc(ras_req->comm, mrank);
+            bool_t ras_req_completed;
 
 	    mpig_request_set_vc(ras_req, vc);
 	    mpig_cm_vmpi_request_status_vtom(ras_req, &vstatus, vrc_test);
 	    mpig_pe_end_ras_op();
-	    mpig_request_complete(ras_req);
+	    mpig_request_complete(ras_req, &ras_req_completed);
 	    ras_req = NULL;
 	}
 	else

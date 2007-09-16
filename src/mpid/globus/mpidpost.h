@@ -164,12 +164,10 @@ void mpig_request_destroy(MPID_Request * req);
  * SUPER-IMPORTANT-MT-NOTE: see the note at the top of this section concerning the creation and destruction of requests from
  * internal device threads.
  */
-#define mpig_request_complete(req_)						\
+#define mpig_request_complete(req_, is_complete_p_)                             \
 {										\
-    bool_t mpig_request_complete_is_complete__;					\
-										\
-    mpig_request_dec_cc((req_), &mpig_request_complete_is_complete__);		\
-    if (mpig_request_complete_is_complete__)					\
+    mpig_request_dec_cc((req_), (is_complete_p_));                              \
+    if (*(is_complete_p_))                                                      \
     {										\
 	bool_t mpig_request_complete_is_inuse__;				\
 	mpig_request_dec_ref_count((req_), &mpig_request_complete_is_inuse__);	\

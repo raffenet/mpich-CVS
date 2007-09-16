@@ -85,8 +85,7 @@ struct mpig_cm_xio_vc_cmu					\
     struct MPID_Request * active_rreq;				\
 								\
     /* send queue */						\
-    struct MPID_Request * sendq_head;				\
-    struct MPID_Request * sendq_tail;				\
+    mpig_genq_t sendq;                                          \
 								\
     /* header size of message being receive */			\
     unsigned msg_hdr_size;					\
@@ -151,10 +150,6 @@ struct mpig_cm_xio_request_cmu													\
 																\
     /* temporary data storage used for things like unexpected eager messages and packing/unpacking buffers */			\
     struct mpig_databuf * databuf;												\
-																\
-    /* next entry in the send queue.  the request completion queue (RCQ) already uses the dev.next field, so a separate send	\
-       queue next pointer field is required. */											\
-    struct MPID_Request * sendq_next;												\
 }																\
 xio;
 

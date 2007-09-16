@@ -255,13 +255,8 @@ MPIG_INLINE_HDEF void mpig_genq_remove_entry(mpig_genq_t * const queue, mpig_gen
         queue->tail = entry->prev;
     }
 
-#   if defined(MPIG_DEBUG)
-    {
-        entry->value = MPIG_INVALID_PTR;
-        entry->prev = MPIG_INVALID_PTR;
-        entry->next = MPIG_INVALID_PTR;
-    }
-#   endif
+    entry->prev = NULL;
+    entry->next = NULL;
 }
 
 #undef FUNCNAME

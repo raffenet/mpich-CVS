@@ -20,7 +20,7 @@ MPIG_STATIC const char * mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_state_t 
     (vc_)->cmu.xio.state = MPIG_CM_XIO_VC_STATE_UNCONNECTED;			\
     mpig_cm_xio_vc_set_contact_string((vc_), NULL);				\
     (vc_)->cmu.xio.endian = MPIG_ENDIAN_UNKNOWN;				\
-    (vc_)->cmu.xio.gdc_df = -1;                                                \
+    (vc_)->cmu.xio.gdc_df = -1;                                                 \
     (vc_)->cmu.xio.handle = NULL;						\
     (vc_)->cmu.xio.conn_seqnum = 0;						\
     (vc_)->cmu.xio.active_sreq = NULL;						\
@@ -874,8 +874,21 @@ static int mpig_cm_xio_adi3_cancel_send(MPID_Request * const sreq)
     
   fn_return:
     /* if the request was succesfully cancelled, then added it to the completion queue */
-    if (sreq_complete) mpig_cm_xio_rcq_enq(sreq);
-    
+    if (sreq_complete)
+    {
+        int mrc;
+        
+        mrc = mpig_cm_xio_rcq_enq(sreq);
+        if (mrc)
+        {
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure occurred "
+                "while attempting to enqueue sreq on the completion queue, vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
+                ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_sreq");
+            goto fn_fail;
+        }
+    }
+
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
 	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, sreq->handle, MPIG_PTR_CAST(sreq), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_adi3_cancel_send);
@@ -1123,7 +1136,17 @@ static int mpig_cm_xio_vc_recv_unexpected(mpig_vc_t * const vc, MPID_Request * c
     }   /* --END ERROR HANDLING-- */
 
     /* if all tasks associated with the request have completed, then added it to the completion queue */
-    if (rreq_complete) mpig_cm_xio_rcq_enq(rreq);
+    if (rreq_complete)
+    {
+        mrc = mpig_cm_xio_rcq_enq(rreq);
+        if (mrc)
+        {
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure occurred "
+                "while attempted to enqueue rreq on the completion queue, vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
+                ", rreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), rreq->handle, MPIG_PTR_CAST(rreq)));
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_rreq");
+        }
+    }
 
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: vc=" MPIG_PTR_FMT ", rreq=" MPIG_PTR_FMT
@@ -1149,6 +1172,8 @@ acquire and releases are performed on machines with release consistent memory mo
 **********************************************************************************************************************************/
 #if !defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS)
 
+typedef mpig_genq_t mpig_cm_xio_senq_t;
+
 #if FALSE /* eliminate compiler warnings */
 static void mpig_cm_xio_sendq_construct(mpig_vc_t * vc);
 
@@ -1160,86 +1185,91 @@ static void mpig_cm_xio_sendq_enq_head(mpig_vc_t * vc, MPID_Request * sreq);
 
 static void mpig_cm_xio_sendq_deq(mpig_vc_t * vc, MPID_Request ** sreqp);
 
-static MPID_Request * mpig_cm_xio_sendq_head(mpig_vc_t * vc);
-
 static bool_t mpig_cm_xio_sendq_empty(mpig_vc_t * vc);
 #endif /* FALSE */
 
 static bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request * sreq);
 
+static bool_t mpig_cm_xio_sendq_compare_sreqs(const void * sreq1, const void * sreq2);
+
+
 #define mpig_cm_xio_sendq_construct(vc_)	\
 {						\
-    (vc_)->cmu.xio.sendq_head = NULL;		\
-    (vc_)->cmu.xio.sendq_tail = NULL;		\
+    mpig_genq_construct(&(vc_)->cmu.xio.sendq); \
 }
 
-#define mpig_cm_xio_sendq_destruct(vc_)			\
-{							\
-    MPIU_Assert((vc_)->cmu.xio.sendq_head == NULL);	\
-    MPIU_Assert((vc_)->cmu.xio.sendq_tail == NULL);	\
-    (vc_)->cmu.xio.sendq_head = MPIG_INVALID_PTR;	\
-    (vc_)->cmu.xio.sendq_tail = MPIG_INVALID_PTR;	\
+#define mpig_cm_xio_sendq_destruct(vc_)                 \
+{                                                       \
+    mpig_genq_destruct(&(vc_)->cmu.xio.sendq, NULL);    \
 }
 
-#define mpig_cm_xio_sendq_enq_head(vc_, sreq_)										\
-{															\
-    (sreq_)->cmu.xio.sendq_next = (vc_)->cmu.xio.sendq_head;								\
-    if ((vc_)->cmu.xio.sendq_tail == NULL)										\
-    {															\
-	(vc_)->cmu.xio.sendq_tail = (sreq_);										\
-    }															\
-    (vc_)->cmu.xio.sendq_head = (sreq_);										\
-															\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC, "sendq - req enqueued at head: vc=" MPIG_PTR_FMT	\
-	", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc_), (sreq_)->handle, MPIG_PTR_CAST(sreq_)));	\
+#define mpig_cm_xio_sendq_enq_head(vc_, sreq_, mpi_errno_p_)                                                                    \
+{                                                                                                                               \
+    mpig_genq_entry_t * mpig_cm_xio_sendq_entry;                                                                                \
+                                                                                                                                \
+    *(mpi_errno_p_) = mpig_genq_entry_create(&mpig_cm_xio_sendq_entry);                                                         \
+    if (*(mpi_errno_p_) == MPI_SUCCESS)                                                                                         \
+    {                                                                                                                           \
+        mpig_genq_entry_set_value(mpig_cm_xio_sendq_entry, (sreq_));                                                            \
+        mpig_genq_enqueue_head_entry(&(vc_)->cmu.xio.sendq, mpig_cm_xio_sendq_entry);                                           \
+                                                                                                                                \
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC, "sendq - req enqueued at head: vc=" MPIG_PTR_FMT       \
+            ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", sendq_entry" MPIG_PTR_FMT, MPIG_PTR_CAST(vc_),                 \
+    }                                                                                                                           \
+    else                                                                                                                        \
+    {                                                                                                                           \
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC | MPIG_DEBUG_LEVEL_ERROR, "ERROR: "                     \
+            "sendq - req enqueued at head failed: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp="                        \
+            MPIG_PTR_FMT, MPIG_PTR_CAST(vc_), (sreq_)->handle, MPIG_PTR_CAST(sreq_)));                                          \
+    }                                                                                                                           \
 }
 
-#define mpig_cm_xio_sendq_enq_tail(vc_, sreq_)										\
-{															\
-    if ((vc_)->cmu.xio.sendq_tail != NULL)										\
-    {															\
-	(vc_)->cmu.xio.sendq_tail->cmu.xio.sendq_next = (sreq_);							\
-    }															\
-    else														\
-    {															\
-	(vc_)->cmu.xio.sendq_head = (sreq_);										\
-    }															\
-    (vc_)->cmu.xio.sendq_tail = (sreq_);										\
-															\
-    (sreq_)->cmu.xio.sendq_next = NULL;											\
-															\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC, "sendq - req enqueued at tail: vc=" MPIG_PTR_FMT	\
-	", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc_), (sreq_)->handle, MPIG_PTR_CAST(sreq_)));	\
+#define mpig_cm_xio_sendq_enq_tail(vc_, sreq_, mpi_errno_p_)                                                                    \
+{                                                                                                                               \
+    mpig_genq_entry_t * mpig_cm_xio_sendq_entry;                                                                                \
+                                                                                                                                \
+    *(mpi_errno_p_) = mpig_genq_entry_create(&mpig_cm_xio_sendq_entry);                                                         \
+    if (*(mpi_errno_p_) == MPI_SUCCESS)                                                                                         \
+    {                                                                                                                           \
+        mpig_genq_entry_set_value(mpig_cm_xio_sendq_entry, (sreq_));                                                            \
+        mpig_genq_enqueue_tail_entry(&(vc_)->cmu.xio.sendq, mpig_cm_xio_sendq_entry);                                           \
+                                                                                                                                \
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC, "sendq - req enqueued at tail: vc=" MPIG_PTR_FMT       \
+            ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT ", sendq_entry" MPIG_PTR_FMT, MPIG_PTR_CAST(vc_),                 \
+        (sreq_)->handle, MPIG_PTR_CAST(sreq_), MPIG_PTR_CAST(mpig_cm_xio_sendq_entry)));                                        \
+    }                                                                                                                           \
+    else                                                                                                                        \
+    {                                                                                                                           \
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC | MPIG_DEBUG_LEVEL_ERROR, "ERROR: "                     \
+            "sendq - req enqueued at tail failed: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp="                        \
+            MPIG_PTR_FMT, MPIG_PTR_CAST(vc_), (sreq_)->handle, MPIG_PTR_CAST(sreq_)));                                          \
+    }                                                                                                                           \
 }
 
-#define mpig_cm_xio_sendq_deq(vc_, sreqp_)											\
-{																\
-    *(sreqp_) = (vc_)->cmu.xio.sendq_head;											\
-																\
-    if ((vc_)->cmu.xio.sendq_head != NULL)											\
-    {																\
-	(vc_)->cmu.xio.sendq_head = (vc_)->cmu.xio.sendq_head->cmu.xio.sendq_next;						\
-	if ((vc_)->cmu.xio.sendq_head == NULL)											\
-	{															\
-	    (vc_)->cmu.xio.sendq_tail = NULL;											\
-	}															\
-																\
-	(*(sreqp_))->cmu.xio.sendq_next = NULL;											\
-																\
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC, "sendq - req dequeued: vc=" MPIG_PTR_FMT		\
-	    ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc_), (*(sreqp_))->handle,				\
-	    MPIG_PTR_CAST(*(sreqp_))));												\
-    }																\
-    else															\
-    {																\
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC, "sendq - queue empty; no request dequeued: vc="	\
-	    MPIG_PTR_FMT, MPIG_PTR_CAST(vc_)));											\
-    }																\
+#define mpig_cm_xio_sendq_deq(vc_, sreqp_)                                                                                      \
+{                                                                                                                               \
+    mpig_genq_entry_t * mpig_cm_xio_sendq_entry;                                                                                \
+                                                                                                                                \
+    mpig_cm_xio_sendq_entry = mpig_genq_dequeue_head_entry(&(vc_)->cmu.xio.sendq);                                              \
+    if (mpig_cm_xio_sendq_entry != NULL)                                                                                        \
+    {                                                                                                                           \
+        *(sreqp_) = mpig_genq_entry_get_value(mpig_cm_xio_sendq_entry);                                                         \
+        mpig_genq_entry_destroy(mpig_cm_xio_sendq_entry);                                                                       \
+                                                                                                                                \
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC, "sendq - req dequeued: vc=" MPIG_PTR_FMT               \
+	    ", sendq_entry=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc_),                \
+            MPIG_PTR_CAST(mpig_cm_xio_sendq_entry), (*(sreqp_))->handle, MPIG_PTR_CAST(*(sreqp_))));                            \
+    }                                                                                                                           \
+    else                                                                                                                        \
+    {                                                                                                                           \
+        *(sreqp_) = NULL;                                                                                                       \
+                                                                                                                                \
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC, "sendq - queue empty; no request dequeued: vc="        \
+	    MPIG_PTR_FMT, MPIG_PTR_CAST(vc_)));                                                                                 \
+    }                                                                                                                           \
 }
 
-#define mpig_cm_xio_sendq_head(vc_) ((vc_)->cmu.xio.sendq_head)
-
-#define mpig_cm_xio_sendq_empty(vc_) ((vc_)->cmu.xio.sendq_head == NULL)
+#define mpig_cm_xio_sendq_empty(vc_) (mpig_genq_is_empty(&(vc_)->cmu.xio.sendq))
 
 
 #else /* defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS) */
@@ -1253,8 +1283,7 @@ static bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request * sreq
 static bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request * sreq)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    MPID_Request * cur_sreq;
-    MPID_Request * prev_sreq;
+    mpig_genq_entry_t * sendq_entry;
     bool_t sreq_found = FALSE;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_sendq_find_and_deq);
 
@@ -1265,38 +1294,20 @@ static bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request * sreq
 		       "entering: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT,
 		       MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
 
-    prev_sreq = NULL;
-    cur_sreq = vc->cmu.xio.sendq_head;
-
-    while (cur_sreq != NULL)
+    sendq_entry = mpig_genq_find_entry(&vc->cmu.xio.sendq, sreq, mpig_cm_xio_sendq_compare_sreqs);
+    if (sendq_entry)
     {
-	if (cur_sreq == sreq)
-	{
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC,
-			       "sreq found and dequeued: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT,
-			       MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
-	    
-	    if (prev_sreq == NULL)
-	    {
-		vc->cmu.xio.sendq_head = sreq->cmu.xio.sendq_next;
-	    }
-	    else
-	    {
-		prev_sreq->cmu.xio.sendq_next = sreq->cmu.xio.sendq_next;
-	    }
-
-	    if (vc->cmu.xio.sendq_tail == sreq)
-	    {
-		vc->cmu.xio.sendq_tail = sreq->cmu.xio.sendq_next;
-	    }
-
-	    sreq->cmu.xio.sendq_next = NULL;
-	    sreq_found = TRUE;
-	    break;
-	}
-
-	prev_sreq = cur_sreq;
-	cur_sreq = cur_sreq->cmu.xio.sendq_next;
+        mpig_genq_remove_entry(&vc->cmu.xio.sendq, sendq_entry);
+        mpig_genq_entry_destroy(sendq_entry);
+        sreq_found = TRUE;
+        
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC, "sreq found and dequeued: vc=" MPIG_PTR_FMT ", sreq="
+            MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
+    }
+    else
+    {
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC, "sreq not found: vc=" MPIG_PTR_FMT ", sreq="
+            MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
     }
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_VC,
@@ -1307,6 +1318,10 @@ static bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request * sreq
 }
 /* mpig_cm_xio_sendq_find_and_deq() */
 
+static bool_t mpig_cm_xio_sendq_compare_sreqs(const void * const sreq1, const void * const sreq2)
+{
+    return (sreq1 == sreq2) ? TRUE : FALSE;
+}
 
 #endif /* MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS */
 /**********************************************************************************************************************************

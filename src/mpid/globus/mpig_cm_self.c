@@ -751,6 +751,7 @@ static int mpig_cm_self_adi3_irecv(
 	int sreq_cnt;
 	MPI_Datatype sreq_dt;
 	MPIU_Size_t data_size;
+        bool_t sreq_completed;
 
 	/* finish filling in the request fields */
 	mpig_request_set_buffer(rreq, buf, cnt, dt);
@@ -787,8 +788,8 @@ static int mpig_cm_self_adi3_irecv(
 	   the reference count and completion counter */
 	mpig_request_set_ref_count(rreq, 1);
 	mpig_request_set_cc(rreq, 0);
-	
-	mpig_request_complete(sreq);
+
+        mpig_request_complete(sreq, &sreq_completed);
     }
     else
     {
@@ -958,6 +959,7 @@ static int mpig_cm_self_vc_recv_any_source(mpig_vc_t * const vc, MPID_Request * 
     int rreq_cnt;
     MPI_Datatype sreq_dt;
     MPIU_Size_t data_size;
+    bool_t sreq_completed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_vc_recv_any_source);
 
@@ -1000,7 +1002,7 @@ static int mpig_cm_self_vc_recv_any_source(mpig_vc_t * const vc, MPID_Request * 
     mpig_request_set_ref_count(rreq, 1);
     mpig_request_set_cc(rreq, 0);
     
-    mpig_request_complete(sreq);
+    mpig_request_complete(sreq, &sreq_completed);
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: vc= " MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
@@ -1078,7 +1080,8 @@ static int mpig_cm_self_send(
 	rreq->status.MPI_TAG = tag;
 	rreq->status.count = (int) data_size;
 	/* rreq->status.mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
-	/* mpig_request_complete(rreq); -- performed below to avoid destroying the request before it is unlocked */
+	/* mpig_request_complete(rreq, &rreq_completed); -- performed below to avoid destroying the request before it is
+           unlocked */
 
 	/* neither the application nor any other part of MPICH has a handle to the send request, so it is safe to just reset the
 	   reference count and completion counter */
@@ -1134,7 +1137,9 @@ static int mpig_cm_self_send(
     
   fn_return:
     if (rreq != NULL)
-    { 
+    {
+        bool_t rreq_completed;
+        
 	/* the receive request is locked by the recvq routine to insure atomicity.  it must be unlocked before returning. */
 	mpig_request_mutex_unlock(rreq);
 
@@ -1142,7 +1147,7 @@ static int mpig_cm_self_send(
 	{
 	    /* if a matching receive was found in the unexpected queue, then the send will have completed the receive.  the
 	       request is completed here to avoid destroying the request while the request mutex is still locked. */
-	    mpig_request_complete(rreq);
+	    mpig_request_complete(rreq, &rreq_completed);
 	}
 	else
 	{

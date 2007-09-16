@@ -325,6 +325,7 @@ int mpig_adi3_cancel_recv(MPID_Request * rreq)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     bool_t cancelled;
+    bool_t req_completed;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_adi3_cancel_recv);
 
@@ -348,13 +349,13 @@ int mpig_adi3_cancel_recv(MPID_Request * rreq)
 
 	rreq->status.cancelled = TRUE;
 	rreq->status.count = 0;
+	mpig_request_complete(rreq, &req_completed);
         /* 
-         * if (rreq->vc->cm->pe_end_op != NULL)
+         * if (req_completed && rreq->vc->cm->pe_end_op != NULL)
          * {
          *     rreq->vc->cm->pe_end_op();
          * }
          */
-	mpig_request_complete(rreq);
     }
     else
     {
