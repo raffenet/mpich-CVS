@@ -25,21 +25,21 @@ HEADERS =			\
     mpidimpl.h			\
     mpidpost.h			\
     mpidpre.h			\
+    mpig_bds_genq.i		\
     mpig_cm_other.h		\
     mpig_cm_self.h		\
     mpig_cm_vmpi.h		\
     mpig_cm_xio.h		\
+    mpig_thread.i		\
     mpig_vmpi.h			\
 
 #
 # targets that must be handled in a special way
 #
-mpig_vmpi.c: mpig_vmpi.h mpidconf.h
-
-mpig_vmpi.o: mpig_vmpi.c
+mpig_vmpi.o: mpig_vmpi.c mpig_vmpi.h mpidconf.h mpidconf_dynamic.h
 	$(CC) -c -I . -I${top_srcdir} $<
 
-mpig_vmpi.lo: mpig_vmpi.c mpig_vmpi.h mpidconf.h
+mpig_vmpi.lo: mpig_vmpi.c mpig_vmpi.h mpidconf.h mpidconf_dynamic.h
 	$(CC_SHL) -c -I . -I${top_srcdir} $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
 
@@ -53,10 +53,10 @@ libmpig_vmpi_premain_cxx.a: mpig_vmpi_premain_cxx.o
 	${AR} cr $@ $?
 	${RANLIB} $@
 
-mpig_vmpi_premain_cc.o: mpig_vmpi_premain.c mpig_vmpi.h mpidconf.h
+mpig_vmpi_premain_cc.o: mpig_vmpi_premain.c mpig_vmpi.h mpidconf.h mpidconf_dynamic.h
 	$(CC) -c -I . -I${top_srcdir} $< -o $@
 
-mpig_vmpi_premain_cxx.o: mpig_vmpi_premain.c mpig_vmpi.h mpidconf.h
+mpig_vmpi_premain_cxx.o: mpig_vmpi_premain.c mpig_vmpi.h mpidconf.h mpidconf_dynamic.h
 	$(CXX) -c -I . -I${top_srcdir} $< -o $@
 
 #
@@ -92,7 +92,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
 # device scripts
 #
 install_BIN = mpiexec
-install_BIN = mpich2-grid-cc mpiexec
+install_BIN = mpich2-grid-cc
 optinstall_ETC = mpich2-grid-cc-insure-psrc
 optinstall_BIN = mpich2-grid-cxx
 optinstall_ETC = mpich2-grid-cxx-insure-psrc
@@ -154,42 +154,25 @@ distclean-local:
 	-rm -f mpich2-grid-f77
 	-rm -f mpich2-grid-f90
 	-rm -f mpich2-grid-settings
-	-rm -f mpidconf.h
-	-rm -f mpiexec
+	-rm -f mpidconf_dynamic.h.in
+	-rm -f mpiddefs.h.out
+	-rm -f .mpig_symbol_map_*.h
+	-rm -f $master_top_builddir/src/include/mpiddefs.h
+	-rm -f $master_top_builddir/bin/mpiexec
 
 #
-# clean up files created by maint/updatefiles (autoheader, autoconf, etc.)
+# target to add missing entries to the error text translation file
 #
-maintainer-clean-local:
-	-rm -f mpidconf.h.in
-
-#
-# targets for building state and error text translation files
-#
-describe_states.txt: FORCE_TARGET
-	grep -h MPID_STATE ${MPIG_SOURCE_DIR}/*.[chi] | sed -e 's/.*(\([A-Za-z0-9_]*\)/\1/' -e 's/);.*$$//' | \
-	    sort -u | awk '{print $$1, $$1}' | sed -e 's/ MPID_STATE_/ /' -e 's/ MPID_\([A-Z]\)\([A-Z_]*\)/ MPID_\1\L\2/' \
-	    >${MPIG_SOURCE_DIR}/describe_states.txt
-
-# grid-errnames.txt: FORCE_TARGET
-# 	sed -e '/^\*\*\(globus|[^ :]*\):\1/ d' -e '/^\*\*\(globus|[^ :]*\) \([^:]*\):\1 -- \2/ d' \
-# 	    ${MPIG_SOURCE_DIR}/errnames.txt >.errnames-$$$$.txt ; \
-# 	if test $$? -eq 0 ; then \
-# 	    grep '"\*\*[^"]*"' ${MPIG_SOURCE_DIR}/*.[chi] | sed -e 's/[^"]*\("\*\*[^"]*"\)/\1/g' -e 's/""/"\n"/' | \
-# 	        sed -e 's/"\*\*\([^"]*\)".*$$/**\1:\1/' -e 's/\(:[A-Za-z0-9_|]* \)%/\1-- %/' | \
-# 	        grep -h '\*\*globus|' .errnames-$$$$.txt - | sort -t ':' +0 -1 -u >grid-errnames.txt ; \
-# 	fi ; \
-# 	rm .errnames-$$$$.txt
-
-grid-errnames.txt: FORCE_TARGET
+errnames.txt: FORCE_TARGET
 	grep '"\*\*[^"]*"' ${MPIG_SOURCE_DIR}/*.[chi] | \
 	    sed -e 's/[^"]*\("\*\*[^"]*"\)/\1/g' -e 's/""/"\n"/' | \
 	    sed -e 's/"\*\*\([^"]*\)".*$$/**\1:\1/' -e 's/\(:[A-Za-z0-9_|]* \)%/\1-- %/' | \
-	    grep -h '\*\*globus|' ${MPIG_SOURCE_DIR}/errnames.txt - | \
+	    grep -h '\*\*mpig|' ${MPIG_SOURCE_DIR}/errnames.txt - | \
 	    sort -t ':' +0 -1 -u >.errnames-$$$$.txt ; \
 	if test $$? -eq 0 ; then \
 	    mv .errnames-$$$$.txt ${MPIG_SOURCE_DIR}/errnames.txt ; \
 	fi
+
 #
 # add new symbols to the symbol renaming header file.
 #
