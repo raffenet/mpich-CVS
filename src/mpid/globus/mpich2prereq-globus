@@ -114,6 +114,7 @@ if test $? -ne 0 -o -s "${MPIG_GLOBUS_SETTINGS_ERR}" ; then
 else
     mpig_msg_result $LINENO "done"
 fi
+rm -f ${MPIG_GLOBUS_SETTINGS_ERR}
 
 cat >>${MPIG_GLOBUS_SETTINGS_MK} <<EOF
 
