@@ -172,7 +172,7 @@ done
 if test -n "${MPIG_PTR_CAST}" ; then
    AC_MSG_RESULT([${MPIG_PTR_CAST}])
 else
-   AC_MSG_RESULT([unknown])
+   AC_MSG_RESULT([none])
    AC_MSG_ERROR([unable to find an integer type big enough to hold a pointer!])
 fi
 
@@ -479,7 +479,7 @@ dnl     true
 dnl fi
 
 # also need to map MPI_WCHAR to an intrinsic C type
-MPIG_C_WCHAR_T_CTYPE=MPIG_CTYPE_UNKNOWN
+MPIG_C_WCHAR_T_CTYPE=MPIG_CTYPE_INVALID
 if test "$ac_cv_type_wchar_t" = "yes" ; then
     AC_MSG_CHECKING([for instrinsic C type compatible with wchar_t])
     for lac_type in char short int long long_long ; do

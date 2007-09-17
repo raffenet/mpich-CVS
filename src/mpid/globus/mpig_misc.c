@@ -327,16 +327,24 @@ void mpig_debug_app_printf(const char * const filename, const char * const funcn
 **********************************************************************************************************************************/
 #define mpig_datatype_set_ctype_map(dt_, ctype_)                                                                                \
 {                                                                                                                               \
-    MPIU_Assert(HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN && HANDLE_GET_MPI_KIND(dt_) == MPID_DATATYPE);                      \
-    MPIU_Assert(MPID_Datatype_get_basic_id(dt_) >= 0 && MPID_Datatype_get_basic_id(dt_) < MPIG_DATATYPE_MAX_BASIC_TYPES);       \
-    mpig_process.dt_ctype_map[MPID_Datatype_get_basic_id(dt_)] = (char)(ctype_);                                                \
+    MPIU_Assert(HANDLE_GET_MPI_KIND(dt_) == MPID_DATATYPE);                                                                     \
+    if ((dt_) != MPI_DATATYPE_NULL)                                                                                             \
+    {                                                                                                                           \
+        MPIU_Assert(HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN);                                                               \
+        MPIU_Assert(MPID_Datatype_get_basic_id(dt_) >= 0 && MPID_Datatype_get_basic_id(dt_) < MPIG_DATATYPE_MAX_BASIC_TYPES);   \
+        mpig_process.dt_ctype_map[MPID_Datatype_get_basic_id(dt_)] = (char)(ctype_);                                            \
+    }                                                                                                                           \
 }
 
 #define mpig_datatype_set_num_ctypes(dt_, num_)                                                                                 \
 {                                                                                                                               \
-    MPIU_Assert(HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN && HANDLE_GET_MPI_KIND(dt_) == MPID_DATATYPE);                      \
-    MPIU_Assert(MPID_Datatype_get_basic_id(dt_) >= 0 && MPID_Datatype_get_basic_id(dt_) < MPIG_DATATYPE_MAX_BASIC_TYPES);       \
-    mpig_process.dt_num_ctypes[MPID_Datatype_get_basic_id(dt_)] = (char)(num_);                                                 \
+    MPIU_Assert(HANDLE_GET_MPI_KIND(dt_) == MPID_DATATYPE);                                                                     \
+    if ((dt_) != MPI_DATATYPE_NULL)                                                                                             \
+    {                                                                                                                           \
+        MPIU_Assert(HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN);                                                               \
+        MPIU_Assert(MPID_Datatype_get_basic_id(dt_) >= 0 && MPID_Datatype_get_basic_id(dt_) < MPIG_DATATYPE_MAX_BASIC_TYPES);   \
+        mpig_process.dt_num_ctypes[MPID_Datatype_get_basic_id(dt_)] = (char)(num_);                                             \
+    }                                                                                                                           \
 }
 
 #define mpig_datatype_set_local_sizeof_ctype(ctype_, size_)     \
@@ -381,18 +389,10 @@ int mpig_datatype_init(void)
     mpig_datatype_set_ctype_map(MPI_UNSIGNED_LONG, MPIG_CTYPE_UNSIGNED_LONG);
     mpig_datatype_set_ctype_map(MPI_FLOAT, MPIG_CTYPE_FLOAT);
     mpig_datatype_set_ctype_map(MPI_DOUBLE, MPIG_CTYPE_DOUBLE);
-#   if defined(HAVE_MPI_LONG_DOUBLE)
-    {
-        mpig_datatype_set_ctype_map(MPI_LONG_DOUBLE, MPIG_CTYPE_LONG_DOUBLE);
-    }
-#   endif
-#   if defined(HAVE_MPI_LONG_LONG)
-    {
-        mpig_datatype_set_ctype_map(MPI_LONG_LONG, MPIG_CTYPE_LONG_LONG);
-        /* mpig_datatype_set_ctype_map(MPI_LONG_LONG_INT, MPIG_CTYPE_LONG_LONG); -- MPI_LONG_LONG_INT = MPI_LONG_LONG in mpi.h */
-        mpig_datatype_set_ctype_map(MPI_UNSIGNED_LONG_LONG, MPIG_CTYPE_UNSIGNED_LONG_LONG);
-    }
-#   endif
+    mpig_datatype_set_ctype_map(MPI_LONG_DOUBLE, MPIG_CTYPE_LONG_DOUBLE);
+    mpig_datatype_set_ctype_map(MPI_LONG_LONG, MPIG_CTYPE_LONG_LONG);
+    /* mpig_datatype_set_ctype_map(MPI_LONG_LONG_INT, MPIG_CTYPE_LONG_LONG); -- MPI_LONG_LONG_INT = MPI_LONG_LONG in mpi.h */
+    mpig_datatype_set_ctype_map(MPI_UNSIGNED_LONG_LONG, MPIG_CTYPE_UNSIGNED_LONG_LONG);
     mpig_datatype_set_ctype_map(MPI_PACKED, MPIG_CTYPE_CHAR);
     mpig_datatype_set_ctype_map(MPI_LB, MPIG_CTYPE_INVALID);
     mpig_datatype_set_ctype_map(MPI_UB, MPIG_CTYPE_INVALID);
@@ -484,21 +484,9 @@ int mpig_datatype_init(void)
     mpig_datatype_set_num_ctypes(MPI_2DOUBLE_PRECISION, 2);
     mpig_datatype_set_num_ctypes(MPI_COMPLEX, 2);
     mpig_datatype_set_num_ctypes(MPI_DOUBLE_COMPLEX, 2);
-#   if defined(HAVE_MPI_REAL4)
-    {
-        mpig_datatype_set_num_ctypes(MPI_COMPLEX8, 2);
-    }
-#   endif 
-#   if defined(HAVE_MPI_REAL8)
-    {
-        mpig_datatype_set_num_ctypes(MPI_COMPLEX16, 2);
-    }
-#   endif 
-#   if defined(HAVE_MPI_REAL16)
-    {
-        mpig_datatype_set_num_ctypes(MPI_COMPLEX32, 2);
-    }
-#   endif
+    mpig_datatype_set_num_ctypes(MPI_COMPLEX8, 2);
+    mpig_datatype_set_num_ctypes(MPI_COMPLEX16, 2);
+    mpig_datatype_set_num_ctypes(MPI_COMPLEX32, 2);
     mpig_datatype_set_num_ctypes(MPI_2COMPLEX, 4);
     mpig_datatype_set_num_ctypes(MPI_2DOUBLE_COMPLEX, 4);
     
