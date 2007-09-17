@@ -88,6 +88,8 @@
 **globus|cm_xio|disconnect_close_proc:globus|cm_xio|disconnect_close_proc
 **globus|cm_xio|disconnect_close_temp:globus|cm_xio|disconnect_close_temp
 **globus|cm_xio|disconnect_close_temp %p:globus|cm_xio|disconnect_close_temp -- %p
+**globus|cm_xio|disconnect_handle_close_temp:globus|cm_xio|disconnect_handle_close_temp
+**globus|cm_xio|disconnect_handle_close_temp %p %s:globus|cm_xio|disconnect_handle_close_temp -- %p %s
 **globus|cm_xio|disconnect_handle_send_close_msg:globus|cm_xio|disconnect_handle_send_close_msg
 **globus|cm_xio|disconnect_handle_send_close_msg %p %s:globus|cm_xio|disconnect_handle_send_close_msg -- %p %s
 **globus|cm_xio|disconnect_send_enq_close_msg:globus|cm_xio|disconnect_send_enq_close_msg
@@ -113,6 +115,9 @@
 **globus|cm_xio|port_xio_write %p %s:globus|cm_xio|port_xio_write -- %p %s
 **globus|cm_xio|rcq_deq_test:globus|cm_xio|rcq_deq_test
 **globus|cm_xio|rcq_deq_wait:globus|cm_xio|rcq_deq_wait
+**globus|cm_xio|rcq_enq_rreq:globus|cm_xio|rcq_enq_rreq
+**globus|cm_xio|rcq_enq_sreq:globus|cm_xio|rcq_enq_sreq
+**globus|cm_xio|rcq_entry_create:globus|cm_xio|rcq_entry_create
 **globus|cm_xio|rcq_finalize:globus|cm_xio|rcq_finalize
 **globus|cm_xio|rcq_init:globus|cm_xio|rcq_init
 **globus|cm_xio|recv_handle_incoming_msg:globus|cm_xio|recv_handle_incoming_msg
@@ -276,9 +281,12 @@
 **globus|connacc|vcrt_serialize:globus|connacc|vcrt_serialize
 **globus|connacc|vcrt_serialize %s %C %p:globus|connacc|vcrt_serialize -- %s %C %p
 **globus|datatype_add_ctype_map:globus|datatype_add_ctype_map
+**globus|datatype_add_ctype_sizes:globus|datatype_add_ctype_sizes
 **globus|datatype_add_info_to_bc:globus|datatype_add_info_to_bc
 **globus|datatype_extract_ctype_map:globus|datatype_extract_ctype_map
 **globus|datatype_extract_ctype_map %s %d:globus|datatype_extract_ctype_map -- %s %d
+**globus|datatype_extract_ctype_sizes:globus|datatype_extract_ctype_sizes
+**globus|datatype_extract_ctype_sizes %s %d:globus|datatype_extract_ctype_sizes -- %s %d
 **globus|datatype_extract_info_from_bc:globus|datatype_extract_info_from_bc
 **globus|datatype_finalize:globus|datatype_finalize
 **globus|datatype_init:globus|datatype_init
