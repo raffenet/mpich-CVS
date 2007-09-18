@@ -1,0 +1,39 @@
+#!/usr/bin/ksh
+
+# 
+# Copyright 2007 Northern Illinois University
+# 
+# XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
+# 
+
+if [[ $# == 0 ]]
+then
+echo 'format: reserve_it <gur_file>'
+exit
+fi
+output=`grid-proxy-info`
+if [[ $? == 1 ]]
+then
+grid-proxy-init
+fi
+zerotime=`echo $output | grep 'timeleft : 0:00:00' | wc -l | awk '{print $1}'`
+echo '$zerotime is'
+echo $zerotime
+if [[ $zerotime == 1 ]]
+then
+echo 'zerotime check succeeded'
+grid-proxy-init
+else
+echo 'zerotime check failed'
+fi
+if [[ $? == 0 ]]
+then
+#/soft/gur/gur.py --submit --jobfile=./$1
+@GUR_PY@ --reserve --jobfile=./$1
+#/home/mmargo/gur/gur.py --submit --jobfile=./$1
+#/home/mmargo/gur/gur.py --reserve --jobfile=./$1
+#~kenneth/info/mpichg2/gur/gur.py --reserve --jobfile=./$1
+#/home/kenneth/info/mpichg2/gur/gur.py --debug --reserve --jobfile=./$1
+else
+echo 'grid-proxy-init failed!'
+fi

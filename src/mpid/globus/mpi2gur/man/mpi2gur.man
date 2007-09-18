@@ -1,0 +1,78 @@
+.\" mpi2gur.pl man page
+.\" Contact mmargo@sdsc.edu to correct errors or omissions.
+.TH mpi2gur 1 "30 July 2007" "1.1" "mpi2gurl.pl man page"
+
+.SH NAME
+.nf
+mpi2gur.pl \- Utility to submit and run co-scheduled applications
+
+.SH SYNOPSIS
+.nf
+.B	mpi2gur.pl [--nowait|--wait] [--create_gur|--run_gur|--create_rsl|--run_rsl] RSL-filename
+
+.SH EXAMPLES
+1. To create a GUR inputfile without waiting
+.sp
+	mpi2gur.pl --nowait --create_gur job1.rsl
+.sp
+2. To run my RSL file in the future without waiting
+.sp
+	mpi2gur.pl --nowait job1.rsl
+.sp	
+	this is equivalent to
+.sp		
+	mpi2gur.pl --nowait --run_rsl job1.rsl
+.sp		
+3. To get the reservation_ids from GUR without running anything on it
+.sp
+	 mpi2gur.pl --run_gur job1.rsl
+.sp		 
+.SH DESCRIPTION
+.fi
+	This manual page documents the utility mpi2gur.pl. This utility converts
+	standard globus file into GUR input file to set coscheduled reservations. 
+	Once the reservations are successfully created, mpi2gur.pl will use it to
+	run the specified coscheduled job.
+
+.SH OPTIONS
+.nf
+	--nowait
+.sp
+	Do not wait for the reservation to start. In some cases, a reservation can start  in the next day or so
+.sp
+	--wait (default)
+.sp
+	Wait for reservation to start. The opposite of --nowait. In this mode, mpi2gurl.pl will not return until the reservation is started
+.sp		
+	--create_gur	
+.sp
+	Or run stage 0.	This run stage will create a GUR jobfile. Very useful for debugging. The GUR input file is titled <RSL-filename.gur>
+.sp		
+	--run_gur	
+.sp 
+	OR run stage 1.	This run stage will create GUR jobfile (as in run stage 0 / --create_gur) and run GUR to get reservation_ids
+.sp		
+	--create_rsl
+.sp
+	OR run stage 2.	This run stage will carry out run stage 0 and 1 and append reservation_ids from run  stage 1 to the new RSL file <_RSL-filename.rsl>
+.sp		
+	--run_rsl
+.sp 
+	OR run stage 3 (default). This run stage will carry out runstage 0-2 and execute the RSL file using reservations created in previous stage. 
+		
+.SH BUGS
+No known bugs at this time.
+
+.SH AUTHORS
+Nicholas Karonis and Derek Baessler
+		 
+		 
+Version 1.1             30 July 2007
+
+
+		
+	
+
+	
+
+	

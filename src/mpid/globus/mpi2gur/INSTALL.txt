@@ -1,0 +1,15 @@
+Brief Install Document
+
+To install, copy all directories and files into an NFS mounted directory
+such as /usr/local/apps.  One way to accomplish this is with the following
+command.
+
+    tar cf - mpi2gur/ |& (cd /usr/local/apps ; tar xf -)
+
+You will need to modify the bin/reserve_in and bin/cancel_it scripts,
+replacing @GUR_PY@ with the location of gur.py on your system.  You may also
+need to modify the first line of bin/mpi2gur.pl, replacing "/usr/bin/perl"
+with the location of Perl location on your system.
+
+Example RSL input files and GUR output files can be found in share/samples.
+An HTML version of the mpi2gur can be found in share/doc/html/mpi2gur.html.

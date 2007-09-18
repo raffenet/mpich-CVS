@@ -1,0 +1,25 @@
+[metajob]
+
+total_nodes = 1
+
+machine_preference = dslogin.sdsc.edu#slash#jobmanager-loadleveler_resid
+
+machine_preference_reorder = no
+
+duration = 600
+
+earliest_start = 11:07_07/27/2005
+
+latest_end = 11:07_08/10/2005
+
+usage_pattern = single
+
+machines_dict_string = {
+  'dslogin.sdsc.edu#slash#jobmanager-loadleveler_resid' : {
+    'username_string' : '',
+    'account_string' : 'TG-CDA040004T',
+    'email_notify' : 'NONOTIFY',
+    'min_int' : 1,
+    'max_int' : 1
+   }
+  }

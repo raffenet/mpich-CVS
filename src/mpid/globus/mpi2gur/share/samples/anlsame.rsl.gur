@@ -1,0 +1,32 @@
+[metajob]
+
+total_nodes = 3
+
+machine_preference = tg-grid1.uc.teragrid.org#slash#jobmanager-pbs_gcc_resid#ia64-compute
+
+machine_preference_reorder = yes
+
+duration = 900
+
+earliest_start = 10:11_08/03/2005
+
+latest_end = 10:11_08/17/2005
+
+usage_pattern = multiple
+
+machines_dict_string = {
+  'tg-grid1.uc.teragrid.org#slash#jobmanager-pbs_gcc_resid#ia64-compute' : {
+    'username_string' : '',
+    'account_string' : 'TG-CDA040004T',
+    'email_notify' : 'NONOTIFY',
+    'min_int' : 2,
+    'max_int' : 2
+   },
+  'tg-grid1.uc.teragrid.org#slash#jobmanager-pbs_gcc_resid#ia64-compute' : {
+    'username_string' : '',
+    'account_string' : 'TG-CDA040004T',
+    'email_notify' : 'NONOTIFY',
+    'min_int' : 1,
+    'max_int' : 1
+   }
+  }

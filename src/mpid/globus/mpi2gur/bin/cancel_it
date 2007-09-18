@@ -1,0 +1,15 @@
+#!/usr/bin/ksh
+
+# 
+# Copyright 2007 Northern Illinois University
+# 
+# XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
+# 
+
+if [[ $# == 0 ]]
+then
+echo 'format: cancel_it <metajob_file>'
+exit
+fi
+@GUR_PY@ --cancel --metajobfile=./$1
+rm $1

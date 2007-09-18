@@ -1,0 +1,17 @@
+[metajob]
+total_nodes = 3
+machine_preference = tg-grid1.uc.teragrid.org#slash#jobmanager-pbs_gcc_resid#ia64-compute
+machine_preference_reorder = no
+duration = 900
+earliest_start = 11:06_08/05/2005
+latest_end = 11:06_08/19/2005
+usage_pattern = single
+machines_dict_string = {
+  'tg-grid1.uc.teragrid.org#slash#jobmanager-pbs_gcc_resid#ia64-compute' : {
+    'username_string' : '',
+    'account_string' : 'TG-CDA040004T',
+    'email_notify' : 'NONOTIFY',
+    'min_int' : 3,
+    'max_int' : 3
+   }
+  }

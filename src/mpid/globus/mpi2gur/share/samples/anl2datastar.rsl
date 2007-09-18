@@ -1,0 +1,10 @@
++
+( &(resourceManagerContact="dslogin.sdsc.edu/jobmanager-loadleveler_resid")
+   (count=1)
+   (hostcount=1)
+   (project="TG-CDA040004T")
+   (executable=/bin/date)
+   (stdout=/users/niu/ux455044/t.out)
+   (stderr=/users/niu/ux455044/t.err)
+)
+

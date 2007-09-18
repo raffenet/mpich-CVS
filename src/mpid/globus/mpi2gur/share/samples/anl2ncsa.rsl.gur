@@ -1,0 +1,17 @@
+[metajob]
+total_nodes = 2
+machine_preference = tg-login1.ncsa.teragrid.org#slash#jobmanager-pbs_gcc_resid#fastcpu
+machine_preference_reorder = no
+duration = 900
+earliest_start = 16:09_08/05/2005
+latest_end = 16:09_08/19/2005
+usage_pattern = single
+machines_dict_string = {
+  'tg-login1.ncsa.teragrid.org#slash#jobmanager-pbs_gcc_resid#fastcpu' : {
+    'username_string' : '',
+    'account_string' : 'TG-CDA040004T',
+    'email_notify' : 'NONOTIFY',
+    'min_int' : 2,
+    'max_int' : 2
+   }
+  }
