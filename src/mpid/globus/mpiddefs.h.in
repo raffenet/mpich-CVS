@@ -1,7 +1,7 @@
 /*
  * Globus device code:          Copyright 2005 Northern Illinois University
  *
- * XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
+ * See COPYRIGHT.txt in the src/mpid/globus directory.
  */
 
 #if !defined(MPICH2_MPIDDEFS_H_INCLUDED)

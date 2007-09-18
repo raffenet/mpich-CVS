@@ -1,3 +1,9 @@
+# 
+# Globus device code:          Copyright 2005 Northern Illinois University
+# 
+# See COPYRIGHT.txt in the src/mpid/globus directory.
+# 
+
 MPIG_LDFLAGS=${LDFLAGS}
 MPIG_LIBS=${LIBS}
 MPIG_TEST_LDFLAGS=${MPIG_TEST_LDFLAGS:-${MPIG_LDFLAGS}}

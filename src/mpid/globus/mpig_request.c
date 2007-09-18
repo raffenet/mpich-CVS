@@ -1,8 +1,8 @@
 /*
  * Globus device code:       Copyright 2005 Northern Illinois University
- * Borrowed CH3 device code: Copyright 2001 Argonne National Laboratory
+ * Borrowed CH3 device code: Copyright 2002 Argonne National Laboratory
  *
- * XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
+ * See COPYRIGHT.txt in the src/mpid/globus directory.
  */
 
 #include "mpidimpl.h"

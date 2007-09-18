@@ -1,9 +1,9 @@
 /*
  * Globus device code:          Copyright 2005 Northern Illinois University
  * Borrowed MPICH-G2 code:      Copyright 2000 Argonne National Laboratory and Northern Illinois University
- * Borrowed MPICH2 device code: Copyright 2001 Argonne National Laboratory
+ * Borrowed MPICH2 device code: Copyright 2002 Argonne National Laboratory
  *
- * XXX: INSERT POINTER TO OFFICIAL COPYRIGHT TEXT
+ * See COPYRIGHT.txt in the src/mpid/globus directory.
  */
 
 /**********************************************************************************************************************************

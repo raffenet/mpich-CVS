@@ -1,3 +1,10 @@
+# 
+# Globus device code:          Copyright 2005 Northern Illinois University
+# Borrowed MPICH-G2 code:      Copyright 2000 Argonne National Laboratory and Northern Illinois University
+# 
+# See COPYRIGHT.txt in the src/mpid/globus directory.
+# 
+
 MPIG_GRID_PKG_NAME="Globus"
 
 #

@@ -1,3 +1,8 @@
+# 
+# Globus device code:          Copyright 2005 Northern Illinois University
+# 
+# See COPYRIGHT.txt in the src/mpid/globus directory.
+# 
 **globus|badreqtype:globus|badreqtype
 **globus|badreqtype %d:globus|badreqtype -- %d
 **globus|bc_add_contact:globus|bc_add_contact
