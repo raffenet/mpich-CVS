@@ -13,7 +13,7 @@ import java.util.*;
 
 import base.drawable.*;
 
-public class Print
+public class PerfTest
 {
     public static final void main( String args[] )
     {
@@ -27,9 +27,10 @@ public class Print
         Primitive              drawobj;
         long                   Nobjs;
 
+
         if ( args.length != 1 ) {
-            System.err.println( "It needs the filename to be the only command "
-                              + "line arguemnt" );
+            System.err.println( "This program needs 1 argument: filename." );
+            System.err.println( "\tUsage: clog2TOdrawable.PerfTimer filename" );
             System.exit( 0 );
         }
 
@@ -38,9 +39,10 @@ public class Print
         shadefs  = new HashMap();
         Nobjs    = 0;
 
-        /* */    Date time1 = new Date();
+        Date time1, time2;
+
         dobj_ins = new InputLog( filename );
-        /* */    Date time2 = new Date();
+        time1 = new Date();
         while ( ( next_kind = dobj_ins.peekNextKind() ) != Kind.EOF ) {
             if ( next_kind == Kind.TOPOLOGY ) {
                 topo = dobj_ins.getNextTopology();
@@ -58,11 +60,13 @@ public class Print
             } 
             if ( next_kind == Kind.PRIMITIVE ) {
                 drawobj = dobj_ins.getNextPrimitive();
-                System.out.println( (++Nobjs) + ", " + drawobj );
+                Nobjs++;
+                // System.out.println( vport_Nobjs + ", " + drawobj );
             }
         }
+        time2 = new Date();
         dobj_ins.close();
-        /* */    Date time3 = new Date();
+        /*
         System.err.println( "\n\t Shadow Category Definitions : " );
         Iterator shadefs_itr = shadefs.entrySet().iterator();
         while ( shadefs_itr.hasNext() )
@@ -74,20 +78,17 @@ public class Print
             objdef = (Category) objdefs_itr.next();
             System.err.println( objdef.toString() );
         }
+        */
 
         System.err.println( "\n" );
-        System.err.println( "Number of Primitives = " + Nobjs );
-        System.err.println( "Number of Unmatched Events = "
-                          + dobj_ins.getNumberOfUnMatchedEvents() );
-
-        System.err.println( "Total ByteSize of the logfile = "
+        System.err.println( "Total Number of Primitives read = "
+                          + Nobjs );
+        System.err.println( "Total ByteSize of the logfile read = "
                           + dobj_ins.getTotalBytesRead() );
         // System.err.println( "time1 = " + time1 + ", " + time1.getTime() );
         // System.err.println( "time2 = " + time2 + ", " + time2.getTime() );
         // System.err.println( "time3 = " + time3 + ", " + time3.getTime() );
         System.err.println( "timeElapsed between 1 & 2 = "
                           + ( time2.getTime() - time1.getTime() ) + " msec" );
-        System.err.println( "timeElapsed between 2 & 3 = "
-                          + ( time3.getTime() - time2.getTime() ) + " msec" );
     }
 }
