@@ -92,7 +92,7 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
 #ifdef ADIOI_MPE_LOGGING
 	MPE_Log_event( ADIOI_MPE_iread_a, 0, NULL );
 #endif
-	ret = PVFS_sys_iread(pvfs_fs->object_ref, file_req, offset, buf, 
+	ret = PVFS_isys_read(pvfs_fs->object_ref, file_req, offset, buf, 
 			mem_req, &(pvfs_fs->credentials), &(aio_req->resp_io),
 			aio_req->op_id, NULL);
 #ifdef ADIOI_MPE_LOGGING
@@ -102,7 +102,7 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
 #ifdef ADIOI_MPE_LOGGING
 	MPE_Log_event( ADIOI_MPE_iwrite_a, 0, NULL );
 #endif
-	ret = PVFS_sys_iwrite(pvfs_fs->object_ref, file_req, offset, buf, 
+	ret = PVFS_isys_write(pvfs_fs->object_ref, file_req, offset, buf, 
 			mem_req, &(pvfs_fs->credentials), &(aio_req->resp_io),
 			aio_req->op_id, aio_req);
 #ifdef ADIOI_MPE_LOGGING
