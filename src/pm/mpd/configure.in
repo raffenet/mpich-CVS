@@ -166,6 +166,11 @@ dnl Checks for library functions.
 # Checking library functions
 AC_CHECK_FUNCS(putenv socket)
 
+AC_CHECK_FUNCS(snprintf)
+if test "$ac_cv_func_snprintf" = "yes" ; then
+     PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
+fi
+
 dnl Output:
 # Starting output
 MPD_HOME=`pwd`
