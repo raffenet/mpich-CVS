@@ -1008,14 +1008,15 @@ End Function
 ' Get MPICH2 Version
 '
 Function GetMPICH2Version()
-    if f.FileExists("src\maint\Version") then
+    if f.FileExists("maint\Version") then
     	Dim fin, ver
-		Set fin = f.OpenTextFile("src\maint\Version")
-		ver = fin.ReadAll()
+		Set fin = f.OpenTextFile("maint\Version")
+		ver = fin.ReadLine()
+		Trim(ver)
 		fin.Close()
 		GetMPICH2Version = ver
 	else
-		GetMPICH2Version = "1.0.5"
+		GetMPICH2Version = "0.0.0"
 	end if
 End Function
 
