@@ -150,6 +150,19 @@ int sctp_open_dgm_socket2(int num_stream, int block_mode,
     goto fn_fail;
   }
 
+  /* retrieve port value if wasn't specified */
+  if(!port){
+    /* Can reuse addr since bind already succeeded. */
+    len = sizeof(addr);
+    if (getsockname(*fd, (struct sockaddr *) &addr, &len)) {
+	goto fn_fail;
+    }
+    
+    *real_port = (int) ntohs(addr.sin_port);
+    port = *real_port;
+  } else 
+    *real_port = port;
+
   env = getenv("MPICH_SCTP_MULTIHOME_FILE");
   if (env != NULL && *env != '\0') {
     rc = bind_from_file(env, *fd, port);
@@ -162,18 +175,6 @@ int sctp_open_dgm_socket2(int num_stream, int block_mode,
   if (rc == -1) {
     goto fn_fail;
   }
-
-  /* retrieve port value if wasn't specified */
-  if(!port){
-    /* Can reuse addr since bind already succeeded. */
-    len = sizeof(addr);
-    if (getsockname(*fd, (struct sockaddr *) &addr, &len)) {
-	goto fn_fail;
-    }
-    
-    *real_port = (int) ntohs(addr.sin_port);
-  } else 
-    *real_port = port;
 
   /* register events */
   if (setsockopt(*fd, IPPROTO_SCTP, SCTP_EVENTS, evnts, sizeof(*evnts))) {
