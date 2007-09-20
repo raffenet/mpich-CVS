@@ -23,7 +23,7 @@
 - The ssm channel uses special interprocess locks (often assembly) that may 
   not work with some compilers or machine architectures. It works on
   Linux with gcc, Intel, and Pathscale compilers on various Intel
-  architectures. It also works in Windows and Solaris environments.
+  architectures. It also works in Windows environments.
 
 - The MPI-IO implementation does not support filetypes that use the
   MPI-2 functions MPI_Type_create_indexed_block or
