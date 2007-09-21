@@ -422,7 +422,7 @@ MPIDI_CH3_Complete_Acceptq_dequeue (MPIDI_VC_t *vc) {
 
 /* build sockaddr_in based on hostname and port in the bizcard */
 #undef FUNCNAME
-#define FUNCNAME get_addr_port_from_bc
+#define FUNCNAME get_sockaddr_in_from_bc
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int get_sockaddr_in_from_bc (const char *business_card, struct sockaddr_in *addr)
