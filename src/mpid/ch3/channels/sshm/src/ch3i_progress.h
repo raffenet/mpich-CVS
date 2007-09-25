@@ -18,7 +18,8 @@
    the rdtscp instruction which is synchronizing, we use this when we
    can. */
 #ifdef GCC_X86_CYCLE_RDTSCP
-#define MPID_CPU_TICK(var_ptr) __asm__ __volatile__("rdtscp" : "=A" (*var_ptr))
+#define MPID_CPU_TICK(var_ptr)                                                                          \
+    __asm__ __volatile__("rdtscp; shl $32, %%rdx; or %%rdx, %%rax" : "=a" (*var_ptr) : : "ecx", "rdx")
 #elif defined(GCC_X86_CYCLE_CPUID_RDTSC)
 /* Here we have to save the ebx register for when the compiler is
    generating position independent code (e.g., when it's generating
