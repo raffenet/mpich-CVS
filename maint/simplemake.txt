@@ -100,9 +100,10 @@ OTHER_DIRS          = names of other directories *provided* but not used
                       by all tools.  This is used for directories that
                       contain subdirectories refered to by EXTRA_DIRS
 EXTRA_PROGRAMS      = names of programs that should *not* be built by default
-install_<type>      = names of files to install when "make install" is
+INSTALL_<type>      = names of files to install when "make install" is
                       invoked.  <type> is a directory type, such as BIN, LIB,
                       or INCLUDE.
+OPTINSTALL_<type>   = Like INSTALL_<type>, but for files that are optional.
 <name>-local        = Local addition to a target in the Makefile.  For example,
 		      to add to the list of files in the clean target, include
 			 clean-local:
