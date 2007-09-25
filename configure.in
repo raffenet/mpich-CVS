@@ -4740,7 +4740,7 @@ pac_cv_posix_clock_realtime=no)
         pac_cv_linux86_cycle,[
             AC_TRY_COMPILE(,[
                 long long var, *var_ptr=&var;
-	        __asm__ __volatile__("rdtscp" : "=A" (*var_ptr));
+		__asm__ __volatile__("rdtscp; shl \$32, %%rdx; or %%rdx, %%rax" : "=a" (*var_ptr) : : "ecx", "rdx");
             ],pac_cv_linux86_cycle=rdtscp,
                 AC_TRY_COMPILE(,[
 	            long long var, *var_ptr=&var;
