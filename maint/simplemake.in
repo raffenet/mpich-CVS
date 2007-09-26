@@ -296,6 +296,7 @@ $mandir_name =               "mandir          = \@mandir\@";
 $htmldir_name =              "htmldir         = \@htmldir\@";
 $docdir_name =               "docdir          = \@docdir\@";
 $sysconfdir_name =           "sysconfdir      = \@sysconfdir\@";
+$pkgconfigdir_name =         "pkgconfigdir    = \@libdir\@/pkgconfig";
 $builddir_name =             "builddir        = \@builddir\@";
 $abs_builddir_name =         "abs_builddir    = \@abs_builddir\@";
 # top_builddir is used by libtool.  We use master_top_builddir because
@@ -320,6 +321,7 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 	     'htmldir'    => $htmldir_name,
 	     'docdir'     => $docdir_name,
 	     'sysconfdir' => $sysconfdir_name,
+	     'pkgconfigdir' => $pkgconfigdir_name,
 	    );
 
 #InstallDirFromKind maps XXX from install_XXX into the GNU name
@@ -332,6 +334,7 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 		 'HTML' => 'htmldir',
 		 'DOC' => 'docdir',
 		 'ETC' => 'sysconfdir',
+		 'PKGCONFIG' => 'pkgconfigdir',
 		);
 # We add the -p switch to install for the libraries because libraries
 # that require ranlib may fail if installed without preserving the
@@ -363,6 +366,8 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 		   'includedir'  => 'prefix',
  		   'exec_prefix' => 'prefix',
 		   'sysconfdir'  => 'prefix',
+		   'exec_prefix' => 'prefix',
+		   'pkgconfigdir'=> 'libdir exec_prefix prefix',
 		  );
 # etc.
 #
@@ -2532,6 +2537,12 @@ sub TargetClean {
     # RecursiveOp uses extra_dirs,subdirs; the "1" forces it to check
     # for the existence of the Makefile
     &RecursiveOp( "distclean", "", 1 );
+
+    # Add clean of local libraries
+    foreach $lib (keys(%extra_libs)) {
+	print FD "\t-${quietLine}rm -f $lib$newline";
+    }
+
     # Remove any local files last (in case this file is one of them)
     $rmfile = "";
     if (!$curdir) { $curdir = ""; }
