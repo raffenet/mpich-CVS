@@ -630,7 +630,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc_ch->recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
 
         /* override nocontig send function */
-        vc->sendEagerNoncontig_fn = MPIDI_CH3I_SendEagerNoncontig;
+        vc->sendNoncontig_fn = MPIDI_CH3I_SendNoncontig;
 
         /* local processes use the default method */
         vc_ch->iStartContigMsg = NULL;
@@ -671,10 +671,10 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
 /* FIXME: DARIUS -- enable this assert once these functions are implemented */
-/*         /\* iStartContigMsg iSendContig and sendEagerNoncontig_fn must */
+/*         /\* iStartContigMsg iSendContig and sendNoncontig_fn must */
 /*            be set for nonlocal processes.  Default functions only */
 /*            support shared-memory communication. *\/ */
-/*         MPIU_Assert(vc_ch->iStartContigMsg && vc_ch->iSendContig && vc->sendEagerNoncontig_fn); */
+/*         MPIU_Assert(vc_ch->iStartContigMsg && vc_ch->iSendContig && vc->sendNoncontig_fn); */
 
     }
 
