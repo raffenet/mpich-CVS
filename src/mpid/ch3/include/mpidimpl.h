@@ -618,8 +618,8 @@ typedef struct MPIDI_VC
     /* eager message threshold */
     int eager_max_msg_sz;
     
-    /* eager noncontiguous send function pointer.  Called to send a
-       noncontiguous eager message.  Caller must initialize
+    /* noncontiguous send function pointer.  Called to send a
+       noncontiguous message.  Caller must initialize
        sreq->dev.segment, _first and _size.  Contiguous messages are
        called directly from CH3 and cannot be overridden. */
     int (* sendNoncontig_fn)( struct MPIDI_VC *vc, struct MPID_Request *sreq,
