@@ -2789,7 +2789,7 @@ int mpig_cm_vmpi_comm_split_hook(MPID_Comm * const orig_comm, MPID_Comm * const 
 		mpig_cm_vmpi_comm_set_remote_vsize(new_comm, vcnt);
 
 		vrc = mpig_vmpi_allreduce(&vcnt, &total_vcnt, 1, MPIG_VMPI_INT, MPIG_VMPI_SUM,
-		    mpig_cm_vmpi_comm_get_vcomm(orig_comm, 0));
+		    mpig_cm_vmpi_comm_get_vcomm((orig_comm->comm_kind == MPID_INTRACOMM) ? orig_comm : orig_comm->local_comm, 0));
 		MPIG_ERR_VMPI_CHKANDSTMT(vrc, "MPI_Allreduce", &mpi_errno, {goto error_vcnt_allreduce;});
 	    
 		/* the key will still be undefined if the communicator is an intercommunicator.  scan the local process table to
@@ -2915,7 +2915,7 @@ int mpig_cm_vmpi_comm_split_hook(MPID_Comm * const orig_comm, MPID_Comm * const 
 	if (vcnt == 0 /* || new_comm == NULL) */)
 	{
 	    vrc = mpig_vmpi_allreduce(&vcnt, &total_vcnt, 1, MPIG_VMPI_INT, MPIG_VMPI_SUM,
-		mpig_cm_vmpi_comm_get_vcomm(orig_comm, 0));
+                mpig_cm_vmpi_comm_get_vcomm((orig_comm->comm_kind == MPID_INTRACOMM) ? orig_comm : orig_comm->local_comm, 0));
 	    MPIG_ERR_VMPI_CHKANDSTMT(vrc, "MPI_Allreduce", &mpi_errno, {goto error_vcnt_allreduce_nop;});
 
 	    if (total_vcnt > 0)
@@ -2939,8 +2939,12 @@ int mpig_cm_vmpi_comm_split_hook(MPID_Comm * const orig_comm, MPID_Comm * const 
 			MPIG_VMPI_UNDEFINED, &tmp_vcomm);
 		    MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Comm_split", &mpi_errno);
 
-		    vrc = mpig_vmpi_comm_free(&tmp_vcomm);
-		    MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Comm_free", &mpi_errno);
+                    /*
+                     * NOTE: the following code is not necessary tmp_vcomm will always be MPIG_VMPI_COMM_NULL.
+                     *
+                     * vrc = mpig_vmpi_comm_free(&tmp_vcomm);
+                     * MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Comm_free", &mpi_errno);
+                     */
 
 		    if (mpi_errno) goto error_comm_split_nop;
 		}
