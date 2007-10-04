@@ -60,15 +60,15 @@ int main(int argc, char *argv[])
 
 int single_struct_test(void)
 {
-    int err, errs = 0;
+    int i, err, errs = 0;
     int bufsize, position = 0;
     struct test_struct_1 ts1, ts2;
     MPI_Datatype mystruct;
     char *buffer;
 
-    MPI_Aint disps[3] = {0, 2*sizeof(int), 3*sizeof(int)}; /* guessing... */
-    int blks[3] = { 2, 2, 1 };
     MPI_Datatype types[3] = { MPI_INT, MPI_CHAR, MPI_INT };
+    int blks[3] = { 2, 2, 1 };
+    MPI_Aint disps[3];
 
     ts1.a = 1;
     ts1.b = 2;
@@ -76,6 +76,14 @@ int single_struct_test(void)
     ts1.d = 4;
     ts1.e = 5;
 
+    MPI_Get_address(&ts1.a, &disps[0]);
+    MPI_Get_address(&ts1.c, &disps[1]);
+    MPI_Get_address(&ts1.e, &disps[2]);
+    for (i = 2; i >= 0; i--)
+    {
+        disps[i] -= disps[0];
+    }
+    
     err = MPI_Type_struct(3, blks, disps, types, &mystruct);
     if (err != MPI_SUCCESS) {
 	errs++;
@@ -165,9 +173,9 @@ int array_of_structs_test(void)
     MPI_Datatype mystruct;
     char *buffer;
 
-    MPI_Aint disps[3] = {0, 2*sizeof(int), 3*sizeof(int)}; /* guessing... */
-    int blks[3] = { 2, 2, 1 };
     MPI_Datatype types[3] = { MPI_INT, MPI_CHAR, MPI_INT };
+    int blks[3] = { 2, 2, 1 };
+    MPI_Aint disps[3];
 
     for (i=0; i < 10; i++) {
 	ts1[i].a = 10*i + 1;
@@ -183,6 +191,14 @@ int array_of_structs_test(void)
 	ts2[i].e = -13;
     }
 
+    MPI_Get_address(&ts1[0].a, &disps[0]);
+    MPI_Get_address(&ts1[0].c, &disps[1]);
+    MPI_Get_address(&ts1[0].e, &disps[2]);
+    for (i = 2; i >= 0; i--)
+    {
+        disps[i] -= disps[0];
+    }
+    
     err = MPI_Type_struct(3, blks, disps, types, &mystruct);
     if (err != MPI_SUCCESS) {
 	errs++;

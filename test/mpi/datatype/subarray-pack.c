@@ -688,20 +688,32 @@ static int pack_and_unpack(char *typebuf,
 		   count,
 		   datatype,
 		   packbuf,
-		   type_size,
+		   pack_size,
 		   &position,
 		   MPI_COMM_SELF);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) {
+	    fprintf(stderr,
+		    "error in MPI_Pack call; aborting after %d errors\n",
+		    errs);
+	}
+	return errs;
+    }
 
+#if 0
+    /* NOTE: THESE TESTS AREN'T VALID; MAKE ASSUMPTIONS ABOUT PACKING METHOD */
     if (position != type_size) {
 	errs++;
 	if (verbose) fprintf(stderr, "position = %d; should be %d (pack)\n",
 			     position, type_size);
     }
-
+#endif
+    
     memset(typebuf, 0, typebufsz);
     position = 0;
     err = MPI_Unpack(packbuf,
-		     type_size,
+		     pack_size,
 		     &position,
 		     typebuf,
 		     count,
@@ -718,11 +730,14 @@ static int pack_and_unpack(char *typebuf,
     }
     free(packbuf);
 
+#if 0
+    /* NOTE: THESE TESTS AREN'T VALID; MAKE ASSUMPTIONS ABOUT PACKING METHOD */
     if (position != type_size) {
 	errs++;
 	if (verbose) fprintf(stderr, "position = %d; should be %d (unpack)\n",
 			     position, type_size);
     }
+#endif
 
     return errs;
 }

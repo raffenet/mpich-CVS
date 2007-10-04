@@ -100,6 +100,7 @@ int vector_of_vectors_test(void)
 		      3, -5,  4 };
 
     char *buf;
+    int buf_size;
     int i, err, errs = 0, sizeoftype, position;
 
     /* set up type */
@@ -138,25 +139,42 @@ int vector_of_vectors_test(void)
 	return errs;
     }
 
-    buf = (char *) malloc(sizeoftype);
+    err = MPI_Pack_size(1, outer_vector, MPI_COMM_WORLD, &buf_size);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, 
+			     "error in MPI call; aborting after %d errors\n",
+			     errs+1);
+	return errs;
+    }
+
+    buf = (char *) malloc(buf_size);
 
     position = 0;
     err = MPI_Pack(array,
 		   1,
 		   outer_vector,
 		   buf,
-		   sizeoftype,
+		   buf_size,
 		   &position,
 		   MPI_COMM_WORLD);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, 
+			     "error in MPI call; aborting after %d errors\n",
+			     errs+1);
+	return errs;
+    }
 
+
+#if 0
+    /* NOTE: THESE TESTS AREN'T VALID; MAKE ASSUMPTIONS ABOUT PACKING METHOD */
     if (position != sizeoftype) {
 	errs++;
 	if (verbose) fprintf(stderr, "position = %d; should be %d (pack)\n",
 			     position, sizeoftype);
     }
 
-#if 0
-    /* NOTE: THESE TESTS AREN'T VALID; MAKE ASSUMPTIONS ABOUT PACKING METHOD */
     for (i=0; i < 4; i++) {
 	if (((int *)buf)[i] != i+1) {
 	    errs++;
@@ -169,19 +187,29 @@ int vector_of_vectors_test(void)
     memset(array, 0, 9*sizeof(int));
     position = 0;
     err = MPI_Unpack(buf,
-		     sizeoftype,
+		     buf_size,
 		     &position,
 		     array,
 		     1,
 		     outer_vector,
 		     MPI_COMM_WORLD);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, 
+			     "error in MPI call; aborting after %d errors\n",
+			     errs+1);
+	return errs;
+    }
 
+#if 0
+    /* NOTE: THESE TESTS AREN'T VALID; MAKE ASSUMPTIONS ABOUT PACKING METHOD */
     if (position != sizeoftype) {
 	errs++;
 	if (verbose) fprintf(stderr, "position = %d; should be %d (unpack)\n",
 			     position, sizeoftype);
     }
-
+#endif
+    
     for (i=0; i < 9; i++) {
 	int goodval;
 	switch (i) {
@@ -226,6 +254,7 @@ int optimizable_vector_of_basics_test(void)
     int array[20] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		      16, 17, 18, 19 };
     char *buf;
+    int buf_size;
     int i, sizeofint, sizeoftype, position;
 
     int err, errs = 0;
@@ -255,25 +284,41 @@ int optimizable_vector_of_basics_test(void)
 			     (int) sizeoftype, (int) (20 * sizeof(int)));
     }
 
-    buf = (char *) malloc(sizeoftype);
+    err = MPI_Pack_size(1, parent_type, MPI_COMM_WORLD, &buf_size);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, 
+			     "error in MPI call; aborting after %d errors\n",
+			     errs+1);
+	return errs;
+    }
+
+    buf = (char *) malloc(buf_size);
 
     position = 0;
     err = MPI_Pack(array,
 		   1,
 		   parent_type,
 		   buf,
-		   sizeoftype,
+		   buf_size,
 		   &position,
 		   MPI_COMM_WORLD);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, 
+			     "error in MPI call; aborting after %d errors\n",
+			     errs+1);
+	return errs;
+    }
 
+#if 0
+    /* NOTE: THESE TESTS AREN'T VALID; MAKE ASSUMPTIONS ABOUT PACKING METHOD */
     if (position != sizeoftype) {
 	errs++;
 	if (verbose) fprintf(stderr, "position = %d; should be %d (pack)\n",
 			     position, sizeoftype);
     }
 
-#if 0
-    /* NOTE: THESE TESTS AREN'T VALID; MAKE ASSUMPTIONS ABOUT PACKING METHOD */
     for (i=0; i < 20; i++) {
 	if (((int *)buf)[i] != i) {
 	    errs++;
@@ -286,19 +331,29 @@ int optimizable_vector_of_basics_test(void)
     memset(array, 0, 20 * sizeof(int));
     position = 0;
     err = MPI_Unpack(buf,
-		     sizeoftype,
+		     buf_size,
 		     &position,
 		     array,
 		     1,
 		     parent_type,
 		     MPI_COMM_WORLD);
+    if (err != MPI_SUCCESS) {
+	errs++;
+	if (verbose) fprintf(stderr, 
+			     "error in MPI call; aborting after %d errors\n",
+			     errs+1);
+	return errs;
+    }
 
+#if 0
+    /* NOTE: THESE TESTS AREN'T VALID; MAKE ASSUMPTIONS ABOUT PACKING METHOD */
     if (position != sizeoftype) {
 	errs++;
 	if (verbose) fprintf(stderr, "position = %d; should be %d (unpack)\n",
 			     position, sizeoftype);
     }
-
+#endif
+    
     for (i=0; i < 20; i++) {
 	if (array[i] != i) {
 	    errs++;
