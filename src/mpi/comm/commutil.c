@@ -171,6 +171,9 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
 
     localcomm_ptr->attributes = 0;
 
+    /* Notify the device of the new communicator */
+    MPID_Dev_intercomm_setup_localcomm_hook(localcomm_ptr);
+
     intercomm_ptr->local_comm = localcomm_ptr;
 
  fn_fail:
