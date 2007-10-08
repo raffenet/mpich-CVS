@@ -22,6 +22,15 @@
 #define MPID_Datatype_get_basic_id(a) ((a)&0x000000ff)
 #define MPID_Datatype_get_basic_size(a) (((a)&0x0000ff00)>>8)
 
+#if !defined(MPID_DEV_HAS_MPID_DATATYPE_GET_SOURCE_BASIC_SIZE)
+#define MPID_Datatype_get_source_basic_size(dt_, status_)       \
+    MPID_Datatype_get_basic_size(dt_)
+#endif
+
+#if !defined(MPID_DEV_HAS_MPID_PACK_HEADER_SIZE)
+#define MPID_Pack_header_size(status_) (0)
+#endif
+
 #define MPID_Datatype_add_ref(datatype_ptr) MPIU_Object_add_ref((datatype_ptr))
 
 #define MPID_Datatype_get_basic_type(a,eltype_)			\
@@ -102,6 +111,11 @@
  									\
     }									\
 }
+
+#if !defined(MPID_DEV_HAS_MPID_DATATYPE_GET_SOURCE_SIZE_MACRO)
+#define MPID_Datatype_get_source_size_macro(status_, dt_, size_) \
+    MPID_Datatype_get_size_macro((dt_), (size_))
+#endif
 
 /*
  * The following macro allows us to reference either the regular or 
@@ -700,6 +714,36 @@ void MPID_Segment_unpack_external32(struct DLOOP_Segment *segp,
 MPI_Aint MPID_Datatype_size_external32(MPI_Datatype type);
 MPI_Aint MPIDI_Datatype_get_basic_size_external32(MPI_Datatype el_type,
                                                   void * v_paramp);
+#if defined(MPID_DEV_HAS_MPID_PACK)
+int MPID_Pack(void * inbuf,
+              int incount,
+              MPI_Datatype dt,
+              void * outbuf,
+              int outsize,
+              int * position,
+              struct MPID_Comm * comm);
+#endif
+#if defined(MPID_DEV_HAS_MPID_UNPACK)
+int MPID_Unpack(void * inbuf,
+                int insize,
+                int * position,
+                void *outbuf,
+                int outcount,
+                MPI_Datatype datatype,
+                struct MPID_Comm * comm);
+#endif
+#if defined(MPID_DEV_HAS_MPID_PACK_SIZE)
+int MPID_Pack_size(int incount,
+                   MPI_Datatype datatype,
+                   int rank,
+                   struct MPID_Comm * comm,
+                   int * size);
+#else
+#define MPID_Pack_size(count_, datatype_, rank_, comm_, size_)  \
+    ((MPID_Datatype_get_size_macro((datatype_), (size_))),      \
+        ((size_) *= (count_)), (MPI_SUCCESS))
+
+#endif
 
 /* debugging helper functions */
 char *MPIDU_Datatype_builtin_to_string(MPI_Datatype type);
