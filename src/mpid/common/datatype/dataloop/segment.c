@@ -729,7 +729,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 		    break;
 		case DLOOP_KIND_STRUCT:
 		    cur_elmp->orig_block =
-			DLOOP_STACKELM_STRUCT_BLOCKSIZE(cur_elmp, cur_elmp->orig_count - cur_elmp->curcount);
+			DLOOP_STACKELM_STRUCT_BLOCKSIZE(cur_elmp, cur_elmp->curcount ? cur_elmp->orig_count - cur_elmp->curcount : 0);
 		    break;
 		default:
 		    /* --BEGIN ERROR HANDLING-- */
