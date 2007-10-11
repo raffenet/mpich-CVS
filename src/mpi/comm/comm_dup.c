@@ -126,11 +126,6 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
        MPIR_Attr_dup_list 
     */
     if (MPIR_Process.attr_dup) {
-        /* newcomm_ptr->attributes = 0; -- MPIR_Comm_copy() already sets
-           attributes to NULL.  Setting it to NULL again causes any
-           attributes added by the device during construction to be
-           disconnected from the communicator without releasing the handle
-           or any resources associated with the value. [BRT] */
 	mpi_errno = MPIR_Process.attr_dup( comm_ptr->handle, 
 					   comm_ptr->attributes, 
 					   &new_attributes );
@@ -145,16 +140,27 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 	}
     }
 
-    
     /* Generate a new context value and a new communicator structure */ 
     /* We must use the local size, because this is compared to the 
        rank of the process in the communicator.  For intercomms, 
        this must be the local size */
-    mpi_errno = MPIR_Comm_copy( comm_ptr, comm_ptr->local_size, 
-				&newcomm_ptr );
+    mpi_errno = MPIR_Comm_copy( comm_ptr, comm_ptr->local_size,
+                                new_attributes, &newcomm_ptr );
+    /* FIXME: the copied attributes should be deleted if MPIR_Comm_copy fails;
+       however, the attribute free utility requires a communicator handle which
+       we don't have if MPIR_Comm_copy fails.  Perhaps the attributes be copied
+       after the new communicator has been created, but then the communicator
+       needs to be destroy if the copy of an attribute fails.  For now, the
+       duplicated attributes are leaked :-(. */
     if (mpi_errno) goto fn_fail;
 
-    newcomm_ptr->attributes = new_attributes;
+    /* newcomm_ptr->attributes = new_attributes; -- new_attributes is now
+       passed into MPIR_Comm_copy() so that it may set the attributes field.
+       Setting it the field here causes any attributes added by the device
+       during construction to be disconnected from the communicator without
+       releasing the handle or any resources associated with the
+       value. [BRT] */
+    
     *newcomm = newcomm_ptr->handle;
     
     /* ... end of body of routine ... */

@@ -580,7 +580,8 @@ void MPIR_Free_contextid( int context_id )
 #define FUNCNAME MPIR_Comm_copy
 #undef FCNAME
 #define FCNAME "MPIR_Comm_copy"
-int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
+int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size,
+                    MPID_Attribute * attributes, MPID_Comm **outcomm_ptr )
 {
     int mpi_errno = MPI_SUCCESS;
     int new_context_id, new_recvcontext_id;
@@ -674,11 +675,14 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
             MPIR_Errhandler_add_ref( comm_ptr->errhandler );
         }
 
-        /* Start with no attributes on this communicator.  This
-           initialization must be performed before notifying the device of
-           the new communicator since the device may wish to add
-           attributes. */
-        newcomm_ptr->attributes = 0;
+        /* Set the communicator's attributes field with the initial set of
+           attributes supplied by the calling routines.  This initialization
+           must be performed before notifying the device of the new
+           communicator since the device may wish to add attributes to the
+           communicator.  To preserve any additions made by the device, the the
+           attributes field must not be reset once this routine has been
+           called. */
+        newcomm_ptr->attributes = attributes;
 
         /* Notify the device of the new communicator */
         MPID_Dev_comm_create_hook(newcomm_ptr);

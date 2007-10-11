@@ -73,7 +73,7 @@ int MPIR_Graph_create( const MPID_Comm *comm_ptr, int nnodes,
     else {
 	/* Just use the first nnodes processes in the communicator */
 	mpi_errno = MPIR_Comm_copy( (MPID_Comm *)comm_ptr, nnodes, 
-				    &newcomm_ptr );
+                                    NULL, &newcomm_ptr );
     }
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 

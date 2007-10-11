@@ -84,7 +84,7 @@ int MPIR_Cart_create( const MPID_Comm *comm_ptr, int ndims, const int dims[],
     }
     else {
 	mpi_errno = MPIR_Comm_copy( (MPID_Comm *)comm_ptr, newsize, 
-				    &newcomm_ptr );
+                                    NULL, &newcomm_ptr );
 	rank   = comm_ptr->rank;
     }
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;

@@ -2285,7 +2285,7 @@ void MPIR_Nest_decr_export(void);
 
 /*int MPIR_Comm_attr_dup(MPID_Comm *, MPID_Attribute **);
   int MPIR_Comm_attr_delete(MPID_Comm *, MPID_Attribute *);*/
-int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );
+int MPIR_Comm_copy( MPID_Comm *, int, MPID_Attribute *, MPID_Comm ** );
 /* Fortran keyvals are set with functions in mpi_f77interface.h */
 #ifdef HAVE_CXX_BINDING
 extern void MPIR_Keyval_set_cxx( int, void (*)(void), void (*)(void) );
