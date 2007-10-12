@@ -110,22 +110,22 @@ if test -z "$PYTHON" ; then  ## user did not give us a python; find one
             continue
         fi
         
-        if test "$enable_totalview" = "yes" ; then
-             AC_MSG_CHECKING([that $pypgm has development tools for totalview])
-             has_python_sdk=no
-             for python_homedir in /usr/lib64 /usr/lib32 /usr/lib ; do
-                 if test -f $python_homedir/$pypgm/config/Makefile ; then
-                     has_python_sdk=yes
-                     break
-                 fi
-             done
-             if test "$has_python_sdk" = "yes" ; then
-                 AC_MSG_RESULT(yes)
-             else
-                 AC_MSG_RESULT(no)
-                 continue
-             fi
-        fi
+dnl        if test "$enable_totalview" = "yes" ; then
+dnl             AC_MSG_CHECKING([that $pypgm has development tools for totalview])
+dnl             has_python_sdk=no
+dnl             for python_homedir in /usr/lib64 /usr/lib32 /usr/lib ; do
+dnl                 if test -f $python_homedir/$pypgm/config/Makefile ; then
+dnl                     has_python_sdk=yes
+dnl                     break
+dnl                 fi
+dnl             done
+dnl             if test "$has_python_sdk" = "yes" ; then
+dnl                 AC_MSG_RESULT(yes)
+dnl             else
+dnl                 AC_MSG_RESULT(no)
+dnl                 continue
+dnl             fi
+dnl        fi
 
         PYTHON="$pypgm"
         break
