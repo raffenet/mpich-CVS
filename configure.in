@@ -4608,6 +4608,7 @@ for MPI_Wtime and internal timestamps.  name may be one of
     linux86_cycle - Linux x86; returns cycle counts, not time in seconds
     linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha
     gcc_ia64_cycle - IPF ar.itc timer
+    device - The timer is provided by the device
     ],timer_type=$enable_timer_type)
 
 if test -z "$timer_type" ; then 
@@ -4805,6 +4806,14 @@ pac_cv_linuxalpha_cycle,[
         AC_MSG_ERROR([LinuxAlpha cycle counter is not available on this system  and/or with the $CC compiler])
     fi
     MPID_TIMER_TYPE="long"
+    ;;
+
+    device)
+    # The device selected should export the datatype for the timer
+    # in MPID_DEVICE_TIMER_TYPE if something other than long is needed
+    if test -n "$MPID_DEVICE_TIMER_TYPE" ; then 
+       MPID_TIMER_TYPE=$MPID_DEVICE_TIMER_TYPE
+    fi
     ;;
 
     *)
