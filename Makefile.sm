@@ -153,6 +153,7 @@ dist-with-version:
 	echo "# Stub Makefile" > ib_module/Makefile.sm && \
 	echo "# Stub Makefile" > psm_module/Makefile.sm && \
 	echo "# Stub Makefile" > sctp_module/Makefile.sm )
+	( cd tmpdir/$(PACKAGE)-$(version)/src/mpid/globus && rm -f NOTES*.txt)
 	( cd tmpdir/${PACKAGE}-${version} && rm -f ToDo* )
 	( cd tmpdir/${PACKAGE}-${version} && rm -rf archive )
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles )
