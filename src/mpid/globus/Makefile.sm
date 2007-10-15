@@ -33,6 +33,10 @@ HEADERS =			\
     mpig_thread.i		\
     mpig_vmpi.h			\
 
+EXTRA_PROGRAMS = struct-pack-brt
+struct-pack-brt_SOURCES = struct-pack-brt.c
+struct-pack-brt_LDADD = -L../../../lib -lpmpig -lmpig
+
 #
 # targets that must be handled in a special way
 #
@@ -75,6 +79,7 @@ lib${MPILIBNAME}_a_SOURCES =	\
     mpig_cm_xio.c		\
     mpig_cm_vmpi.c		\
     mpig_comm.c			\
+    mpig_datatype.c		\
     mpig_misc.c			\
     mpig_pg.c			\
     mpig_pm.c			\
@@ -167,7 +172,7 @@ errnames.txt: FORCE_TARGET
 	grep '"\*\*[^"]*"' ${MPIG_SOURCE_DIR}/*.[chi] | \
 	    sed -e 's/[^"]*\("\*\*[^"]*"\)/\1/g' -e 's/""/"\n"/' | \
 	    sed -e 's/"\*\*\([^"]*\)".*$$/**\1:\1/' -e 's/\(:[A-Za-z0-9_|]* \)%/\1-- %/' | \
-	    grep -h '\*\*mpig|' ${MPIG_SOURCE_DIR}/errnames.txt - | \
+	    grep -h '\*\*globus|' ${MPIG_SOURCE_DIR}/errnames.txt - | \
 	    sort -t ':' +0 -1 -u >.errnames-$$$$.txt ; \
 	if test $$? -eq 0 ; then \
 	    mv .errnames-$$$$.txt ${MPIG_SOURCE_DIR}/errnames.txt ; \

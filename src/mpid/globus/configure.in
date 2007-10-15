@@ -232,9 +232,8 @@ int main(int argc, char **argv)
     fclose(f);
     exit(0);
 }
-],lac_cv_my_endian=`cat conftest.out`,
-  lac_cv_my_endian="FAILED",
-  lac_cv_my_endian=${CROSS_MY_ENDIAN:-undetermined})
+],lac_cv_my_endian=`cat conftest.out`, lac_cv_my_endian="FAILED", lac_cv_my_endian=${CROSS_MY_ENDIAN:-undetermined})
+rm -f conftest.out
 ])
 
 if test "$lac_cv_my_endian" = "big" ; then
@@ -423,11 +422,15 @@ AC_DEFUN([LAC_SET_MPIG_F77_CTYPE],
 m4_pushdef([lac_f77_type], m4_bregexp([$1], [^MPI_\(.*\)], [\1]))
 m4_pushdef([lac_mpir_f77_ctype], [MPIR_F77_]lac_f77_type[_CTYPE])
 m4_pushdef([lac_mpig_f77_ctype], [MPIG_F77_]lac_f77_type[_CTYPE])
+m4_if([$2], [], [
 if test -n "$lac_mpir_f77_ctype" ; then
     lac_mpig_f77_ctype=`echo "MPIG_CTYPE_${lac_mpir_f77_ctype}" | tr '[a-z ]' '[A-Z_]'`
 else
     lac_mpig_f77_ctype="MPIG_CTYPE_INVALID"
 fi
+],[
+lac_mpig_f77_ctype="$2"
+])
 AC_DEFINE_UNQUOTED(lac_mpig_f77_ctype, ${lac_mpig_f77_ctype}, [MPIG_CTYPE for F77 $1])
 m4_popdef([lac_mpig_f77_ctype])
 m4_popdef([lac_mpir_f77_ctype])
@@ -458,10 +461,10 @@ if test ${FORTRAN_BINDING} -ne 0 ; then
     LAC_SET_MPIG_F77_CTYPE(MPI_2DOUBLE_COMPLEX)
     LAC_SET_MPIG_F77_CTYPE(MPI_2REAL)
     LAC_SET_MPIG_F77_CTYPE(MPI_2DOUBLE_PRECISION)
-    LAC_SET_MPIG_F77_CTYPE(MPI_INTEGER1)
-    LAC_SET_MPIG_F77_CTYPE(MPI_INTEGER2)
-    LAC_SET_MPIG_F77_CTYPE(MPI_INTEGER4)
-    LAC_SET_MPIG_F77_CTYPE(MPI_INTEGER8)
+    LAC_SET_MPIG_F77_CTYPE(MPI_INTEGER1, MPIG_CTYPE_INT8)
+    LAC_SET_MPIG_F77_CTYPE(MPI_INTEGER2, MPIG_CTYPE_INT16)
+    LAC_SET_MPIG_F77_CTYPE(MPI_INTEGER4, MPIG_CTYPE_INT32)
+    LAC_SET_MPIG_F77_CTYPE(MPI_INTEGER8, MPIG_CTYPE_INT64)
     LAC_SET_MPIG_F77_CTYPE(MPI_INTEGER16)
     LAC_SET_MPIG_F77_CTYPE(MPI_REAL4)
     LAC_SET_MPIG_F77_CTYPE(MPI_REAL8)
@@ -498,9 +501,9 @@ else
 fi
 AC_DEFINE_UNQUOTED(MPIG_C_WCHAR_T_CTYPE, ${MPIG_C_WCHAR_T_CTYPE}, [MPIG_CTYPE for wchar_t])
 
-#
-# m4 macros to acquire information from the vendor MPI
-#
+dnl
+dnl m4 macros to acquire information from the vendor MPI
+dnl
 AC_DEFUN([LAC_CHECK_C_VMPI_FUNC],
 [
 m4_pushdef([lac_upper_varname], m4_translit([HAVE_C_V$1], [a-z], [A-Z]))
@@ -839,6 +842,7 @@ if test "${MPIG_VMPI:?}" != "no" ; then
             return 0;
         }
         ], lac_cv_vmpi_version=`cat conftest.out`, lac_cv_vmpi_version=0)
+	rm -f conftest.out
     ])
 
     AC_DEFINE_UNQUOTED(MPIG_VMPI_VERSION,${lac_cv_vmpi_version},
@@ -895,6 +899,10 @@ dnl AC_DEFINE_UNQUOTED(MPIG_USING_GRID_PKG,"${MPIG_USING_GRID_PKG:?}",[Grid midd
 
 AC_SUBST(MPIG_SOURCE_DIR)
 AC_SUBST(MPIG_BUILD_DIR)
+
+AC_DEFINE_UNQUOTED(MPIG_DATATYPE_MAX_BASIC_TYPES, ${MPIG_DATATYPE_MAX_BASIC_TYPES}, [maximum number of basic MPI datatypes])
+AC_DEFINE_UNQUOTED(MPIG_MAX_CTYPES, ${MPIG_MAX_CTYPES}, [maximum number of entries in the mpig_ctype_t enumeration])
+AC_DEFINE_UNQUOTED(MPIG_DATA_FORMAT_DESC_STRUCT, ${MPIG_DATA_FORMAT_DESC_STRUCT}, [data format descriptor])
 
 AC_DEFINE_UNQUOTED(MPIG_MPICH2_VERSION,"${MPIG_MPICH2_VERSION:?}",[MPICH2 version])
 
@@ -1048,7 +1056,9 @@ if test "${MPIG_RENAME_SYMBOLS}" = "yes" ; then
 	    sed -e 's/^/#define /' >>.mpig_symbol_map_public.h
 	fi
     if test "${MPIG_VMPI_PREMAIN_LIBS_REQUIRED}" = "yes" ; then
+       echo '#if !defined(MPIG_BUILDING_MPICH2)' >>.mpig_symbol_map_public.h
        echo '#define main(argc_, argv_) mpig_app_main(argc_, argv_)' >>.mpig_symbol_map_public.h
+       echo '#endif' >>.mpig_symbol_map_public.h
     fi
     grep -v '^P\?MPI_' ${srcdir}/mpig_symbol_map.txt | grep -v -f .mpig_symbol_map_public_extras.txt \
         ${srcdir}/mpig_symbol_map.txt | sed -e 's/^/#define /' >.mpig_symbol_map_internal.h

@@ -1,8 +1,5 @@
-# 
-# Globus device code:          Copyright 2005 Northern Illinois University
-# 
-# See COPYRIGHT.txt in the src/mpid/globus directory.
-# 
+**globus|argunpackbuf:globus|argunpackbuf
+**globus|argunpackbuf %d %d:globus|argunpackbuf -- %d %d
 **globus|badreqtype:globus|badreqtype
 **globus|badreqtype %d:globus|badreqtype -- %d
 **globus|bc_add_contact:globus|bc_add_contact
@@ -31,6 +28,7 @@
 **globus|cm_vmpi|iprobe_any_source:globus|cm_vmpi|iprobe_any_source
 **globus|cm_vmpi|localcomm:globus|cm_vmpi|localcomm
 **globus|cm_vmpi|localcomm %C %p:globus|cm_vmpi|localcomm -- %C %p
+**globus|cm_vmpi|packed_incompat:globus|cm_vmpi|packed_incompat
 **globus|cm_vmpi|pe_table_add_req:globus|cm_vmpi|pe_table_add_req
 **globus|cm_vmpi|pe_table_add_req %R %p:globus|cm_vmpi|pe_table_add_req -- %R %p
 **globus|cm_vmpi|reg_ras:globus|cm_vmpi|reg_ras
@@ -101,10 +99,15 @@
 **globus|cm_xio|disconnect_send_enq_close_msg %p:globus|cm_xio|disconnect_send_enq_close_msg -- %p
 **globus|cm_xio|disconnnect_handle_close_proc:globus|cm_xio|disconnnect_handle_close_proc
 **globus|cm_xio|disconnnect_handle_close_proc %p %s:globus|cm_xio|disconnnect_handle_close_proc -- %p %s
+**globus|cm_xio|invalid_buf_type:globus|cm_xio|invalid_buf_type
 **globus|cm_xio|module_init:an error occurred while initializing the XIO communication module
 **globus|cm_xio|msg_handler:globus|cm_xio|msg_handler
 **globus|cm_xio|nets_init:globus|cm_xio|nets_init
 **globus|cm_xio|nets_init %p %s:globus|cm_xio|nets_init -- %p %s
+**globus|cm_xio|no_room_for_pack_hdr:globus|cm_xio|no_room_for_pack_hdr
+**globus|cm_xio|no_room_for_pack_hdr %d %d:globus|cm_xio|no_room_for_pack_hdr -- %d %d
+**globus|cm_xio|packed_buf_too_small:globus|cm_xio|packed_buf_too_small
+**globus|cm_xio|packed_buf_too_small %d:globus|cm_xio|packed_buf_too_small -- %d
 **globus|cm_xio|port_dequeue_vc:globus|cm_xio|port_dequeue_vc
 **globus|cm_xio|port_dequeue_vc %s:globus|cm_xio|port_dequeue_vc -- %s
 **globus|cm_xio|port_enqueue_vc:globus|cm_xio|port_enqueue_vc
@@ -136,6 +139,7 @@
 **globus|cm_xio|reg_write_sreq:globus|cm_xio|reg_write_sreq
 **globus|cm_xio|req_recv_state:globus|cm_xio|req_recv_state
 **globus|cm_xio|req_recv_state %s:globus|cm_xio|req_recv_state -- %s
+**globus|cm_xio|rreq_drain_data:globus|cm_xio|rreq_drain_data
 **globus|cm_xio|seg_pack_iov:globus|cm_xio|seg_pack_iov
 **globus|cm_xio|send_enq_cancel_send_msg:a failure occurred while sending a cancel send message
 **globus|cm_xio|send_enq_cancel_send_resp_msg:a failure occurred while send a cancel send response message
@@ -297,6 +301,10 @@
 **globus|datatype_init:globus|datatype_init
 **globus|disconnect_handle_close_temp:globus|disconnect_handle_close_temp
 **globus|disconnect_handle_close_temp %p %s:globus|disconnect_handle_close_temp -- %p %s
+**globus|dt_pack_failed:globus|dt_pack_failed
+**globus|dt_pack_failed %d %d:globus|dt_pack_failed -- %d %d
+**globus|dt_unpack_failed:globus|dt_unpack_failed
+**globus|dt_unpack_failed %d %d:globus|dt_unpack_failed -- %d %d
 **globus|get_vc_compatability:globus|get_vc_compatability
 **globus|get_vc_compatability %s:globus|get_vc_compatability -- %s
 **globus|inttostrconv:an error occurred while converting an integer to a string
@@ -369,6 +377,8 @@
 **globus|topology_comm_destruct:globus|topology_comm_destruct
 **globus|topology_finalize:globus|topology_finalize
 **globus|topology_init:globus|topology_init
+**globus|unpack_header_incomplete:globus|unpack_header_incomplete
+**globus|unpack_header_incomplete %d %d:globus|unpack_header_incomplete -- %d %d
 **globus|vc_construct_contact_info:an error occurred while initializing the contact information contained within a VC
 **globus|vc_construct_contact_info %s %d:an error occurred while initializing the contact information contained within the VC associated with process %s:%d
 **globus|vc_ptr_bad:globus|vc_ptr_bad

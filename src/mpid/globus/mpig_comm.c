@@ -153,6 +153,31 @@ int mpig_comm_construct(MPID_Comm * const comm)
     mpig_genq_entry_set_value(&comm->dev.active_list, comm);
     mpig_genq_enqueue_tail_entry(&mpig_comm_active_list, &comm->dev.active_list);
 
+#   if defined(MPID_HAS_HETERO)
+    {
+#       if (MPIG_FAKING_HETERO == FALSE)
+        {
+            int p;
+            
+            comm->is_hetero = FALSE;
+            for (p = 0; p < comm->remote_size; p++)
+            {
+                mpig_vc_t * vc = mpig_comm_get_remote_vc(comm, p);
+            
+                if (mpig_dfd_is_hetero(&vc->dfd))
+                {
+                    comm->is_hetero = TRUE;
+                }
+            }
+        }
+#       else
+        {
+            comm->is_hetero = TRUE;
+        }
+#       endif
+    }
+#   endif
+    
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT
 	", mpi_errno=" MPIG_ERRNO_FMT, comm->handle, MPIG_PTR_CAST(comm), mpi_errno));
@@ -164,7 +189,67 @@ int mpig_comm_construct(MPID_Comm * const comm)
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
-/* mpig_comm_construct() */
+/* end mpig_comm_construct() */
+
+/*
+ * int mpig_intercomm_construct_localcomm([IN/MOD] comm)
+ *
+ * comm [IN/MOD] - communicator being created
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_intercomm_construct_localcomm
+int mpig_intercomm_construct_localcomm(MPID_Comm * const localcomm)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_intercomm_construct_localcomm);
+
+    MPIG_UNUSED_VAR(fcname);
+    
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_intercomm_construct_localcomm);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
+	"entering: localcomm=" MPIG_HANDLE_FMT ", localcommp=" MPIG_PTR_FMT, localcomm->handle, MPIG_PTR_CAST(localcomm)));
+
+    /* a local intracommunicator may be attached to an intercommunicator.  this intracommunicator is created locally (meaning not
+       collectively) by MPIR_Setup_intercomm_localcomm() when needed.  we set the value of queue entry's pointer to the
+       communicator object to NULL so that we can detect when one of these local intracommuncators is being destroyed and skip
+       parts of the destruction process. */
+    localcomm->dev.app_ref = FALSE;
+    mpig_genq_entry_construct(&localcomm->dev.active_list);
+    mpig_genq_entry_set_value(&localcomm->dev.active_list, NULL);
+
+#   if defined(MPID_HAS_HETERO)
+    {
+#       if (MPIG_FAKING_HETERO == FALSE)
+        {
+            int p;
+            
+            localcomm->is_hetero = FALSE;
+            for (p = 0; p < localcomm->remote_size; p++)
+            {
+                mpig_vc_t * vc = mpig_comm_get_remote_vc(localcomm, p);
+            
+                if (mpig_dfd_is_hetero(&vc->dfd))
+                {
+                    localcomm->is_hetero = TRUE;
+                }
+            }
+        }
+#       else
+        {
+            localcomm->is_hetero = TRUE;
+        }
+#       endif
+    }
+#   endif
+    
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: localcomm=" MPIG_HANDLE_FMT ", localcommp="
+        MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, localcomm->handle, MPIG_PTR_CAST(localcomm), mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_intercomm_construct_localcomm);
+    return mpi_errno;
+}
+/* end mpig_intercomm_construct_localcomm() */
 
 /*
  * int mpig_comm_destruct([IN/MOD] comm)
@@ -176,6 +261,7 @@ int mpig_comm_construct(MPID_Comm * const comm)
 int mpig_comm_destruct(MPID_Comm * const comm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    bool_t is_localcomm = (mpig_genq_entry_get_value(&comm->dev.active_list) == NULL) ? TRUE : FALSE;
     int mrc;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_comm_destruct);
@@ -187,8 +273,8 @@ int mpig_comm_destruct(MPID_Comm * const comm)
 	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, MPIG_PTR_CAST(comm)));
 
     /* if this communicator was created by MPIR_Setup_intercomm_localcomm(), then skip the rest of the destruction process.  see
-       comments below. */
-    if (mpig_genq_entry_get_value(&comm->dev.active_list) == NULL)
+       the comments above in mpig_intercomm_construct_localcomm(). */
+    if (is_localcomm)
     {
         mpig_genq_entry_destruct(&comm->dev.active_list);
         goto fn_return;
@@ -201,27 +287,6 @@ int mpig_comm_destruct(MPID_Comm * const comm)
 	/* FIXME: convert this into a generic CM function table list/array so that any CM can register hooks */
     }
 #   endif /* #if defined(MPIG_VMPI) */
-
-    /* a local intracommunicator may be attached to an intercommunicator.  this intracommunicator is created locally (meaning not
-       collectively) by MPIR_Setup_intercomm_localcomm() when needed.  the device is not notified of its creation and thus has
-       not intialized any of the device information.  we set the value of queue entry's pointer to the communicator object to
-       NULL so that we can detect when one of these local intracommuncators is being destroyed and skip the destruction
-       process. */
-    if (comm->comm_kind == MPID_INTERCOMM)
-    {
-	MPID_Comm * const local_comm = comm->local_comm;
-	
-	if (local_comm != NULL)
-	{
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM, "encountered an intercommunicator with a local intracommunicator: comm="
-		MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT ", local_comm"  MPIG_HANDLE_FMT ", local_commp=" MPIG_PTR_FMT, 
-		comm->handle, MPIG_PTR_CAST(comm), local_comm->handle, MPIG_PTR_CAST(local_comm)));
-	    
-            local_comm->dev.app_ref = FALSE;
-            mpig_genq_entry_construct(&local_comm->dev.active_list);
-            mpig_genq_entry_set_value(&local_comm->dev.active_list, NULL);
-	}
-    }
 
     MPIU_Assert(comm->dev.app_ref == FALSE);
     mpig_genq_remove_entry(&mpig_comm_active_list, &comm->dev.active_list);
@@ -241,7 +306,7 @@ int mpig_comm_destruct(MPID_Comm * const comm)
     MPIG_FUNC_EXIT(MPID_STATE_mpig_comm_destruct);
     return mpi_errno;
 }
-/* mpig_comm_destruct() */
+/* end mpig_comm_destruct() */
 
 /*
  * <mpi_errno> mpig_comm_free_hook[IN/MOD] comm)

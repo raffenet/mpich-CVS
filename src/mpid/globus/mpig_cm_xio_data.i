@@ -20,11 +20,11 @@
 #define mpig_cm_xio_msg_hdr_local_sizeof_msg_size(vc_) (sizeof(unsigned char))
 #define mpig_cm_xio_msg_hdr_remote_sizeof_msg_size(vc_) (sizeof(unsigned char))
 
-#define mpig_cm_xio_msg_hdr_put_end(vc_, msgbuf_)								\
-{														\
-    *(unsigned char *)(mpig_databuf_get_base_ptr(msgbuf_)) = (unsigned char) mpig_databuf_get_eod(msgbuf_);	\
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", msg_size=%u",		\
-	MPIG_PTR_CAST(msgbuf_), (unsigned) mpig_databuf_get_eod(msgbuf_)));					\
+#define mpig_cm_xio_msg_hdr_put_end(vc_, msgbuf_, hdr_size_adj_)                                                                \
+{                                                                                                                               \
+    *(unsigned char *)(mpig_databuf_get_base_ptr(msgbuf_)) = (unsigned char) (mpig_databuf_get_eod(msgbuf_) + (hdr_size_adj_));	\
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", msg_size=%u",                                \
+	MPIG_PTR_CAST(msgbuf_), (unsigned) mpig_databuf_get_eod(msgbuf_)));                                                     \
 }
 
 #define mpig_cm_xio_msg_hdr_get_msg_size(vc_, msgbuf_, msg_size_p_)					\
@@ -73,6 +73,7 @@
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_endian(vc_));		\
 }
 
+#if FALSE
 #define mpig_cm_xio_msg_hdr_local_sizeof_data_format(vc_) (sizeof(unsigned char))
 #define mpig_cm_xio_msg_hdr_remote_sizeof_data_format(vc_) (sizeof(unsigned char))
 
@@ -91,6 +92,7 @@
 	MPIG_PTR_CAST(msgbuf_), *(df_p_)));								\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_data_format(vc_));		\
 }
+#endif /* FALSE */
 
 #define mpig_cm_xio_msg_hdr_local_sizeof_req_type(vc_) (sizeof(unsigned char))
 #define mpig_cm_xio_msg_hdr_remote_sizeof_req_type(vc_) (sizeof(unsigned char))
@@ -136,11 +138,11 @@
     int32_t tag__;												\
     int32_t ctx__;												\
     char * ptr__ = (char *) mpig_databuf_get_pos_ptr(msgbuf_);							\
-    mpig_dc_get_int32((vc_)->cmu.xio.endian, ptr__, &rank__);							\
+    mpig_dc_get_int32(mpig_vc_get_endian(vc_), ptr__, &rank__);							\
     ptr__ += sizeof(int32_t);											\
-    mpig_dc_get_int32((vc_)->cmu.xio.endian, ptr__, &tag__);							\
+    mpig_dc_get_int32(mpig_vc_get_endian(vc_), ptr__, &tag__);							\
     ptr__ += sizeof(int32_t);											\
-    mpig_dc_get_int32((vc_)->cmu.xio.endian, ptr__, &ctx__);							\
+    mpig_dc_get_int32(mpig_vc_get_endian(vc_), ptr__, &ctx__);							\
     *(rank_p_) = rank__;											\
     *(tag_p_) = tag__;												\
     *(ctx_p_) = ctx__;												\
@@ -164,21 +166,21 @@
 #define mpig_cm_xio_msg_hdr_get_rank(vc_, msgbuf_, rank_p_)					\
 {												\
     int32_t rank__;										\
-    mpig_dc_get_int32((vc_)->cmu.xio.endian, mpig_databuf_get_pos_ptr(msgbuf_), &rank__);	\
+    mpig_dc_get_int32(mpig_vc_get_endian(vc_), mpig_databuf_get_pos_ptr(msgbuf_), &rank__);	\
     *(rank_p_) = rank__;									\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", rank=%d",	\
 	MPIG_PTR_CAST(msgbuf_), *(rank_p_)));							\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_rank(vc_));		\
 }
 
-#define mpig_cm_xio_msg_hdr_local_sizeof_data_size(vc_) (nexus_dc_sizeof_u_long_long(1))
-#define mpig_cm_xio_msg_hdr_remote_sizeof_data_size(vc_) (nexus_dc_sizeof_remote_u_long_long(1, (vc_)->cmu.xio.gdc_df))
+#define mpig_cm_xio_msg_hdr_local_sizeof_data_size(vc_) (sizeof(uint64_t))
+#define mpig_cm_xio_msg_hdr_remote_sizeof_data_size(vc_) (sizeof(uint64_t))
 
 #define mpig_cm_xio_msg_hdr_put_data_size(vc_, msgbuf_, data_size_);						\
 {														\
-    unsigned long long data_size__ = (unsigned long long) (data_size_);						\
-    nexus_byte_t * ptr__ = (nexus_byte_t *) mpig_databuf_get_eod_ptr(msgbuf_);					\
-    nexus_dc_put_u_long_long(&ptr__, &data_size__, 1);								\
+    uint64_t data_size__ = (unsigned long long) (data_size_);                                                   \
+    MPIU_Assert(data_size__ == (data_size_));                                                                   \
+    mpig_dc_put_int64(mpig_databuf_get_eod_ptr(msgbuf_), (data_size__));                                        \
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr put: msgbuf=" MPIG_PTR_FMT ", data_size=" MPIG_SIZE_FMT,	\
 	MPIG_PTR_CAST(msgbuf_), (MPIU_Size_t) (data_size_)));							\
     mpig_databuf_inc_eod((msgbuf_), mpig_cm_xio_msg_hdr_local_sizeof_data_size(vc_));				\
@@ -186,11 +188,10 @@
 
 #define mpig_cm_xio_msg_hdr_get_data_size(vc_, msgbuf_, data_size_p_);						\
 {														\
-    unsigned long long data_size__;										\
-    nexus_byte_t * ptr__ = (nexus_byte_t *) mpig_databuf_get_pos_ptr(msgbuf_);					\
-    nexus_dc_get_u_long_long(&ptr__, &data_size__, 1, (vc_)->cmu.xio.gdc_df);					\
+    uint64_t data_size__;                                                                                       \
+    mpig_dc_get_int64(mpig_vc_get_endian(vc_), mpig_databuf_get_pos_ptr(msgbuf_), &data_size__);                \
     *(data_size_p_) = data_size__;										\
-    MPIU_Assertp(data_size__ == *(data_size_p_));								\
+    MPIU_Assert(data_size__ == *(data_size_p_));								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", data_size=" MPIG_SIZE_FMT,	\
 	MPIG_PTR_CAST(msgbuf_), (MPIU_Size_t) *(data_size_p_)));						\
     mpig_databuf_inc_pos((msgbuf_), mpig_cm_xio_msg_hdr_remote_sizeof_data_size(vc_));				\
@@ -211,7 +212,7 @@
 #define mpig_cm_xio_msg_hdr_get_req_id(vc_, msgbuf_, req_id_p_)							\
 {														\
     int32_t req_id__;												\
-    mpig_dc_get_int32((vc_)->cmu.xio.endian, mpig_databuf_get_pos_ptr(msgbuf_), &req_id__);			\
+    mpig_dc_get_int32(mpig_vc_get_endian(vc_), mpig_databuf_get_pos_ptr(msgbuf_), &req_id__);			\
     *(req_id_p_) = req_id__;											\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", req_id=" MPIG_HANDLE_FMT,	\
 	MPIG_PTR_CAST(msgbuf_), (unsigned) *(req_id_p_)));							\
@@ -271,7 +272,7 @@
 #define mpig_cm_xio_msg_hdr_get_conn_seqnum(vc_, msgbuf_, conn_seqnum_p_)						\
 {															\
     int32_t conn_seqnum__;												\
-    mpig_dc_get_int32((vc_)->cmu.xio.endian, mpig_databuf_get_pos_ptr(msgbuf_), &conn_seqnum__);			\
+    mpig_dc_get_int32(mpig_vc_get_endian(vc_), mpig_databuf_get_pos_ptr(msgbuf_), &conn_seqnum__);			\
     *(conn_seqnum_p_) = conn_seqnum__;											\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_MSGHDR, "hdr get: msgbuf=" MPIG_PTR_FMT ", conn_seqnum=" MPIG_HANDLE_FMT,	\
 	MPIG_PTR_CAST(msgbuf_), (unsigned) *(conn_seqnum_p_)));								\
@@ -287,19 +288,25 @@
 /**********************************************************************************************************************************
 					      BEGIN STREAM DATA CONVERSION ROUTINES
 **********************************************************************************************************************************/
+
+/* FIXME: the stream routines really don't belong in the XIO CM.  they are more general than that and could be used by any CM
+   that does stream based communication. */
+
 #if !defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS)
 
-MPIG_STATIC int mpig_cm_xio_stream_sreq_init(MPID_Request * sreq);
+static int mpig_cm_xio_stream_sreq_init(MPID_Request * sreq);
 
-MPIG_STATIC int mpig_cm_xio_stream_sreq_pack(MPID_Request * sreq);
+static int mpig_cm_xio_stream_sreq_pack(MPID_Request * sreq);
 
-MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * rreq);
+static int mpig_cm_xio_stream_rreq_init(MPID_Request * rreq);
 
-MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * rreq);
+static int mpig_cm_xio_stream_rreq_unpack(MPID_Request * rreq);
 
-MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(mpig_vc_t * vc, MPID_Request * rreq);
+static int mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(mpig_vc_t * vc, MPID_Request * rreq);
 
-MPIG_STATIC int mpig_cm_xio_stream_rreq_handle_truncation(MPID_Request * rreq, MPIU_Size_t buffered_bytes);
+static int mpig_cm_xio_stream_rreq_handle_truncation(MPID_Request * rreq, MPIU_Size_t buffered_bytes);
+
+static void mpig_cm_xio_stream_rreq_drain(MPID_Request * rreq);
 
 
 #define mpig_cm_xio_stream_set_size(req_, stream_size_)	\
@@ -353,7 +360,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_handle_truncation(MPID_Request * rreq, M
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_stream_sreq_init
-MPIG_STATIC int mpig_cm_xio_stream_sreq_init(MPID_Request * const sreq)
+static int mpig_cm_xio_stream_sreq_init(MPID_Request * const sreq)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     struct mpig_cm_xio_request_cmu * sreq_cmu = &sreq->cmu.xio;
@@ -412,7 +419,7 @@ MPIG_STATIC int mpig_cm_xio_stream_sreq_init(MPID_Request * const sreq)
             
         }   /* --END ERROR HANDLING-- */
         
-	MPID_Segment_init(buf, cnt, dt, sreq_cmu->segp, 0); /* always packs using local data format */
+        MPID_Segment_init(buf, cnt, dt, sreq_cmu->segp, MPID_DATALOOP_HOMOGENEOUS);
 
 	sreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_DENSE;
     }
@@ -433,7 +440,7 @@ MPIG_STATIC int mpig_cm_xio_stream_sreq_init(MPID_Request * const sreq)
             
         }   /* --END ERROR HANDLING-- */
         
-	MPID_Segment_init(buf, cnt, dt, sreq_cmu->segp, 0); /* always packs using local data format */
+        MPID_Segment_init(buf, cnt, dt, sreq_cmu->segp, MPID_DATALOOP_HOMOGENEOUS);
 	
 	mpi_errno = mpig_databuf_create((MPIU_Size_t) MPIG_CM_XIO_DATA_SPARSE_BUFFER_SIZE, &sreq_cmu->databuf);
 	if (mpi_errno)
@@ -487,7 +494,7 @@ MPIG_STATIC int mpig_cm_xio_stream_sreq_init(MPID_Request * const sreq)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_stream_sreq_pack
-MPIG_STATIC int mpig_cm_xio_stream_sreq_pack(MPID_Request * const sreq)
+static int mpig_cm_xio_stream_sreq_pack(MPID_Request * const sreq)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     struct mpig_cm_xio_request_cmu * sreq_cmu = &sreq->cmu.xio;
@@ -638,7 +645,7 @@ MPIG_STATIC int mpig_cm_xio_stream_sreq_pack(MPID_Request * const sreq)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_stream_rreq_init
-MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
+static int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     struct mpig_cm_xio_request_cmu * rreq_cmu = &rreq->cmu.xio;
@@ -649,6 +656,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
     MPIU_Size_t dt_size;
     MPIU_Size_t dt_nblks;
     MPI_Aint dt_true_lb;
+    const bool_t hetero = mpig_request_is_hetero(rreq);
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_stream_rreq_init);
 
@@ -665,15 +673,14 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
     rreq_cmu->buf_size = cnt * dt_size;
     rreq_cmu->buf_true_lb = dt_true_lb;
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "remote_gdc_df=%d, local_gdc_df=%d, buf_size=" MPIG_SIZE_FMT, rreq_cmu->gdc_df,
-        GLOBUS_DC_FORMAT_LOCAL, rreq_cmu->buf_size));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "hetero=%s, buf_size=" MPIG_SIZE_FMT, MPIG_BOOL_STR(hetero)));
     
     /* rreq_cmu->stream_size -- must be set prior to calling this routine */
     rreq_cmu->stream_pos = 0;
     rreq_cmu->stream_max_pos = rreq_cmu->stream_size;
     rreq->status.count = 0;
 
-    if (FALSE && ((dt_contig && rreq_cmu->gdc_df == GLOBUS_DC_FORMAT_LOCAL) || cnt == 0))
+    if ((dt_contig && hetero == FALSE) || cnt == 0 || mpig_request_get_dt(rreq) == MPI_PACKED)
     {
 	/* if the application buffer is contiguous, then receive data straight into the application buffer.  use of a segment is
 	   not required. */
@@ -682,10 +689,36 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
 	    rreq_cmu->stream_size));
 	
 	rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_CONTIG;
+
+        /* if the request datatype is MPI_PACKED, then add a message header to the buffer */
+        if (mpig_request_get_dt(rreq) == MPI_PACKED)
+        {
+            if (cnt > MPIG_PACK_HEADER_SIZE)
+            {
+                MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "request datatype is MPI_PACKED; adding pack header to buffer: rreq= "
+                    MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
+                
+                mpig_dfd_pack_header(mpig_request_get_dfd(rreq), (void *) ((char *) buf + rreq_cmu->buf_true_lb));
+
+                /* change the buffer size and true lb to reflect the addition of the pack header.  this is a bit of a hack but it
+                   avoids complicating the stream state. */
+                rreq_cmu->buf_size -= MPIG_PACK_HEADER_SIZE;
+                rreq_cmu->buf_true_lb += MPIG_PACK_HEADER_SIZE;
+                rreq->status.count += MPIG_PACK_HEADER_SIZE;
+            }
+            else if (cnt != 0)
+            {   /* --BEGIN ERROR HANDLING-- */
+                MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "request datatype is MPI_PACKED; not enough space in buffer for pack "
+                    "header: rreq= " MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", avail=%d, required=%d", rreq->handle,
+                    MPIG_PTR_CAST(rreq), mpig_iov_get_num_bytes(rreq_cmu->iov), MPIG_PACK_HEADER_SIZE));
+                MPIU_ERR_SET2(mpi_errno, MPI_ERR_TRUNCATE, "**globus|cm_xio|no_room_for_pack_hdr",
+                    "**globus|cm_xio|no_room_for_pack_hdr %d %d", mpig_iov_get_num_bytes(rreq_cmu->iov), MPIG_PACK_HEADER_SIZE);
+                goto fn_fail;
+            }   /* --END ERROR HANDLING-- */
+        }
     }
-    else if (FALSE && rreq_cmu->gdc_df == GLOBUS_DC_FORMAT_LOCAL &&
-        (cnt * dt_nblks <= (MPIU_Size_t) mpig_iov_get_num_free_entries(rreq_cmu->iov) ||
-            dt_size / dt_nblks >= MPIG_CM_XIO_DATA_DENSITY_THRESHOLD / (MPIU_Size_t) mpig_iov_get_num_entries(rreq_cmu->iov)))
+    else if (!hetero && (cnt * dt_nblks <= (MPIU_Size_t) mpig_iov_get_num_free_entries(rreq_cmu->iov) ||
+        dt_size / dt_nblks >= MPIG_CM_XIO_DATA_DENSITY_THRESHOLD / (MPIU_Size_t) mpig_iov_get_num_entries(rreq_cmu->iov)))
     {
 	/* if the application buffer is noncontiguous but the data is dense enough that an IOV can being used efficiently, then
 	   the data will be received straight into the application buffer */
@@ -701,9 +734,9 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
             goto fn_fail;
             
         }   /* --END ERROR HANDLING-- */
-        
-	MPID_Segment_init(buf, cnt, dt, rreq_cmu->segp, 0); /* XXX: USE GLOBUS DC VERSION ??? */
 
+        MPID_Segment_init(buf, cnt, dt, rreq_cmu->segp, MPID_DATALOOP_HOMOGENEOUS);
+        
 	rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_DENSE;
     }
     else
@@ -713,8 +746,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
 	   more data to be acquired in a single write operation.  the intermediate buffer is only allocated here if an unexpected
 	   buffer is not already attached to the request. */
 #       if defined(MPIG_DEBUG)
-        const char * const buf_desc = (FALSE && rreq_cmu->gdc_df == GLOBUS_DC_FORMAT_LOCAL) ? "sparse app buffer" :
-            "foreign data format";
+        const char * const buf_desc = (hetero == FALSE) ? "sparse app buffer" : "heterogeneous data";
 #       endif
         
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; initializing segment and allocating bufffer: rreq=" MPIG_HANDLE_FMT
@@ -729,8 +761,8 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
             goto fn_fail;
             
         }   /* --END ERROR HANDLING-- */
-        
-	MPID_Segment_init(buf, cnt, dt, rreq_cmu->segp, 0);  /* XXX: USE GLOBUS DC VERSION ??? */
+
+        mpig_segment_init(buf, cnt, dt, mpig_request_get_dfd(rreq), rreq_cmu->segp);
 
 	if (rreq_cmu->databuf == NULL)
 	{
@@ -744,14 +776,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
 	    }   /* --END ERROR HANDLING-- */
 	}
 	
-        if (FALSE && rreq_cmu->gdc_df == GLOBUS_DC_FORMAT_LOCAL)
-        {
-            rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_SPARSE;
-        }
-        else
-        {
-            rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_FOREIGN;
-        }
+        rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_SPARSE;
     }
     
   fn_return:
@@ -786,12 +811,12 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
  *
  * NOTE: this routine may be called even all of the data described by the IOV has not been read.  the only restriction is that at
  * least one entry must be free in the IOV, so it is recommend that the IOV be compacted before this routine is called.
- * (mpig_iov_unpack() automatically compacts the IOV.)  this capability was considered necessary to reduce the number of read
- * operations, specifically when the rendezvous protocol is used with noncontiguous buffers or data requiring conversion.
+ * (mpig_iov_unpack_buffer() automatically compacts the IOV.)  this capability was considered necessary to reduce the number of
+ * read operations, specifically when the rendezvous protocol is used with noncontiguous buffers or data requiring conversion.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_stream_rreq_unpack
-MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
+static int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     struct mpig_cm_xio_request_cmu * rreq_cmu = &rreq->cmu.xio;
@@ -824,12 +849,6 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "stream stalled; pos = max_pos; skipping IOV reload: rreq=" MPIG_HANDLE_FMT
 	    ", rreqp=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", max_pos" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, rreq->handle,
 	    MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos, rreq_cmu->stream_max_pos, rreq_cmu->stream_size));
-    }
-    else if (rreq_cmu->stream_pos != (MPIU_Size_t) rreq->status.count)
-    {
-	/* if truncation has occurred, then set the IOV to drain the next chunck bytes from the network. */
-	mpi_errno = mpig_cm_xio_stream_rreq_handle_truncation(rreq, (MPIU_Size_t) 0);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_trunc");
     }
     else if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_CONTIG)
     {
@@ -868,7 +887,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 		}
 		
 		rreq_cmu->stream_pos = last;
-		rreq->status.count = last;
+		rreq->status.count += nbytes;
 	    }
 	}
 
@@ -888,7 +907,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 		rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos, rreq_cmu->buf_size, rreq_cmu->stream_size));
 	    
 	    rreq_cmu->stream_pos = last;
-	    rreq->status.count = last;
+	    rreq->status.count += nbytes;
 	}
 
 	/* if more data was available than application buffer space, then call the routine to handle truncation */
@@ -914,9 +933,10 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 				mpig_databuf_get_pos_ptr(rreq_cmu->databuf));
 	    if (last != rreq_cmu->stream_pos)
 	    {
-		mpig_databuf_inc_pos(rreq_cmu->databuf, last - rreq_cmu->stream_pos);
+                nbytes = last - rreq_cmu->stream_pos;
+		mpig_databuf_inc_pos(rreq_cmu->databuf, nbytes);
 		rreq_cmu->stream_pos = last;
-		rreq->status.count = last;
+		rreq->status.count += nbytes;
 		
 		if (mpig_databuf_get_remaining_bytes(rreq_cmu->databuf) == 0)
 		{
@@ -951,24 +971,21 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 		    MPIG_PTR_FMT ", start=" MPIG_SIZE_FMT ", end=" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, rreq->handle,
 		    MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos, last, rreq_cmu->stream_size));
 
+                nbytes = last - rreq_cmu->stream_pos;
 		mpig_iov_inc_num_inuse_entries(rreq_cmu->iov, iov_count);
-		mpig_iov_inc_num_bytes(rreq_cmu->iov, last - rreq_cmu->stream_pos);
-		
+		mpig_iov_inc_num_bytes(rreq_cmu->iov, nbytes);
 		rreq_cmu->stream_pos = last;
-		rreq->status.count = last;
+		rreq->status.count += nbytes;
 
 		/* if data still remains in an unexpected buffer, then extract data from it.  this could happen if the amount of
 		   data in the buffer was less than the next basic type to be processed.  as such, we would expect a very small
 		   amount of data to be in the buffer. */
 		if (rreq_cmu->databuf != NULL)
 		{
-		    nbytes = mpig_iov_unpack(mpig_databuf_get_pos_ptr(rreq_cmu->databuf),
-			mpig_databuf_get_remaining_bytes(rreq_cmu->databuf), rreq_cmu->iov);
+		    nbytes = mpig_iov_unpack_buffer(rreq_cmu->iov, mpig_databuf_get_pos_ptr(rreq_cmu->databuf),
+			mpig_databuf_get_remaining_bytes(rreq_cmu->databuf));
 		    mpig_databuf_inc_pos(rreq_cmu->databuf, nbytes);
 
-		    rreq_cmu->stream_pos = last;
-		    rreq->status.count = last;
-		    
 		    if (mpig_databuf_get_remaining_bytes(rreq_cmu->databuf) == 0)
 		    {
 			if (mpig_iov_get_num_bytes(rreq_cmu->iov) > 0)
@@ -1042,7 +1059,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 		else
 		{
 		    /* if truncation has occurred, then call the truncation handler to populate the IOV to drain the next chunk
-		       of data from the network. */
+		       of data from the stream. */
 		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "dense app buffer; position did not advance; handling truncation: "
 			"rreq=" MPIG_HANDLE_FMT ", rreq_p=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT
 			", size=" MPIG_SIZE_FMT, rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos,
@@ -1055,19 +1072,15 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 	    }
 	}
     }
-    else /* if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_SPARSE || rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_FOREIGN) */
+    else if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_SPARSE)
     {
 	/* the application buffer is noncontiguous and the data density is rather sparse, or if data conversion is necessaary, so
 	   an intermediate buffer is used to receive the data in condensed form, allowing more data to be received by a single
 	   read operation */
 #       if defined(MPIG_DEBUG)
-        const char * const buf_desc = (FALSE && rreq_cmu->gdc_df == GLOBUS_DC_FORMAT_LOCAL) ? "sparse app buffer" :
-            "foreign data format";
+        const char * const buf_desc = (mpig_request_is_hetero(rreq) == FALSE) ? "sparse app buffer" : "heterogeneous data";
 #       endif
 	bool_t reload_iov = TRUE;
-	
-	MPIU_Assert(rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_SPARSE ||
-            rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_FOREIGN);
 	
 	/* adjust the end of the data in the intermediate buffer if the IOV still describes data to be acquired */
 	nbytes = mpig_iov_get_num_bytes(rreq_cmu->iov);
@@ -1086,17 +1099,8 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 	if (mpig_databuf_get_remaining_bytes(rreq_cmu->databuf) > 0)
 	{
 	    last = MPIG_MIN(rreq_cmu->stream_pos + mpig_databuf_get_remaining_bytes(rreq_cmu->databuf), rreq_cmu->stream_max_pos);
-            if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_SPARSE)
-            {
-                MPID_Segment_unpack(rreq_cmu->segp, (MPI_Aint) rreq_cmu->stream_pos, (MPI_Aint *) &last,
-                    mpig_databuf_get_base_ptr(rreq_cmu->databuf));
-            }
-            else /* if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_FOREIGN) */
-            {
-                mpig_segment_globus_dc_unpack(rreq_cmu->segp, (MPI_Aint) rreq_cmu->stream_pos, (MPI_Aint *) &last,
-                    mpig_databuf_get_base_ptr(rreq_cmu->databuf), rreq_cmu->src_ctype_map, rreq_cmu->src_sizeof_ctypes,
-                    rreq_cmu->gdc_df);
-            }
+            mpig_segment_unpack(rreq_cmu->segp, mpig_request_get_dfd(rreq), (MPI_Aint) rreq_cmu->stream_pos,
+                (MPI_Aint *) &last, mpig_databuf_get_base_ptr(rreq_cmu->databuf));
 	
 	    if (last != rreq_cmu->stream_pos)
 	    {
@@ -1105,9 +1109,10 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
                     rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos, last, rreq_cmu->stream_size));
 	    
 		/* update the intermediate buffer, status count, and stream position to reflect bytes consumed by the unpack */
-		mpig_databuf_inc_pos(rreq_cmu->databuf, last - rreq_cmu->stream_pos);
+                nbytes = last - rreq_cmu->stream_pos;
+                mpig_databuf_inc_pos(rreq_cmu->databuf, nbytes);
 		rreq_cmu->stream_pos = last;
-		rreq->status.count = last;
+		rreq->status.count += nbytes;
 
 		/* if any bytes remain in the intermediate buffer, move them to the beginning of the buffer; otherwise, reset the
 		   intermediate buffer to its zeroed state */
@@ -1171,7 +1176,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 		else
 		{
 		    /* if truncation has occurred, then call the truncation handler to populate the IOV to drain the next chunk
-		       of data from the network. */
+		       of data from the stream. */
 		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; position did not advance; handling truncation: rreq="
                         MPIG_HANDLE_FMT ", rreq_p=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT ", size="
                         MPIG_SIZE_FMT, buf_desc, rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos,
@@ -1235,7 +1240,19 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
                 rreq_cmu->stream_pos, rreq_cmu->stream_pos + nbytes, rreq_cmu->stream_size));
 	}
     }
-
+    else if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_DRAIN)
+    {
+	/* if draining data from the stream, then set the IOV with the next chunk of bytes to be drained.  data is typically
+           drained from the stream if an error occurred earlier, such as a truncation error. */
+	mpig_cm_xio_stream_rreq_drain(rreq);
+    }
+    else
+    {
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA, "ERROR: unknown buffer typee: rreq=" MPIG_HANDLE_FMT
+            ", rreqp=" MPIG_PTR_FMT ", buf_type=%d", rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->buf_type));
+        MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|invalid_buf_type");
+    }
+    
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA, "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT
 	", mpi_errno=" MPIG_ERRNO_FMT, rreq->handle, MPIG_PTR_CAST(rreq), mpi_errno));
@@ -1259,7 +1276,7 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_stream_rreq_unpack_vc_msgbuf
-MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(mpig_vc_t * const vc, MPID_Request * const rreq)
+static int mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(mpig_vc_t * const vc, MPID_Request * const rreq)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     struct mpig_cm_xio_vc_cmu * vc_cmu = &vc->cmu.xio;
@@ -1278,8 +1295,8 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(mpig_vc_t * const vc, M
     /* if any data remains in the VC message buffer, then move it into the application or intermediate buffer */
     while (mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf) > 0 && mpig_iov_get_num_bytes(rreq_cmu->iov) > 0)
     {
-	nbytes = mpig_iov_unpack(mpig_databuf_get_pos_ptr(vc_cmu->msgbuf),
-	    mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf), rreq_cmu->iov);
+	nbytes = mpig_iov_unpack_buffer(rreq_cmu->iov, mpig_databuf_get_pos_ptr(vc_cmu->msgbuf),
+	    mpig_databuf_get_remaining_bytes(vc_cmu->msgbuf));
 	mpig_databuf_inc_pos(vc_cmu->msgbuf, nbytes);
 	if (mpig_iov_get_num_bytes(rreq_cmu->iov) == 0)
 	{
@@ -1306,22 +1323,22 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(mpig_vc_t * const vc, M
 /*
  * <mpi_errno> mpig_cm_xio_stream_rreq_handle_truncation([IN/MOD] rreq, [IN] buffered_bytes, [OUT] complete)
  *
- * set the IOV to read any extraneous bytes from the network.  if all of the bytes have already been read (possibly buffered),
- * then the IOV remains unaltered.
+ * add a truncation error to the request and set the IOV to read any extraneous bytes from the stream.  if all of the bytes have
+ * already been read (possibly buffered), then the IOV remains unaltered.
  * 
  * rreq [IN/MOD] - receive request
  * buffered_bytes [IN] - number of bytes already read in and buffered (and thus should be ignored)
  *
- * NOTE: this routine may need to be called more than once if the amount of extraneous data being received is larger than
- * MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE.
+ * NOTE: if the IOV returned from this routine does not represent all of the remaining data associated with this request, then
+ * mpig_cm_xio_stream_drain() will need to be called one or more times to until all bytes for this request have been drained from
+ * the stream.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_stream_rreq_handle_truncation
-MPIG_STATIC int mpig_cm_xio_stream_rreq_handle_truncation(MPID_Request * const rreq, const MPIU_Size_t buffered_bytes)
+static int mpig_cm_xio_stream_rreq_handle_truncation(MPID_Request * const rreq, const MPIU_Size_t buffered_bytes)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     struct mpig_cm_xio_request_cmu * rreq_cmu = &rreq->cmu.xio;
-    MPIU_Size_t nbytes;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_memcpy);
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_stream_rreq_handle_truncation);
@@ -1332,18 +1349,14 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_handle_truncation(MPID_Request * const r
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA, "entering: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT
 	", bufferred_bytes=" MPIG_SIZE_FMT, rreq->handle, MPIG_PTR_CAST(rreq), buffered_bytes));
 
-    /* If this is the first call, then generate an error and attach it to the request */
-    if (rreq_cmu->stream_pos == (MPIU_Size_t) rreq->status.count)
-    {
-        MPIU_ERR_SET2(rreq->status.MPI_ERROR, MPI_ERR_TRUNCATE, "**truncate", "**truncate %d %d", rreq_cmu->stream_size,
-	    rreq_cmu->stream_pos);
+    MPIU_ERR_SET2(rreq->status.MPI_ERROR, MPI_ERR_TRUNCATE, "**truncate", "**truncate %d %d", rreq_cmu->stream_size,
+        rreq_cmu->stream_pos);
 
-	/* XXX: we need to detect if this is really a truncation error or a datatype mismatch error.  to do this, we must write a
-	   contig function that gets passed to MPID_Segment_manipulate().  the routine needs to save the size of the next basic
-	   type in the user arg.  if the size of the basic type is greater than the amount remaining data (size - pos), then the
-	   problem is a datatype mismatch, not a truncation error. */
-    }
-
+    /* XXX: we need to detect if this is really a truncation error or a datatype mismatch error.  to do this, we must write a
+       contig function that gets passed to MPID_Segment_manipulate().  the routine needs to save the size of the next basic
+       type in the user arg.  if the size of the basic type is greater than the amount remaining data (size - pos), then the
+       problem is a datatype mismatch, not a truncation error. */
+        
     /* adjust for any bytes already sitting a buffer */
     if (buffered_bytes)
     {
@@ -1361,23 +1374,69 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_handle_truncation(MPID_Request * const r
 	goto fn_return;
     }
 
-    /* if the request does not have a sufficiently sized buffer, the allocate a temporary buffer in which to receive the data */
-    if (rreq_cmu->databuf == NULL || mpig_databuf_get_size(rreq_cmu->databuf) < MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE)
+    /* if the request does not have a sufficiently sized buffer for draining data from the stream, then allocate a temporary
+       buffer in which to receive the data */
+    if (buffered_bytes < rreq_cmu->stream_size - rreq_cmu->stream_pos &&
+        (rreq_cmu->databuf == NULL || mpig_databuf_get_size(rreq_cmu->databuf) < MPIG_CM_XIO_DATA_DRAIN_BUFFER_SIZE))
     {
-	if (rreq_cmu->databuf != NULL) mpig_databuf_destroy(rreq_cmu->databuf);
-	mpi_errno = mpig_databuf_create((MPIU_Size_t) MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE, &rreq_cmu->databuf);
-	if (mpi_errno)
-	{   /* --BEGIN ERROR HANDLING-- */
-	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA,
-		"ERROR: malloc failed when attempting to allocate an truncation receive buffer"));
-	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "truncation receive buffer");
-	    goto fn_fail;
-	}   /* --END ERROR HANDLING-- */
+        if (rreq_cmu->databuf != NULL) mpig_databuf_destroy(rreq_cmu->databuf);
+        mpi_errno = mpig_databuf_create((MPIU_Size_t) MPIG_CM_XIO_DATA_DRAIN_BUFFER_SIZE, &rreq_cmu->databuf);
+        if (mpi_errno)
+        {   /* --BEGIN ERROR HANDLING-- */
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA,
+                "ERROR: malloc failed when attempting to allocate an truncation receive buffer"));
+            MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "truncation receive buffer");
+            goto fn_fail;
+        }   /* --END ERROR HANDLING-- */
     }
 
     /* set the IOV to receive the extra data (as much of it as possible) into the temporary buffer */
-    nbytes = MPIG_MIN(mpig_databuf_get_size(rreq_cmu->databuf), rreq_cmu->stream_max_pos - rreq_cmu->stream_pos);
+    mpig_cm_xio_stream_rreq_drain(rreq);
+
+    /* change the buffer type to indicate that data is being drained from the stream */
+    rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_DRAIN;
     
+  fn_return:
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA, "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT
+	", mpi_errno=" MPIG_ERRNO_FMT, rreq->handle, MPIG_PTR_CAST(rreq), mpi_errno));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_stream_rreq_handle_truncation);
+    return mpi_errno;
+
+  fn_fail:
+    {   /* --BEGIN ERROR HANDLING-- */
+	goto fn_return;
+    }   /* --END ERROR HANDLING-- */
+}
+/* mpig_cm_xio_stream_rreq_handle_truncation() */
+
+/*
+ * void mpig_cm_xio_stream_rreq_drain([IN/MOD] rreq)
+ *
+ * set the IOV to read any extraneous bytes from the stream.  if all of the bytes have already been read (possibly buffered),
+ * then the IOV remains unaltered.
+ * 
+ * rreq [IN/MOD] - receive request
+ *
+ * NOTE: this routine may need to be called more than once if the amount of extraneous data being received is larger than
+ * MPIG_CM_XIO_DATA_DRAIN_BUFFER_SIZE.
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_xio_stream_rreq_drain
+static void mpig_cm_xio_stream_rreq_drain(MPID_Request * const rreq)
+{
+    static const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    struct mpig_cm_xio_request_cmu * rreq_cmu = &rreq->cmu.xio;
+    MPIU_Size_t nbytes;
+    MPIG_STATE_DECL(MPID_STATE_memcpy);
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_stream_rreq_drain);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_stream_rreq_drain);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA, "entering: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT,
+	rreq->handle, MPIG_PTR_CAST(rreq)));
+
+    nbytes = MPIG_MIN(mpig_databuf_get_size(rreq_cmu->databuf), rreq_cmu->stream_max_pos - rreq_cmu->stream_pos);
     if (nbytes > 0)
     {
 	mpig_databuf_set_pos(rreq_cmu->databuf, 0);
@@ -1396,18 +1455,13 @@ MPIG_STATIC int mpig_cm_xio_stream_rreq_handle_truncation(MPID_Request * const r
 	    rreq_cmu->stream_max_pos, rreq_cmu->stream_size));
     }
 
-  fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA, "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT
-	", mpi_errno=" MPIG_ERRNO_FMT, rreq->handle, MPIG_PTR_CAST(rreq), mpi_errno));
-    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_stream_rreq_handle_truncation);
-    return mpi_errno;
-
-  fn_fail:
-    {   /* --BEGIN ERROR HANDLING-- */
-	goto fn_return;
-    }   /* --END ERROR HANDLING-- */
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DATA, "exiting: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT,
+	rreq->handle, MPIG_PTR_CAST(rreq)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_stream_rreq_drain);
+    return;
 }
-/* mpig_cm_xio_stream_rreq_handle_truncation() */
+/* mpig_cm_xio_stream_rreq_drain() */
 
 #endif /* MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS */
 /**********************************************************************************************************************************

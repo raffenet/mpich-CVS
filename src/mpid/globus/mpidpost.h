@@ -17,6 +17,8 @@
 **********************************************************************************************************************************/
 int mpig_comm_construct(MPID_Comm * comm);
 
+int mpig_intercomm_construct_localcomm(MPID_Comm * comm);
+
 int mpig_comm_destruct(MPID_Comm * comm);
 
 int mpig_comm_free_hook(MPID_Comm * comm);
@@ -26,18 +28,25 @@ int mpig_comm_free_hook(MPID_Comm * comm);
     *(mpi_errno_p_) = MPIG_ ## func_ ## _HOOK((old_comm_), (new_comm_));	\
 }
 
-#define MPID_Dev_comm_create_hook(comm_)								\
-{													\
-    int MPID_Dev_comm_create_hook_mrc__;								\
-    MPID_Dev_comm_create_hook_mrc__ = mpig_comm_construct(comm_);					\
-    if (MPID_Dev_comm_create_hook_mrc__) MPID_Abort(NULL, MPID_Dev_comm_create_hook_mrc__, 13, NULL);	\
+#define MPID_Dev_comm_create_hook(comm_)                                        \
+{                                                                               \
+    int MPID_Dev_comm_mrc__;                                                    \
+    MPID_Dev_comm_mrc__ = mpig_comm_construct(comm_);                           \
+    if (MPID_Dev_comm_mrc__) MPID_Abort(NULL, MPID_Dev_comm_mrc__, 13, NULL);	\
 }
 
-#define MPID_Dev_comm_destroy_hook(comm_)								\
-{													\
-    int MPID_Dev_comm_destroy_hook_mrc__;								\
-    MPID_Dev_comm_destroy_hook_mrc__ = mpig_comm_destruct(comm_);					\
-    if (MPID_Dev_comm_destroy_hook_mrc__) MPID_Abort(NULL, MPID_Dev_comm_destroy_hook_mrc__, 13, NULL);	\
+#define MPID_Dev_intercomm_setup_localcomm_hook(comm_)                          \
+{                                                                               \
+    int MPID_Dev_comm_mrc__;                                                    \
+    MPID_Dev_comm_mrc__ = mpig_intercomm_construct_localcomm(comm_);            \
+    if (MPID_Dev_comm_mrc__) MPID_Abort(NULL, MPID_Dev_comm_mrc__, 13, NULL);	\
+}
+
+#define MPID_Dev_comm_destroy_hook(comm_)                                       \
+{                                                                               \
+    int MPID_Dev_comm_mrc__;                                                    \
+    MPID_Dev_comm_mrc__ = mpig_comm_destruct(comm_);                            \
+    if (MPID_Dev_comm_mrc__) MPID_Abort(NULL, MPID_Dev_comm_mrc__, 13, NULL);	\
 }
 
 #define MPIG_COMM_FREE_HOOK(old_comm_, new_comm_) mpig_comm_free_hook(old_comm_)
@@ -720,9 +729,10 @@ typedef struct mpig_process
     /* mutex to protect and insure coherence of data in the process structure */
     mpig_mutex_t mutex;
 
-    /* mapping of MPI datatypes to C types and the local size of those C types */
-    char dt_ctype_map[MPIG_DATATYPE_MAX_BASIC_TYPES];
-    char dt_sizeof_ctypes[MPIG_CTYPE_LAST];
+    /* local data format descriptor */
+    mpig_data_format_descriptor_t my_dfd;
+
+    /* number of basic C types in a MPI datatype */
     char dt_num_ctypes[MPIG_DATATYPE_MAX_BASIC_TYPES];
 
     MPIG_PROCESS_CMS_DECL

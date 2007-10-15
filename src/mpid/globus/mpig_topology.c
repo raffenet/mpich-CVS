@@ -12,11 +12,11 @@ int mpig_topology_depths_keyval = MPI_KEYVAL_INVALID;
 int mpig_topology_colors_keyval = MPI_KEYVAL_INVALID;
 
 
-MPIG_STATIC int mpig_topology_destroy_depths_attr(MPI_Comm comm, int keyval, void * attr, void * state);
+static int mpig_topology_destroy_depths_attr(MPI_Comm comm, int keyval, void * attr, void * state);
 
-MPIG_STATIC int mpig_topology_destroy_colors_attr(MPI_Comm comm, int keyval, void * attr, void * state);
+static int mpig_topology_destroy_colors_attr(MPI_Comm comm, int keyval, void * attr, void * state);
 
-MPIG_STATIC int mpig_topology_get_vc_match(const mpig_vc_t * vc1, const mpig_vc_t * vc2, int level, bool_t * match);
+static int mpig_topology_get_vc_match(const mpig_vc_t * vc1, const mpig_vc_t * vc2, int level, bool_t * match);
 
 /*
  * <mpi_errno> mpig_topology_init(void)
@@ -399,7 +399,7 @@ int mpig_topology_comm_construct(MPID_Comm * const comm)
 	}
     }
 
-    /* attach a the copies of the topology depths and collors information to the communicator using the attribute keys */
+    /* attach a the copies of the topology depths and colors information to the communicator using the attribute keys */
     mpi_errno = NMPI_Comm_set_attr(comm->handle, mpig_topology_colors_keyval, colors_attr_copy);
     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|comm_set_attr", "**globus|comm_set_attr %s",
 	"topology colors attribute");
@@ -536,7 +536,7 @@ int mpig_topology_comm_destruct(MPID_Comm * const comm)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_topology_get_vc_match
-MPIG_STATIC int mpig_topology_get_vc_match(const mpig_vc_t * const vc1, const mpig_vc_t * const vc2, const int level,
+static int mpig_topology_get_vc_match(const mpig_vc_t * const vc1, const mpig_vc_t * const vc2, const int level,
     bool_t * const match_p)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
@@ -599,7 +599,7 @@ MPIG_STATIC int mpig_topology_get_vc_match(const mpig_vc_t * const vc1, const mp
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_topology_destroy_depths_attr
-MPIG_STATIC int mpig_topology_destroy_depths_attr(MPI_Comm comm_handle, int keyval, void * attr, void * state)
+static int mpig_topology_destroy_depths_attr(MPI_Comm comm_handle, int keyval, void * attr, void * state)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int * const depths = (int *) attr;
@@ -628,7 +628,7 @@ MPIG_STATIC int mpig_topology_destroy_depths_attr(MPI_Comm comm_handle, int keyv
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_topology_destroy_colors_attr
-MPIG_STATIC int mpig_topology_destroy_colors_attr(MPI_Comm comm_handle, int keyval, void * attr, void * state)
+static int mpig_topology_destroy_colors_attr(MPI_Comm comm_handle, int keyval, void * attr, void * state)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int ** const colors = (int **) attr;

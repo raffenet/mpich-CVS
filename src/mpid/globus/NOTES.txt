@@ -7,8 +7,6 @@
 
 * [1] Integration with MPICH2 trunk
 
-  * track data types (was done but datatype code has changed)
-
   * commit top-level changes after getting approval [BRT & BILL G.: 1 day]
 
   * ... haven't finished analysis ...
@@ -23,9 +21,6 @@
 
   - [4] handle the case where the size of the vendor MPI's MPI_Aint differs from MPICH2's MPI_Aint (see discussion below)
 
-  * [5] add configure test to extract the vendor MPI_VERSION and MPI_SUBVERSION.  use this information to determine expected
-    functionality that cannot be determined without runtime configure tests.
-
   * ... I feel like I am forgetting something important ...
 
 
@@ -35,8 +30,6 @@
 
   * don't allow a req to be enqueued twice on the rcq!  this happens with send cancel.  can it happen any other time?
 
-  - don't return every time an unexpected message is received just so that MPI_Probe works
-  
   - roll the RCQ and CM_XIO progress wait routines together so that multiple requests can be completed in a single call
 
   - fix error reporting in XIO client-side connection establishment code (replace assert statements with real error messages)
@@ -48,21 +41,9 @@
 
 * [2] Heterogenous data conversion
 
-  * integrate Nick's segment module that uses globus_dc
+  *** handle heterogeneous data in collective routines
 
-    * complete segment module?  [NICK]
-
-    * create mapping of MPI Fortran types to C basic types  [BRT: 2-8 hours (depending on configure work required)]
-
-    * change mpig_cm_xio_data module to use Nick's code  [BRT: 30 minutes]
-
-  *** handle communication and manipulation of MPI_PACKED data
-
-    * update XIO CM
-
-    * update VMPI CM ADI3 routines to detect and properly handle MPI_PACKED
-
-    * create path from top-level MPI_Pack(), etc. routines to device
+  *** Heterogeneous dataloop problem identified by struct-pack test
 
   *  cross platform testing (by hand; test suites can't handle heterogeneous platforms)
 

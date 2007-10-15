@@ -806,7 +806,6 @@ static int mpig_cm_xio_server_handle_recv_open_proc_req(mpig_vc_t * tmp_vc, mpig
     struct mpig_cm_xio_vc_cmu * proc_vc_cmu = NULL;
     bool_t proc_vc_locked = FALSE;
     mpig_endian_t endian;
-    int df;
     mpig_pg_t * pg = NULL;
     bool_t pg_committed;
     char * pg_id = NULL;
@@ -823,9 +822,7 @@ static int mpig_cm_xio_server_handle_recv_open_proc_req(mpig_vc_t * tmp_vc, mpig
 
     /* unpack information from message header */
     mpig_cm_xio_msg_hdr_get_endian(tmp_vc, tmp_vc_cmu->msgbuf, &endian);
-    mpig_cm_xio_msg_hdr_get_data_format(tmp_vc, tmp_vc_cmu->msgbuf, &df);
-    mpig_cm_xio_vc_set_endian(tmp_vc, endian);
-    mpig_cm_xio_vc_set_data_format(tmp_vc, df);
+    mpig_vc_set_endian(tmp_vc, endian);
     mpig_cm_xio_msg_hdr_get_conn_seqnum(tmp_vc, tmp_vc_cmu->msgbuf, &tmp_vc_cmu->conn_seqnum);
     mpig_cm_xio_msg_hdr_get_rank(tmp_vc, tmp_vc_cmu->msgbuf, &pg_size);
     mpig_cm_xio_msg_hdr_get_rank(tmp_vc, tmp_vc_cmu->msgbuf, &pg_rank);
@@ -863,8 +860,7 @@ static int mpig_cm_xio_server_handle_recv_open_proc_req(mpig_vc_t * tmp_vc, mpig
 	    if (mpig_vc_get_cm(proc_vc) == NULL)
 	    {
 		mpig_cm_xio_vc_construct(proc_vc);
-		mpig_cm_xio_vc_set_data_format(proc_vc, mpig_cm_xio_vc_get_data_format(tmp_vc));
-		mpig_cm_xio_vc_set_endian(proc_vc, mpig_cm_xio_vc_get_endian(tmp_vc));
+		mpig_vc_set_endian(proc_vc, mpig_vc_get_endian(tmp_vc));
 	    }
 
 	    /* adjust the proc VC reference count to compensate for the internal reference; the CM XIO increment routine is
@@ -1097,7 +1093,7 @@ static int mpig_cm_xio_server_send_open_proc_resp(mpig_vc_t * const tmp_vc, cons
     mpig_cm_xio_msg_hdr_put_msg_type(tmp_vc, tmp_vc_cmu->msgbuf, MPIG_CM_XIO_MSG_TYPE_OPEN_PROC_RESP);
     mpig_cm_xio_msg_hdr_put_conn_open_resp(tmp_vc, tmp_vc_cmu->msgbuf, resp);
     mpig_cm_xio_msg_hdr_put_conn_seqnum(tmp_vc, tmp_vc_cmu->msgbuf, tmp_vc_cmu->conn_seqnum);
-    mpig_cm_xio_msg_hdr_put_end(tmp_vc, tmp_vc_cmu->msgbuf);
+    mpig_cm_xio_msg_hdr_put_end(tmp_vc, tmp_vc_cmu->msgbuf, 0);
 
     /* send the open respoinse message */
     mpig_cm_xio_register_write_vc_msgbuf(tmp_vc, callback_fn, &mpi_errno);
@@ -1146,7 +1142,6 @@ static void mpig_cm_xio_server_handle_send_open_proc_resp_ack(
     mpig_vc_t * const tmp_vc = (mpig_vc_t *) arg;
     struct mpig_cm_xio_vc_cmu * const tmp_vc_cmu = &tmp_vc->cmu.xio;
     mpig_cm_t * cm;
-    int df;
     mpig_endian_t endian;
     mpig_vc_t * proc_vc = NULL;
     struct mpig_cm_xio_vc_cmu * proc_vc_cmu = NULL;
@@ -1176,8 +1171,7 @@ static void mpig_cm_xio_server_handle_send_open_proc_resp_ack(
 	pg = mpig_vc_get_pg(tmp_vc);
 	pg_rank = mpig_vc_get_pg_rank(tmp_vc);
 	cm = mpig_vc_get_cm(tmp_vc);
-	df = mpig_cm_xio_vc_get_data_format(tmp_vc);
-	endian = mpig_cm_xio_vc_get_endian(tmp_vc);
+	endian = mpig_vc_get_endian(tmp_vc);
     }
     mpig_vc_mutex_unlock(tmp_vc);
 
@@ -1219,8 +1213,7 @@ static void mpig_cm_xio_server_handle_send_open_proc_resp_ack(
 	    "change state of proc VC to connected; starting communication: proc_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(proc_vc)));
 	proc_vc_cmu->handle = handle;
 	mpig_vc_set_cm(proc_vc, cm);
-	mpig_cm_xio_vc_set_data_format(proc_vc, df);
-	mpig_cm_xio_vc_set_endian(proc_vc, endian);
+	mpig_vc_set_endian(proc_vc, endian);
 	mpig_cm_xio_vc_set_state(proc_vc, MPIG_CM_XIO_VC_STATE_CONNECTED);
 	mpig_cm_xio_vc_list_add(proc_vc);
 
@@ -1376,7 +1369,6 @@ static int mpig_cm_xio_server_handle_recv_open_port_req(mpig_vc_t * port_vc, mpi
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     struct mpig_cm_xio_vc_cmu * const port_vc_cmu = &port_vc->cmu.xio;
     mpig_endian_t endian;
-    int df;
     char * port_id = NULL;
     size_t port_id_size = 0;
     mpig_cm_xio_port_t * port;
@@ -1392,9 +1384,7 @@ static int mpig_cm_xio_server_handle_recv_open_port_req(mpig_vc_t * port_vc, mpi
     
     /* unpack information from message header */
     mpig_cm_xio_msg_hdr_get_endian(port_vc, port_vc_cmu->msgbuf, &endian);
-    mpig_cm_xio_msg_hdr_get_data_format(port_vc, port_vc_cmu->msgbuf, &df);
-    mpig_cm_xio_vc_set_endian(port_vc, endian);
-    mpig_cm_xio_vc_set_data_format(port_vc, df);
+    mpig_vc_set_endian(port_vc, endian);
     port_id = (char *) mpig_databuf_get_pos_ptr(port_vc_cmu->msgbuf);
     port_id_size = strlen(port_id) + 1;
     mpig_databuf_inc_pos(port_vc_cmu->msgbuf, port_id_size);
@@ -1488,7 +1478,7 @@ static int mpig_cm_xio_server_send_open_port_resp_ack(mpig_vc_t * const port_vc)
     mpig_cm_xio_msg_hdr_put_begin(port_vc, port_vc_cmu->msgbuf);
     mpig_cm_xio_msg_hdr_put_msg_type(port_vc, port_vc_cmu->msgbuf, MPIG_CM_XIO_MSG_TYPE_OPEN_PORT_RESP);
     mpig_cm_xio_msg_hdr_put_conn_open_resp(port_vc, port_vc_cmu->msgbuf, MPIG_CM_XIO_OPEN_RESP_PORT_ACK);
-    mpig_cm_xio_msg_hdr_put_end(port_vc, port_vc_cmu->msgbuf);
+    mpig_cm_xio_msg_hdr_put_end(port_vc, port_vc_cmu->msgbuf, 0);
 
     /* send the open port response message */
     mpig_cm_xio_register_write_vc_msgbuf(port_vc, mpig_cm_xio_server_handle_send_open_port_resp_ack, &mpi_errno);
@@ -1630,7 +1620,7 @@ static int mpig_cm_xio_server_send_open_error_resp(mpig_vc_t * const vc, const m
     mpig_databuf_reset(vc_cmu->msgbuf);
     mpig_cm_xio_msg_hdr_put_begin(vc, vc_cmu->msgbuf);
     mpig_cm_xio_msg_hdr_put_msg_type(vc, vc_cmu->msgbuf, MPIG_CM_XIO_MSG_TYPE_OPEN_ERROR_RESP);
-    mpig_cm_xio_msg_hdr_put_end(vc, vc_cmu->msgbuf);
+    mpig_cm_xio_msg_hdr_put_end(vc, vc_cmu->msgbuf, 0);
 
     /* send the open respoinse message */
     mpig_cm_xio_register_write_vc_msgbuf(vc, mpig_cm_xio_server_handle_send_open_error_resp, &mpi_errno);
@@ -2174,7 +2164,6 @@ static int mpig_cm_xio_client_send_open_proc_req(mpig_vc_t * const tmp_vc)
     mpig_cm_xio_msg_hdr_put_begin(tmp_vc, tmp_vc_cmu->msgbuf);
     mpig_cm_xio_msg_hdr_put_msg_type(tmp_vc, tmp_vc_cmu->msgbuf, MPIG_CM_XIO_MSG_TYPE_OPEN_PROC_REQ);
     mpig_cm_xio_msg_hdr_put_endian(tmp_vc, tmp_vc_cmu->msgbuf, MPIG_MY_ENDIAN);
-    mpig_cm_xio_msg_hdr_put_data_format(tmp_vc, tmp_vc_cmu->msgbuf, GLOBUS_DC_FORMAT_LOCAL);
     mpig_cm_xio_msg_hdr_put_conn_seqnum(tmp_vc, tmp_vc_cmu->msgbuf, tmp_vc_cmu->conn_seqnum);
     mpig_cm_xio_msg_hdr_put_rank(tmp_vc, tmp_vc_cmu->msgbuf, mpig_process.my_pg_size);
     mpig_cm_xio_msg_hdr_put_rank(tmp_vc, tmp_vc_cmu->msgbuf, mpig_process.my_pg_rank);
@@ -2182,7 +2171,7 @@ static int mpig_cm_xio_client_send_open_proc_req(mpig_vc_t * const tmp_vc)
     MPIU_Strncpy(mpig_databuf_get_eod_ptr(tmp_vc_cmu->msgbuf), mpig_process.my_pg->id,
 	mpig_databuf_get_free_bytes(tmp_vc_cmu->msgbuf));
     mpig_databuf_inc_eod(tmp_vc_cmu->msgbuf, pg_id_size);
-    mpig_cm_xio_msg_hdr_put_end(tmp_vc, tmp_vc_cmu->msgbuf);
+    mpig_cm_xio_msg_hdr_put_end(tmp_vc, tmp_vc_cmu->msgbuf, 0);
 
     /* send the open request message */
     mpig_cm_xio_register_write_vc_msgbuf(tmp_vc, mpig_cm_xio_client_handle_send_open_proc_req, &mpi_errno);
@@ -2608,12 +2597,11 @@ static int mpig_cm_xio_client_send_open_port_req(mpig_vc_t * const port_vc)
     mpig_cm_xio_msg_hdr_put_begin(port_vc, port_vc_cmu->msgbuf);
     mpig_cm_xio_msg_hdr_put_msg_type(port_vc, port_vc_cmu->msgbuf, MPIG_CM_XIO_MSG_TYPE_OPEN_PORT_REQ);
     mpig_cm_xio_msg_hdr_put_endian(port_vc, port_vc_cmu->msgbuf, MPIG_MY_ENDIAN);
-    mpig_cm_xio_msg_hdr_put_data_format(port_vc, port_vc_cmu->msgbuf, GLOBUS_DC_FORMAT_LOCAL);
     port_id_size = strlen(mpig_cm_xio_vc_get_port_id(port_vc)) + 1;
     MPIU_Strncpy(mpig_databuf_get_eod_ptr(port_vc_cmu->msgbuf), mpig_cm_xio_vc_get_port_id(port_vc),
     	mpig_databuf_get_free_bytes(port_vc_cmu->msgbuf));
     mpig_databuf_inc_eod(port_vc_cmu->msgbuf, port_id_size);
-    mpig_cm_xio_msg_hdr_put_end(port_vc, port_vc_cmu->msgbuf);
+    mpig_cm_xio_msg_hdr_put_end(port_vc, port_vc_cmu->msgbuf, 0);
 
     /* send the open request port message */
     mpig_cm_xio_register_write_vc_msgbuf(port_vc, mpig_cm_xio_client_handle_send_open_port_req, &mpi_errno);
@@ -3111,7 +3099,7 @@ static int mpig_cm_xio_disconnect_send_enq_close_proc_msg(mpig_vc_t * const vc, 
     mpig_cm_xio_msg_hdr_put_msg_type(vc, sreq_cmu->msgbuf, mpig_cm_xio_request_get_msg_type(sreq));
     mpig_cm_xio_msg_hdr_put_bool(vc, sreq_cmu->msgbuf, cr);
     mpig_cm_xio_msg_hdr_put_bool(vc, sreq_cmu->msgbuf, ack);
-    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cmu->msgbuf);
+    mpig_cm_xio_msg_hdr_put_end(vc, sreq_cmu->msgbuf, 0);
 
     mpig_iov_reset(sreq_cmu->iov, 0);
     mpig_iov_add_entry(sreq_cmu->iov, mpig_databuf_get_base_ptr(sreq_cmu->msgbuf), mpig_databuf_get_eod(sreq_cmu->msgbuf));
@@ -3829,13 +3817,13 @@ typedef struct mpig_cm_xio_port
 mpig_cm_xio_port_t;
 
 
-MPIG_STATIC int mpig_cm_xio_port_find_and_lock(const char * port_id, mpig_cm_xio_port_t ** port);
+static int mpig_cm_xio_port_find_and_lock(const char * port_id, mpig_cm_xio_port_t ** port);
 
-MPIG_STATIC int mpig_cm_xio_port_enqueue_vc(mpig_cm_xio_port_t * port, mpig_vc_t * vc);
+static int mpig_cm_xio_port_enqueue_vc(mpig_cm_xio_port_t * port, mpig_vc_t * vc);
 
-MPIG_STATIC int mpig_cm_xio_port_dequeue_vc(mpig_cm_xio_port_t * port, mpig_vc_t ** vc_p);
+static int mpig_cm_xio_port_dequeue_vc(mpig_cm_xio_port_t * port, mpig_vc_t ** vc_p);
 
-MPIG_STATIC int mpig_cm_xio_port_has_matching_id(void * port_in, void * port_id_in);
+static int mpig_cm_xio_port_has_matching_id(void * port_in, void * port_id_in);
 
 #define mpig_cm_xio_port_mutex_construct(port_) mpig_mutex_construct(&(port_)->mutex)
 #define mpig_cm_xio_port_mutex_destruct(port_) mpig_mutex_destruct(&(port_)->mutex)
@@ -3910,11 +3898,6 @@ int mpig_port_open(MPID_Info * info, char * port_name)
     mpi_errno = mpig_bc_add_contact(&bc, "CM_XIO_PORT_ID", uuid_str);
     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
 	"**globus|bc_add_contact %s", "CM_XIO_PORT_ID");
-
-    MPIU_Snprintf(uint_str, (size_t) 10, "%u", (unsigned) GLOBUS_DC_FORMAT_LOCAL);
-    mpi_errno = mpig_bc_add_contact(&bc, "CM_XIO_PORT_DC_FORMAT", uint_str);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-	"**globus|bc_add_contact %s", "CM_XIO_PORT_DC_FORMAT");
 
     mpi_errno = mpig_bc_add_contact(&bc, "CM_XIO_PORT_DC_ENDIAN", MPIG_ENDIAN_STR(MPIG_MY_ENDIAN));
     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
@@ -4214,14 +4197,11 @@ int mpig_port_connect(const char * const port_name, mpig_vc_t ** const port_vc_p
     char * port_cs;
     char * port_id_bc_str = NULL;
     char * port_id;
-    char * df_bc_str = NULL;
-    int df;
     char * endian_bc_str = NULL;
     mpig_endian_t endian;
     mpig_vc_t * port_vc = NULL;
     struct mpig_cm_xio_vc_cmu * port_vc_cmu = NULL;
     bool_t port_vc_locked = FALSE;
-    int rc;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_port_connect);
 
@@ -4251,14 +4231,6 @@ int mpig_port_connect(const char * const port_name, mpig_vc_t ** const port_vc_p
     port_id = MPIU_Strdup(port_id_bc_str);
     MPIU_ERR_CHKANDJUMP1((port_id == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "port identification string");
     
-    /* Get format of basic datatypes */
-    mpi_errno = mpig_bc_get_contact(&bc, "CM_XIO_PORT_DC_FORMAT", &df_bc_str, &found);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno || !found), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
-	"**globus|bc_get_contact %s", "CM_XIO_PORT_DC_FORMAT");
-
-    rc = sscanf(df_bc_str, "%d", &df);
-    MPIU_ERR_CHKANDJUMP((rc != 1), mpi_errno, MPI_ERR_INTERN, "**keyval");
-
     /* Get endianess of remote system */
     mpi_errno = mpig_bc_get_contact(&bc, "CM_XIO_PORT_DC_ENDIAN", &endian_bc_str, &found);
     MPIU_ERR_CHKANDJUMP1((mpi_errno || !found), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
@@ -4284,8 +4256,7 @@ int mpig_port_connect(const char * const port_name, mpig_vc_t ** const port_vc_p
 	mpig_vc_set_cm(port_vc, &mpig_cm_xio_net_default);
 	mpig_cm_xio_vc_set_contact_string(port_vc, port_cs);
 	mpig_cm_xio_vc_set_port_id(port_vc, port_id);
-	mpig_cm_xio_vc_set_data_format(port_vc, df);
-	mpig_cm_xio_vc_set_endian(port_vc, endian);
+	mpig_vc_set_endian(port_vc, endian);
 
 	mpi_errno = mpig_cm_xio_client_connect_port(port_vc);
 	if (mpi_errno)
@@ -4321,7 +4292,6 @@ int mpig_port_connect(const char * const port_name, mpig_vc_t ** const port_vc_p
   fn_return:
     if (port_cs_bc_str != NULL) mpig_bc_free_contact(port_cs_bc_str);
     if (port_id_bc_str != NULL) mpig_bc_free_contact(port_id_bc_str);
-    if (df_bc_str != NULL) mpig_bc_free_contact(df_bc_str);
     if (endian_bc_str != NULL) mpig_bc_free_contact(endian_bc_str);
     mpig_bc_destruct(&bc);
 
@@ -4363,7 +4333,7 @@ mpig_endian_t mpig_port_vc_get_endian(mpig_vc_t * const port_vc)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DYNAMIC, "entering: port_vc=" MPIG_PTR_FMT,
 	MPIG_PTR_CAST(port_vc)));
 
-    endian = mpig_cm_xio_vc_get_endian(port_vc);
+    endian = mpig_vc_get_endian(port_vc);
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DYNAMIC, "exiting: port_vc=" MPIG_PTR_FMT ", endian=%s",
@@ -4533,7 +4503,7 @@ int mpig_port_vc_close(mpig_vc_t * const port_vc)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_port_find_and_lock
-MPIG_STATIC int mpig_cm_xio_port_find_and_lock(const char * port_id, mpig_cm_xio_port_t ** port_p)
+static int mpig_cm_xio_port_find_and_lock(const char * port_id, mpig_cm_xio_port_t ** port_p)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     globus_list_t * port_list_entry = NULL;
@@ -4583,7 +4553,7 @@ MPIG_STATIC int mpig_cm_xio_port_find_and_lock(const char * port_id, mpig_cm_xio
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_port_enqueue_vc
-MPIG_STATIC int mpig_cm_xio_port_enqueue_vc(mpig_cm_xio_port_t * port, mpig_vc_t * vc)
+static int mpig_cm_xio_port_enqueue_vc(mpig_cm_xio_port_t * port, mpig_vc_t * vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int rc;
@@ -4636,7 +4606,7 @@ MPIG_STATIC int mpig_cm_xio_port_enqueue_vc(mpig_cm_xio_port_t * port, mpig_vc_t
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_port_dequeue_vc
-MPIG_STATIC int mpig_cm_xio_port_dequeue_vc(mpig_cm_xio_port_t * port, mpig_vc_t ** vc_p)
+static int mpig_cm_xio_port_dequeue_vc(mpig_cm_xio_port_t * port, mpig_vc_t ** vc_p)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -4672,7 +4642,7 @@ MPIG_STATIC int mpig_cm_xio_port_dequeue_vc(mpig_cm_xio_port_t * port, mpig_vc_t
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_port_has_matching_id
-MPIG_STATIC int mpig_cm_xio_port_has_matching_id(void * const port_in, void * const port_id_in)
+static int mpig_cm_xio_port_has_matching_id(void * const port_in, void * const port_id_in)
 {
     const mpig_cm_xio_port_t * const port = (const mpig_cm_xio_port_t *) port_in;
     const char * port_id = (const char *) port_id_in;

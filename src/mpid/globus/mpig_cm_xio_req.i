@@ -11,11 +11,11 @@
 **********************************************************************************************************************************/
 #if !defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS)
 
-MPIG_STATIC void mpig_cm_xio_request_destruct_fn(MPID_Request * req);
+static void mpig_cm_xio_request_destruct_fn(MPID_Request * req);
 
-MPIG_STATIC const char * mpig_cm_xio_request_state_get_string(mpig_cm_xio_req_state_t req_state);
+static const char * mpig_cm_xio_request_state_get_string(mpig_cm_xio_req_state_t req_state);
 
-MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * req);
+static const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * req);
 
 #define mpig_cm_xio_request_construct(req_)						\
 {											\
@@ -30,7 +30,6 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
     (req_)->cmu.xio.gcb = (globus_xio_iovec_callback_t) NULL;				\
     (req_)->cmu.xio.sreq_type = MPIG_REQUEST_TYPE_UNDEFINED;				\
     mpig_databuf_construct((req_)->cmu.xio.msgbuf, MPIG_CM_XIO_REQUEST_MSGBUF_SIZE);	\
-    (req_)->cmu.xio.gdc_df = NEXUS_DC_FORMAT_UNKNOWN;					\
     (req_)->cmu.xio.databuf = NULL;							\
 											\
     (req_)->dev.cm_destruct = mpig_cm_xio_request_destruct_fn;				\
@@ -52,7 +51,6 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
     (req_)->cmu.xio.gcb = (globus_xio_iovec_callback_t) MPIG_INVALID_PTR;	\
     (req_)->cmu.xio.sreq_type = MPIG_REQUEST_TYPE_UNDEFINED;			\
     mpig_databuf_destruct((req_)->cmu.xio.msgbuf);				\
-    (req_)->cmu.xio.gdc_df = NEXUS_DC_FORMAT_UNKNOWN;				\
     if ((req_)->cmu.xio.databuf != NULL)					\
     {										\
 	mpig_databuf_destroy((req_)->cmu.xio.databuf);				\
@@ -116,7 +114,7 @@ MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * 
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_request_destruct_fn
-MPIG_STATIC void mpig_cm_xio_request_destruct_fn(MPID_Request * const req)
+static void mpig_cm_xio_request_destruct_fn(MPID_Request * const req)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
 
@@ -132,7 +130,7 @@ MPIG_STATIC void mpig_cm_xio_request_destruct_fn(MPID_Request * const req)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_request_state_get_string
-MPIG_STATIC const char * mpig_cm_xio_request_state_get_string(mpig_cm_xio_req_state_t req_state)
+static const char * mpig_cm_xio_request_state_get_string(mpig_cm_xio_req_state_t req_state)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     const char * str;
@@ -201,7 +199,7 @@ MPIG_STATIC const char * mpig_cm_xio_request_state_get_string(mpig_cm_xio_req_st
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_request_protocol_get_string
-MPIG_STATIC const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * req)
+static const char * mpig_cm_xio_request_protocol_get_string(MPID_Request * req)
 {
     const char * str;
     
@@ -259,17 +257,19 @@ MPIG_STATIC mpig_cond_t mpig_cm_xio_rcq_cond;
 MPIG_STATIC int mpig_cm_xio_rcq_blocked = FALSE;
 MPIG_STATIC int mpig_cm_xio_rcq_wakeup_pending = FALSE;
 
-MPIG_STATIC int mpig_cm_xio_rcq_init(void);
+static int mpig_cm_xio_rcq_init(void);
 
-MPIG_STATIC int mpig_cm_xio_rcq_finalize(void);
+static int mpig_cm_xio_rcq_finalize(void);
 
-MPIG_STATIC int mpig_cm_xio_rcq_enq(MPID_Request * req);
+static int mpig_cm_xio_rcq_enq(MPID_Request * req);
 
-MPIG_STATIC int mpig_cm_xio_rcq_deq_wait(MPID_Request ** req);
+static int mpig_cm_xio_rcq_deq_wait(MPID_Request ** req);
 
-MPIG_STATIC int mpig_cm_xio_rcq_deq_test(MPID_Request ** req);
+static int mpig_cm_xio_rcq_deq_test(MPID_Request ** req);
 
-MPIG_STATIC void mpig_cm_xio_rcq_wakeup(void);
+#if FALSE
+static void mpig_cm_xio_rcq_wakeup(void);
+#endif
 
 #else /* defined(MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS) */
 
@@ -278,7 +278,7 @@ MPIG_STATIC void mpig_cm_xio_rcq_wakeup(void);
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_rcq_init
-MPIG_STATIC int mpig_cm_xio_rcq_init(void)
+static int mpig_cm_xio_rcq_init(void)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     globus_result_t rc;
@@ -317,7 +317,7 @@ MPIG_STATIC int mpig_cm_xio_rcq_init(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_rcq_finalize
-MPIG_STATIC int mpig_cm_xio_rcq_finalize(void)
+static int mpig_cm_xio_rcq_finalize(void)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     globus_result_t rc;
@@ -349,7 +349,7 @@ MPIG_STATIC int mpig_cm_xio_rcq_finalize(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_rcq_enq
-MPIG_STATIC int mpig_cm_xio_rcq_enq(MPID_Request * const req)
+static int mpig_cm_xio_rcq_enq(MPID_Request * const req)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_genq_entry_t * rcq_entry;
@@ -406,7 +406,7 @@ MPIG_STATIC int mpig_cm_xio_rcq_enq(MPID_Request * const req)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_rcq_deq_wait
-MPIG_STATIC int mpig_cm_xio_rcq_deq_wait(MPID_Request ** const reqp)
+static int mpig_cm_xio_rcq_deq_wait(MPID_Request ** const reqp)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_genq_entry_t * rcq_entry;
@@ -467,7 +467,7 @@ MPIG_STATIC int mpig_cm_xio_rcq_deq_wait(MPID_Request ** const reqp)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_rcq_deq_test
-MPIG_STATIC int mpig_cm_xio_rcq_deq_test(MPID_Request ** reqp)
+static int mpig_cm_xio_rcq_deq_test(MPID_Request ** reqp)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     mpig_genq_entry_t * rcq_entry;
@@ -507,12 +507,13 @@ MPIG_STATIC int mpig_cm_xio_rcq_deq_test(MPID_Request ** reqp)
 }
 /* end mpig_cm_xio_rcq_deq_test() */
 
+#if FALSE
 /*
  * void mpig_cm_xio_rcq_wakeup([IN/MOD] req)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_rcq_wakeup
-MPIG_STATIC void mpig_cm_xio_rcq_wakeup(void)
+static void mpig_cm_xio_rcq_wakeup(void)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_rcq_wakeup);
@@ -538,6 +539,7 @@ MPIG_STATIC void mpig_cm_xio_rcq_wakeup(void)
     return;
 }
 /* end mpig_cm_xio_rcq_wakeup() */
+#endif /* FALSE */
 
 #endif /* MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS */
 /**********************************************************************************************************************************

@@ -29,7 +29,7 @@ static int mpig_cm_self_send(
     MPID_Request ** sreqp);
 
 static void mpig_cm_self_buffer_copy(
-    const void * const sbuf, int scnt, MPI_Datatype sdt, int * smpi_errno,
+    const void * const sbuf, int scnt, MPI_Datatype sdt, const mpig_data_format_descriptor_t * dfd, int * smpi_errno,
     void * const rbuf, int rcnt, MPI_Datatype rdt, MPIU_Size_t * rsz, int * rmpi_errno);
 /**********************************************************************************************************************************
 				       END MISCELLANEOUS MACROS, PROTOTYPES, AND VARIABLES
@@ -65,7 +65,6 @@ static mpig_cm_vtable_t mpig_cm_self_vtable =
     mpig_cm_self_destruct_vc_contact_info,
     mpig_cm_self_select_comm_method,
     NULL, /* mpig_cm_self_get_vc_compatability */
-    /* NULL, /\* mpig_cm_self_pe_cancel_op *\/ */
     mpig_cm_vtable_last_entry
 };
 
@@ -112,6 +111,8 @@ static int mpig_cm_self_adi3_probe(int rank, int tag, MPID_Comm * comm, int ctxo
 
 static int mpig_cm_self_adi3_iprobe(int rank, int tag, MPID_Comm * comm, int ctxoff, int * flag_p, MPI_Status * status);
 
+static int mpig_cm_self_adi3_cancel_recv(MPID_Request * rreq);
+
 static int mpig_cm_self_adi3_cancel_send(MPID_Request * sreq);
 
 static int mpig_cm_self_vc_recv_any_source(mpig_vc_t * vc, MPID_Request * rreq);
@@ -129,7 +130,7 @@ MPIG_STATIC mpig_vc_vtable_t mpig_cm_self_vc_vtable =
     mpig_cm_self_adi3_irecv,
     mpig_cm_self_adi3_probe,
     mpig_cm_self_adi3_iprobe,
-    mpig_adi3_cancel_recv,
+    mpig_cm_self_adi3_cancel_recv,
     mpig_cm_self_adi3_cancel_send,
     mpig_cm_self_vc_recv_any_source,
     NULL, /* vc_inc_ref_count */
@@ -474,6 +475,7 @@ static int mpig_cm_self_adi3_send(
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_send);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_VAR(send_ctx);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_send);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
@@ -516,6 +518,7 @@ static int mpig_cm_self_adi3_isend(
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_isend);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_VAR(send_ctx);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_isend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
@@ -547,6 +550,7 @@ static int mpig_cm_self_adi3_rsend(
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_rsend);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_VAR(send_ctx);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_rsend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
@@ -589,6 +593,7 @@ static int mpig_cm_self_adi3_irsend(
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_irsend);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_VAR(send_ctx);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_irsend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
@@ -620,6 +625,7 @@ static int mpig_cm_self_adi3_ssend(
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_ssend);
 
     MPIG_UNUSED_VAR(fcname);
+    MPIG_UNUSED_VAR(send_ctx);
 
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_ssend);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT,
@@ -669,6 +675,7 @@ static int mpig_cm_self_adi3_issend(
 	MPIG_PTR_CAST(buf), cnt, dt, rank, tag, MPIG_PTR_CAST(comm), send_ctx));
 
     mpi_errno = mpig_cm_self_send(MPIG_REQUEST_TYPE_SSEND, buf, cnt, dt, rank, tag, ctxoff, comm, sreqp);
+    MPIG_UNUSED_VAR(send_ctx);
 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: sreq=" MPIG_HANDLE_FMT
 	", sreqp=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_HANDLE_VAL(*sreqp), MPIG_PTR_CAST(*sreqp), mpi_errno));
@@ -768,11 +775,11 @@ static int mpig_cm_self_adi3_irecv(
 		sreq->handle, MPIG_PTR_CAST(sreq)));
 
 	    mpig_request_get_buffer(sreq, &sreq_buf, &sreq_cnt, &sreq_dt);
-	    mpig_cm_self_buffer_copy(sreq_buf, sreq_cnt, sreq_dt, &sreq->status.MPI_ERROR,
-				     buf, cnt, dt, &data_size, &rreq->status.MPI_ERROR);
+	    mpig_cm_self_buffer_copy(sreq_buf, sreq_cnt, sreq_dt, mpig_request_get_dfd(sreq), &sreq->status.MPI_ERROR,
+                buf, cnt, dt, &data_size, &rreq->status.MPI_ERROR);
 	
 	    rreq->status.count = (int) data_size;
-	    /* rreq->status.mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+            mpig_dfd_copy(mpig_request_get_dfd(rreq), mpig_request_get_dfd(sreq));
 	}
 	else
 	{
@@ -781,7 +788,7 @@ static int mpig_cm_self_adi3_irecv(
 		MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq), sreq->handle, MPIG_PTR_CAST(sreq)));
 	
 	    rreq->status.count = (int) 0;
-	    /* rreq->status.mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+            /* mpig_request_copy_my_dfd(rreq) performed in mpig_request_construct() */
 	}
     
 	/* neither the application nor any other part of MPICH has a handle to the receive request, so it is safe to just reset
@@ -900,6 +907,48 @@ static int mpig_cm_self_adi3_iprobe(
 
 
 /*
+ * int mpig_cm_self_adi3_cancel_recv(...)
+ */
+int mpig_cm_self_adi3_cancel_recv(MPID_Request * rreq)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    bool_t cancelled;
+    bool_t req_completed;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_self_adi3_cancel_recv);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_adi3_cancel_recv);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: rreq=" MPIG_HANDLE_FMT
+    ", rreqp=" MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
+
+    mpi_errno = mpig_recvq_cancel_posted_rreq(rreq, &cancelled);
+    if (cancelled)
+    {
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "cancel receive request succeeded immediately: rreq=" MPIG_HANDLE_FMT
+        ", rreqp=" MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
+
+        rreq->status.cancelled = TRUE;
+        rreq->status.count = 0;
+        mpig_request_complete(rreq, &req_completed);
+    }
+    else
+    {
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "cancel receive request pending or failed: rreq=" MPIG_HANDLE_FMT
+        ", rreqp=" MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
+    }
+
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rreq=" MPIG_HANDLE_FMT
+    ", rreqp=" MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_adi3_cancel_recv);
+    return mpi_errno;
+}
+/* mpig_cm_self_adi3_cancel_recv() */
+
+
+/*
  * int mpig_cm_self_adi3_cancel_send([IN/MOD] sreq)
  */
 #undef FUNCNAME
@@ -981,11 +1030,11 @@ static int mpig_cm_self_vc_recv_any_source(mpig_vc_t * const vc, MPID_Request * 
 
 	mpig_request_get_buffer(sreq, &sreq_buf, &sreq_cnt, &sreq_dt);
 	mpig_request_get_buffer(rreq, &rreq_buf, &rreq_cnt, &rreq_dt);
-	mpig_cm_self_buffer_copy(sreq_buf, sreq_cnt, sreq_dt, &sreq->status.MPI_ERROR,
+	mpig_cm_self_buffer_copy(sreq_buf, sreq_cnt, sreq_dt, mpig_request_get_dfd(sreq), &sreq->status.MPI_ERROR,
 				 rreq_buf, rreq_cnt, rreq_dt, &data_size, &rreq->status.MPI_ERROR);
 	
 	rreq->status.count = (int) data_size;
-	/* rreq->status.mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+        mpig_dfd_copy(mpig_request_get_dfd(rreq), mpig_request_get_dfd(sreq));
     }
     else
     {
@@ -994,7 +1043,7 @@ static int mpig_cm_self_vc_recv_any_source(mpig_vc_t * const vc, MPID_Request * 
 	    rreq->handle, MPIG_PTR_CAST(rreq), sreq->handle, MPIG_PTR_CAST(sreq)));
 	
 	rreq->status.count = (int) 0;
-	/* rreq->status.mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+        /* mpig_request_copy_my_dfd(rreq) performed in mpig_request_construct() */
     }
     
     /* neither the application nor any other part of MPICH has a handle to the receive request, so it is safe to just reset the
@@ -1049,7 +1098,11 @@ static int mpig_cm_self_send(
     MPIU_Assert(rank == comm->rank);
     
     mpig_request_create_isreq(type, 2, 1, (void *) buf, cnt, dt, rank, tag, send_ctx, comm, mpig_cm_self_vc, &sreq);
-
+    if (dt == MPI_PACKED)
+    {
+        mpig_dfd_unpack_header(&sreq->status.mpig_src_dfd, buf);
+    }
+    
     mpi_errno = mpig_recvq_deq_posted_or_enq_unexp(NULL, rank, tag, recv_ctx, &rreq_found, &rreq);
     if (mpi_errno)
     {   /* --BEGIN ERROR HANDLING-- */
@@ -1066,8 +1119,8 @@ static int mpig_cm_self_send(
 
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT,
 			   "found posted receive request; copying data"));
-	mpig_cm_self_buffer_copy(buf, cnt, dt, &rreq->status.MPI_ERROR, rreq->dev.buf, rreq->dev.cnt, rreq->dev.dt,
-				 &data_size, &rreq->status.MPI_ERROR);
+	mpig_cm_self_buffer_copy(buf, cnt, dt, mpig_request_get_dfd(sreq), &rreq->status.MPI_ERROR, rreq->dev.buf, rreq->dev.cnt,
+            rreq->dev.dt, &data_size, &rreq->status.MPI_ERROR);
 
 	/* if the request was posted as a receive any source, then inform the PE that the op has completed */
 	if (mpig_request_get_rank(rreq) == MPI_ANY_SOURCE)
@@ -1079,7 +1132,7 @@ static int mpig_cm_self_send(
 	rreq->status.MPI_SOURCE = rank;
 	rreq->status.MPI_TAG = tag;
 	rreq->status.count = (int) data_size;
-	/* rreq->status.mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+        mpig_dfd_copy(mpig_request_get_dfd(rreq), mpig_request_get_dfd(sreq));
 	/* mpig_request_complete(rreq, &rreq_completed); -- performed below to avoid destroying the request before it is
            unlocked */
 
@@ -1105,10 +1158,11 @@ static int mpig_cm_self_send(
 	    rreq->status.MPI_TAG = tag;
 	    mpig_request_set_remote_req_id(rreq, sreq->handle);
 
-	    /* the count (in bytes) must be set for MPI_Probe() and MPI_Iprobe() to operate properly */
-	    MPID_Datatype_get_size_macro(dt, dt_size);
-	    rreq->status.count = cnt * dt_size;
-	    /* rreq->status.mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+	    /* the count (in bytes) must be set for MPI_Probe() and MPI_Iprobe() to operate properly, and it must be set in terms
+               of the number of source bytes */
+            dt_size = mpig_dfd_get_datatype_size(mpig_request_get_dfd(sreq), dt);
+            rreq->status.count = cnt * dt_size - ((dt == MPI_PACKED) ? MPIG_PACK_HEADER_SIZE : 0);
+            mpig_dfd_copy(mpig_request_get_dfd(rreq), mpig_request_get_dfd(sreq));
 	}
 	else
 	{
@@ -1123,7 +1177,7 @@ static int mpig_cm_self_send(
 	    rreq->status.MPI_TAG = tag;
 	    rreq->status.MPI_ERROR = err;
 	    rreq->status.count = 0;
-	    /* rreq->status.mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+            /* mpig_request_copy_my_dfd(rreq) performed in mpig_request_construct() */
 
 	    /* neither the application nor any other part of MPICH has a handle to the send request, so it is safe to just reset
 	       the reference count and completion counter */
@@ -1182,20 +1236,25 @@ static int mpig_cm_self_send(
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_buffer_copy
 static void mpig_cm_self_buffer_copy(
-    const void * const sbuf, const int scnt, const MPI_Datatype sdt, int * const smpi_errno,
-    void * const rbuf, const int rcnt, const MPI_Datatype rdt, MPIU_Size_t * const rsz, int * const rmpi_errno)
+    const void * const sbuf, const int scnt, const MPI_Datatype sdt, const mpig_data_format_descriptor_t * const sdfd,
+    int * const smpi_errno, void * const rbuf, const int rcnt, const MPI_Datatype rdt, MPIU_Size_t * const rsz,
+    int * const rmpi_errno)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    const bool_t hetero = mpig_dfd_is_hetero(sdfd);
+    const int spack_adjust = (sdt == MPI_PACKED && scnt > 0) ? MPIG_PACK_HEADER_SIZE : 0;
+    const int rpack_adjust = (rdt == MPI_PACKED && rcnt > 0) ? MPIG_PACK_HEADER_SIZE : 0;
     bool_t sdt_contig;
     bool_t rdt_contig;
-    MPIU_Size_t sdt_size;
-    MPIU_Size_t rdt_size;
+    MPIU_Size_t sdt_local_size;
+    MPIU_Size_t rdt_local_size;
     MPIU_Size_t sdt_nblks;
     MPIU_Size_t rdt_nblks;
     MPI_Aint sdt_true_lb;
     MPI_Aint rdt_true_lb;
-    MPIU_Size_t sdata_size;
-    MPIU_Size_t rdata_size;
+    MPIU_Size_t sdata_local_size;
+    MPIU_Size_t sdata_source_size;
+    MPIU_Size_t rdata_local_size;
     MPIG_STATE_DECL(MPID_STATE_memcpy);
 
     MPIG_UNUSED_VAR(fcname);
@@ -1209,67 +1268,85 @@ static void mpig_cm_self_buffer_copy(
 	MPIG_PTR_CAST(rbuf), rcnt, rdt));
     *smpi_errno = MPI_SUCCESS;
     *rmpi_errno = MPI_SUCCESS;
-
-    mpig_datatype_get_info(sdt, &sdt_contig, &sdt_size, &sdt_nblks, &sdt_true_lb);
-    mpig_datatype_get_info(rdt, &rdt_contig, &rdt_size, &rdt_nblks, &rdt_true_lb);
-    sdata_size = sdt_size * scnt;
-    rdata_size = rdt_size * rcnt;
-
-    if (sdata_size > rdata_size)
-    {
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA | MPIG_DEBUG_LEVEL_PT2PT,
-	    "message truncated, sdata_size=" MPIG_SIZE_FMT " rdata_size=" MPIG_SIZE_FMT, sdata_size, rdata_size));
-	sdata_size = rdata_size;
-	MPIU_ERR_SETANDSTMT2(*rmpi_errno, MPI_ERR_TRUNCATE, {;}, "**truncate", "**truncate %d %d", sdata_size, rdata_size);
-    }
+    *rsz = 0;
     
-    if (sdata_size == 0)
+    mpig_datatype_get_info(sdt, &sdt_contig, &sdt_local_size, &sdt_nblks, &sdt_true_lb);
+    mpig_datatype_get_info(rdt, &rdt_contig, &rdt_local_size, &rdt_nblks, &rdt_true_lb);
+    sdata_local_size = sdt_local_size * scnt - spack_adjust;
+    sdata_source_size = (hetero == FALSE) ? sdata_local_size : (mpig_dfd_get_datatype_size(sdfd, sdt) * scnt - spack_adjust);
+    rdata_local_size = rdt_local_size * rcnt - rpack_adjust;
+
+    if (sdata_local_size == 0)
     {
 	*rsz = 0;
 	goto fn_return;
     }
+
+    if (sdata_local_size > rdata_local_size)
+    {
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA | MPIG_DEBUG_LEVEL_PT2PT, "message truncated, "
+            "sdata_local_size=" MPIG_SIZE_FMT " rdata_local_size=" MPIG_SIZE_FMT, sdata_local_size, rdata_local_size));
+	MPIU_ERR_SETANDSTMT2(*rmpi_errno, MPI_ERR_TRUNCATE, {;}, "**truncate", "**truncate %d %d", sdata_local_size +
+            rpack_adjust, rdata_local_size + rpack_adjust);
+	sdata_local_size = rdata_local_size;
+        sdata_source_size = mpig_dfd_get_datatype_size(sdfd, rdt) * rcnt - rpack_adjust;
+    }
     
-    if (sdt_contig && rdt_contig)
+    if (rdt == MPI_PACKED)
+    {
+        MPIU_Assert(rdt_contig);
+        mpig_dfd_pack_header(sdfd, (void *)((MPI_Aint) rbuf + rdt_true_lb));
+    }
+    
+    if ((sdt_contig && rdt_contig && hetero == FALSE) || (sdt == MPI_PACKED && rdt == MPI_PACKED))
     {
 	MPIG_FUNC_ENTER(MPID_STATE_memcpy);
-	memcpy((char *)rbuf + rdt_true_lb, (const char *) sbuf + sdt_true_lb, (size_t) sdata_size);
+	memcpy((void *)((MPI_Aint) rbuf + rdt_true_lb + rpack_adjust), (void *)((MPI_Aint) sbuf + sdt_true_lb + spack_adjust),
+            (size_t) sdata_local_size);
 	MPIG_FUNC_EXIT(MPID_STATE_memcpy);
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "copied " MPIG_SIZE_FMT
-	    " bytes directly from send buffer to receive buffer", sdata_size));
-	*rsz = sdata_size;
+	    " bytes directly from send buffer to receive buffer", sdata_local_size));
+	*rsz = sdata_local_size;
     }
     else if (sdt_contig)
     {
 	MPID_Segment seg;
 	MPIU_Size_t last;
 
-	MPID_Segment_init(rbuf, rcnt, rdt, &seg, 0);
-	last = sdata_size;
-	MPID_Segment_unpack(&seg, (MPI_Aint) 0, (MPI_Aint *) &last, (char *) sbuf + sdt_true_lb);
+	mpig_segment_init(rbuf, rcnt, rdt, sdfd, &seg);
+	last = sdata_source_size + rpack_adjust;
+	mpig_segment_unpack(&seg, sdfd, (MPI_Aint) rpack_adjust, (MPI_Aint *) &last,
+            (void *) ((MPI_Aint) sbuf + sdt_true_lb + spack_adjust - rpack_adjust));
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "unpacked data in receive buffer: nbytes_moved=" MPIG_SIZE_FMT, last));
-	if (last != sdata_size)
+	if (last != sdata_source_size + rpack_adjust)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA, "data type mismatch: send_nbytes=" MPIG_SIZE_FMT
-		", nbytes_moved=" MPIG_SIZE_FMT, sdata_size, last));
+		", nbytes_moved=" MPIG_SIZE_FMT, sdata_source_size, last - rpack_adjust));
 	    MPIU_ERR_SET(*rmpi_errno, MPI_ERR_TYPE, "**dtypemismatch");
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
-	*rsz = last;
+	*rsz = last - rpack_adjust;
     }
     else if (rdt_contig)
     {
 	MPID_Segment seg;
 	MPIU_Size_t last;
 
-	MPID_Segment_init(sbuf, scnt, sdt, &seg, 0);
-	last = sdata_size;
-	MPID_Segment_pack(&seg, (MPI_Aint) 0, (MPI_Aint *) &last, (char *) rbuf + rdt_true_lb);
+        /* unless we are faking heterogeneous communication for testing purposes, the only way the arriving message could be in a
+           format other than the local format is if the message were packed.  even if we are faking heterogeneous communication,
+           only the receive buffer could be packed since any case involved a packed send buffer would have been handled by the
+           previous cases. */
+        MPIU_Assert(hetero == FALSE || (MPIG_FAKING_HETERO && spack_adjust == 0));
+        
+	MPID_Segment_init(sbuf, scnt, sdt, &seg, MPID_DATALOOP_HOMOGENEOUS);
+	last = sdata_local_size;
+	MPID_Segment_pack(&seg, (MPI_Aint) 0, (MPI_Aint *) &last, (void *) ((MPI_Aint) rbuf + rdt_true_lb + rpack_adjust));
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "packed data in receive buffer: nbytes_moved=" MPIG_SIZE_FMT, last));
-	if (last != sdata_size)
+	if (last != sdata_local_size)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA, "data type mismatch: send_nbytes=" MPIG_SIZE_FMT
-		", nbytes_moved=" MPIG_SIZE_FMT, sdata_size, last));
+		", nbytes_moved=" MPIG_SIZE_FMT, sdata_source_size, last));
 	    MPIU_ERR_SET(*rmpi_errno, MPI_ERR_TYPE, "**dtypemismatch");
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
@@ -1285,6 +1362,13 @@ static void mpig_cm_self_buffer_copy(
 	MPID_Segment rseg;
 	MPIU_Size_t rfirst;
 
+        /* NOTE: the previous cases should have covered all possibilities where one of the datatypes was MPI_PACKED, even when we
+           are faking heterogeneous communication for testing purposes.  therefore, the pack adjustments are not applied to this
+           case.  also, the only way the arriving message could be in a format other than the local format is if the message were
+           packed.  since this case is handled above, we do not need to worry heterogeneity here either. */
+        MPIU_Assert(sdt != MPI_PACKED && rdt != MPI_PACKED);
+        MPIU_Assert(hetero == FALSE || MPIG_FAKING_HETERO);
+        
 	buf = MPIU_Malloc((size_t) MPIG_COPY_BUFFER_SIZE);
 	if (buf == NULL)
 	{   /* --BEGIN ERROR HANDLING-- */
@@ -1296,8 +1380,8 @@ static void mpig_cm_self_buffer_copy(
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
-	MPID_Segment_init(sbuf, scnt, sdt, &sseg, 0);
-	MPID_Segment_init(rbuf, rcnt, rdt, &rseg, 0);
+	MPID_Segment_init(sbuf, scnt, sdt, &sseg, MPID_DATALOOP_HOMOGENEOUS);
+	mpig_segment_init(rbuf, rcnt, rdt, sdfd, &rseg);
 
 	sfirst = 0;
 	rfirst = 0;
@@ -1308,13 +1392,13 @@ static void mpig_cm_self_buffer_copy(
 	    MPIU_Size_t last;
 	    char * buf_end;
 
-	    if (sdata_size - sfirst > MPIG_COPY_BUFFER_SIZE - buf_off)
+	    if (sdata_local_size - sfirst > MPIG_COPY_BUFFER_SIZE - buf_off)
 	    {
 		last = sfirst + (MPIG_COPY_BUFFER_SIZE - buf_off);
 	    }
 	    else
 	    {
-		last = sdata_size;
+		last = sdata_local_size;
 	    }
 	    
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "pre-pack: first=" MPIG_SIZE_FMT ", last=" MPIG_SIZE_FMT, sfirst, last));
@@ -1326,17 +1410,17 @@ static void mpig_cm_self_buffer_copy(
 	    sfirst = last;
 	    
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "pre-unpack: first=" MPIG_SIZE_FMT ", last=" MPIG_SIZE_FMT, rfirst, last));
-	    MPID_Segment_unpack(&rseg, *(MPI_Aint *) &rfirst, (MPI_Aint *) &last, buf);
+	    mpig_segment_unpack(&rseg, sdfd, *(MPI_Aint *) &rfirst, (MPI_Aint *) &last, buf);
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "post-unpack: first=" MPIG_SIZE_FMT ", last=" MPIG_SIZE_FMT, rfirst, last));
 	    MPIU_Assert(last > rfirst);
 
 	    rfirst = last;
-	    if (rfirst == sdata_size) break;  /* successful completion */
+	    if (rfirst == sdata_local_size) break;  /* successful completion */
 
-	    if (sfirst == sdata_size)
+	    if (sfirst == sdata_local_size)
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA, "data type mismatch: send_nbytes="
-		    MPIG_SIZE_FMT ", nbytes_moved=" MPIG_SIZE_FMT, sdata_size, last));
+		    MPIG_SIZE_FMT ", nbytes_moved=" MPIG_SIZE_FMT, sdata_local_size, last));
 		MPIU_ERR_SET(*smpi_errno, MPI_ERR_TYPE, "**dtypemismatch");
 		*rmpi_errno = *smpi_errno;
 		break;

@@ -45,12 +45,6 @@ for arg in ${ac_configure_args} ; do
         --enable-globus-xio)
         mpig_enable_globus_xio=yes
         ;;
-        --enable-mpig-debugging)
-        mpig_enable_debugging=yes
-        ;;
-        --disable-mpig-debugging)
-        mpig_enable_debugging=no
-        ;;
     esac
 done
 
@@ -313,11 +307,13 @@ mpig_msg_check $LINENO "checking if Globus is built with debugging enabled"
 mpig_get_globus_setting HAVE_GLOBUS_DEBUG debug
 mpig_msg_result $LINENO "${HAVE_GLOBUS_DEBUG}"
 export HAVE_GLOBUS_DEBUG
-if test "${HAVE_GLOBUS_DEBUG}" = "no" -a "${enable_fast}" = "default" ; then
-    enable_fast=yes
-    ac_configure_args="${ac_configure_args} --enable-fast"
-    mpig_msg_info $LINENO "debugging disabled.  adding --enable-fast option to remove error checking from MPI routines and " \
-        "disable detailed error reporting."
+if test "${HAVE_GLOBUS_DEBUG}" = "no" ; then
+    if test "${enable_fast}" = "default" ; then
+        enable_fast=yes
+        ac_configure_args="${ac_configure_args} --enable-fast"
+        mpig_msg_info $LINENO "debugging disabled.  adding --enable-fast option to remove error checking from MPI routines and " \
+            "disable detailed error reporting."
+    fi
     MPIG_DEBUG=no
 else
     MPIG_DEBUG=yes
@@ -364,7 +360,7 @@ mpig_msg_check $LINENO "extacting library and linker flags from Globus"
 mpig_get_globus_setting MPIG_LDFLAGS ldflags
 mpig_get_globus_setting MPIG_LIBS libs
 MPIG_TEST_LDFLAGS=${MPIG_TEST_LDFLAGS:-${MPIG_LDFLAGS}}
-MPIG_TEST_LIBS=${MPIG_TEST_LIBS:-`echo "${MPIG_LDFLAGS}" | sed -e 's/-lglobus_][^ ]* *//g'`} # speed up testing
+MPIG_TEST_LIBS=${MPIG_TEST_LIBS:-`echo "${MPIG_LIBS}" | sed -e 's/-l[^[:space:]]*_'"${with_globus_flavor}"'* *//g'`}
 mpig_msg_result $LINENO "done"
 if test -n "${LDFLAGS}" ; then
     mpig_msg_info $LINENO "ignoring LDFLAGS environment variable.  using the value supplied by Globus."
@@ -496,9 +492,9 @@ else
 fi
 
 #
-# store the format of the received message in the status so that the value of the count field can be evaluated int the context
-# the of the source data format
+# add the globus data conversion format of the received message in the status so that the value of the count field can be
+# evaluated int the context the of the source data format
 #
-EXTRA_STATUS_DECL="${EXTRA_STATUS_DECL} int mpig_dc_format;"
+MPIG_GMW_DATA_FORMAT_DESC_STRUCT="char gdc_format;"
 
 rm -f ${MPIG_GLOBUS_SETTINGS_MK}

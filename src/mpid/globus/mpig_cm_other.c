@@ -39,7 +39,6 @@ static mpig_cm_vtable_t mpig_cm_other_vtable =
     NULL, /* mpig_cm_other_destruct_vc_contact_info */
     NULL, /* mpig_cm_other_select_comm_method */
     NULL, /* mpig_cm_other_get_vc_compatability */
-    /* mpig_cm_other_pe_cancel_op, */
     mpig_cm_vtable_last_entry
 };
 
@@ -86,6 +85,8 @@ static int mpig_cm_other_adi3_probe(int rank, int tag, MPID_Comm * comm, int ctx
 
 static int mpig_cm_other_adi3_iprobe(int rank, int tag, MPID_Comm * comm, int ctxoff, int * flag_p, MPI_Status * status);
 
+static int mpig_cm_other_adi3_cancel_recv(MPID_Request * rreq);
+
 static int mpig_cm_other_adi3_cancel_send(MPID_Request * sreq);
 
 MPIG_STATIC mpig_vc_vtable_t mpig_cm_other_vc_vtable =
@@ -100,7 +101,7 @@ MPIG_STATIC mpig_vc_vtable_t mpig_cm_other_vc_vtable =
     mpig_cm_other_adi3_irecv,
     mpig_cm_other_adi3_probe,
     mpig_cm_other_adi3_iprobe,
-    mpig_adi3_cancel_recv,
+    mpig_cm_other_adi3_cancel_recv,
     mpig_cm_other_adi3_cancel_send,
     NULL, /* vc_recv_any_source */
     NULL, /* vc_inc_ref_count */
@@ -673,6 +674,48 @@ static int mpig_cm_other_adi3_iprobe(
     /* --END ERROR HANDLING-- */
 }
 /* mpig_cm_other_adi3_iprobe(...) */
+
+
+int mpig_cm_other_adi3_cancel_recv(MPID_Request * rreq)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    bool_t cancelled;
+    bool_t req_completed;
+    int mpi_errno = MPI_SUCCESS;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_other_adi3_cancel_recv);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_other_adi3_cancel_recv);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "entering: rreq=" MPIG_HANDLE_FMT
+    ", rreqp=" MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
+
+    mpi_errno = mpig_recvq_cancel_posted_rreq(rreq, &cancelled);
+    if (cancelled)
+    {
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "cancel receive request succeeded immediately: rreq=" MPIG_HANDLE_FMT
+        ", rreqp=" MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
+
+        /* inform the PE that a receive any source operation has completed */
+        mpig_pe_end_ras_op();
+
+        rreq->status.cancelled = TRUE;
+        rreq->status.count = 0;
+        mpig_request_complete(rreq, &req_completed);
+    }
+    else
+    {
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "cancel receive request pending or failed: rreq=" MPIG_HANDLE_FMT
+        ", rreqp=" MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
+    }
+
+    /* fn_return: */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rreq=" MPIG_HANDLE_FMT
+    ", rreqp=" MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_other_adi3_cancel_recv);
+    return mpi_errno;
+}
+/* mpig_cm_other_adi3_cancel_recv() */
 
 
 /*

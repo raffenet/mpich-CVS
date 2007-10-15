@@ -767,15 +767,6 @@ static int mpig_cm_xio_net_add_contact_info(mpig_cm_t * const cm, mpig_bc_t * co
 	    "**globus|bc_add_contact",
 	    "**globus|bc_add_contact %s", "CM_XIO_CONTACT_STRING");
 
-	MPIU_Snprintf(uint_str, (size_t) 10, "%u", (unsigned) GLOBUS_DC_FORMAT_LOCAL);
-	mpi_errno = mpig_bc_add_contact(bc, "CM_XIO_DC_FORMAT", uint_str);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-	    "**globus|bc_add_contact %s", "CM_XIO_DC_FORMAT");
-
-	mpi_errno = mpig_bc_add_contact(bc, "CM_XIO_DC_ENDIAN", MPIG_ENDIAN_STR(MPIG_MY_ENDIAN));
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-	    "**globus|bc_add_contact %s", "CM_XIO_DC_ENDIAN");
-
 	core_entries_added = TRUE;
     }
     
@@ -878,12 +869,8 @@ static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * 
     mpig_bc_t * bc;
     char * version_str = NULL;
     char * contact_str = NULL;
-    char * format_str = NULL;
-    char * endian_str = NULL;
     char * driver_name = NULL;
-    int format;
     int version;
-    mpig_endian_t endian;
     bool_t found;
     int rc;
     int mpi_errno = MPI_SUCCESS;
@@ -927,23 +914,6 @@ static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * 
 	MPIU_ERR_CHKANDJUMP((rc != 1), mpi_errno, MPI_ERR_INTERN, "**keyval");
 	if (version != MPIG_CM_XIO_PROTO_VERSION) goto fn_return;
 
-	/* Get format of basic datatypes */
-	mpi_errno = mpig_bc_get_contact(bc, "CM_XIO_DC_FORMAT", &format_str, &found);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
-	    "**globus|bc_get_contact %s", "CM_XIO_DC_FORMAT");
-	if (!found) goto fn_return;
-	
-	rc = sscanf(format_str, "%d", &format);
-	MPIU_ERR_CHKANDJUMP((rc != 1), mpi_errno, MPI_ERR_INTERN, "**keyval");
-
-	/* Get endianess of remote system */
-	mpi_errno = mpig_bc_get_contact(bc, "CM_XIO_DC_ENDIAN", &endian_str, &found);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
-	    "**globus|bc_get_contact %s", "CM_XIO_DC_ENDIAN");
-	if (!found) goto fn_return;
-
-	endian = (strcmp(endian_str, "little") == 0) ? MPIG_ENDIAN_LITTLE : MPIG_ENDIAN_BIG;
-	
         /* verify that both sides want to use the same protocol.  this is done here rather than below, because if a connection is
 	   already formed, the protocols must be compatable. */
 	MPIU_Snprintf(key, MPIG_CM_XIO_NET_MAX_KEY_NAME_SIZE, "MPIG_XIO_%s_PROTO_NAME", cm->cmu.xio.key_name);
@@ -955,8 +925,6 @@ static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * 
 	/* initialize CM XIO fields in the VC */
 	mpig_cm_xio_vc_construct(vc);
 	mpig_vc_set_cm(vc, cm);
-	mpig_cm_xio_vc_set_endian(vc, endian);
-	mpig_cm_xio_vc_set_data_format(vc, format);
     }
 
     if (mpig_vc_get_cm_module_type(vc) == MPIG_CM_TYPE_XIO)
@@ -981,8 +949,6 @@ static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * 
   fn_return:
     if (version_str != NULL) mpig_bc_free_contact(version_str);
     if (contact_str != NULL) mpig_bc_free_contact(contact_str);
-    if (format_str != NULL) mpig_bc_free_contact(format_str);
-    if (endian_str != NULL) mpig_bc_free_contact(endian_str);
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting:  cm=" MPIG_PTR_FMT
 	", cm_name=%s, vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),

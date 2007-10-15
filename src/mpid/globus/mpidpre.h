@@ -78,7 +78,6 @@ typedef int bool_t;
 #define MPIG_INLINE
 #endif /* end if/else defined(HAVE_C_INLINE) */
 
-
 /* declare the existence of MPICH2 and MPIG structures that cannot be defined util later */
 struct MPID_Comm;
 struct MPID_Datatype;
@@ -103,7 +102,10 @@ struct mpig_recvq_ras_op;
 #define MPIG_CHECK_ERRORS FALSE
 #endif
 
-
+/* tell MPICH2 framework that the device supports heterogeneous environments */
+#if FALSE
+#define MPID_HAS_HETERO
+#endif
 /**********************************************************************************************************************************
                                                BEGIN BASIC DATA STRUCTURES SECTON
 **********************************************************************************************************************************/
@@ -188,6 +190,56 @@ typedef struct {char str[MPIG_UUID_MAX_STR_LEN+1];} mpig_uuid_t;
 #endif
 /**********************************************************************************************************************************
                                                         END UUID SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+                                              BEGIN DATA FORMAT DESCRIPTOR SECTION
+**********************************************************************************************************************************/
+typedef MPIG_DATA_FORMAT_DESC_STRUCT mpig_data_format_descriptor_t;
+
+MPIU_Size_t mpig_dfd_get_datatype_size(const mpig_data_format_descriptor_t * dfd, MPI_Datatype dt);
+
+#define mpig_dfd_copy(dest_dfd_, src_dfd_)                                                              \
+{                                                                                                       \
+    *((mpig_data_format_descriptor_t *) (dest_dfd_)) = *((mpig_data_format_descriptor_t *) (src_dfd_)); \
+}
+/**********************************************************************************************************************************
+                                               END DATA FORMAT DESCRIPTOR SECTION
+**********************************************************************************************************************************/
+
+
+/**********************************************************************************************************************************
+						      BEGIN STATUS SECTION
+**********************************************************************************************************************************/
+#define mpig_status_get_dfd(status_) ((mpig_data_format_descriptor_t *) &(status_)->mpig_src_dfd)
+
+#define mpig_status_copy_my_dfd(status_)                                \
+{                                                                       \
+    mpig_dfd_copy(mpig_status_get_dfd(status_), &mpig_process.my_dfd);  \
+}
+
+#define mpig_status_copy_request_dfd(status_, req_)                                     \
+{                                                                                       \
+    mpig_dfd_copy(mpig_status_get_dfd(status_), mpig_status_get_dfd(&(req_)->status));  \
+}                                                                                       \
+
+#define MPID_DEV_STATUS_SET_EMPTY_HOOK(status_) \
+{                                               \
+    mpig_status_copy_my_dfd(status_);           \
+}
+
+#define MPID_DEV_STATUS_SET_PROC_NULL_HOOK(status_)     \
+{                                                       \
+    mpig_status_copy_my_dfd(status_);                   \
+}
+
+#define MPID_DEV_REQUEST_EXTRACT_STATUS_HOOK(req_, status_)     \
+{                                                               \
+    mpig_status_copy_request_dfd((status_), (req_));            \
+}
+/**********************************************************************************************************************************
+						       END STATUS SECTION
 **********************************************************************************************************************************/
 
 
@@ -332,11 +384,7 @@ typedef int (*mpig_cm_select_comm_method_fn_t)(struct mpig_cm * cm, struct mpig_
 typedef int (*mpig_cm_get_vc_compatability_fn_t)(struct mpig_cm * cm, const struct mpig_vc * vc1, const struct mpig_vc * vc2,
     unsigned levels_in, unsigned * levels_out);
 
-
-/* FIXME: document.  used to mark the completion of a progress engine operation as oppropriate for the communication method.
-   this is current used by the cancel receive code, which is presently CM agnostic. */
-typedef void (*mpig_cm_pe_end_op_fn_t)(void);
-
+/* special function to aid in detecting errors in the CM tables */
 typedef char * (*mpig_cm_vtable_last_entry_fn_t)(int foo, float bar, const short * baz, char bif);
 
 typedef struct mpig_cm_vtable
@@ -348,7 +396,6 @@ typedef struct mpig_cm_vtable
     mpig_cm_destruct_vc_contact_info_fn_t	destruct_vc_contact_info;
     mpig_cm_select_comm_method_fn_t		select_comm_method;
     mpig_cm_get_vc_compatability_fn_t		get_vc_compatability;
-    /* mpig_cm_pe_end_op_fn_t                      pe_end_op; */
     mpig_cm_vtable_last_entry_fn_t		vtable_last_entry;
 }
 mpig_cm_vtable_t;
@@ -505,7 +552,28 @@ mpig_comm_t;
 /**********************************************************************************************************************************
 						     BEGIN DATATYPE SECTION
 **********************************************************************************************************************************/
-#define MPIG_DATATYPE_MAX_BASIC_TYPES 64
+#if defined(MPID_HAS_HETERO)
+#define MPIG_PACK_HEADER_SIZE (MPIG_DATATYPE_MAX_BASIC_TYPES + MPIG_CTYPE_LAST + 2)
+
+#define MPID_DEV_HAS_MPID_PACK_HEADER_SIZE
+#define MPID_Pack_header_size(status_) (MPIG_PACK_HEADER_SIZE)
+#define MPID_DEV_HAS_MPID_PACK
+#define MPID_Pack mpig_datatype_pack
+#define MPID_DEV_HAS_MPID_UNPACK
+#define MPID_Unpack mpig_datatype_unpack
+#define MPID_DEV_HAS_MPID_PACK_SIZE
+#define MPID_Pack_size mpig_datatype_pack_size
+#define MPID_DEV_HAS_MPID_DATATYPE_GET_SOURCE_BASIC_SIZE
+#define MPID_Datatype_get_source_basic_size(status_, dt_) \
+    ((int) mpig_dfd_get_datatype_size(mpig_status_get_dfd(status_), (dt_)))
+#define MPID_DEV_HAS_MPID_DATATYPE_GET_SOURCE_SIZE_MACRO
+#define MPID_Datatype_get_source_size_macro(status_, dt_, size_)                \
+{                                                                               \
+    (size_) = mpig_dfd_get_datatype_size(mpig_status_get_dfd(status_), (dt_));  \
+}
+#else
+#define MPIG_PACK_HEADER_SIZE (0)
+#endif
 
 typedef enum mpig_ctype
 {
@@ -523,6 +591,10 @@ typedef enum mpig_ctype
     MPIG_CTYPE_UNSIGNED_INT,
     MPIG_CTYPE_UNSIGNED_LONG,
     MPIG_CTYPE_UNSIGNED_LONG_LONG,
+    MPIG_CTYPE_INT8,
+    MPIG_CTYPE_INT16,
+    MPIG_CTYPE_INT32,
+    MPIG_CTYPE_INT64,
     MPIG_CTYPE_LAST
 }
 mpig_ctype_t;
@@ -729,30 +801,6 @@ typedef mpig_mutex_t mpig_request_mutex_t;
     MPIG_REQUEST_CMU_DECL
 /**********************************************************************************************************************************
 						       END REQUEST SECTION
-**********************************************************************************************************************************/
-
-
-/**********************************************************************************************************************************
-						      BEGIN STATUS SECTION
-**********************************************************************************************************************************/
-#if defined(HAVE_GLOBUS_DC_MODULE)
-#define MPID_DEV_STATUS_SET_EMPTY_HOOK(status_)		\
-{							\
-    (status_)->mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL;	\
-}
-
-#define MPID_DEV_STATUS_SET_PROC_NULL_HOOK(status_)	\
-{							\
-    (status_)->mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL;	\
-}
-
-#define MPID_DEV_REQUEST_EXTRACT_STATUS_HOOK(req_, status_)	\
-{								\
-    (status_)->mpig_dc_format = (req_)->status.mpig_dc_format;	\
-}
-#endif
-/**********************************************************************************************************************************
-						       END STATUS SECTION
 **********************************************************************************************************************************/
 
 
@@ -1017,10 +1065,9 @@ typedef struct mpig_vc
     /* business card containing information on how to connect to the remote process */
     mpig_bc_t bc;
 
-    /* map of MPI datatypes to basic C types */
-    char dt_ctype_map[MPIG_DATATYPE_MAX_BASIC_TYPES];
-    char dt_sizeof_ctypes[MPIG_CTYPE_LAST];
-
+    /* data format information for the remote system */
+    mpig_data_format_descriptor_t dfd;
+    
     /* status of the VC */
     bool_t initialized;
 }

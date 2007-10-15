@@ -100,6 +100,8 @@ mpig_cm_t mpig_cm_vmpi =
     "VMPI",
     &mpig_cm_vmpi_vtable
 };
+
+MPIG_STATIC bool_t mpig_cm_vmpi_finalized = FALSE;
 /**********************************************************************************************************************************
 					       END COMMUNICATION MODULE API VTABLE
 **********************************************************************************************************************************/
@@ -633,6 +635,8 @@ static int mpig_cm_vmpi_finalize(mpig_cm_t * const cm)
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Finalize", &mpi_errno);
 
       fn_return:
+        mpig_cm_vmpi_finalized = TRUE;
+        
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
 	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_finalize);
 	return mpi_errno;
@@ -1257,7 +1261,7 @@ void mpig_cm_vmpi_request_status_vtom(MPID_Request * const mreq, mpig_vmpi_statu
 	    vrc = mpig_vmpi_test_cancelled(vstatus, &mreq->status.cancelled);
 	    MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Test_cancelled", &mreq->status.MPI_ERROR);
 	    mreq->status.count = 0;
-	    /* mreq->status.mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+	    /* mpig_request_copy_my_dfd(mreq); -- vendor MPI is assumed to be homogeneous */
 	}
     }
     else
@@ -1289,7 +1293,7 @@ void mpig_cm_vmpi_request_status_vtom(MPID_Request * const mreq, mpig_vmpi_statu
 	int mtag = (vstatus_tag >= 0) ? vstatus_tag : MPI_UNDEFINED;
 	int count;
 	
-	MPIG_Assert(vstatus_source < mpig_cm_vmpi_comm_get_remote_vsize(mreq->comm));
+	MPIU_Assert(vstatus_source < mpig_cm_vmpi_comm_get_remote_vsize(mreq->comm));
 	
 	vrc = mpig_vmpi_get_count(vstatus, MPIG_VMPI_BYTE, &count);
 	MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Get_count", &mreq->status.MPI_ERROR);
@@ -1297,7 +1301,7 @@ void mpig_cm_vmpi_request_status_vtom(MPID_Request * const mreq, mpig_vmpi_statu
 	mreq->status.MPI_SOURCE = mrank;
 	mreq->status.MPI_TAG = mtag;
 	mreq->status.count = count;
-	/* mreq->status.mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+        /* mpig_request_copy_my_dfd(mreq); -- vendor MPI is assumed to be homogeneous */
 	
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "nonblocking recv complete: vrank=%d, mrank=%d"
 	    ", vtag=%d, mtag=%d, count=%d", vstatus_source, mrank, vstatus_tag, mtag, count));
@@ -1796,75 +1800,100 @@ int mpig_cm_vmpi_pe_test(void)
 /**********************************************************************************************************************************
 						   BEGIN VC CORE API FUNCTIONS
 **********************************************************************************************************************************/
-#define mpig_cm_vmpi_send_macro(send_op_, send_op_name_, isend_op_name_, buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_,		 \
-    sreqp_, mpi_errno_p_)													 \
-{																 \
-    mpig_vmpi_datatype_t mpig_cm_vmpi_send_vdt__;										 \
-    const int mpig_cm_vmpi_send_vrank__ = mpig_cm_vmpi_comm_get_remote_vrank((comm_), (rank_));					 \
-    const int mpig_cm_vmpi_send_vtag__ = mpig_cm_vmpi_tag_get_vtag((tag_));							 \
-    const mpig_vmpi_comm_t mpig_cm_vmpi_send_vcomm__ = mpig_cm_vmpi_comm_get_vcomm((comm_), (ctxoff_));				 \
-    int mpig_cm_vmpi_send_vrc__;												 \
-    int mpig_cm_vmpi_send_dt_size__ = 0;											 \
-																 \
-    mpig_cm_vmpi_datatype_get_vdt((dt_), &mpig_cm_vmpi_send_vdt__);								 \
-																 \
-    /* NOTE: a blocking send may only be used when no other communication module requires polling to make progress, or no other	 \
-       requests have outstanding requests. */											 \
-    if (mpig_pe_cm_owns_all_active_ops(&mpig_cm_vmpi_pe_info))									 \
-    {																 \
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "performing a blocking %s operation: vdt=" MPIG_VMPI_DATATYPE_FMT		 \
-	    ", vrank=%d, vtag=%d, vcomm=" MPIG_VMPI_COMM_FMT, #send_op_, MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_send_vdt__),	 \
-	    mpig_cm_vmpi_send_vrank__, mpig_cm_vmpi_send_vtag__, MPIG_VMPI_COMM_CAST(mpig_cm_vmpi_send_vcomm__)));		 \
-	mpig_cm_vmpi_send_vrc__ = mpig_vmpi_ ## send_op_((buf_), (cnt_), (mpig_cm_vmpi_send_vdt__),				 \
-	    (mpig_cm_vmpi_send_vrank__), (mpig_cm_vmpi_send_vtag__), (mpig_cm_vmpi_send_vcomm__));				 \
-	MPIG_ERR_VMPI_CHKANDJUMP(mpig_cm_vmpi_send_vrc__, (send_op_name_), (mpi_errno_p_));					 \
-																 \
-	/* the send request is set to NULL in order to inform the upper layer that the requested operation has completed */	 \
-	*(sreqp_) = NULL;													 \
-    }																 \
-    else															 \
-    {																 \
-	mpig_vc_t * const mpig_cm_vmpi_send_vc__ = mpig_comm_get_remote_vc((comm_), (rank_));					 \
-	MPID_Request * mpig_cm_vmpi_send_sreq__;										 \
-																 \
-	/* create a new send request */												 \
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "creating a new send request"));						 \
-	/* NOTE: mpig_request_create_isreq() jumps to fn_fail if failure occurs */						 \
-	mpig_request_create_isreq(MPIG_REQUEST_TYPE_SEND, 2, 1, (void *) (buf_), (cnt_), (dt_), (rank_), (tag_),		 \
-	    (comm_)->context_id + (ctxoff_), (comm_), mpig_cm_vmpi_send_vc__, &mpig_cm_vmpi_send_sreq__);			 \
-	mpig_cm_vmpi_request_construct(mpig_cm_vmpi_send_sreq__);								 \
-																 \
-	/* start the nonblocking send operation */										 \
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "starting a nonblocking %s operation: vdt=" MPIG_VMPI_DATATYPE_FMT		 \
-	    ", vrank=%d, vtag=%d, vcomm=" MPIG_VMPI_COMM_FMT, #send_op_, MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_send_vdt__),	 \
-	    mpig_cm_vmpi_send_vrank__,mpig_cm_vmpi_send_vtag__, MPIG_VMPI_COMM_CAST(mpig_cm_vmpi_send_vcomm__)));		 \
-	mpig_cm_vmpi_send_vrc__ = mpig_vmpi_i ## send_op_((buf_), (cnt_), (mpig_cm_vmpi_send_vdt__),				 \
-	    (mpig_cm_vmpi_send_vrank__), (mpig_cm_vmpi_send_vtag__), (mpig_cm_vmpi_send_vcomm__),				 \
-	    mpig_cm_vmpi_request_get_vreq_ptr(mpig_cm_vmpi_send_sreq__));							 \
-	MPIG_ERR_VMPI_CHKANDJUMP((mpig_cm_vmpi_send_vrc__), (isend_op_name_), (mpi_errno_p_));					 \
-																 \
-	mpig_cm_vmpi_pe_table_add_req(mpig_cm_vmpi_send_sreq__, (mpi_errno_p_));						 \
-	if (*(mpi_errno_p_))													 \
-	{   /* --BEGIN ERROR HANDLING-- */											 \
+#define mpig_cm_vmpi_send_macro(send_op_, send_op_name_, isend_op_name_, buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_,           \
+    sreqp_, mpi_errno_p_)                                                                                                        \
+{                                                                                                                                \
+    const void * mpig_cm_vmpi_send_vbuf__ = (buf_);                                                                              \
+    int mpig_cm_vmpi_send_vcnt__ = (cnt_);                                                                                       \
+    mpig_vmpi_datatype_t mpig_cm_vmpi_send_vdt__;                                                                                \
+    const int mpig_cm_vmpi_send_vrank__ = mpig_cm_vmpi_comm_get_remote_vrank((comm_), (rank_));                                  \
+    const int mpig_cm_vmpi_send_vtag__ = mpig_cm_vmpi_tag_get_vtag((tag_));                                                      \
+    const mpig_vmpi_comm_t mpig_cm_vmpi_send_vcomm__ = mpig_cm_vmpi_comm_get_vcomm((comm_), (ctxoff_));                          \
+    int mpig_cm_vmpi_send_vrc__;                                                                                                 \
+    int mpig_cm_vmpi_send_dt_size__ = 0;                                                                                         \
+                                                                                                                                 \
+    mpig_cm_vmpi_datatype_get_vdt((dt_), &mpig_cm_vmpi_send_vdt__);                                                              \
+                                                                                                                                 \
+    if ((dt_) == MPI_PACKED)                                                                                                     \
+    {                                                                                                                            \
+        mpig_data_format_descriptor_t mpig_cm_vmpi_send_dfd__;                                                                   \
+                                                                                                                                 \
+        mpig_dfd_unpack_header(&mpig_cm_vmpi_send_dfd__, (buf_));                                                                \
+        if (mpig_dfd_is_hetero(&mpig_cm_vmpi_send_dfd__) ||                                                                      \
+            (MPIG_FAKING_HETERO == TRUE && mpig_dfd_compare(&mpig_cm_vmpi_send_dfd__, &mpig_process.my_dfd) == FALSE))           \
+        {                                                                                                                        \
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: cannot use vendor MPI to send a "        \
+                "packed message with an incompatible data format" MPIG_VMPI_DATATYPE_FMT ", vrank=%d, vtag=%d, vcomm="           \
+                MPIG_VMPI_COMM_FMT, MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_send_vdt__), mpig_cm_vmpi_send_vrank__,                 \
+                mpig_cm_vmpi_send_vtag__, MPIG_VMPI_COMM_CAST(mpig_cm_vmpi_send_vcomm__)));                                      \
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|packed_incompat");                                          \
+	    goto fn_fail;                                                                                                        \
+        }                                                                                                                        \
+                                                                                                                                 \
+        /* XXX: right now, we assume that the vendor MPI_Pack just serialize the data into a byte stream with no header */       \
+        mpig_cm_vmpi_send_vbuf__ = (char *) mpig_cm_vmpi_send_vbuf__ + MPIG_PACK_HEADER_SIZE;                                    \
+        mpig_cm_vmpi_send_vcnt__ -= MPIG_PACK_HEADER_SIZE;                                                                       \
+    }                                                                                                                            \
+                                                                                                                                 \
+    /* NOTE: a blocking send may only be used when no other communication module requires polling to make progress, or no        \
+       other module have outstanding requests. */                                                                                \
+    if (mpig_pe_cm_owns_all_active_ops(&mpig_cm_vmpi_pe_info))                                                                   \
+    {                                                                                                                            \
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "performing a blocking %s operation: vdt=" MPIG_VMPI_DATATYPE_FMT             \
+	    ", vrank=%d, vtag=%d, vcomm=" MPIG_VMPI_COMM_FMT, #send_op_, MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_send_vdt__),       \
+	    mpig_cm_vmpi_send_vrank__, mpig_cm_vmpi_send_vtag__, MPIG_VMPI_COMM_CAST(mpig_cm_vmpi_send_vcomm__)));               \
+	mpig_cm_vmpi_send_vrc__ = mpig_vmpi_ ## send_op_(mpig_cm_vmpi_send_vbuf__, mpig_cm_vmpi_send_vcnt__,                     \
+            mpig_cm_vmpi_send_vdt__, mpig_cm_vmpi_send_vrank__, mpig_cm_vmpi_send_vtag__, mpig_cm_vmpi_send_vcomm__);            \
+	MPIG_ERR_VMPI_CHKANDJUMP(mpig_cm_vmpi_send_vrc__, (send_op_name_), (mpi_errno_p_));                                      \
+                                                                                                                                 \
+	/* the send request is set to NULL in order to inform the upper layer that the requested operation has completed */      \
+	*(sreqp_) = NULL;                                                                                                        \
+    }                                                                                                                            \
+    else                                                                                                                         \
+    {                                                                                                                            \
+	mpig_vc_t * const mpig_cm_vmpi_send_vc__ = mpig_comm_get_remote_vc((comm_), (rank_));                                    \
+	MPID_Request * mpig_cm_vmpi_send_sreq__;                                                                                 \
+                                                                                                                                 \
+	/* create a new send request */                                                                                          \
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "creating a new send request"));                                              \
+	/* NOTE: mpig_request_create_isreq() jumps to fn_fail if failure occurs */                                               \
+	mpig_request_create_isreq(MPIG_REQUEST_TYPE_SEND, 2, 1, (void *) (buf_), (cnt_), (dt_), (rank_), (tag_),                 \
+	    (comm_)->context_id + (ctxoff_), (comm_), mpig_cm_vmpi_send_vc__, &mpig_cm_vmpi_send_sreq__);                        \
+	mpig_cm_vmpi_request_construct(mpig_cm_vmpi_send_sreq__);                                                                \
+                                                                                                                                 \
+	/* start the nonblocking send operation */                                                                               \
+	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "starting a nonblocking %s operation: vdt=" MPIG_VMPI_DATATYPE_FMT            \
+	    ", vrank=%d, vtag=%d, vcomm=" MPIG_VMPI_COMM_FMT, #send_op_, MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_send_vdt__),       \
+	    mpig_cm_vmpi_send_vrank__,mpig_cm_vmpi_send_vtag__, MPIG_VMPI_COMM_CAST(mpig_cm_vmpi_send_vcomm__)));                \
+	mpig_cm_vmpi_send_vrc__ = mpig_vmpi_i ## send_op_(mpig_cm_vmpi_send_vbuf__, mpig_cm_vmpi_send_vcnt__,                    \
+            mpig_cm_vmpi_send_vdt__, mpig_cm_vmpi_send_vrank__, mpig_cm_vmpi_send_vtag__, mpig_cm_vmpi_send_vcomm__,             \
+	    mpig_cm_vmpi_request_get_vreq_ptr(mpig_cm_vmpi_send_sreq__));                                                        \
+	MPIG_ERR_VMPI_CHKANDJUMP((mpig_cm_vmpi_send_vrc__), (isend_op_name_), (mpi_errno_p_));                                   \
+                                                                                                                                 \
+	mpig_cm_vmpi_pe_table_add_req(mpig_cm_vmpi_send_sreq__, (mpi_errno_p_));                                                 \
+	if (*(mpi_errno_p_))                                                                                                     \
+	{   /* --BEGIN ERROR HANDLING-- */                                                                                       \
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: attempt to register a request with the " \
-		"VMPI process engine failed: sreq" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, mpig_cm_vmpi_send_sreq__->handle,	 \
-		MPIG_PTR_CAST(mpig_cm_vmpi_send_sreq__)));									 \
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|pe_table_add_req",					 \
-		"**globus|cm_vmpi|pe_table_add_req %R %p", mpig_cm_vmpi_send_sreq__->handle, mpig_cm_vmpi_send_sreq__);		 \
-	    goto fn_fail;													 \
-	}															 \
-																 \
-	*(sreqp_) = mpig_cm_vmpi_send_sreq__;											 \
-    }																 \
-																 \
-    /* add to usage bytes sent counter */											 \
-    mpig_datatype_get_local_size((dt_), &mpig_cm_vmpi_send_dt_size__);								 \
-    MPIG_USAGE_INC_VMPI_NBYTES_SENT(mpig_cm_vmpi_send_dt_size__ * (cnt_));							 \
+		"VMPI process engine failed: sreq" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, mpig_cm_vmpi_send_sreq__->handle,    \
+		MPIG_PTR_CAST(mpig_cm_vmpi_send_sreq__)));                                                                       \
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|pe_table_add_req",                                         \
+		"**globus|cm_vmpi|pe_table_add_req %R %p", mpig_cm_vmpi_send_sreq__->handle, mpig_cm_vmpi_send_sreq__);          \
+	    goto fn_fail;                                                                                                        \
+	}                                                                                                                        \
+                                                                                                                                 \
+	*(sreqp_) = mpig_cm_vmpi_send_sreq__;                                                                                    \
+    }                                                                                                                            \
+                                                                                                                                 \
+    /* add to usage bytes sent counter */                                                                                        \
+    mpig_datatype_get_local_size((dt_), &mpig_cm_vmpi_send_dt_size__);                                                           \
+    MPIG_USAGE_INC_VMPI_NBYTES_SENT(mpig_cm_vmpi_send_dt_size__ * (mpig_cm_vmpi_send_vcnt__));                                   \
 }
 
 
 #define mpig_cm_vmpi_isend_macro(send_op_, isend_op_name_, buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_, sreqp_, mpi_errno_p_)	\
 {																\
+    const void * mpig_cm_vmpi_isend_vbuf__ = (buf_);                                                                            \
+    int mpig_cm_vmpi_isend_vcnt__ = (cnt_);                                                                                     \
     mpig_vmpi_datatype_t mpig_cm_vmpi_isend_vdt__;										\
     const int mpig_cm_vmpi_isend_vrank__ = mpig_cm_vmpi_comm_get_remote_vrank((comm_), (rank_));				\
     const int mpig_cm_vmpi_isend_vtag__ = mpig_cm_vmpi_tag_get_vtag((tag_));							\
@@ -1873,7 +1902,30 @@ int mpig_cm_vmpi_pe_test(void)
     MPID_Request * mpig_cm_vmpi_isend_sreq__;											\
     int mpig_cm_vmpi_isend_vrc__;												\
     int mpig_cm_vmpi_isend_dt_size__ = 0;											\
-																\
+                                                                                                                                \
+    mpig_cm_vmpi_datatype_get_vdt((dt_), &mpig_cm_vmpi_isend_vdt__);                                                            \
+                                                                                                                                \
+    if ((dt_) == MPI_PACKED)                                                                                                    \
+    {                                                                                                                           \
+        mpig_data_format_descriptor_t mpig_cm_vmpi_isend_dfd__;                                                                 \
+                                                                                                                                \
+        mpig_dfd_unpack_header(&mpig_cm_vmpi_isend_dfd__, (buf_));                                                              \
+        if (mpig_dfd_is_hetero(&mpig_cm_vmpi_isend_dfd__) ||                                                                    \
+            (MPIG_FAKING_HETERO == TRUE && mpig_dfd_compare(&mpig_cm_vmpi_isend_dfd__, &mpig_process.my_dfd) == FALSE))         \
+        {                                                                                                                       \
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: cannot use vendor MPI to send a "       \
+                "packed message with an incompatible data format" MPIG_VMPI_DATATYPE_FMT ", vrank=%d, vtag=%d, vcomm="          \
+                MPIG_VMPI_COMM_FMT, MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_isend_vdt__), mpig_cm_vmpi_isend_vrank__,              \
+                mpig_cm_vmpi_isend_vtag__, MPIG_VMPI_COMM_CAST(mpig_cm_vmpi_isend_vcomm__)));                                   \
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|packed_incompat");                                         \
+	    goto fn_fail;                                                                                                       \
+        }                                                                                                                       \
+                                                                                                                                \
+        /* XXX: right now, we assume that the vendor MPI_Pack just serialize the data into a byte stream with no header */      \
+        mpig_cm_vmpi_isend_vbuf__ = (char *) mpig_cm_vmpi_isend_vbuf__ + MPIG_PACK_HEADER_SIZE;                                 \
+        mpig_cm_vmpi_isend_vcnt__ -= MPIG_PACK_HEADER_SIZE;                                                                     \
+    }                                                                                                                           \
+                                                                                                                                \
     /* create a new send request */												\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "creating a new send request"));							\
     /* NOTE: mpig_request_create_isreq() jumps to fn_fail if failure occurs */							\
@@ -1882,13 +1934,12 @@ int mpig_cm_vmpi_pe_test(void)
     mpig_cm_vmpi_request_construct(mpig_cm_vmpi_isend_sreq__);									\
 																\
     /* start the nonblocking send operation */											\
-    mpig_cm_vmpi_datatype_get_vdt((dt_), &mpig_cm_vmpi_isend_vdt__);								\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "starting a nonblocking %s operation: vdt=" MPIG_VMPI_DATATYPE_FMT		\
 	", vrank=%d, vtag=%d, vcomm=" MPIG_VMPI_COMM_FMT, #send_op_, MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_isend_vdt__),		\
 	mpig_cm_vmpi_isend_vrank__, mpig_cm_vmpi_isend_vtag__, MPIG_VMPI_COMM_CAST(mpig_cm_vmpi_isend_vcomm__)));		\
-    mpig_cm_vmpi_isend_vrc__ = mpig_vmpi_i ## send_op_((buf_), (cnt_), (mpig_cm_vmpi_isend_vdt__),				\
-	(mpig_cm_vmpi_isend_vrank__), (mpig_cm_vmpi_isend_vtag__), (mpig_cm_vmpi_isend_vcomm__),				\
-	mpig_cm_vmpi_request_get_vreq_ptr(mpig_cm_vmpi_isend_sreq__));								\
+    mpig_cm_vmpi_isend_vrc__ = mpig_vmpi_i ## send_op_(mpig_cm_vmpi_isend_vbuf__, mpig_cm_vmpi_isend_vcnt__,                    \
+        mpig_cm_vmpi_isend_vdt__, mpig_cm_vmpi_isend_vrank__, mpig_cm_vmpi_isend_vtag__, mpig_cm_vmpi_isend_vcomm__,            \
+        mpig_cm_vmpi_request_get_vreq_ptr(mpig_cm_vmpi_isend_sreq__));                                                          \
     MPIG_ERR_VMPI_CHKANDJUMP((mpig_cm_vmpi_isend_vrc__), (isend_op_name_), (mpi_errno_p_));					\
 																\
     mpig_cm_vmpi_pe_table_add_req(mpig_cm_vmpi_isend_sreq__, (mpi_errno_p_));							\
@@ -1896,7 +1947,7 @@ int mpig_cm_vmpi_pe_test(void)
     {   /* --BEGIN ERROR HANDLING-- */												\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: attempt to register a request with the "	\
 	    "VMPI process engine failed: sreq" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, mpig_cm_vmpi_isend_sreq__->handle,	\
-	    MPIG_PTR_CAST(mpig_cm_vmpi_isend_sreq__)));									\
+	    MPIG_PTR_CAST(mpig_cm_vmpi_isend_sreq__)));                                                                         \
 	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|pe_table_add_req",						\
 	    "**globus|cm_vmpi|pe_table_add_req %R %p", mpig_cm_vmpi_isend_sreq__->handle, mpig_cm_vmpi_isend_sreq__);		\
 	goto fn_fail;														\
@@ -2136,6 +2187,8 @@ static int mpig_cm_vmpi_adi3_recv(
     const int ctxoff, MPI_Status * const status, MPID_Request ** const rreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    void * vbuf = buf;
+    int vcnt = cnt;
     mpig_vmpi_datatype_t vdt;
     const int vrank = mpig_cm_vmpi_comm_get_remote_vrank(comm, rank);
     const int vtag = mpig_cm_vmpi_tag_get_vtag(tag);
@@ -2153,6 +2206,15 @@ static int mpig_cm_vmpi_adi3_recv(
 	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", recv_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
 	rank, tag, MPIG_PTR_CAST(comm), recv_ctx));
 
+    /* if the message is to be received as packed data, then we must add the pack header to the beginning of the message and
+       adjust the buffer and count appropriately. */
+    if (dt == MPI_PACKED)
+    {
+        mpig_dfd_pack_header(&mpig_process.my_dfd, buf);
+        vbuf = (char *) vbuf + MPIG_PACK_HEADER_SIZE;
+        vcnt -= MPIG_PACK_HEADER_SIZE;
+    }
+    
     mpig_cm_vmpi_datatype_get_vdt(dt, &vdt);
 
     /* NOTE: the blocking receive routine may only be used when no other communication method requires polling to make progress,
@@ -2164,8 +2226,8 @@ static int mpig_cm_vmpi_adi3_recv(
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "performing a blocking recv operation: vdt=" MPIG_VMPI_DATATYPE_FMT
 	    ", vrank=%d, vtag=%d, vcomm=" MPIG_VMPI_COMM_FMT, MPIG_VMPI_DATATYPE_CAST(vdt), vrank, vtag,
 	    MPIG_VMPI_COMM_CAST(vcomm)));
-	vrc = mpig_vmpi_recv(buf, cnt, vdt, vrank, vtag, vcomm, &vstatus);
-	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Rrecv", &mpi_errno);
+	vrc = mpig_vmpi_recv(vbuf, vcnt, vdt, vrank, vtag, vcomm, &vstatus);
+	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Recv", &mpi_errno);
 
 	/* if the operation completed successfully, and the application supplied a status structure, then fill in the status */
 	if (status != MPI_STATUS_IGNORE)
@@ -2176,7 +2238,7 @@ static int mpig_cm_vmpi_adi3_recv(
 	    int vstatus_tag = mpig_vmpi_status_get_tag(&vstatus);
 	    int mtag = (vstatus_tag >= 0) ? vstatus_tag : MPI_UNDEFINED;
 	    
-	    MPIG_Assert(vstatus_source < mpig_cm_vmpi_comm_get_remote_vsize(comm));
+	    MPIU_Assert(vstatus_source < mpig_cm_vmpi_comm_get_remote_vsize(comm));
 	    
 	    vrc = mpig_vmpi_get_count(&vstatus, MPIG_VMPI_BYTE, &count);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Get_count", &mpi_errno);
@@ -2187,9 +2249,9 @@ static int mpig_cm_vmpi_adi3_recv(
 	    status->MPI_SOURCE = mrank;
 	    status->MPI_TAG = mtag;
 	    /* NOTE: MPI_ERROR must not be set except by the MPI_Test/Wait routines when MPI_ERR_IN_STATUS is to be returned. */
-	    status->count = count;
 	    status->cancelled = FALSE;
-	    /* status->mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+	    status->count = count;
+            mpig_status_copy_my_dfd(status);
 	}
     
 	/* the receive request is set to NULL in order to inform the upper layer that the requested operation has completed */
@@ -2209,7 +2271,7 @@ static int mpig_cm_vmpi_adi3_recv(
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "starting a nonblocking recv operation: vdt=" MPIG_VMPI_DATATYPE_FMT
 	    ", vrank=%d, vtag=%d, vcomm=" MPIG_VMPI_COMM_FMT, MPIG_VMPI_DATATYPE_CAST(vdt), vrank, vtag,
 	    MPIG_VMPI_COMM_CAST(vcomm)));
-	vrc = mpig_vmpi_irecv(buf, cnt, vdt, vrank, vtag, vcomm, mpig_cm_vmpi_request_get_vreq_ptr(rreq));
+	vrc = mpig_vmpi_irecv(vbuf, vcnt, vdt, vrank, vtag, vcomm, mpig_cm_vmpi_request_get_vreq_ptr(rreq));
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Irecv", &mpi_errno);
 
 	/* add the outstanding request to the progress engine request tracking data structures */
@@ -2258,6 +2320,8 @@ static int mpig_cm_vmpi_adi3_irecv(
     const int ctxoff, MPID_Request ** const rreqp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    void * vbuf = buf;
+    int vcnt = cnt;
     const int recv_ctx = comm->recvcontext_id + ctxoff;
     mpig_vmpi_datatype_t vdt;
     const int vrank = mpig_cm_vmpi_comm_get_remote_vrank(comm, rank);
@@ -2276,6 +2340,15 @@ static int mpig_cm_vmpi_adi3_irecv(
 	", cnt=%d, dt=" MPIG_HANDLE_FMT ", rank=%d, tag=%d, comm=" MPIG_PTR_FMT ", recv_ctx=%d", MPIG_PTR_CAST(buf), cnt, dt,
 	rank, tag, MPIG_PTR_CAST(comm), recv_ctx));
 
+    /* if the message is to be received as packed data, then we must add the pack header to the beginning of the message and
+       adjust the buffer and count appropriately. */
+    if (dt == MPI_PACKED)
+    {
+        mpig_dfd_pack_header(&mpig_process.my_dfd, buf);
+        vbuf = (char *) vbuf + MPIG_PACK_HEADER_SIZE;
+        vcnt -= MPIG_PACK_HEADER_SIZE;
+    }
+    
     mpig_cm_vmpi_datatype_get_vdt(dt, &vdt);
     
     /* create a new receive request */
@@ -2288,7 +2361,7 @@ static int mpig_cm_vmpi_adi3_irecv(
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "starting a nonblocking recv operation: vdt=" MPIG_VMPI_DATATYPE_FMT
 	", vrank=%d, vtag=%d, vcomm=" MPIG_VMPI_COMM_FMT, MPIG_VMPI_DATATYPE_CAST(vdt), vrank, vtag,
 	MPIG_VMPI_COMM_CAST(vcomm)));
-    vrc = mpig_vmpi_irecv(buf, cnt, vdt, vrank, vtag, vcomm, mpig_cm_vmpi_request_get_vreq_ptr(rreq));
+    vrc = mpig_vmpi_irecv(vbuf, vcnt, vdt, vrank, vtag, vcomm, mpig_cm_vmpi_request_get_vreq_ptr(rreq));
     MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Irecv", &mpi_errno);
 
     /* add the outstanding request to the progress engine request tracking data structures */
@@ -2387,7 +2460,7 @@ static int mpig_cm_vmpi_adi3_probe(
 	int vstatus_source = mpig_vmpi_status_get_source(&vstatus);
 	int vstatus_tag = mpig_vmpi_status_get_tag(&vstatus);
 
-	MPIG_Assert(vstatus_source < mpig_cm_vmpi_comm_get_remote_vsize(comm));
+	MPIU_Assert(vstatus_source < mpig_cm_vmpi_comm_get_remote_vsize(comm));
 	    
 	vrc = mpig_vmpi_get_count(&vstatus, MPIG_VMPI_BYTE, &count);
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Get_count", &mpi_errno);
@@ -2395,9 +2468,9 @@ static int mpig_cm_vmpi_adi3_probe(
 	status->MPI_SOURCE = (vstatus_source >= 0) ? mpig_cm_vmpi_comm_get_remote_mrank(comm, vstatus_source) : MPI_UNDEFINED;
 	status->MPI_TAG = (vstatus_tag >= 0) ? vstatus_tag : MPI_UNDEFINED;
 	/* NOTE: MPI_ERROR must not be set except by the MPI_Test/Wait routines when MPI_ERR_IN_STATUS is to be returned. */
-	status->count = count;
 	status->cancelled = FALSE;
-	/* status->mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+	status->count = count;
+        mpig_status_copy_my_dfd(status);
     }
     
   fn_return:
@@ -2451,7 +2524,7 @@ static int mpig_cm_vmpi_adi3_iprobe(
 	int vstatus_source = mpig_vmpi_status_get_source(&vstatus);
 	int vstatus_tag = mpig_vmpi_status_get_tag(&vstatus);
 
-	MPIG_Assert(vstatus_source < mpig_cm_vmpi_comm_get_remote_vsize(comm));
+	MPIU_Assert(vstatus_source < mpig_cm_vmpi_comm_get_remote_vsize(comm));
 	    
 	vrc = mpig_vmpi_get_count(&vstatus, MPIG_VMPI_BYTE, &count);
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Get_count", &mpi_errno);
@@ -2459,9 +2532,9 @@ static int mpig_cm_vmpi_adi3_iprobe(
 	status->MPI_SOURCE = (vstatus_source >= 0) ? mpig_cm_vmpi_comm_get_remote_mrank(comm, vstatus_source) : MPI_UNDEFINED;
 	status->MPI_TAG = (vstatus_tag >= 0) ? vstatus_tag : MPI_UNDEFINED;
 	/* NOTE: MPI_ERROR must not be set except by the MPI_Test/Wait routines when MPI_ERR_IN_STATUS is to be returned. */
-	status->count = count;
 	status->cancelled = FALSE;
-	/* status->mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+	status->count = count;
+        mpig_status_copy_my_dfd(status);
     }
     
     *found_p = vfound;
@@ -2588,10 +2661,10 @@ int mpig_cm_vmpi_comm_dup_hook(MPID_Comm * const orig_comm, MPID_Comm * const ne
 
     mpig_cm_vmpi_comm_construct(new_comm);
     
-    if (mpig_cm_vmpi_comm_get_remote_vsize(orig_comm) > 0)
+    if (orig_comm->comm_kind == MPID_INTRACOMM)
     {
-	if (orig_comm->comm_kind == MPID_INTRACOMM)
-	{
+        if (mpig_cm_vmpi_comm_get_remote_vsize(orig_comm) > 0)
+        {
 	    mpig_cm_vmpi_comm_set_remote_vsize(new_comm, mpig_cm_vmpi_comm_get_remote_vsize(orig_comm));
 	
 	    /*
@@ -2641,28 +2714,30 @@ int mpig_cm_vmpi_comm_dup_hook(MPID_Comm * const orig_comm, MPID_Comm * const ne
 	    /* NOTE: ctxoff is used by the error handling code to determine how many communicators need to be freed.  therefore, it
 	       is important that it ctxoff not be altered after this point. */
 	}
-	else
-	{
-	    mpi_errno = mpig_cm_vmpi_intercomm_create_hook(orig_comm->local_comm, new_comm);
-	    if (mpi_errno != MPI_SUCCESS) goto error_intercomm_dup;
-	}
+    }
+    else
+    {
+        mpi_errno = mpig_cm_vmpi_intercomm_create_hook(orig_comm->local_comm, new_comm);
+        if (mpi_errno != MPI_SUCCESS) goto error_intercomm_dup;
+        
+#       if 0
+        {
+            /*
+             * if the new communicator is an intercommunicator, then construct a local communicator for the collective operations
+             *
+             * NOTE: this is only needed if the vendor MPI supports the duplication of intercommunicators; otherwise, the
+             * creation of the local communicator for collective operations in handled by the
+             * mpig_cm_vmpi_intercomm_create_hook().
+             */
+            if (orig_comm->comm_kind == MPID_INTERCOMM)
+            {
+                mpi_errno = mpig_cm_vmpi_comm_construct_localcomm(orig_comm->local_comm, new_comm, mpig_cm_vmpi_comm_dup_hook);
+                if (mpi_errno) goto error_construct_localcomm;
+            }
+        }
+#       endif
     }
 
-#   if 0
-    {
-	/*
-	 * if the new communicator is an intercommunicator, then construct a local communicator for the collective operations
-	 *
-	 * NOTE: this is only needed if the vendor MPI supports the duplication of intercommunicators; otherwise, teh creation o
-	 * fhte local communicator for collective operations in handled by the mpig_cm_vmpi_intercomm_create_hook().
-	 */
-	if (orig_comm->comm_kind == MPID_INTERCOMM)
-	{
-	    mpi_errno = mpig_cm_vmpi_comm_construct_localcomm(orig_comm->local_comm, new_comm, mpig_cm_vmpi_comm_dup_hook);
-	    if (mpi_errno) goto error_construct_localcomm;
-	}
-    }
-#   endif
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: orig_comm=" MPIG_HANDLE_FMT ", orig_commp="
@@ -4045,6 +4120,9 @@ int mpig_cm_vmpi_type_free_hook(MPID_Datatype * const dtp)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "entering: dt=" MPIG_HANDLE_FMT ", dtp=" MPIG_PTR_FMT,
 	dtp->handle, MPIG_PTR_CAST(dtp)));
 
+    /* if the CM has already been finalized, then ignore the request to free types */
+    if (mpig_cm_vmpi_finalized) goto fn_return;
+    
     if (mpig_vmpi_datatype_is_null(mpig_cm_vmpi_dtp_get_vdt(dtp)) == FALSE)
     {
         MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "calling MPIG_Type_free: vdt=" MPIG_VMPI_DATATYPE_FMT,
@@ -4061,6 +4139,7 @@ int mpig_cm_vmpi_type_free_hook(MPID_Datatype * const dtp)
         MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "VMPI datatype is NULL, likely a result of a previous creation failure."));
     }
 
+  fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "exiting: dt=" MPIG_HANDLE_FMT ", dtp=" MPIG_PTR_FMT
 	", mpi_errno=" MPIG_ERRNO_FMT, dtp->handle, MPIG_PTR_CAST(dtp), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_type_free_hook);
@@ -4108,7 +4187,7 @@ int mpig_cm_vmpi_iprobe_any_source(int tag, MPID_Comm * comm, int ctxoff, bool_t
 	int vstatus_source = mpig_vmpi_status_get_source(&vstatus);
 	int vstatus_tag = mpig_vmpi_status_get_tag(&vstatus);
 
-	MPIG_Assert(vstatus_source < mpig_cm_vmpi_comm_get_remote_vsize(comm));
+	MPIU_Assert(vstatus_source < mpig_cm_vmpi_comm_get_remote_vsize(comm));
 	    
 	vrc = mpig_vmpi_get_count(&vstatus, MPIG_VMPI_BYTE, &count);
 	MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Get_count", &mpi_errno);
@@ -4116,9 +4195,9 @@ int mpig_cm_vmpi_iprobe_any_source(int tag, MPID_Comm * comm, int ctxoff, bool_t
 	status->MPI_SOURCE = (vstatus_source >= 0) ? mpig_cm_vmpi_comm_get_remote_mrank(comm, vstatus_source) : MPI_UNDEFINED;
 	status->MPI_TAG = (vstatus_tag >= 0) ? vstatus_tag : MPI_UNDEFINED;
 	/* NOTE: MPI_ERROR must not be set except by the MPI_Test/Wait routines when MPI_ERR_IN_STATUS is to be returned. */
-	status->count = count;
 	status->cancelled = FALSE;
-	/* status->mpig_dc_format = GLOBUS_DC_FORMAT_LOCAL; */
+	status->count = count;
+        mpig_status_copy_my_dfd(status);
     }
 
     *found_p = vfound;
@@ -4176,6 +4255,7 @@ int mpig_cm_vmpi_cancel_recv_any_source(MPID_Request * const ras_req, bool_t * c
 	mpig_request_set_vc(ras_req, mpig_cm_vmpi_ras_vc);
 	ras_req->cms.vmpi.cancelling = TRUE;
 
+#if FALSE
 	/* do a quick check to see if the request has already completed */
 	vrc_test = mpig_vmpi_test(mpig_cm_vmpi_request_get_vreq_ptr(ras_req), &vcompleted, &vstatus);
 	if (vrc_test && mpig_vmpi_request_is_null(mpig_cm_vmpi_request_get_vreq(ras_req)) == FALSE)
@@ -4201,8 +4281,8 @@ int mpig_cm_vmpi_cancel_recv_any_source(MPID_Request * const ras_req, bool_t * c
 		mpig_cm_vmpi_request_status_vtom(ras_req, &vstatus, vrc_test);
 		mpig_request_complete(ras_req, &ras_req_completed);
 		/* mpig_pe_end_ras_op() should only be called when the request wasn't cancelled.  in the case where it is
-		   cancelled, mpig_adi3_cancel_recv() will make the call, and it must do so since it doesn't know that vendor MPI
-		   exists. */
+		   cancelled, mpig_cm_other_adi3_cancel_recv() will make the call, and it must do so since it doesn't know that
+		   vendor MPI exists. */
 		mpig_pe_end_ras_op();
 	    }
 	    else
@@ -4210,6 +4290,7 @@ int mpig_cm_vmpi_cancel_recv_any_source(MPID_Request * const ras_req, bool_t * c
 		cancelled = TRUE;
 	    }
 	}
+#endif
     }
     
     *cancelled_p = cancelled;
@@ -4237,6 +4318,8 @@ int mpig_cm_vmpi_register_recv_any_source(const mpig_msg_op_params_t * const ras
     MPID_Request * const ras_req)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    void * vbuf = ras_params->buf;
+    int vcnt = ras_params->cnt;
     mpig_vmpi_datatype_t vdt;
     const int vtag = mpig_cm_vmpi_tag_get_vtag(ras_params->tag);
     const mpig_vmpi_comm_t vcomm = mpig_cm_vmpi_comm_get_vcomm(ras_params->comm, ras_params->ctxoff);
@@ -4257,6 +4340,15 @@ int mpig_cm_vmpi_register_recv_any_source(const mpig_msg_op_params_t * const ras
     MPIU_Assert(mpig_cm_vmpi_comm_has_remote_vprocs(ras_params->comm));
     MPIU_Assert(mpig_cm_vmpi_thread_is_main());
     
+    /* if the message is to be received as packed data, then we must add the pack header to the beginning of the message and
+       adjust the buffer and count appropriately. */
+    if (ras_params->dt == MPI_PACKED)
+    {
+        mpig_dfd_pack_header(&mpig_process.my_dfd, ras_params->buf);
+        vbuf = (char *) vbuf + MPIG_PACK_HEADER_SIZE;
+        vcnt -= MPIG_PACK_HEADER_SIZE;
+    }
+    
     mpig_cm_vmpi_datatype_get_vdt(ras_params->dt, &vdt);
     
     /* initialize the vendor MPI structure within the supplied request */
@@ -4264,7 +4356,7 @@ int mpig_cm_vmpi_register_recv_any_source(const mpig_msg_op_params_t * const ras
 
     /* start the nonblocking receive */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "starting a nonblocking recv"));
-    vrc = mpig_vmpi_irecv(ras_params->buf, ras_params->cnt, vdt, MPIG_VMPI_ANY_SOURCE, vtag, vcomm,
+    vrc = mpig_vmpi_irecv(vbuf, vcnt, vdt, MPIG_VMPI_ANY_SOURCE, vtag, vcomm,
 	mpig_cm_vmpi_request_get_vreq_ptr(ras_req));
     MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Irecv", &mpi_errno);
 
@@ -4341,7 +4433,7 @@ int mpig_cm_vmpi_unregister_recv_any_source(mpig_recvq_ras_op_t * const ras_op)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     MPID_Request * ras_req = mpig_recvq_ras_op_get_rreq(ras_op);
-    int vcompleted;
+    int vcompleted = FALSE;
     int vcancelled;
     mpig_vmpi_status_t vstatus;
     int vrc;

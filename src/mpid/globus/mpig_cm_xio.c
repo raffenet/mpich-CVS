@@ -36,7 +36,7 @@
 #endif
 
 #if !defined(MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE)
-#define MPIG_CM_XIO_DATA_TRUNCATION_BUFFER_SIZE (16*1024)
+#define MPIG_CM_XIO_DATA_DRAIN_BUFFER_SIZE (256*1024)
 #endif
 
 #if !defined(MPIG_CM_XIO_MAX_ACCEPT_ERRORS)
@@ -46,8 +46,8 @@
 /*
  *internal parameters
  */
-#define MPIG_CM_XIO_PROTO_VERSION 1
-#define MPIG_CM_XIO_CONNACC_PROTO_VERSION 1
+#define MPIG_CM_XIO_PROTO_VERSION 2
+#define MPIG_CM_XIO_CONNACC_PROTO_VERSION 2
 #define MPIG_CM_XIO_PROTO_CONNECT_MAGIC "MPIG-CM-XIO-SHAKE-MAGIC-8-BALL\n"
 #define MPIG_CM_XIO_PROTO_ACCEPT_MAGIC "MPIG-CM-XIO-MAGIC-8-BALL-SAYS-YES\n"
 /**********************************************************************************************************************************
@@ -70,7 +70,6 @@ static int mpig_cm_xio_module_init(void);
 static int mpig_cm_xio_module_finalize(void);
 
 static const char * mpig_cm_xio_msg_type_get_string(mpig_cm_xio_msg_type_t msg_type);
-
 
 #define mpig_cm_xio_mutex_construct()	mpig_mutex_construct(&mpig_cm_xio_mutex)
 #define mpig_cm_xio_mutex_destruct()	mpig_mutex_construct(&mpig_cm_xio_mutex)
@@ -289,7 +288,7 @@ static int mpig_cm_xio_module_finalize(void)
 {																\
     /* if the request was posted as a receive any source, then do not decrement the XIO active op count since it was never	\
        incremented */														\
-    if (was_ras_req_)                                                                                                           \
+    if (was_ras_req_ == FALSE)                                                                                                  \
     {																\
 	mpig_cm_xio_pe_info.active_ops -= 1;											\
 	mpig_pe_end_op();													\

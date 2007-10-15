@@ -724,7 +724,7 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
  * mpid_Comm_disconnect()
  */
 #undef FUNCNAME
-#define FUNCNAME MPID_Comm_connect
+#define FUNCNAME MPID_Comm_disconnect
 int MPID_Comm_disconnect(MPID_Comm * const comm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);

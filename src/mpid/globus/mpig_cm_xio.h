@@ -70,10 +70,6 @@ struct mpig_cm_xio_vc_cmu					\
     /* contact string for remote process */			\
     char * contact_string;					\
 								\
-    /* data format of remote machine */				\
-    int gdc_df;							\
-    mpig_endian_t endian;					\
-								\
     /* handle to the XIO connection */				\
     globus_xio_handle_t handle;					\
 								\
@@ -142,11 +138,6 @@ struct mpig_cm_xio_request_cmu													\
 																\
     /* space for a message header, and perhaps a small amount of data */							\
     MPIG_DATABUF_DECL(msgbuf, MPIG_CM_XIO_REQUEST_MSGBUF_SIZE);									\
-																\
-    /* format of the message data in databuf */											\
-    char * src_ctype_map;                                                                                                       \
-    char * src_sizeof_ctypes;                                                                                                   \
-    int gdc_df;															\
 																\
     /* temporary data storage used for things like unexpected eager messages and packing/unpacking buffers */			\
     struct mpig_databuf * databuf;												\
@@ -282,7 +273,7 @@ typedef enum mpig_cm_xio_req_state
     MPIG_CM_XIO_REQ_STATE_RECV_UNEXP_DATA_RREQ_POSTED,
     MPIG_CM_XIO_REQ_STATE_RECV_UNEXP_DATA_RREQ_ERROR,
     MPIG_CM_XIO_REQ_STATE_RECV_UNEXP_DATA_SREQ_CANCELLED,
-    MPIG_CM_XIO_REQ_STATE_RECV_UNEXP_RSEND_DATA,
+    MPIG_CM_XIO_REQ_STATE_RECV_DRAIN_DATA,
     MPIG_CM_XIO_REQ_STATE_WAIT_RNDV_DATA,
     MPIG_CM_XIO_REQ_STATE_RECV_COMPLETE,
     MPIG_CM_XIO_REQ_STATE_LAST
@@ -300,7 +291,8 @@ typedef enum mpig_cm_xio_app_buf_type
     MPIG_CM_XIO_APP_BUF_TYPE_CONTIG,
     MPIG_CM_XIO_APP_BUF_TYPE_DENSE,
     MPIG_CM_XIO_APP_BUF_TYPE_SPARSE,
-    MPIG_CM_XIO_APP_BUF_TYPE_FOREIGN,
+    /* MPIG_CM_XIO_APP_BUF_TYPE_HETERO, */
+    MPIG_CM_XIO_APP_BUF_TYPE_DRAIN,
     MPIG_CM_XIO_APP_BUF_TYPE_LAST
 }
 mpig_cm_xio_app_buf_type_t;

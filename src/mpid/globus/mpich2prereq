@@ -319,6 +319,30 @@ if test -s ${MPIG_SOURCE_DIR}/mpich2prereq-${mpig_with_grid_pkg} ; then
 fi
 
 #
+# contruct a data format descriptor to precisely identify the format of all data types on a machine
+#
+MPIG_DATATYPE_MAX_BASIC_TYPES=55
+export MPIG_DATATYPE_MAX_BASIC_TYPES
+MPIG_MAX_CTYPES=18
+export MPIG_MAX_CTYPES
+MPIG_DATA_FORMAT_DESC_STRUCT="struct {"
+MPIG_DATA_FORMAT_DESC_STRUCT="${MPIG_DATA_FORMAT_DESC_STRUCT} char hetero;"
+MPIG_DATA_FORMAT_DESC_STRUCT="${MPIG_DATA_FORMAT_DESC_STRUCT} char endian;"
+MPIG_DATA_FORMAT_DESC_STRUCT="${MPIG_DATA_FORMAT_DESC_STRUCT} char mpi_ctype_map[${MPIG_DATATYPE_MAX_BASIC_TYPES}];"
+MPIG_DATA_FORMAT_DESC_STRUCT="${MPIG_DATA_FORMAT_DESC_STRUCT} char sizeof_ctypes[${MPIG_MAX_CTYPES}];"
+if test -n "${MPIG_GMW_DATA_FORMAT_DESC_STRUCT}"; then
+    MPIG_DATA_FORMAT_DESC_STRUCT="${MPIG_DATA_FORMAT_DESC_STRUCT} ${MPIG_GMW_DATA_FORMAT_DESC_STRUCT}"
+fi
+MPIG_DATA_FORMAT_DESC_STRUCT="${MPIG_DATA_FORMAT_DESC_STRUCT} }"
+export MPIG_DATA_FORMAT_DESC_STRUCT
+
+#
+# add a data format descriptor to MPI_Status.  this descriptor will contain the source data format of the received message,
+# allowing the value of the count field to be evaluated int that context
+#
+EXTRA_STATUS_DECL="${EXTRA_STATUS_DECL} ${MPIG_DATA_FORMAT_DESC_STRUCT} mpig_src_dfd;"
+
+#
 # compiler information should have been set by the grid middleware package script.  the typical compiler environment variables
 # are cleared here to prevent unintentional side effects within the top-level configure script and other configure scripts it
 # runs.  the variables must also be removed from the configure arguments variable to prevent the initial values from being

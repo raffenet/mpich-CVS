@@ -6,6 +6,13 @@
  * See COPYRIGHT.txt in the src/mpid/globus directory.
  */
 
+/* NOTE: MPIG_FAKING_HETERO should be set to FALSE for normal operations */
+#if TRUE || !defined(MPID_HAS_HETERO)
+#define MPIG_FAKING_HETERO (FALSE)
+#else
+#define MPIG_FAKING_HETERO (TRUE)
+#endif
+
 #if !defined(MPICH2_MPIDIMPL_H_INCLUDED)
 #define MPICH2_MPIDIMPL_H_INCLUDED
 
@@ -59,13 +66,6 @@ int gethostname(char *name, size_t len);
 #if defined(HAVE_GLOBUS_COMMON_MODULE)
 #define mpig_get_globus_error_msg(grc_) (globus_error_print_chain(globus_error_peek(grc_)))
 #endif
-/**********************************************************************************************************************************
-						       BEGIN PT2PT SECTION
-**********************************************************************************************************************************/
-int mpig_adi3_cancel_recv(MPID_Request * rreq);
-/**********************************************************************************************************************************
-							END PT2PT SECTION
-**********************************************************************************************************************************/
 
 
 /**********************************************************************************************************************************
@@ -145,38 +145,6 @@ int mpig_datatype_add_info_to_bc(mpig_bc_t * bc);
 
 int mpig_datatype_extract_info_from_bc(mpig_vc_t * vc);
 
-mpig_ctype_t mpig_datatype_get_remote_ctype(const mpig_vc_t * vc, const MPID_Datatype dt);
-
-mpig_ctype_t mpig_datatype_get_local_ctype(const MPI_Datatype dt);
-
-int mpig_datatype_get_local_sizeof_ctype(mpig_ctype_t ctype);
-
-#if defined(HAVE_GLOBUS_DC_MODULE)
-void mpig_segment_globus_dc_unpack(struct DLOOP_Segment * segp, DLOOP_Offset first, DLOOP_Offset * lastp,
-    DLOOP_Buffer unpack_buffer, char * src_ctype_map, char * src_sizeof_ctypes, int src_dc_format);
-#endif
-
-#define mpig_datatype_get_ctype(dt_, ctype_map_p_) \
-    ((mpig_ctype_t) (ctype_map_p_)[MPID_Datatype_get_basic_id(dt_)])
-
-#define mpig_ctype_get_sizeof(ctype_, sizeof_ctypes_p_) \
-    ((int) (sizeof_ctypes_p_)[ctype_])
-
-#define mpig_datatype_get_remote_ctype(dt_, vc_) \
-    (mpig_datatype_get_ctype((dt_), mpig_vc_get_ctype_map_ptr(vc_)))
-
-#define mpig_ctype_get_remote_sizeof(ctype_, vc_) \
-    (mpig_ctype_get_sizeof((ctype_), mpig_vc_get_sizeof_ctypes_ptr(vc_)))
-
-#define mpig_datatype_get_local_ctype(dt_) \
-    (mpig_datatype_get_ctype((dt_), mpig_process.dt_ctype_map))
-
-#define mpig_ctype_get_local_sizeof(ctype_) \
-    (mpig_ctype_get_sizeof((ctype_), mpig_process.dt_sizeof_ctypes))
-
-#define mpig_datatype_get_num_ctypes(dt_) \
-    ((int) mpig_process.dt_num_ctypes[MPID_Datatype_get_basic_id(dt_)])
-
 #define mpig_datatype_get_local_size(dt_, dt_size_p_)                           \
 {                                                                               \
     if (HANDLE_GET_KIND(dt_) == HANDLE_KIND_BUILTIN)                            \
@@ -219,6 +187,126 @@ void mpig_segment_globus_dc_unpack(struct DLOOP_Segment * segp, DLOOP_Offset fir
 			 (MPIU_Size_t) *(dt_size_), (MPIU_Size_t) *(dt_nblks_), (MPI_Aint) *(dt_true_lb_)));		\
     }															\
 }
+
+#define mpig_datatype_get_num_ctypes(dt_) (mpig_process.dt_num_ctypes[MPID_Datatype_get_basic_id(dt_)])
+
+
+extern const char * const mpig_ctype_strings[];
+
+#define mpig_ctype_get_string(ctype_) \
+    (((ctype_) >= MPIG_CTYPE_INVALID && (ctype_) <= MPIG_CTYPE_LAST) ? mpig_ctype_strings[ctype_] : "UNKNOWN")
+
+
+#define MPIG_PACK_HEADER_POS_ENDIAN (0)
+#define MPIG_PACK_HEADER_POS_CTYPE_MAP (MPIG_PACK_HEADER_POS_ENDIAN + 1)
+#define MPIG_PACK_HEADER_POS_SIZEOF_CTYPES (MPIG_PACK_HEADER_POS_CTYPE_MAP + MPIG_DATATYPE_MAX_BASIC_TYPES)
+#define MPIG_PACK_HEADER_POS_GDC_FORMAT (MPIG_PACK_HEADER_POS_SIZEOF_CTYPES + MPIG_CTYPE_LAST)
+
+#define mpig_dfd_get_mpi_ctype_mapping(dfd_, dt_) ((mpig_ctype_t) (dfd_)->mpi_ctype_map[MPID_Datatype_get_basic_id(dt_)])
+
+#define mpig_dfd_get_sizeof_ctype(dfd_, ctype_) ((int) (dfd_)->sizeof_ctypes[ctype_])
+
+#define mpig_dfd_set_endian(dfd_, endian_)      \
+{                                               \
+    (dfd_)->endian = (char) (endian_);          \
+}
+
+#define mpig_dfd_get_endian(dfd_) ((mpig_endian_t) (dfd_)->endian)
+
+#define mpig_dfd_set_gdc_format(dfd_, gdc_format_)      \
+{                                                       \
+    (dfd_)->gdc_format = (char) (gdc_format_);          \
+}
+
+#define mpig_dfd_get_gdc_format(dfd_) ((int) (dfd_)->gdc_format)
+
+/* mpig_dfd_compare() returns a non-zero value if the DFDs are equivalent, and zero if they are not */
+#define mpig_dfd_compare(dfd1_, dfd2_)                                                                  \
+    ((dfd1_)->endian == (dfd2_)->endian && (dfd1_)->gdc_format == (dfd2_)->gdc_format &&                \
+        memcmp((dfd1_)->mpi_ctype_map, (dfd2_)->mpi_ctype_map, MPIG_DATATYPE_MAX_BASIC_TYPES) == 0 &&   \
+        memcmp((dfd1_)->sizeof_ctypes, (dfd2_)->sizeof_ctypes, MPIG_CTYPE_LAST) == 0)
+
+#if MPIG_FAKING_HETERO
+#define mpig_dfd_is_hetero(dfd_) (TRUE)
+#else
+#define mpig_dfd_is_hetero(dfd_) ((dfd_)->hetero)
+#endif
+
+#if defined(MPID_HAS_HETERO)
+#define mpig_dfd_unpack_header(dfd_, src_buf_)                                                                          \
+{                                                                                                                       \
+    (dfd_)->endian = ((char * )(src_buf_))[MPIG_PACK_HEADER_POS_ENDIAN];                                                \
+    memcpy((dfd_)->mpi_ctype_map, (char *)(src_buf_) + MPIG_PACK_HEADER_POS_CTYPE_MAP, MPIG_DATATYPE_MAX_BASIC_TYPES);  \
+    memcpy((dfd_)->sizeof_ctypes, (char *)(src_buf_) + MPIG_PACK_HEADER_POS_SIZEOF_CTYPES, MPIG_CTYPE_LAST);            \
+    (dfd_)->gdc_format = ((char *)(src_buf_))[MPIG_PACK_HEADER_POS_GDC_FORMAT];                                         \
+                                                                                                                        \
+    (dfd_)->hetero = mpig_dfd_compare((dfd_), &mpig_process.my_dfd) ? FALSE : TRUE;                                     \
+}
+
+#define mpig_dfd_pack_header(dfd_, dest_buf_)                                                                           \
+{                                                                                                                       \
+    ((char * )(dest_buf_))[MPIG_PACK_HEADER_POS_ENDIAN] = (dfd_)->endian;                                               \
+    memcpy((char *)(dest_buf_) + MPIG_PACK_HEADER_POS_CTYPE_MAP, (dfd_)->mpi_ctype_map, MPIG_DATATYPE_MAX_BASIC_TYPES); \
+    memcpy((char *)(dest_buf_) + MPIG_PACK_HEADER_POS_SIZEOF_CTYPES, (dfd_)->sizeof_ctypes, MPIG_CTYPE_LAST);           \
+    ((char *)(dest_buf_))[MPIG_PACK_HEADER_POS_GDC_FORMAT] = (dfd_)->gdc_format;                                        \
+}
+#else /* !defined(MPID_HAS_HETERO) */
+#define mpig_dfd_unpack_header(dfd_, src_buf_)                          \
+{                                                                       \
+    *(mpig_data_format_descriptor_t *)(dfd_) = mpig_process.my_dfd;     \
+}
+
+#define mpig_dfd_pack_header(dfd_, dest_buf_)   \
+{                                               \
+}
+#endif /* if/else defined(MPID_HAS_HETERO) */
+
+
+#if defined(MPID_HAS_HETERO)
+/* mpig_segment_unpack_piece_params
+ *
+ * this structure is used to pass internal information into and out of our segment processing functions as they are called by the
+ * MPID segment processing subsystem.
+ *
+ * NOTE: src_ctype_map and src_sizeof_ctype may be different than those of the last processs to send the message.  this can occur
+ * when a packed message originated at a machine having a different format than that of the last process to forward the message.
+ */
+typedef struct mpig_segment_piece_params
+{
+    char * src_buffer;
+    const mpig_data_format_descriptor_t * src_dfd;
+}
+mpig_segment_piece_params_t ;
+
+MPI_Aint mpig_segment_sizeof_source_basic_datatype(MPI_Datatype dt, void * v_paramp);
+
+void mpig_segment_globus_dc_unpack(struct DLOOP_Segment * segp, const mpig_data_format_descriptor_t * dfd,
+    DLOOP_Offset first, DLOOP_Offset * lastp, DLOOP_Buffer unpack_buffer);
+
+#define mpig_segment_init(buf_, cnt_, dt_, dfd_, segp_) \
+    (MPID_Segment_init((buf_), (cnt_), (dt_), (segp_), \
+        mpig_dfd_is_hetero(dfd_) ? MPID_DATALOOP_HETEROGENEOUS : MPID_DATALOOP_HOMOGENEOUS))
+
+#define mpig_segment_unpack(segp_, dfd_, first_, last_p_, buf_)                         \
+{                                                                                       \
+    if (mpig_dfd_is_hetero(dfd_) == FALSE)                                              \
+    {                                                                                   \
+        MPID_Segment_unpack((segp_), (first_), (last_p_), (buf_));                      \
+    }                                                                                   \
+    else                                                                                \
+    {                                                                                   \
+        mpig_segment_globus_dc_unpack((segp_), (dfd_), (first_), (last_p_), (buf_));    \
+    }                                                                                   \
+}
+#else /* !defined(MPID_HAS_HETERO) */
+#define mpig_segment_init(buf_, cnt_, dt_, dfd_, segp_) \
+    (MPID_Segment_init((buf_), (cnt_), (dt_), (segp_), MPID_DATALOOP_HOMOGENEOUS))
+
+#define mpig_segment_unpack(segp_, dfd_, first_, last_p_, buf_) \
+{                                                               \
+    MPID_Segment_unpack((segp_), (first_), (last_p_), (buf_));  \
+}
+#endif /* if/else defined(MPID_HAS_HETERO) */
 /**********************************************************************************************************************************
 						      END DATATYPE SECTION
 **********************************************************************************************************************************/
@@ -339,6 +427,8 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 	MPIG_PTR_CAST((req_)->dev.buf), (req_)->dev.cnt, (req_)->dev.dt));						\
 }
 
+#define mpig_request_get_cnt(req_) ((req_)->dev.cnt)
+
 #define mpig_request_get_dt(req_) ((req_)->dev.dt)
 
 #define mpig_request_i_set_remote_req_id(req_, remote_req_id_)	\
@@ -418,6 +508,15 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 }
 
 #define mpig_request_get_vc(req_) ((req_)->dev.vc)
+
+#define mpig_request_get_dfd(req_) ((mpig_data_format_descriptor_t *) &(req_)->status.mpig_src_dfd)
+
+#define mpig_request_is_hetero(req_) (mpig_dfd_is_hetero(mpig_request_get_dfd(req_)))
+
+#define mpig_request_copy_vc_dfd(req_, vc_)     \
+{                                               \
+    *(mpig_request_get_dfd(req_)) = vc->dfd;    \
+}
 
 #define mpig_request_set_cm_destruct_fn(req_, fn_)	\
 {							\
@@ -652,147 +751,229 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
  * threads.
  */
 
+#define mpig_dc_put_int8(buf_, data_) mpig_dc_put_uint8((buf_), (data_))
+#define mpig_dc_putn_int8(buf_, data_, num_) mpig_dc_put_uint8((buf_), (data_), (num_))
+#define mpig_dc_get_int8(endian_, buf_, data_p_) mpig_dc_get_uint8((endian_), (buf_), (data_p_))
+#define mpig_dc_getn_int8(endian_, buf_, data_, num_) mpig_dc_getn_uint8((endian_), (buf_), (data_), (num_))
+#define mpig_dc_put_int16(buf_, data_) mpig_dc_put_uint16((buf_), (data_))
+#define mpig_dc_putn_int16(buf_, data_, num_) mpig_dc_put_uint16((buf_), (data_), (num_))
+#define mpig_dc_get_int16(endian_, buf_, data_p_) mpig_dc_get_uint16((endian_), (buf_), (data_p_))
+#define mpig_dc_getn_int16(endian_, buf_, data_, num_) mpig_dc_getn_uint16((endian_), (buf_), (data_), (num_))
 #define mpig_dc_put_int32(buf_, data_) mpig_dc_put_uint32((buf_), (data_))
 #define mpig_dc_putn_int32(buf_, data_, num_) mpig_dc_put_uint32((buf_), (data_), (num_))
 #define mpig_dc_get_int32(endian_, buf_, data_p_) mpig_dc_get_uint32((endian_), (buf_), (data_p_))
-#define mpig_dc_getn_int32(endian_, buf_, data_, num_) mpig_dc_get_uint32((endian_), (buf_, (data_), (num_))
+#define mpig_dc_getn_int32(endian_, buf_, data_, num_) mpig_dc_getn_uint32((endian_), (buf_), (data_), (num_))
 #define mpig_dc_put_int64(buf_, data_) mpig_dc_put_uint64((buf_), (data_))
 #define mpig_dc_putn_int64(buf_, data_, num_) mpig_dc_put_uint64((buf_), (data_), (num_))
 #define mpig_dc_get_int64(endian_, buf_, data_p_) mpig_dc_get_uint64((endian_), (buf_), (data_p_))
-#define mpig_dc_getn_int64(endian_, buf_, data_, num_) mpig_dc_get_uint64((endian_), (buf_), (data_), (num_))
+#define mpig_dc_getn_int64(endian_, buf_, data_, num_) mpig_dc_getn_uint64((endian_), (buf_), (data_), (num_))
 
-#define mpig_dc_put_uint32(buf_, data_)					\
-{									\
-    unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
-    unsigned char * mpig_dc_data__ = (unsigned char *) &(data_);	\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+#define mpig_dc_put_uint8(buf_, data_)                          \
+{                                                               \
+    *((unsigned char *) buf_) = (unsigned char) (data_);        \
 }
 
-#define mpig_dc_putn_uint32(buf_, data_, num_)			\
+#define mpig_dc_putn_uint8(buf_, data_p_, num_)         \
+{                                                       \
+    memcpy((void *)(buf_), (void *)(data_p_), (num_));  \
+}
+
+#define mpig_dc_get_uint8(endian_, buf_, data_p_)               \
+{                                                               \
+    *((unsigned char *) data_p_) = *((unsigned char *) buf_);   \
+}
+
+#define mpig_dc_getn_uint8(endian_, buf_, data_p_, num_)        \
+{                                                               \
+    memcpy((void *)(data_p_), (void *)(buf_), (num_));          \
+}
+
+#define mpig_dc_put_uint16(buf_, data_)                                         \
+{                                                                               \
+    unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);		\
+    unsigned char * restrict mpig_dc_data_p__ = (unsigned char *) &(data_);	\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+}
+
+#define mpig_dc_putn_uint16(buf_, data_p_, num_)                \
 {								\
-    memcpy((void *)(buf_), (void *)(data_), (num_) * 4);	\
+    memcpy((void *)(buf_), (void *)(data_p_), (num_) * 2);	\
 }
 
-#define mpig_dc_get_uint32(endian_, buf_, data_p_)				\
-{										\
-    if ((endian_) == MPIG_MY_ENDIAN)						\
-    {										\
-	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
-	unsigned char * mpig_dc_data_p__ = (unsigned char *)(data_p_);		\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-    }										\
-    else									\
-    {										\
-	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
-	unsigned char * mpig_dc_data_p__ = (unsigned char *)(data_p_) + 3;	\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-    }										\
+#define mpig_dc_get_uint16(endian_, buf_, data_p_)                                      \
+{                                                                                       \
+    if ((endian_) == MPIG_MY_ENDIAN)                                                    \
+    {                                                                                   \
+	unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);		\
+	unsigned char * restrict mpig_dc_data_p__ = (unsigned char *)(data_p_);		\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+    }                                                                                   \
+    else                                                                                \
+    {                                                                                   \
+	unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);		\
+	unsigned char * restrict mpig_dc_data_p__ = (unsigned char *)(data_p_) + 1;	\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+    }                                                                                   \
 }
 
-#define mpig_dc_getn_uint32(endian_, buf_, data_, num_)			\
-{									\
-    if ((endian_) == MPIG_MY_ENDIAN)					\
-    {									\
-	memcpy((void *)(buf_), (void *)(data_), (num_) * 4);		\
-    }									\
-    else								\
-    {									\
-	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);	\
-	unsigned char * mpig_dc_data__ = (unsigned char *)(data_) + 3;	\
-									\
-	for (n__ = 0; n__ < (num_); n__++)				\
-	{								\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    mpig_dc_data__ += 8;					\
-	}								\
-    }									\
+#define mpig_dc_getn_uint16(endian_, buf_, data_p_, num_)                               \
+{                                                                                       \
+    if ((endian_) == MPIG_MY_ENDIAN)                                                    \
+    {                                                                                   \
+	memcpy((void *)(buf_), (void *)(data_p_), (num_) * 2);                          \
+    }                                                                                   \
+    else                                                                                \
+    {                                                                                   \
+	unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);               \
+	unsigned char * restrict mpig_dc_data_p__ = (unsigned char *)(data_p_) + 1;	\
+        MPIU_Size_t mpig_dc_n__;                                                        \
+                                                                                        \
+	for (mpig_dc_n__ = 0; mpig_dc_n__ < (num_); mpig_dc_n__++)                      \
+	{                                                                               \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    mpig_dc_data_p__ += 4;                                                      \
+	}                                                                               \
+    }                                                                                   \
 }
 
-#define mpig_dc_put_uint64(buf_, data_)					\
-{									\
-    unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
-    unsigned char * mpig_dc_data__ = (unsigned char *) &(data_);	\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
-    *(mpig_dc_buf__)++ = *(mpig_dc_data__)++;				\
+#define mpig_dc_put_uint32(buf_, data_)                                         \
+{                                                                               \
+    unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);		\
+    unsigned char * restrict mpig_dc_data_p__ = (unsigned char *) &(data_);	\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
 }
 
-#define mpig_dc_putn_uint64(buf_, data_, num_)			\
+#define mpig_dc_putn_uint32(buf_, data_p_, num_)                \
 {								\
-    memcpy((void *)(buf_), (void *)(data_), (num_) * 8);	\
+    memcpy((void *)(buf_), (void *)(data_p_), (num_) * 4);	\
 }
 
-#define mpig_dc_get_uint64(endian_, buf_, data_p_)				\
-{										\
-    if ((endian_) == MPIG_MY_ENDIAN)						\
-    {										\
-	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
-	unsigned char * mpig_dc_data_p__ = (unsigned char *)(data_p_);		\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;				\
-    }										\
-    else									\
-    {										\
-	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);		\
-	unsigned char * mpig_dc_data_p__ = (unsigned char *)(data_p_) + 7;	\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;				\
-    }										\
+#define mpig_dc_get_uint32(endian_, buf_, data_p_)                                      \
+{                                                                                       \
+    if ((endian_) == MPIG_MY_ENDIAN)                                                    \
+    {                                                                                   \
+	unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);		\
+	unsigned char * restrict mpig_dc_data_p__ = (unsigned char *)(data_p_);		\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+    }                                                                                   \
+    else                                                                                \
+    {                                                                                   \
+	unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);		\
+	unsigned char * restrict mpig_dc_data_p__ = (unsigned char *)(data_p_) + 3;	\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+    }                                                                                   \
 }
 
-#define mpig_dc_getn_uint64(endian_, buf_, data_, num_)			\
-{									\
-    if ((endian_) == MPIG_MY_ENDIAN)					\
-    {									\
-	memcpy((void *)(buf_), (void *)(data_), (num_) * 8);		\
-    }									\
-    else								\
-    {									\
-	unsigned char * mpig_dc_buf__ = (unsigned char *)(buf_);	\
-	unsigned char * mpig_dc_data__ = (unsigned char *)(data_p) + 7;	\
-									\
-	for (n__ = 0; n__ < (num_); n__++)				\
-	{								\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    *(mpig_dc_data__)-- = *(mpig_dc_buf__)++;			\
-	    mpig_dc_data__ += 16;					\
-	}								\
-    }									\
+#define mpig_dc_getn_uint32(endian_, buf_, data_p_, num_)                               \
+{                                                                                       \
+    if ((endian_) == MPIG_MY_ENDIAN)                                                    \
+    {                                                                                   \
+	memcpy((void *)(buf_), (void *)(data_p_), (num_) * 4);                          \
+    }                                                                                   \
+    else                                                                                \
+    {                                                                                   \
+	unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);               \
+	unsigned char * restrict mpig_dc_data_p__ = (unsigned char *)(data_p_) + 3;	\
+        MPIU_Size_t mpig_dc_n__;                                                        \
+                                                                                        \
+	for (mpig_dc_n__ = 0; mpig_dc_n__ < (num_); mpig_dc_n__++)                      \
+	{                                                                               \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    mpig_dc_data_p__ += 8;                                                      \
+	}                                                                               \
+    }                                                                                   \
+}
+
+#define mpig_dc_put_uint64(buf_, data_)                                         \
+{                                                                               \
+    unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);		\
+    unsigned char * restrict mpig_dc_data_p__ = (unsigned char *) &(data_);	\
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+    *(mpig_dc_buf__)++ = *(mpig_dc_data_p__)++;                                 \
+}
+
+#define mpig_dc_putn_uint64(buf_, data_p_, num_)                \
+{								\
+    memcpy((void *)(buf_), (void *)(data_p_), (num_) * 8);	\
+}
+
+#define mpig_dc_get_uint64(endian_, buf_, data_p_)                                      \
+{                                                                                       \
+    if ((endian_) == MPIG_MY_ENDIAN)                                                    \
+    {                                                                                   \
+	unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);		\
+	unsigned char * restrict mpig_dc_data_p__ = (unsigned char *)(data_p_);		\
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)++ = *(mpig_dc_buf__)++;                                     \
+    }                                                                                   \
+    else                                                                                \
+    {                                                                                   \
+	unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);		\
+	unsigned char * restrict mpig_dc_data_p__ = (unsigned char *)(data_p_) + 7;	\
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+	*(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                     \
+    }                                                                                   \
+}
+
+#define mpig_dc_getn_uint64(endian_, buf_, data_p_, num_)                               \
+{                                                                                       \
+    if ((endian_) == MPIG_MY_ENDIAN)                                                    \
+    {                                                                                   \
+	memcpy((void *)(buf_), (void *)(data_p_), (num_) * 8);                          \
+    }                                                                                   \
+    else                                                                                \
+    {                                                                                   \
+	unsigned char * restrict mpig_dc_buf__ = (unsigned char *)(buf_);               \
+	unsigned char * restrict mpig_dc_data_p__ = (unsigned char *)(data_p_) + 7;	\
+        MPIU_Size_t mpig_dc_n__;                                                        \
+                                                                                        \
+	for (mpig_dc_n__ = 0; mpig_dc_n__ < (num_); mpig_dc_n__++)                      \
+	{                                                                               \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    *(mpig_dc_data_p__)-- = *(mpig_dc_buf__)++;                                 \
+	    mpig_dc_data_p__ += 16;                                                     \
+	}                                                                               \
+    }                                                                                   \
 }
 /**********************************************************************************************************************************
 						       END DATA CONVERSION
@@ -813,7 +994,7 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
  * releases to guarantee that up-to-date data and internal state is visible at the appropriate times.  (see additional notes in
  * sections for other objects concerning issues with super lazy release consistent systems like Treadmarks.)
  */
-MPIU_Size_t mpig_iov_unpack_fn(const void * buf, MPIU_Size_t buf_size, mpig_iov_t * iov);
+MPIU_Size_t mpig_iov_unpack_buffer_fn(mpig_iov_t * iov, const void * buf, MPIU_Size_t buf_size);
 
 #define mpig_iov_construct(iov_, max_entries_)			\
 {								\
@@ -895,7 +1076,7 @@ MPIU_Size_t mpig_iov_unpack_fn(const void * buf, MPIU_Size_t buf_size, mpig_iov_
 
 #define mpig_iov_get_num_bytes(iov_) (((mpig_iov_t *)(iov_))->num_bytes)
 
-#define mpig_iov_unpack(buf_, nbytes_, iov_) mpig_iov_unpack_fn((buf_), (nbytes_), (mpig_iov_t *)(iov_));
+#define mpig_iov_unpack_buffer(iov_, buf_, nbytes_) mpig_iov_unpack_buffer_fn((mpig_iov_t *)(iov_), (buf_), (nbytes_));
 /**********************************************************************************************************************************
 						     END I/O VECTOR SECTION
 **********************************************************************************************************************************/
@@ -1204,21 +1385,23 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
  * temp VC was completely initialized.  we have chosen to assume that none of the the systems upon which MPIG will run have that
  * lazy of a RC model.
  */
-#define mpig_vc_construct(vc_)				\
-{							\
-    mpig_vc_mutex_construct(vc_);			\
-    mpig_vc_i_set_ref_count((vc_), 0);			\
-    mpig_vc_set_initialized((vc_), FALSE);		\
-    mpig_vc_set_cm((vc_), NULL);			\
-    mpig_vc_set_vtable((vc_), NULL);			\
-    mpig_vc_set_pg_info((vc_), NULL, -1);		\
-    mpig_bc_construct(mpig_vc_get_bc(vc_));		\
-    (vc_)->cms.ci_initialized = FALSE;			\
-    (vc_)->cms.topology_num_levels = -1;		\
-    (vc_)->cms.topology_levels = 0;			\
-    (vc_)->cms.app_num = -1;				\
-    (vc_)->cms.lan_id = NULL;				\
-    (vc_)->lpid = -1;					\
+#define mpig_vc_construct(vc_)                  \
+{                                               \
+    mpig_vc_mutex_construct(vc_);               \
+    mpig_vc_i_set_ref_count((vc_), 0);          \
+    mpig_vc_set_initialized((vc_), FALSE);      \
+    mpig_vc_set_cm((vc_), NULL);                \
+    mpig_vc_set_vtable((vc_), NULL);            \
+    mpig_vc_set_pg_info((vc_), NULL, -1);       \
+    mpig_bc_construct(mpig_vc_get_bc(vc_));     \
+    (vc_)->cms.ci_initialized = FALSE;          \
+    (vc_)->cms.topology_num_levels = -1;        \
+    (vc_)->cms.topology_levels = 0;             \
+    (vc_)->cms.app_num = -1;                    \
+    (vc_)->cms.lan_id = NULL;                   \
+    (vc_)->lpid = -1;                           \
+    (vc_)->dfd.hetero = FALSE;                  \
+    (vc_)->dfd.endian = MPIG_ENDIAN_UNKNOWN;    \
 }
 
 #define mpig_vc_destruct(vc_)						\
@@ -1240,6 +1423,8 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
     (vc_)->cms.app_num = -1;						\
     (vc_)->cms.lan_id = MPIG_INVALID_PTR;				\
     (vc_)->lpid = -1;							\
+    (vc_)->dfd.hetero = FALSE;                                          \
+    (vc_)->dfd.endian = MPIG_ENDIAN_UNKNOWN;                            \
     mpig_vc_mutex_destruct(vc_);					\
 }
 
@@ -1345,9 +1530,14 @@ double mpig_vc_vtable_last_entry(float foo, int bar, const short * baz, char bif
 
 #define mpig_vc_get_lan_id(vc_) ((vc_)->cms.lan_id)
 
-#define mpig_vc_get_ctype_map_ptr(vc_) ((vc_)->dt_ctype_map)
+#define mpig_vc_set_endian(vc_, endian_)								\
+{													\
+    mpig_dfd_set_endian(&(vc_)->dfd, (endian_));                                                        \
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC, "VC - setting endian: vc=" MPIG_PTR_FMT ", endian=%s",	\
+        MPIG_PTR_CAST(vc_), MPIG_ENDIAN_STR(endian_)));                                                 \
+}
 
-#define mpig_vc_get_sizeof_ctypes_ptr(vc_) ((vc_)->dt_sizeof_ctypes)
+#define mpig_vc_get_endian(vc_) (mpig_dfd_get_endian(&(vc_)->dfd))
 
 /* Thread safety and release consistency macros */
 #define mpig_vc_mutex_construct(vc_)	mpig_mutex_construct(&(vc_)->mutex)

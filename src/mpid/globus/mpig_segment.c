@@ -6,6 +6,7 @@
  * See COPYRIGHT.txt in the src/mpid/globus directory.
  */
 
+#if defined(MPID_HAS_HETERO)
 
 /*
  * This file contains the integration of MPICH2 segment (i.e., DATA LOOP) functions and Globus data conversion functions.
@@ -247,66 +248,11 @@
  * (3) we never convert MPI_BYTE.
  */
 
-/* mpig_segment_piece_params
- *
- * this structure is used to pass internal information into and out of our segment processing functions as they are called by the
- * MPID segment processing subsystem.
- *
- * NOTE: src_ctype_map and src_sizeof_ctype may be different than those of the last processs to send the message.  this can occur
- * when a packed message originated at a machine having a different format than that of the last process to forward the message.
- */
-struct mpig_segment_piece_params 
-{
-    char * src_buffer;
-    char * src_ctype_map;
-    char * src_sizeof_ctypes;
-};
-/* 
- * mpig_segment_sizeof_source_datatype() - compute the size of a datatype at the source process
- */
-#undef FUNCNAME 
-#define FUNCNAME mpig_segment_sizeof_source_datatype
-static MPI_Aint mpig_segment_sizeof_source_datatype(MPI_Datatype el_type, void *v_paramp)
-{
-    const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_segment_piece_params * p = (struct mpig_segment_piece_params *) v_paramp;
-    mpig_ctype_t remote_ctype = mpig_datatype_get_ctype(el_type, p->src_ctype_map);
-    int remote_sizeof_ctype = mpig_ctype_get_sizeof(remote_ctype, p->src_sizeof_ctypes);
-    int mult = mpig_datatype_get_num_ctypes(el_type);
-    MPI_Aint size = (MPI_Aint) mult * remote_sizeof_ctype;
-
-    MPIG_UNUSED_VAR(fcname);
-
-    MPIU_Assert(size > 0);
-
-    return size;
-
-}
-/* end mpig_segment_globus_dc_sizeof_source_datatype() */
 
 /*
  * GLOBUS_DC - segment processing routines that use the globus data conversion module
  */
 #if defined(HAVE_GLOBUS_DC_MODULE)
-
-/* mpig_segment_globus_dc_piece_params
- *
- * this is an extension to mpig_segment_piece_params structure that contains information using by the globus data conversion
- * module.
- *
- * NOTE: and src_gdc_format may be different than those of the last processs to send the message.  this can occur when a packed
- * message originated at a machine having a different format than that of the last process to forward the message.
- */
-struct mpig_segment_globus_dc_piece_params 
-{
-    struct mpig_segment_piece_params common;
-    struct
-    {
-        int src_gdc_format;
-    }
-    globus;
-};
-/* end struct mpig_segment_globus_dc_piece_params */
 
 /*******************/
 /* LOCAL FUNCTIONS */
@@ -331,81 +277,115 @@ static int mpig_segment_globus_dc_unpack_contig(
     void * v_paramp)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    struct mpig_segment_globus_dc_piece_params * p = v_paramp;
-    globus_byte_t ** src = (globus_byte_t **) &(p->common.src_buffer);
-    char * dest = ((char *) dest_bufp) + dest_rel_off;
-    unsigned long count = *blocks_p;
-    mpig_ctype_t remote_ctype = mpig_datatype_get_ctype(el_type, p->common.src_ctype_map);
-    int local_sizeof_remote_ctype = mpig_ctype_get_local_sizeof(remote_ctype);
+    mpig_segment_piece_params_t * p = v_paramp;
+    globus_byte_t ** src_buf = (globus_byte_t **) &(p->src_buffer);
+    const mpig_data_format_descriptor_t * const src_dfd = p->src_dfd;
+    char * dest_buf = ((char *) dest_bufp) + dest_rel_off;
+    MPIU_Size_t count = *blocks_p;
+    mpig_ctype_t src_ctype = mpig_dfd_get_mpi_ctype_mapping(src_dfd, el_type);;
+    int local_sizeof_src_ctype = mpig_dfd_get_sizeof_ctype(&mpig_process.my_dfd, src_ctype);
     int mult = mpig_datatype_get_num_ctypes(el_type);
-    int df = p->globus.src_gdc_format;
+    mpig_endian_t src_endian = mpig_dfd_get_endian(src_dfd);
+    int src_gdc_format = mpig_dfd_get_gdc_format(src_dfd);;
     int mpi_errno = MPI_SUCCESS;
 
     MPIG_UNUSED_VAR(fcname);
 
-    if (FALSE && local_sizeof_remote_ctype <= MPID_Datatype_get_basic_size(el_type))
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "entering: dest_bufp=" MPIG_PTR_FMT ", dest_offset="
+        MPIG_AINT_FMT ", cnt=" MPIG_SIZE_FMT ", dt=" MPIG_HANDLE_FMT ", src_buf=" MPIG_PTR_FMT ", src_dfd=" MPIG_PTR_FMT,
+        MPIG_PTR_CAST(dest_bufp), dest_rel_off, count, el_type, MPIG_PTR_CAST(*src_buf), MPIG_PTR_CAST(src_dfd)));
+
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "info: src_dfd=" MPIG_PTR_FMT ", src_endian=%s, src_gdc_format=%d, src_ctype=%s, "
+        "local_sizeof_ctype=%d, mult=%d", MPIG_PTR_CAST(src_dfd), MPIG_ENDIAN_STR(src_endian), src_gdc_format,
+        mpig_ctype_get_string(src_ctype), local_sizeof_src_ctype, mult));
+    
+    if (local_sizeof_src_ctype <= MPID_Datatype_get_basic_size(el_type))
     {
         /* OK to receive directly into destination buffer */
-        switch (remote_ctype)
+        switch (src_ctype)
         {
             case MPIG_CTYPE_FLOAT:
             {
-                globus_dc_get_float(src, (float *) dest, mult * count, df);
+                globus_dc_get_float(src_buf, (float *) dest_buf, mult * count, src_gdc_format);
                 break;
             }
             case MPIG_CTYPE_DOUBLE:
             {
-                globus_dc_get_double(src, (double *) dest, mult * count, df);
+                globus_dc_get_double(src_buf, (double *) dest_buf, mult * count, src_gdc_format);
                 break;
             }
             case MPIG_CTYPE_CHAR:
             {
-                globus_dc_get_char(src, (char *) dest, mult * count, df);
+                globus_dc_get_char(src_buf, (char *) dest_buf, mult * count, src_gdc_format);
                 break;
             }
             case MPIG_CTYPE_SHORT:
             {
-                globus_dc_get_short(src, (short *) dest, mult * count, df);
+                globus_dc_get_short(src_buf, (short *) dest_buf, mult * count, src_gdc_format);
                 break;
             }
             case MPIG_CTYPE_INT:
             {
-                globus_dc_get_int(src, (int *) dest, mult * count, df);
+                globus_dc_get_int(src_buf, (int *) dest_buf, mult * count, src_gdc_format);
                 break;
             }
             case MPIG_CTYPE_LONG:
             {
-                globus_dc_get_long(src, (long *) dest, mult * count, df);
+                globus_dc_get_long(src_buf, (long *) dest_buf, mult * count, src_gdc_format);
                 break;
             }
             case MPIG_CTYPE_LONG_LONG:
             {
-                globus_dc_get_long_long(src, (long long *) dest, mult * count, df);
+                globus_dc_get_long_long(src_buf, (long long *) dest_buf, mult * count, src_gdc_format);
                 break;
             }
             case MPIG_CTYPE_UNSIGNED_CHAR:
             {
-                globus_dc_get_u_char(src, (unsigned char *) dest, mult * count, df);
+                globus_dc_get_u_char(src_buf, (unsigned char *) dest_buf, mult * count, src_gdc_format);
                 break;
             }
             case MPIG_CTYPE_UNSIGNED_SHORT:
             {
-                globus_dc_get_u_short(src, (unsigned short *) dest, mult * count, df);
+                globus_dc_get_u_short(src_buf, (unsigned short *) dest_buf, mult * count, src_gdc_format);
                 break;
             }
             case MPIG_CTYPE_UNSIGNED_INT:
             {
-                globus_dc_get_u_int(src, (unsigned int *) dest, mult * count, df);
+                globus_dc_get_u_int(src_buf, (unsigned int *) dest_buf, mult * count, src_gdc_format);
                 break;
             }
             case MPIG_CTYPE_UNSIGNED_LONG:
             {
-                globus_dc_get_u_long(src, (unsigned long *) dest, mult * count, df);
+                globus_dc_get_u_long(src_buf, (unsigned long *) dest_buf, mult * count, src_gdc_format);
                 break;
             }
             case MPIG_CTYPE_UNSIGNED_LONG_LONG:
             {
-                nexus_dc_get_u_long_long(src, (unsigned long long *) dest, mult * count, df);
+                nexus_dc_get_u_long_long(src_buf, (unsigned long long *) dest_buf, mult * count, src_gdc_format);
+                break;
+            }
+            case MPIG_CTYPE_INT8:
+            {
+                mpig_dc_getn_int8(src_endian, *src_buf, (int8_t *) dest_buf, mult * count);
+                src_buf += 1;
+                break;
+            }
+            case MPIG_CTYPE_INT16:
+            {
+                mpig_dc_getn_int16(src_endian, *src_buf, (int16_t *) dest_buf, mult * count);
+                src_buf += 2;
+                break;
+            }
+            case MPIG_CTYPE_INT32:
+            {
+                mpig_dc_getn_int32(src_endian, *src_buf, (int32_t *) dest_buf, mult * count);
+                src_buf += 4;
+                break;
+            }
+            case MPIG_CTYPE_INT64:
+            {
+                mpig_dc_getn_int64(src_endian, *src_buf, (int64_t *) dest_buf, mult * count);
+                src_buf += 8;
                 break;
             }
             default:
@@ -413,21 +393,21 @@ static int mpig_segment_globus_dc_unpack_contig(
                 char err_str[256];
 
                 /* TODO: generate returnable error code rather than aborting */
-                MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPIG_CTYPE, dt=" MPIG_HANDLE_FMT ", remote_ctype=%d",
-                    el_type, remote_ctype);
+                MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPIG_CTYPE, dt=" MPIG_HANDLE_FMT ", src_ctype=%d",
+                    el_type, src_ctype);
                 MPID_Abort(NULL, MPI_SUCCESS, 13, err_str);
                 break;
             }
         }
-        /* end switch(remote_ctype) */
+        /* end switch(src_ctype) */
     }
-    else /* (local_csize_of_remote_ctype > MPID_Datatype_get_basic_size(el_type)) */
+    else /* (local_csize_of_src_ctype > MPID_Datatype_get_basic_size(el_type)) */
     {
         /* 
            --NOT-- OK to receive directly into destination buffer  ...
            ... need to convert one at a time
         */
-        mpig_ctype_t local_ctype = mpig_datatype_get_local_ctype(el_type);
+        mpig_ctype_t local_ctype = mpig_dfd_get_mpi_ctype_mapping(&mpig_process.my_dfd, el_type);
         unsigned i;
         /* single-instance temp buffs */
         union
@@ -450,78 +430,78 @@ static int mpig_segment_globus_dc_unpack_contig(
 
         for (i = 0; i < mult * count; i ++)
         {
-            switch (remote_ctype)
+            switch (src_ctype)
             {
                 case MPIG_CTYPE_FLOAT:
                 {
-                    globus_dc_get_float(src, &tmp_buf.t_float, 1, df);
+                    globus_dc_get_float(src_buf, &tmp_buf.t_float, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_float;
                     break;
                 }
                 case MPIG_CTYPE_DOUBLE:
                 {
-                    globus_dc_get_double(src, &tmp_buf.t_double, 1, df);
+                    globus_dc_get_double(src_buf, &tmp_buf.t_double, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_double;
                     tmp_buf_p = &tmp_buf.t_double;
                     break;
                 }
                 case MPIG_CTYPE_CHAR:
                 {
-                    globus_dc_get_char(src, &tmp_buf.t_char, 1, df);
+                    globus_dc_get_char(src_buf, &tmp_buf.t_char, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_char;
                     break;
                 }
                 case MPIG_CTYPE_SHORT:
                 {
-                    globus_dc_get_short(src, &tmp_buf.t_short, 1, df);
+                    globus_dc_get_short(src_buf, &tmp_buf.t_short, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_short;
                     break;
                 }
                 case MPIG_CTYPE_INT:
                 {
-                    globus_dc_get_int(src, &tmp_buf.t_int, 1, df);
+                    globus_dc_get_int(src_buf, &tmp_buf.t_int, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_int;
                     break;
                 }
                 case MPIG_CTYPE_LONG:
                 {
-                    globus_dc_get_long(src, &tmp_buf.t_long, 1, df);
+                    globus_dc_get_long(src_buf, &tmp_buf.t_long, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_long;
                     break;
                 }
                 case MPIG_CTYPE_LONG_LONG:
                 {
-                    globus_dc_get_long_long(src, &tmp_buf.t_long_long, 1, df);
+                    globus_dc_get_long_long(src_buf, &tmp_buf.t_long_long, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_long_long;
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_CHAR:
                 {
-                    globus_dc_get_u_char(src, &tmp_buf.t_unsigned_char, 1, df);
+                    globus_dc_get_u_char(src_buf, &tmp_buf.t_unsigned_char, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_unsigned_char;
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_SHORT:
                 {
-                    globus_dc_get_u_short(src, &tmp_buf.t_unsigned_short, 1, df);
+                    globus_dc_get_u_short(src_buf, &tmp_buf.t_unsigned_short, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_unsigned_short;
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_INT:
                 {
-                    globus_dc_get_u_int(src, &tmp_buf.t_unsigned_int, 1, df);
+                    globus_dc_get_u_int(src_buf, &tmp_buf.t_unsigned_int, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_unsigned_int;
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_LONG:
                 {
-                    globus_dc_get_u_long(src, &tmp_buf.t_unsigned_long, 1, df);
+                    globus_dc_get_u_long(src_buf, &tmp_buf.t_unsigned_long, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_unsigned_long;
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_LONG_LONG:
                 {
-                    nexus_dc_get_u_long_long(src, &tmp_buf.t_unsigned_long_long, 1, df);
+                    nexus_dc_get_u_long_long(src_buf, &tmp_buf.t_unsigned_long_long, 1, src_gdc_format);
                     tmp_buf_p = (void *) &tmp_buf.t_unsigned_long_long;
                     break;
                 }
@@ -530,85 +510,85 @@ static int mpig_segment_globus_dc_unpack_contig(
                     char err_str[256];
                             
                     /* TODO: generate returnable error code rather than aborting */
-                    MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPIG_CTYPE, dt=" MPIG_HANDLE_FMT ", remote_ctype=%d",
-                        el_type, remote_ctype);
+                    MPIU_Snprintf(err_str, 1024, "ERROR: unknown MPIG_CTYPE, dt=" MPIG_HANDLE_FMT ", src_ctype=%d",
+                        el_type, src_ctype);
                     MPID_Abort(NULL, MPI_SUCCESS, 13, err_str);
                     break;
                 }
-            } /* end switch(remote_ctype) */
+            } /* end switch(src_ctype) */
 
             switch (local_ctype)
             {
                 case MPIG_CTYPE_FLOAT:
                 {
-                    *((float *) dest) = *((float *) tmp_buf_p);
-                    dest += sizeof(float);
+                    *((float *) dest_buf) = *((float *) tmp_buf_p);
+                    dest_buf += sizeof(float);
                     break;
                 }
                 case MPIG_CTYPE_DOUBLE:
                 {
-                    *((double *) dest) = *((double *) tmp_buf_p);
-                    dest += sizeof(double);
+                    *((double *) dest_buf) = *((double *) tmp_buf_p);
+                    dest_buf += sizeof(double);
                     break;
                 }
                 case MPIG_CTYPE_CHAR:
                 {
-                    *((char *) dest) = *((char *) tmp_buf_p);
-                    dest += sizeof(char);
+                    *((char *) dest_buf) = *((char *) tmp_buf_p);
+                    dest_buf += sizeof(char);
                     break;
                 }
                 case MPIG_CTYPE_SHORT:
                 {
-                    *((short *) dest) = *((short *) tmp_buf_p);
-                    dest += sizeof(short);
+                    *((short *) dest_buf) = *((short *) tmp_buf_p);
+                    dest_buf += sizeof(short);
                     break;
                 }
                 case MPIG_CTYPE_INT:
                 {
-                    *((int *) dest) =  *((int *) tmp_buf_p);
-                    dest += sizeof(int);
+                    *((int *) dest_buf) =  *((int *) tmp_buf_p);
+                    dest_buf += sizeof(int);
                     break;
                 }
                 case MPIG_CTYPE_LONG:
                 {
-                    *((long *) dest) = *((long *) tmp_buf_p);
-                    dest += sizeof(long);
+                    *((long *) dest_buf) = *((long *) tmp_buf_p);
+                    dest_buf += sizeof(long);
                     break;
                 }
                 case MPIG_CTYPE_LONG_LONG:
                 {
-                    *((long long *) dest) = *((long long *) tmp_buf_p);
-                    dest += sizeof(long long);
+                    *((long long *) dest_buf) = *((long long *) tmp_buf_p);
+                    dest_buf += sizeof(long long);
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_CHAR:
                 {
-                    *((unsigned char *) dest) = *((unsigned char *) tmp_buf_p);
-                    dest += sizeof(unsigned char);
+                    *((unsigned char *) dest_buf) = *((unsigned char *) tmp_buf_p);
+                    dest_buf += sizeof(unsigned char);
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_SHORT:
                 {
-                    *((unsigned short *) dest) = *((unsigned short *) tmp_buf_p);
-                    dest += sizeof(unsigned short);
+                    *((unsigned short *) dest_buf) = *((unsigned short *) tmp_buf_p);
+                    dest_buf += sizeof(unsigned short);
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_INT:
                 {
-                    *((unsigned int *) dest) = *((unsigned int *) tmp_buf_p);
-                    dest += sizeof(unsigned int);
+                    *((unsigned int *) dest_buf) = *((unsigned int *) tmp_buf_p);
+                    dest_buf += sizeof(unsigned int);
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_LONG:
                 {
-                    *((unsigned long *) dest) = *((unsigned long *) tmp_buf_p);
-                    dest += sizeof(unsigned long);
+                    *((unsigned long *) dest_buf) = *((unsigned long *) tmp_buf_p);
+                    dest_buf += sizeof(unsigned long);
                     break;
                 }
                 case MPIG_CTYPE_UNSIGNED_LONG_LONG:
                 {
-                    *((unsigned long *) dest) = *((unsigned long long *) tmp_buf_p);
-                    dest += sizeof(unsigned long long);
+                    *((unsigned long *) dest_buf) = *((unsigned long long *) tmp_buf_p);
+                    dest_buf += sizeof(unsigned long long);
                     break;
                 }
                 default:
@@ -624,7 +604,10 @@ static int mpig_segment_globus_dc_unpack_contig(
             }
             /* end switch(local_ctype) */
         } /* end for (i = 0; i < mult * count; i ++) */
-    } /* end if/else (local_csize_of_remote_ctype <= MPID_Datatype_get_basic_size(el_type)) */
+    } /* end if/else (local_csize_of_src_ctype <= MPID_Datatype_get_basic_size(el_type)) */
+
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "exiting: dest_bufp=" MPIG_PTR_FMT ", src_buf=" MPIG_PTR_FMT
+        ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(dest_bufp), MPIG_PTR_CAST(*src_buf), mpi_errno));
 
     return mpi_errno;
 }
@@ -634,25 +617,21 @@ static int mpig_segment_globus_dc_unpack_contig(
 /* EXTERNALLY VISIBLE FUNCTIONS */
 /********************************/
 
-/* this is the one and only function we're here for :-) */
-void mpig_segment_globus_dc_unpack(
-    struct DLOOP_Segment *segp, /* dest */
-    DLOOP_Offset first,         /* src  */
-    DLOOP_Offset *lastp,        /* src  */
-    DLOOP_Buffer unpack_buffer, /* src  */
-    char * src_ctype_map,
-    char * src_sizeof_ctypes,
-    int src_gdc_format)
+#undef FUNCNAME 
+#define FUNCNAME mpig_segment_globus_dc_unpack
+void mpig_segment_globus_dc_unpack(struct DLOOP_Segment * const segp, const mpig_data_format_descriptor_t * const src_dfd,
+    const DLOOP_Offset first, DLOOP_Offset * const lastp, DLOOP_Buffer src_buffer)
 {
-    struct mpig_segment_globus_dc_piece_params unpack_params;
+    struct mpig_segment_piece_params unpack_params;
     /* MPIDI_STATE_DECL(MPID_STATE_mpig_segment_globus_dc_unpack); */
     
     /* MPIDI_FUNC_ENTER(MPID_STATE_mpig_segment_globus_dc_unpack); */
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "entering: segp=" MPIG_PTR_FMT ", src_dfd=" MPIG_PTR_FMT
+        ", first=" MPIG_AINT_FMT ", last=" MPIG_AINT_FMT ", src_buffer=" MPIG_PTR_FMT,MPIG_PTR_CAST(segp), MPIG_PTR_CAST(src_dfd),
+        first, *lastp, MPIG_PTR_CAST(src_buffer)));
 
-    unpack_params.common.src_buffer = unpack_buffer;
-    unpack_params.common.src_ctype_map = src_ctype_map;
-    unpack_params.common.src_sizeof_ctypes = src_sizeof_ctypes;
-    unpack_params.globus.src_gdc_format = src_gdc_format;
+    unpack_params.src_buffer = src_buffer;
+    unpack_params.src_dfd = src_dfd;
 
     MPID_Segment_manipulate(
         segp,
@@ -681,9 +660,11 @@ void mpig_segment_globus_dc_unpack(
            (i.e., what the segment does NOT point to).  in our case, data sizes 
            of MPI datatypes on the sending side.
         */
-        mpig_segment_sizeof_source_datatype,
+        mpig_segment_sizeof_source_basic_datatype,
         (void *) &unpack_params);
 
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_DT, "exiting: segp=" MPIG_PTR_FMT ", last=" MPIG_AINT_FMT,
+        MPIG_PTR_CAST(segp), *lastp));
     /* MPIDI_FUNC_EXIT(MPID_STATE_MPID_SEGMENT_UNPACK_EXTERNAL); */
     return;
 
@@ -691,3 +672,31 @@ void mpig_segment_globus_dc_unpack(
 /* end mpig_segment_globus_dc_unpack() */
 
 #endif /* if defined(HAVE_GLOBUS_DC_MODULE) */
+
+/* 
+ * mpig_segment_sizeof_source_basic_datatype() - compute the size of a basic MPI datatype at the source process
+ */
+#undef FUNCNAME 
+#define FUNCNAME mpig_segment_sizeof_source_basic_datatype
+MPI_Aint mpig_segment_sizeof_source_basic_datatype(MPI_Datatype dt, void * v_paramp)
+{
+    const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    struct mpig_segment_piece_params * p = (struct mpig_segment_piece_params *) v_paramp;
+    const mpig_data_format_descriptor_t * const src_dfd = p->src_dfd;
+    mpig_ctype_t src_ctype = mpig_dfd_get_mpi_ctype_mapping(src_dfd, dt);
+    int src_sizeof_ctype = mpig_dfd_get_sizeof_ctype(src_dfd, src_ctype);
+    int mult = mpig_datatype_get_num_ctypes(dt);
+    MPI_Aint size = (MPI_Aint) mult * src_sizeof_ctype;
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "dt=" MPIG_HANDLE_FMT ", src_ctype=%s, src_sizeof_ctype=%d, mult=%d, size="
+        MPIG_AINT_FMT, dt, mpig_ctype_get_string(src_ctype), src_sizeof_ctype, mult, size));
+    
+    MPIU_Assert(size >= 0);
+
+    return size;
+}
+/* end mpig_segment_sizeof_source_basic_datatype() */
+
+#endif /* defined(MPID_HAS_HETERO) */

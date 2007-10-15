@@ -118,6 +118,7 @@ MPIG_INLINE_HDEF int mpig_genq_entry_create(mpig_genq_entry_t ** const entry_p)
     
   fn_fail:
     {   /* --BEGIN ERROR HANDLING-- */
+        *entry_p = NULL;
 	goto fn_return;
     }   /* --END ERROR HANDLING-- */
 }
