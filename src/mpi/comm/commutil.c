@@ -699,7 +699,16 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size,
         details. */
 #   if defined(MPID_DEV_COMM_FUNC_HOOK)
     {
-        MPID_DEV_COMM_FUNC_HOOK(COMM_DUP, comm_ptr, newcomm_ptr, &mpi_errno);
+        if (comm_ptr->local_size == size)
+        {
+            MPID_DEV_COMM_FUNC_HOOK(COMM_DUP, comm_ptr, newcomm_ptr,
+                &mpi_errno);
+        }
+        else
+        {
+            MPID_DEV_COMM_FUNC_HOOK(COMM_SPLIT, comm_ptr, newcomm_ptr,
+                &mpi_errno);
+        }
         if (mpi_errno != MPI_SUCCESS)
         {
             MPIR_Comm_release(newcomm_ptr, FALSE);
