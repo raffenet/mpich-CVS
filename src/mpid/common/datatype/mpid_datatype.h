@@ -23,7 +23,7 @@
 #define MPID_Datatype_get_basic_size(a) (((a)&0x0000ff00)>>8)
 
 #if !defined(MPID_DEV_HAS_MPID_DATATYPE_GET_SOURCE_BASIC_SIZE)
-#define MPID_Datatype_get_source_basic_size(dt_, status_)       \
+#define MPID_Datatype_get_source_basic_size(status_, dt_) \
     MPID_Datatype_get_basic_size(dt_)
 #endif
 
@@ -740,8 +740,8 @@ int MPID_Pack_size(int incount,
                    int * size);
 #else
 #define MPID_Pack_size(count_, datatype_, rank_, comm_, size_)  \
-    ((MPID_Datatype_get_size_macro((datatype_), (size_))),      \
-        ((size_) *= (count_)), (MPI_SUCCESS))
+    ((MPID_Datatype_get_size_macro((datatype_), (*(size_)))),   \
+        (*(size_) *= (count_)), (MPI_SUCCESS))
 
 #endif
 
