@@ -84,14 +84,32 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
+
     /* Check for correct number of bytes */
-    MPID_Datatype_get_size_macro(datatype, size);
+    MPID_Datatype_get_source_size_macro(status, datatype, size);
     if (size != 0) {
-	if ((status->count % size) != 0)
-	    (*count) = MPI_UNDEFINED;
-	else
+	if ((status->count % size) == 0)
+	{
 	    (*count) = status->count / size;
+
+	    if (datatype == MPI_PACKED && status->count)
+	    {
+		/* MPI_PACKED is a special case.  the pack header is not
+		   part of status->count; however, it must be included
+		   in the count that is returned to the application to
+		   function properly.  for example, the application
+		   could get the count using the status returned from
+		   MPI_Probe and then perform a MPI_Recv with that count
+		   and a type of MPI_PACKED.  the MPI_Recv would fail
+		   with a truncation error because the message contained
+		   more bytes than specified in the count argument. */
+		*count += MPID_Pack_header_size(status);
+	    }
+	}
+	else
+	{
+	    (*count) = MPI_UNDEFINED;
+	}
     }
     else {
 	if (status->count > 0)
