@@ -136,8 +136,17 @@ int MPIR_Allreduce (
     if (!is_homogeneous) {
         /* heterogeneous. To get the same result on all processes, we
            do a reduce to 0 and then broadcast. */
-        mpi_errno = NMPI_Reduce ( sendbuf, recvbuf, count, datatype,
-                                  op, 0, comm );
+        if (sendbuf != MPI_IN_PLACE || comm_ptr->rank == 0)
+        {
+            mpi_errno = NMPI_Reduce ( sendbuf, recvbuf, count, datatype,
+                op, 0, comm );
+        }
+        else
+        {
+            mpi_errno = NMPI_Reduce ( recvbuf, NULL, count, datatype,
+                op, 0, comm );
+        }
+        
 	/* FIXME: mpi_errno is error CODE, not necessarily the error
 	   class MPI_ERR_OP.  In MPICH2, we can get the error class 
 	   with 

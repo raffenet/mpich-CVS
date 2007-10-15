@@ -92,9 +92,6 @@ int MPIR_Allgather (
     int mask, dst_tree_root, my_tree_root, is_homogeneous,  
         send_offset, recv_offset, last_recv_cnt = 0, nprocs_completed, k,
         offset, tmp_mask, tree_root;
-#ifdef MPID_HAS_HETERO
-    int position, tmp_buf_size, nbytes;
-#endif
 
     if (((sendcount == 0) && (sendbuf != MPI_IN_PLACE)) || (recvcount == 0))
         return MPI_SUCCESS;
@@ -115,21 +112,27 @@ int MPIR_Allgather (
     else
         comm_size_is_pof2 = 0;
 
-    /* check if multiple threads are calling this collective function */
-    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
-    
-    if ((recvcount*comm_size*type_size < MPIR_ALLGATHER_LONG_MSG) &&
-        (comm_size_is_pof2 == 1)) {
-
-        /* Short or medium size message and power-of-two no. of processes. Use
-         * recursive doubling algorithm */   
-
     is_homogeneous = 1;
 #ifdef MPID_HAS_HETERO
     if (comm_ptr->is_hetero)
         is_homogeneous = 0;
 #endif
     
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
+    
+    /* FIXME: the datatype sizes can be different for each process in a
+       heterogeneous environment, so algorithm selection cannot be based simply
+       on the local soze of the message.  for now, we skip algorithms selected
+       by size.  we also skip algorithms that use MPI_Pack_size to determine
+       the size of the datatype/buffer and assume it will be the same for all
+       processes. */
+    if ((recvcount*comm_size*type_size < MPIR_ALLGATHER_LONG_MSG) &&
+        (comm_size_is_pof2 == 1) && is_homogeneous) {
+
+        /* Short or medium size message and power-of-two no. of processes. Use
+         * recursive doubling algorithm */   
+
         if (is_homogeneous) {
             /* homogeneous. no need to pack into tmp_buf on each node. copy
                local data into recvbuf */ 
@@ -268,9 +271,10 @@ int MPIR_Allgather (
             }
         }
         
-#ifdef MPID_HAS_HETERO
+#if FALSE && defined(MPID_HAS_HETERO)
         else { 
             /* heterogeneous. need to use temp. buffer. */
+            int position, tmp_buf_size, nbytes;
             
             NMPI_Pack_size(recvcount*comm_size, recvtype, comm, &tmp_buf_size);
             
@@ -431,7 +435,8 @@ int MPIR_Allgather (
 #endif /* MPID_HAS_HETERO */
     }
 
-    else if (recvcount*comm_size*type_size < MPIR_ALLGATHER_SHORT_MSG) {
+    else if (recvcount*comm_size*type_size < MPIR_ALLGATHER_SHORT_MSG
+        && is_homogeneous) {
         /* Short message and non-power-of-two no. of processes. Use
          * Bruck algorithm (see description above). */
 

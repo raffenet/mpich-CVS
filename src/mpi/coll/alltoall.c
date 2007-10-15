@@ -87,6 +87,7 @@ int MPIR_Alltoall(
     MPI_Comm comm;
     MPI_Request *reqarray;
     MPI_Status *starray;
+    int is_homogeneous;
 #ifdef MPIR_OLD_SHORT_ALLTOALL_ALG
     MPI_Aint sendtype_true_extent, sendbuf_extent, sendtype_true_lb;
     int k, p, curr_cnt, dst_tree_root, my_tree_root;
@@ -106,10 +107,23 @@ int MPIR_Alltoall(
     MPID_Datatype_get_size_macro(sendtype, sendtype_size);
     nbytes = sendtype_size * sendcount;
     
+    is_homogeneous = 1;
+#ifdef MPID_HAS_HETERO
+    if (comm_ptr->is_hetero)
+        is_homogeneous = 0;
+#endif
+
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
     
-    if ((nbytes <= MPIR_ALLTOALL_SHORT_MSG) && (comm_size >= 8)) {
+    /* FIXME: the datatype sizes can be different for each process in a
+       heterogeneous environment, so algorithm selection cannot be based simply
+       on the local soze of the message.  for now, we skip algorithms selected
+       by size.  we also skip algorithms that use MPI_Pack_size to determine
+       the size of the datatype/buffer and assume it will be the same for all
+       processes. */
+    if ((nbytes <= MPIR_ALLTOALL_SHORT_MSG) && (comm_size >= 8) &&
+        is_homogeneous) {
 
         /* use the indexing algorithm by Jehoshua Bruck et al,
          * IEEE TPDS, Nov. 97 */ 
@@ -384,7 +398,7 @@ int MPIR_Alltoall(
 
     }
 
-    else if (nbytes <= MPIR_ALLTOALL_MEDIUM_MSG) {  
+    else if (nbytes <= MPIR_ALLTOALL_MEDIUM_MSG && is_homogeneous) {  
         /* Medium-size message. Use isend/irecv with scattered
            destinations */
 

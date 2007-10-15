@@ -97,6 +97,7 @@ int MPIR_Reduce (
     void       *tmp_buf;
     MPID_Op *op_ptr;
     MPI_Comm comm;
+    int is_homogeneous;
     MPIU_THREADPRIV_DECL;
 #ifdef HAVE_CXX_BINDING
     int is_cxx_uop = 0;
@@ -112,6 +113,12 @@ int MPIR_Reduce (
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
     
+    is_homogeneous = 1;
+#ifdef MPID_HAS_HETERO
+    if (comm_ptr->is_hetero)
+        is_homogeneous = 0;
+#endif
+
     /* set op_errno to 0. stored in perthread structure */
     MPIU_THREADPRIV_FIELD(op_errno) = 0;
 
@@ -176,8 +183,15 @@ int MPIR_Reduce (
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
         
+    /* FIXME: the datatype sizes can be different for each process in a
+       heterogeneous environment, so algorithm selection cannot be based simply
+       on the local soze of the message.  for now, we skip algorithms selected
+       by size.  we also skip algorithms that use MPI_Pack_size to determine
+       the size of the datatype/buffer and assume it will be the same for all
+       processes. */
     if ((count*type_size > MPIR_REDUCE_SHORT_MSG) &&
-        (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) && (count >= pof2)) {
+        (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) && (count >= pof2) &&
+        is_homogeneous) {
         /* do a reduce-scatter followed by gather to root. */
 
         rem = comm_size - pof2;

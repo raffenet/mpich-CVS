@@ -287,7 +287,11 @@ int MPIR_Scatter (
             MPIU_Free(tmp_buf);
     }
     
-#ifdef MPID_HAS_HETERO
+#if FALSE && defined(MPID_HAS_HETERO)
+    /* FIXME: the datatype sizes can be different for each process in a
+       heterogeneous environment.  for now, skip algorithms that use
+       MPI_Pack_size to determine the size of the datatype/buffer and assume it
+       will be the same for all processes. */
     else { /* communicator is heterogeneous */
         if (rank == root) {
             NMPI_Pack_size(sendcnt*comm_size, sendtype, comm,
@@ -422,11 +426,49 @@ int MPIR_Scatter (
                         recvtype, comm);
         MPIU_Free(tmp_buf);
     }
-#endif /* MPID_HAS_HETERO */
+#endif /* FALSE && defined(MPID_HAS_HETERO) */
+#if defined(MPID_HAS_HETERO)
+    else
+    {
+        /* communicator is heterogeneous.  the root process sends data directly
+         to each of the other processes. send their data directly to the root
+         process.  FIXME: this is horribly inefficient. */
+        if ( rank == root )
+        {
+            int p;
+
+            for ( p = 0; p < comm_size; p++ )
+            {
+                char * sbuf = (char*) sendbuf + p * extent * sendcnt;
+                
+                if (p == root) continue;
+
+                mpi_errno = MPIC_Send(sbuf, sendcnt, sendtype,
+                    p, MPIR_GATHER_TAG, comm);
+                if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+            }
+            
+	    if (recvbuf != MPI_IN_PLACE)
+	    {
+                char * sbuf = (char*) sendbuf + rank * extent * sendcnt;
+                
+		mpi_errno = MPIR_Localcopy(sbuf, sendcnt, sendtype,
+                    recvbuf, recvcnt, recvtype);
+		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	    }
+        }
+        else
+        {
+            mpi_errno = MPIC_Recv(recvbuf, recvcnt, recvtype,
+                root, MPIR_GATHER_TAG, comm, MPI_STATUS_IGNORE);
+        }
+    }
+#endif
     
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
-    
+
+  fn_fail:
     return (mpi_errno);
 }
 /* end:nested */

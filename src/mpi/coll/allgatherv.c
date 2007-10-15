@@ -86,9 +86,6 @@ int MPIR_Allgatherv (
     int mask, dst_tree_root, my_tree_root, is_homogeneous, position,  
         send_offset, recv_offset, last_recv_cnt, nprocs_completed, k,
         offset, tmp_mask, tree_root;
-#ifdef MPID_HAS_HETERO
-    int tmp_buf_size, nbytes;
-#endif
     
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
@@ -112,20 +109,26 @@ int MPIR_Allgatherv (
     else
         comm_size_is_pof2 = 0;
 
+    is_homogeneous = 1;
+#ifdef MPID_HAS_HETERO
+    if (comm_ptr->is_hetero)
+        is_homogeneous = 0;
+#endif
+        
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
+    /* FIXME: the datatype sizes can be different for each process in a
+       heterogeneous environment, so algorithm selection cannot be based simply
+       on the local soze of the message.  for now, we skip algorithms selected
+       by size.  we also skip algorithms that use MPI_Pack_size to determine
+       the size of the datatype/buffer and assume it will be the same for all
+       processes. */
     if ((total_count*recvtype_size < MPIR_ALLGATHER_LONG_MSG) &&
-        (comm_size_is_pof2 == 1)) {
+        (comm_size_is_pof2 == 1) && is_homogeneous) {
         /* Short or medium size message and power-of-two no. of processes. Use
          * recursive doubling algorithm */   
 
-        is_homogeneous = 1;
-#ifdef MPID_HAS_HETERO
-        if (comm_ptr->is_hetero)
-            is_homogeneous = 0;
-#endif
-        
         if (is_homogeneous) {
             /* need to receive contiguously into tmp_buf because
                displs could make the recvbuf noncontiguous */
@@ -348,9 +351,11 @@ int MPIR_Allgatherv (
             MPIU_Free((char *)tmp_buf+recvtype_true_lb); 
         }
         
-#ifdef MPID_HAS_HETERO
+#if FALSE && defined(MPID_HAS_HETERO)
         else {
             /* heterogeneous. need to use temp. buffer. */
+            int tmp_buf_size, nbytes;
+            
             NMPI_Pack_size(total_count, recvtype, comm, &tmp_buf_size);
             tmp_buf = MPIU_Malloc(tmp_buf_size);
 	    /* --BEGIN ERROR HANDLING-- */
@@ -542,7 +547,7 @@ int MPIR_Allgatherv (
 
     }
 
-    else if (total_count*recvtype_size < MPIR_ALLGATHER_SHORT_MSG) {
+    else if (total_count*recvtype_size < MPIR_ALLGATHER_SHORT_MSG && is_homogeneous) {
         /* Short message and non-power-of-two no. of processes. Use
          * Bruck algorithm (see description above). */
  

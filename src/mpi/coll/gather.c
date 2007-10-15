@@ -70,10 +70,6 @@ int MPIR_Gather (
     MPI_Datatype types[2], tmp_type;
     int copy_offset = 0, copy_blks = 0;
 
-#ifdef MPID_HAS_HETERO
-    int position, recv_size;
-#endif
-    
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
@@ -100,7 +96,6 @@ int MPIR_Gather (
 
     if (is_homogeneous)
     {
-
         /* communicator is homogeneous. no need to pack buffer. */
 
         if (rank == root)
@@ -298,9 +293,16 @@ int MPIR_Gather (
 	if (tmp_buf) MPIU_Free(tmp_buf);
     }
     
-#ifdef MPID_HAS_HETERO
+#if FALSE && defined(MPID_HAS_HETERO)
+    /* FIXME: the datatype sizes can be different for each process in a
+       heterogeneous environment.  for now, skip algorithms that use
+       MPI_Pack_size to determine the size of the datatype/buffer and assume it
+       will be the same for all processes. */
     else
-    { /* communicator is heterogeneous. pack data into tmp_buf. */
+    {
+        /* communicator is heterogeneous. pack data into tmp_buf. */
+        int position, recv_size;
+        
         if (rank == root)
             NMPI_Pack_size(recvcnt*comm_size, recvtype, comm,
                            &tmp_buf_size); 
@@ -403,8 +405,46 @@ int MPIR_Gather (
         
         MPIU_Free(tmp_buf);
     }
-#endif /* MPID_HAS_HETERO */
+#endif /* FALSE && defined(MPID_HAS_HETERO) */
+#if defined(MPID_HAS_HETERO)
+    else
+    {
+        /* communicator is heterogeneous.  all processes send their data
+         directly to the root process.  FIXME: this is horribly inefficient and
+         is likely to result in most of the messages being buffered and placed
+         in the unexpected queue. */
+        if ( rank == root )
+        {
+            int p;
 
+            for ( p = 0; p < comm_size; p++ )
+            {
+                char * rbuf = (char*) recvbuf + p * extent * recvcnt;
+                
+                if (p == root) continue;
+
+                mpi_errno = MPIC_Recv(rbuf, recvcnt, recvtype,
+                    p, MPIR_GATHER_TAG, comm, MPI_STATUS_IGNORE);
+                if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+            }
+            
+	    if (sendbuf != MPI_IN_PLACE)
+	    {
+                char * rbuf = (char*) recvbuf + rank * extent * recvcnt;
+                
+		mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype,
+                    rbuf, recvcnt, recvtype);
+		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	    }
+        }
+        else
+        {
+            mpi_errno = MPIC_Send(sendbuf, sendcnt, sendtype,
+                root, MPIR_GATHER_TAG, comm);
+        }
+    }
+#endif
+    
  fn_fail:
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
@@ -444,6 +484,13 @@ int MPIR_Gather_inter (
     void *tmp_buf=NULL;
     MPID_Comm *newcomm_ptr = NULL;
     MPI_Comm comm;
+    int is_homogeneous;
+
+    is_homogeneous = 1;
+#ifdef MPID_HAS_HETERO
+    if (comm_ptr->is_hetero)
+        is_homogeneous = 0;
+#endif
 
     if (root == MPI_PROC_NULL)
     {
@@ -467,7 +514,13 @@ int MPIR_Gather_inter (
         nbytes = sendtype_size * sendcnt * local_size;
     }
 
-    if (nbytes < MPIR_GATHER_SHORT_MSG)
+    /* FIXME: the datatype sizes can be different for each process in a
+       heterogeneous environment, so algorithm selection cannot be based simply
+       on the local soze of the message.  for now, we skip algorithms selected
+       by size.  we also skip algorithms that use MPI_Pack_size to determine
+       the size of the datatype/buffer and assume it will be the same for all
+       processes. */
+    if (nbytes < MPIR_GATHER_SHORT_MSG && is_homogeneous)
     {
         if (root == MPI_ROOT)
 	{

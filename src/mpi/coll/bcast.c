@@ -80,7 +80,7 @@ int MPIR_Bcast (
   int        relative_rank, mask;
   int        mpi_errno = MPI_SUCCESS;
   int scatter_size, nbytes=0, curr_size, recv_size = 0, send_size;
-  int type_size, j, k, i, tmp_mask, is_contig, is_homogeneous;
+  int j, k, i, tmp_mask, is_contig, is_homogeneous;
   int relative_dst, dst_tree_root, my_tree_root, send_offset;
   int recv_offset, tree_root, nprocs_completed, offset, position;
   int *recvcnts, *displs, left, right, jnext, pof2, comm_size_is_pof2;
@@ -119,15 +119,16 @@ int MPIR_Bcast (
    * possible, and MPI_Pack_size() in other places.
    */
   if (is_homogeneous) {
+      int type_size;
       MPID_Datatype_get_size_macro(datatype, type_size);
+      nbytes = type_size * count;
   }
   else {
-      mpi_errno = NMPI_Pack_size(1, datatype, comm, &type_size);
+      mpi_errno = MPID_Pack_size(count, datatype, root, comm_ptr, &nbytes);
       if (mpi_errno != MPI_SUCCESS) {
 	  MPIU_ERR_POP(mpi_errno);
       }
   }
-  nbytes = type_size * count;
 
   if (!is_contig || !is_homogeneous)
   {
@@ -136,7 +137,7 @@ int MPIR_Bcast (
       if (!tmp_buf)
       {
           mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem",
-					    "**nomem %d", type_size );
+					    "**nomem %d", nbytes );
           return mpi_errno;
       }
       /* --END ERROR HANDLING-- */
