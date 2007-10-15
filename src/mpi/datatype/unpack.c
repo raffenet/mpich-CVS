@@ -61,9 +61,7 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
 {
     static const char FCNAME[] = "MPI_Unpack";
     int mpi_errno = MPI_SUCCESS;
-    MPI_Aint first, last;
     MPID_Comm *comm_ptr = NULL;
-    MPID_Segment *segp;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_UNPACK);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -123,24 +121,34 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
 	goto fn_exit;
     }
     
-    segp = MPID_Segment_alloc();
-    MPIU_ERR_CHKANDJUMP1((segp == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");
-    MPID_Segment_init(outbuf, outcount, datatype, segp, 0);
+#   if !defined(MPID_DEV_HAS_MPID_UNPACK)
+    {
+        /* NOTE: the use of buffer values and positions in MPI_Unpack and in
+         * MPID_Segment_unpack are quite different.  See code or docs or something.
+         */
+        MPID_Segment seg;
+        MPI_Aint first, last;
+        
+        mpi_errno = MPID_Segment_init(outbuf, outcount, datatype, &seg, 0);
+        if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    /* NOTE: the use of buffer values and positions in MPI_Unpack and in
-     * MPID_Segment_unpack are quite different.  See code or docs or something.
-     */
-    first = 0;
-    last  = SEGMENT_IGNORE_LAST;
+        first = 0;
+        last  = SEGMENT_IGNORE_LAST;
 
-    MPID_Segment_unpack(segp,
-			first,
-			&last,
-			(void *) ((char *) inbuf + *position));
+        MPID_Segment_unpack(&seg,
+			    first,
+			    &last,
+			    (void *) ((char *) inbuf + *position));
 
-    *position += (int) last;
-
-    MPID_Segment_free(segp);
+        *position += (int) last;
+    }
+#   else
+    {
+        mpi_errno = MPID_Unpack(inbuf, insize, position,
+                                outbuf, outcount, datatype, comm_ptr);
+        if (mpi_errno) goto fn_fail;
+    }
+#   endif
 
     /* ... end of body of routine ... */
 

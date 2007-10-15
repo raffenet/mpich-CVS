@@ -36,7 +36,7 @@
 .  int incount - input count
 .  MPI_Datatype datatype - datatype
 .  void *outbuf - output buffer
-.  int outcount - output count
+.  int outsize - output buffer size
 .  int *position - position
 -  MPI_Comm comm - communicator
 
@@ -59,15 +59,13 @@ int MPI_Pack(void *inbuf,
 	     int incount,
 	     MPI_Datatype datatype,
 	     void *outbuf, 
-	     int outcount,
+	     int outsize,
 	     int *position,
 	     MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Pack";
     int mpi_errno = MPI_SUCCESS;
-    MPI_Aint first, last;
     MPID_Comm *comm_ptr = NULL;
-    MPID_Segment *segp;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -95,7 +93,7 @@ int MPI_Pack(void *inbuf,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COUNT(incount,mpi_errno);
-	    MPIR_ERRTEST_COUNT(outcount,mpi_errno);
+	    MPIR_ERRTEST_COUNT(outsize,mpi_errno);
 	    /* NOTE: inbuf could be null (MPI_BOTTOM) */
 	    if (incount > 0) {
 		MPIR_ERRTEST_ARGNULL(outbuf, "output buffer", mpi_errno);
@@ -122,83 +120,83 @@ int MPI_Pack(void *inbuf,
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-#ifdef HAVE_ERROR_CHECKING /* IMPLEMENTATION-SPECIFIC ERROR CHECKS */
+#   ifdef HAVE_ERROR_CHECKING /* IMPLEMENTATION-SPECIFIC ERROR CHECKS */
     {
 	int tmp_sz;
 
 	MPID_BEGIN_ERROR_CHECKS;
-	/* Verify that there is space in the buffer to pack the type */
-	MPID_Datatype_get_size_macro(datatype, tmp_sz);
+        {
+            /* Verify that there is space in the buffer to pack the type */
+            if (*position < 0) {
+                MPIU_ERR_SET1(mpi_errno,MPI_ERR_ARG,
+                              "**argposneg","**argposneg %d",
+                              *position);
+            }
+            if (outsize < 0) {
+                MPIU_ERR_SET2(mpi_errno,MPI_ERR_ARG,"**argneg",
+			      "**argneg %s %d","outsize",outsize);
+            }
+            if (incount < 0) {
+                MPIU_ERR_SET2(mpi_errno,MPI_ERR_ARG,"**argneg",
+			      "**argneg %s %d","incount",incount);
+            }
+        
+#           if !defined(MPID_DEV_HAS_MPI_PACK)
+            {
+                MPID_Datatype_get_size_macro(datatype, tmp_sz);
 
-	if (tmp_sz * incount > outcount - *position) {
-	    if (*position < 0) {
-		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_ARG,
-				     "**argposneg","**argposneg %d",
-				     *position)
+                if (tmp_sz * incount > outsize - *position) {
+                    MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argpackbuf",
+				         "**argpackbuf %d %d", tmp_sz * incount,
+				         outsize - *position );
+                }
 	    }
-	    else if (outcount < 0) {
-		MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argneg",
-				     "**argneg %s %d","outcount",outcount);
-	    }
-	    else if (incount < 0) {
-		MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argneg",
-				     "**argneg %s %d","incount",incount);
-	    }
-	    else {
-		MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argpackbuf",
-				     "**argpackbuf %d %d", tmp_sz * incount, 
-				     outcount - *position );
-	    }
+#           endif
+
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
 	MPID_END_ERROR_CHECKS;
     }
-#endif /* HAVE_ERROR_CHECKING */
+#   endif /* HAVE_ERROR_CHECKING */
     
     /* ... body of routine ... */
     if (incount == 0) {
 	goto fn_exit;
     }
     
-    /* TODO: CHECK RETURN VALUES?? */
-    /* TODO: SHOULD THIS ALL BE IN A MPID_PACK??? */
-    segp = MPID_Segment_alloc();
-    /* --BEGIN ERROR HANDLING-- */
-    if (segp == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
-					 MPIR_ERR_RECOVERABLE,
-					 FCNAME,
-					 __LINE__,
-					 MPI_ERR_OTHER,
-					 "**nomem",
-					 "**nomem %s",
-					 "MPID_Segment");
-	goto fn_fail;
-    }
     /* --END ERROR HANDLING-- */
-    mpi_errno = MPID_Segment_init(inbuf, incount, datatype, segp, 0);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPI_SUCCESS)
+#   if !defined(MPID_DEV_HAS_MPID_PACK)
     {
-	goto fn_fail;
+        /* NOTE: the use of buffer values and positions in MPI_Pack and in
+         * MPID_Segment_pack are quite different.  See code or docs or something.
+         */
+        MPID_Segment seg;
+        MPI_Aint first, last;
+        
+        /* TODO: CHECK RETURN VALUES?? */
+        /* TODO: SHOULD THIS ALL BE IN A MPID_PACK??? */
+        
+        mpi_errno = MPID_Segment_init(inbuf, incount, datatype, &seg, 0);
+        if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+        first = 0;
+        last  = SEGMENT_IGNORE_LAST;
+
+        MPID_Segment_pack(&seg,
+		          first,
+		          &last,
+		          (void *) ((char *) outbuf + *position));
+        *position += (int) last;
     }
-    /* --END ERROR HANDLING-- */
-
-    /* NOTE: the use of buffer values and positions in MPI_Pack and in
-     * MPID_Segment_pack are quite different.  See code or docs or something.
-     */
-    first = 0;
-    last  = SEGMENT_IGNORE_LAST;
-
-    MPID_Segment_pack(segp,
-		      first,
-		      &last,
-		      (void *) ((char *) outbuf + *position));
-
-    *position += (int) last;
-
-    MPID_Segment_free(segp);
-
+#   else
+    {
+        mpi_errno = MPID_Pack(inbuf, incount, datatype,
+                              outbuf, outsize, position, comm_ptr);
+        if (mpi_errno) goto fn_fail;
+    }
+#   endif
+    
+    
     /* ... end of body of routine ... */
     
   fn_exit:
@@ -210,8 +208,9 @@ int MPI_Pack(void *inbuf,
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_pack",
-	    "**mpi_pack %p %d %D %p %d %p %C", inbuf, incount, datatype, outbuf, outcount, position, comm);
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            "**mpi_pack", "**mpi_pack %p %d %D %p %d %p %C", inbuf, incount,
+            datatype, outbuf, outsize, position, comm);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
