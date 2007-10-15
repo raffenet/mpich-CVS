@@ -45,4 +45,7 @@ file=${dir}/setup
 if test -f $file ; then
     echo sourcing $file
     . $file
+else 
+    echo "Cannot find $file , needed to build process locks"
+    exit 1
 fi

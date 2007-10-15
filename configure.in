@@ -2448,6 +2448,13 @@ AC_SUBST(XARGS_NODATA_OPT)
 # Force ranlib to handle correctly (ranlib -c on some BSD and MAC OS platforms)
 # or force gcc to not generate common symbols if using gcc (-fno-common).
 # This autoconf macro checks for this.
+
+# Note that if an option is added to CFLAGS, that option MUST NOT appear
+# in MPI_CFLAGS (i.e., the options used in mpicc)
+
+# Also note that it should not be necessary to use this option - it 
+# is almost always possible to avoid "common" symbols, and this approach
+# is gcc-specific (if it needs to choose -fno-common), which we want to avoid.
 dnl PAC_PROG_C_BROKEN_COMMON
 #
 AC_PROG_INSTALL
