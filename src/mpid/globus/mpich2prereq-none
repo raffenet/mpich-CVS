@@ -42,7 +42,7 @@ fi
 if test "${enable_f77}" != "no" ; then
     if test -n "${F77:=${FC}}" ; then
         MPIG_F77=${F77}
-        MPIG_F77FLAGS=${MPIG_F77FLAGS:-`echo "${F77FLAGS:=${FCFLAGS}}" | sed -e 's/-I[^ ]* *//g'`}
+        MPIG_F77FLAGS=${MPIG_F77FLAGS:-`echo "${F77FLAGS:=${FFLAGS}}" | sed -e 's/-I[^ ]* *//g'`}
         MPIG_F77LD=${MPIG_F77LD:-${F77}}
         MPIG_TEST_F77=${MPIG_TEST_F77:-${F77}}
         MPIG_TEST_F77FLAGS="${MPIG_TEST_F77FLAGS:-${MPIG_F77FLAGS}} ${CPPFLAGS}"

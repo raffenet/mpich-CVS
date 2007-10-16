@@ -164,7 +164,7 @@ static int mpig_cm_self_init(mpig_cm_t * const cm, int * const argc, char *** co
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_init);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((strlen(mpig_process.my_hostname) == 0), mpi_errno, MPI_ERR_OTHER, "**globus|cm_self|hostname");
+    MPIU_ERR_CHKANDJUMP((strlen(mpig_process.my_hostname) == 0), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_self|hostname");
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
@@ -232,13 +232,13 @@ static int mpig_cm_self_add_contact_info(mpig_cm_t * const cm, mpig_bc_t * const
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering"));
 
     mpi_errno = mpig_bc_add_contact(bc, "CM_SELF_HOSTNAME", mpig_process.my_hostname);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-	"**globus|bc_add_contact %s", "CM_SELF_HOSTNAME");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_add_contact",
+	"**mpig|bc_add_contact %s", "CM_SELF_HOSTNAME");
 
     MPIU_Snprintf(pid, (size_t) 64, "%lu", (unsigned long) mpig_process.my_pid);
     mpi_errno = mpig_bc_add_contact(bc, "CM_SELF_PID", pid);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-	"**globus|bc_add_contact %s", "CM_SELF_PID");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_add_contact",
+	"**mpig|bc_add_contact %s", "CM_SELF_PID");
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
@@ -284,14 +284,14 @@ static int mpig_cm_self_construct_vc_contact_info(mpig_cm_t * const cm, mpig_vc_
 
     /* extract the hostname from the business card */
     mpi_errno = mpig_bc_get_contact(bc, "CM_SELF_HOSTNAME", &hostname_str, &found);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact", "**globus|bc_get_contact %s",
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_get_contact", "**mpig|bc_get_contact %s",
 	"CM_SELF_HOSTNAME");
     if (!found) goto fn_return;
 
     /* extract the process id from the business card */
     mpi_errno = mpig_bc_get_contact(bc, "CM_SELF_PID", &pid_str, &found);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
-	"**globus|bc_get_contact %s", "CM_SELF_PID");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_get_contact",
+	"**mpig|bc_get_contact %s", "CM_SELF_PID");
     if (!found) goto fn_return;
 
     rc = sscanf(pid_str, "%lu", &pid);
@@ -747,8 +747,8 @@ static int mpig_cm_self_adi3_irecv(
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: receive queue operation failed; dequeue "
 	    "unexpected or enqueue posted: rank=%d, tag=%d, recv_ctx=%d", rank, tag, recv_ctx));
-	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|recvq_deq_unexp_or_enq_posted",
-	    "**globus|recvq_deq_unexp_or_enq_posted %d %d %d", rank, tag, recv_ctx);
+	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|recvq_deq_unexp_or_enq_posted",
+	    "**mpig|recvq_deq_unexp_or_enq_posted %d %d %d", rank, tag, recv_ctx);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
     
@@ -849,8 +849,8 @@ static int mpig_cm_self_adi3_probe(
 	MPIG_PTR_FMT ", recv_ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), recv_ctx, MPIG_PTR_CAST(status)));
 
     mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
-    MPIU_ERR_CHKANDJUMP((!found), mpi_errno, MPI_ERR_OTHER, "**globus|cm_self|probedeadlock");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_fuaes");
+    MPIU_ERR_CHKANDJUMP((!found), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_self|probedeadlock");
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_PT2PT, "exiting: rank=%d, tag=%d, comm="
@@ -887,7 +887,7 @@ static int mpig_cm_self_adi3_iprobe(
 	MPIG_PTR_FMT ", recv_ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), recv_ctx, MPIG_PTR_CAST(status)));
 
     mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_fuaes");
 
     *found_p = found;
 
@@ -1108,8 +1108,8 @@ static int mpig_cm_self_send(
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: receive queue operation failed; dequeue "
 	    "posted or enqueue unexpected: rank=%d, tag=%d, recv_ctx=%d", rank, tag, recv_ctx));
-	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|recvq_deq_posted_or_enq_unexp",
-	    "**globus|recvq_deq_posted_or_enq_unexp %d %d %d", rank, tag, recv_ctx);
+	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|recvq_deq_posted_or_enq_unexp",
+	    "**mpig|recvq_deq_posted_or_enq_unexp %d %d %d", rank, tag, recv_ctx);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
     

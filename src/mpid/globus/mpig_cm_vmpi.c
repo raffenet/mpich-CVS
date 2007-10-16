@@ -424,7 +424,7 @@ static int mpig_cm_vmpi_init(mpig_cm_t * const cm, int * const argc, char *** co
 	    vrc = mpig_vmpi_bcast(&job_id_len, 1, MPIG_VMPI_INT, 0, MPIG_VMPI_COMM_WORLD);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
 
-	    MPIU_ERR_CHKANDJUMP((job_id_len == 0), mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|uuid_generate");
+	    MPIU_ERR_CHKANDJUMP((job_id_len == 0), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|uuid_generate");
 	    
 	    vrc = mpig_vmpi_bcast(job_id_str, job_id_len, MPIG_VMPI_CHAR, 0, MPIG_VMPI_COMM_WORLD);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
@@ -436,13 +436,13 @@ static int mpig_cm_vmpi_init(mpig_cm_t * const cm, int * const argc, char *** co
 	    
 	    vrc = mpig_vmpi_bcast(&job_id_len, 1, MPIG_VMPI_INT, 0, MPIG_VMPI_COMM_WORLD);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
-	    MPIU_ERR_CHKANDJUMP((job_id_len == 0), mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|uuid_create");
+	    MPIU_ERR_CHKANDJUMP((job_id_len == 0), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|uuid_create");
 
 	    vrc = mpig_vmpi_bcast(job_id_str, job_id_len, MPIG_VMPI_CHAR, 0, MPIG_VMPI_COMM_WORLD);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Bcast", &mpi_errno);
 
 	    mpi_errno = mpig_uuid_parse(job_id_str, &mpig_cm_vmpi_job_id);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|uuid_parse");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|uuid_parse");
 	}
 
 	/*
@@ -560,7 +560,7 @@ static int mpig_cm_vmpi_init(mpig_cm_t * const cm, int * const argc, char *** co
 	 * intialize the VMPI communication module progress engine
 	 */
 	mpi_errno = mpig_cm_vmpi_pe_init();
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|vmpi_pe_init");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|vmpi_pe_init");
 	
       fn_return:
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
@@ -615,7 +615,7 @@ static int mpig_cm_vmpi_finalize(mpig_cm_t * const cm)
 	 * shutdown the VMPI communication module progress engine
 	 */
 	mpi_errno = mpig_cm_vmpi_pe_finalize();
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|vmpi_pe_finalize");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|vmpi_pe_finalize");
 
 	/* the MPICH2 predefined communicators are destroyed prior to the calling of the CM finalize routines.  the free and
 	 * destruct hooks take care of releasing any resources used by this module that are associated with those communicators,
@@ -680,13 +680,13 @@ static int mpig_cm_vmpi_add_contact_info(mpig_cm_t * const cm, mpig_bc_t * const
 
         mpig_uuid_unparse(&mpig_cm_vmpi_job_id, job_id_str);
 	mpi_errno = mpig_bc_add_contact(bc, "CM_VMPI_UUID", job_id_str);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-	    "**globus|bc_add_contact %s", "CM_VMPI_UUID");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_add_contact",
+	    "**mpig|bc_add_contact %s", "CM_VMPI_UUID");
 	
 	MPIU_Snprintf(uint_str, 10, "%u", (unsigned) mpig_process.cms.vmpi.cw_rank);
 	mpi_errno = mpig_bc_add_contact(bc, "CM_VMPI_CW_RANK", uint_str);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-	    "**globus|bc_add_contact %s", "CM_VMPI_CW_RANK");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_add_contact",
+	    "**mpig|bc_add_contact %s", "CM_VMPI_CW_RANK");
 	
       fn_return:
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
@@ -744,14 +744,14 @@ static int mpig_cm_vmpi_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t * co
 
 	/* extract the subjob id from the business card */
 	mpi_errno = mpig_bc_get_contact(bc, "CM_VMPI_UUID", &uuid_str, &found);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
-	    "**globus|bc_get_contact %s", "CM_VMPI_UUID");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_get_contact",
+	    "**mpig|bc_get_contact %s", "CM_VMPI_UUID");
 	if (!found) goto fn_return;
     
 	/* extract the rank of the process in _its_ MPI_COMM_WORLD from the business card */
 	mpi_errno = mpig_bc_get_contact(bc, "CM_VMPI_CW_RANK", &cw_rank_str, &found);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
-	    "**globus|bc_get_contact %s", "CM_VMPI_CW_RANK");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_get_contact",
+	    "**mpig|bc_get_contact %s", "CM_VMPI_CW_RANK");
 	if (!found) goto fn_return;
 	
 	rc = sscanf(cw_rank_str, "%d", &cw_rank);
@@ -759,7 +759,7 @@ static int mpig_cm_vmpi_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t * co
 
 	/* if all when well, copy the extracted contact information into the VC */
 	mpi_errno = mpig_uuid_parse(uuid_str, &vc->cms.vmpi.job_id);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|uuid_import");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|uuid_import");
 	vc->cms.vmpi.cw_rank = cw_rank;
 
 	/*
@@ -1004,7 +1004,7 @@ static int mpig_cm_vmpi_pe_init(void)
     
     /* preallocate a set of entries in the progress engine tables for tracking outstanding requests */
     mpi_errno = mpig_cm_vmpi_pe_table_inc_size();
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|vmpi_pe_table_inc_size");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|vmpi_pe_table_inc_size");
 
     /* initialize the VMPI CM progress engine info structure and register the CM with the progress engine core */
     mpig_cm_vmpi_pe_info.active_ops = 0;
@@ -1277,7 +1277,7 @@ void mpig_cm_vmpi_request_status_vtom(MPID_Request * const mreq, mpig_vmpi_statu
 	MPIU_Assert(vrc == MPI_SUCCESS && "ERROR: vendor MPI_Error_string failed");
 
 	MPIU_ERR_SET1(mreq->status.MPI_ERROR, mpig_cm_vmpi_error_class_vtom(verror_class),
-	    "**globus|vmpi_req_failed", "**globus|vmpi_req_failed %s", verror_str);
+	    "**mpig|vmpi_req_failed", "**mpig|vmpi_req_failed %s", verror_str);
 
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_REQ, "request failed: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT ", msg=%s",
 	    mreq->handle, MPIG_PTR_CAST(mreq), verror_str));
@@ -1508,7 +1508,7 @@ int mpig_cm_vmpi_pe_wait(struct MPID_Progress_state * state)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PROGRESS, "ERROR: unregistering queued vendor "
 		"requests failed"));
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|recvq_unreg_ras");
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_unreg_ras");
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
     }
@@ -1555,7 +1555,7 @@ int mpig_cm_vmpi_pe_wait(struct MPID_Progress_state * state)
 		vrc_tw = mpig_vmpi_waitany(mpig_cm_vmpi_pe_info.active_ops, mpig_cm_vmpi_pe_table_vreqs,
 		    &mpig_cm_vmpi_pe_table_vindices[0], &mpig_cm_vmpi_pe_table_vstatuses[0]);
 
-		if (mpig_cm_vmpi_pe_table_vindices[0] != MPI_UNDEFINED)
+		if (mpig_cm_vmpi_pe_table_vindices[0] != MPIG_VMPI_UNDEFINED)
 		{
 		    num_reqs_completed = 1;
 		}
@@ -1682,7 +1682,7 @@ int mpig_cm_vmpi_pe_test(void)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PROGRESS, "ERROR: unregistering queued vendor "
 		"requests failed"));
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|recvq_unreg_ras");
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_unreg_ras");
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
     }
@@ -1826,7 +1826,7 @@ int mpig_cm_vmpi_pe_test(void)
                 "packed message with an incompatible data format" MPIG_VMPI_DATATYPE_FMT ", vrank=%d, vtag=%d, vcomm="           \
                 MPIG_VMPI_COMM_FMT, MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_send_vdt__), mpig_cm_vmpi_send_vrank__,                 \
                 mpig_cm_vmpi_send_vtag__, MPIG_VMPI_COMM_CAST(mpig_cm_vmpi_send_vcomm__)));                                      \
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|packed_incompat");                                          \
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|packed_incompat");                                          \
 	    goto fn_fail;                                                                                                        \
         }                                                                                                                        \
                                                                                                                                  \
@@ -1876,8 +1876,8 @@ int mpig_cm_vmpi_pe_test(void)
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: attempt to register a request with the " \
 		"VMPI process engine failed: sreq" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, mpig_cm_vmpi_send_sreq__->handle,    \
 		MPIG_PTR_CAST(mpig_cm_vmpi_send_sreq__)));                                                                       \
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|pe_table_add_req",                                         \
-		"**globus|cm_vmpi|pe_table_add_req %R %p", mpig_cm_vmpi_send_sreq__->handle, mpig_cm_vmpi_send_sreq__);          \
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|pe_table_add_req",                                         \
+		"**mpig|cm_vmpi|pe_table_add_req %R %p", mpig_cm_vmpi_send_sreq__->handle, mpig_cm_vmpi_send_sreq__);          \
 	    goto fn_fail;                                                                                                        \
 	}                                                                                                                        \
                                                                                                                                  \
@@ -1917,7 +1917,7 @@ int mpig_cm_vmpi_pe_test(void)
                 "packed message with an incompatible data format" MPIG_VMPI_DATATYPE_FMT ", vrank=%d, vtag=%d, vcomm="          \
                 MPIG_VMPI_COMM_FMT, MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_isend_vdt__), mpig_cm_vmpi_isend_vrank__,              \
                 mpig_cm_vmpi_isend_vtag__, MPIG_VMPI_COMM_CAST(mpig_cm_vmpi_isend_vcomm__)));                                   \
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|packed_incompat");                                         \
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|packed_incompat");                                         \
 	    goto fn_fail;                                                                                                       \
         }                                                                                                                       \
                                                                                                                                 \
@@ -1948,8 +1948,8 @@ int mpig_cm_vmpi_pe_test(void)
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: attempt to register a request with the "	\
 	    "VMPI process engine failed: sreq" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, mpig_cm_vmpi_isend_sreq__->handle,	\
 	    MPIG_PTR_CAST(mpig_cm_vmpi_isend_sreq__)));                                                                         \
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|pe_table_add_req",						\
-	    "**globus|cm_vmpi|pe_table_add_req %R %p", mpig_cm_vmpi_isend_sreq__->handle, mpig_cm_vmpi_isend_sreq__);		\
+	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|pe_table_add_req",						\
+	    "**mpig|cm_vmpi|pe_table_add_req %R %p", mpig_cm_vmpi_isend_sreq__->handle, mpig_cm_vmpi_isend_sreq__);		\
 	goto fn_fail;														\
     }																\
 																\
@@ -2280,8 +2280,8 @@ static int mpig_cm_vmpi_adi3_recv(
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: attempt to register a request with the "
 		"VMPI process engine failed: rreq" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|pe_table_add_req",
-		"**globus|cm_vmpi|pe_table_add_req %R %p", rreq->handle, rreq);
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|pe_table_add_req",
+		"**mpig|cm_vmpi|pe_table_add_req %R %p", rreq->handle, rreq);
 	    goto fn_fail;
 	}
 
@@ -2370,8 +2370,8 @@ static int mpig_cm_vmpi_adi3_irecv(
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: attempt to register a request with the "
 	    "VMPI process engine failed: rreq" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT, rreq->handle, MPIG_PTR_CAST(rreq)));
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|pe_table_add_req",
-	    "**globus|cm_vmpi|pe_table_add_req %R %p", rreq->handle, rreq);
+	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|pe_table_add_req",
+	    "**mpig|cm_vmpi|pe_table_add_req %R %p", rreq->handle, rreq);
 	goto fn_fail;
     }
 
@@ -2442,7 +2442,7 @@ static int mpig_cm_vmpi_adi3_probe(
 	while (TRUE)
 	{
 	    mpi_errno = MPID_Progress_poke();
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_poke");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pe_poke");
 	    
 	    vrc = mpig_vmpi_iprobe(vrank, vtag, vcomm, &vfound, &vstatus);
 	    MPIG_ERR_VMPI_CHKANDJUMP(vrc, "MPI_Iprobe", &mpi_errno);
@@ -3550,7 +3550,7 @@ static int mpig_cm_vmpi_comm_construct_localcomm(MPID_Comm * const orig_lcomm, M
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: construction of localcomm failed: "
 		"new_comm=" MPIG_HANDLE_FMT ", new_commp=" MPIG_PTR_FMT, new_comm->handle, MPIG_PTR_CAST(new_comm)));
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|localcomm", "**globus|cm_vmpi|localcomm %C %p",
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|localcomm", "**mpig|cm_vmpi|localcomm %C %p",
 		new_comm->handle, new_comm);
 	    goto error_localcomm_create;
 	}   /* --END ERROR HANDLING-- */
@@ -4010,8 +4010,8 @@ int mpig_cm_vmpi_type_create_resized_hook(const MPI_Datatype old_dt, const MPI_A
 		"MPI_Type_create_resized, which is required for the requested adjustment: old_dt=" MPIG_HANDLE_FMT ", old_lb="
 		MPIG_AINT_FMT ", old_ub=" MPIG_AINT_FMT ", new_lb=" MPIG_AINT_FMT ", new_extent=" MPIG_AINT_FMT ", new_dt="
 		MPIG_HANDLE_FMT ", new_dtp=", old_dt, old_lb, old_ub, lb, extent, new_dtp->handle, MPIG_PTR_CAST(new_dtp)));
-	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|dt_resize_bounds",
-		"**globus|cm_vmpi|dt_resize_bounds %D", old_dt);
+	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|dt_resize_bounds",
+		"**mpig|cm_vmpi|dt_resize_bounds %D", old_dt);
 	}
     }
 #   endif
@@ -4394,8 +4394,8 @@ int mpig_cm_vmpi_register_recv_any_source(const mpig_msg_op_params_t * const ras
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: attempt to register a request with the "
 		"VMPI process engine failed: ras_req" MPIG_HANDLE_FMT ", ras_reqp=" MPIG_PTR_FMT, ras_req->handle,
 		MPIG_PTR_CAST(ras_req)));
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|pe_table_add_req",
-		"**globus|cm_vmpi|pe_table_add_req %R %p", ras_req->handle, ras_req);
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|pe_table_add_req",
+		"**mpig|cm_vmpi|pe_table_add_req %R %p", ras_req->handle, ras_req);
 	    goto fn_fail;
 	}
 

@@ -866,7 +866,7 @@ if test "${MPIG_VMPI:?}" != "no" ; then
 		[define if MPIg must initialize the vendor MPI before the main routine of the application is called])
         for c in cc cxx ; do
 	    cnu=`echo ${c} | tr '[a-z]' '[A-Z]'`
-	    cf=mpich2-grid-${c}
+	    cf=mpig-${c}
 	    premain_lib="libmpig_vmpi_premain_${c}.a"
             if test -f ${cf} ; then
                 AC_MSG_NOTICE([Updating the paths in the MPIg compiler script ${cf}])

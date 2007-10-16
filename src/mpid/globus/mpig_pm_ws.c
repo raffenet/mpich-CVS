@@ -11,6 +11,11 @@
  * In particular, this module makes use of the GRAM and Redezvous services.
  */
 
+/* XXX: this is a hack to work around the Globus xsd_long.h header file also defining int64_t */
+#include "mpichconf.h"
+#if !defined(HAVE_INT64_T)
+#define HAVE_INT64_T 1
+#endif
 #include "mpidimpl.h"
 
 #if defined(HAVE_GLOBUS_RENDEZVOUS_MODULE)
@@ -35,13 +40,6 @@
 #include "globus_wsrf_core_tools.h"
 #include "wsa_EndpointReferenceType.h"
 #include "ManagedMultiJobService_client.h"
-
-/* XXX: this is a hack to work around the Globus xsd_long.h header file also defining int64_t */
-#include "mpichconf.h"
-#if !defined(HAVE_INT64_T)
-#define HAVE_INT64_T 1
-#endif
-#include "mpidimpl.h"
 
 /*
  * prototypes and data structures exposing the "web services" process management class
@@ -750,7 +748,7 @@ static int mpig_pm_ws_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * 
 	    MPID_Abort(NULL, MPI_ERR_OTHER, 1, mpig_pm_ws_ErrorMsg);
 	}
 
-        mpig_uuid_unpares(&uuid, uuid_str);
+        mpig_uuid_unparse(&uuid, uuid_str);
 	mpi_errno = mpig_bc_add_contact(bc, "PM_WS_PG_ID", uuid_str);
 	if (mpi_errno)
 	{

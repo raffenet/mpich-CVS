@@ -186,8 +186,8 @@ int mpig_pm_vmpi_finalize(mpig_pm_t * const pm)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
+        "**mpig|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_finalized");
     
     mpig_pm_vmpi_state = MPIG_PM_VMPI_STATE_FINALIZED;
 
@@ -279,9 +279,9 @@ int mpig_pm_vmpi_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bc=" MPIG_PTR_FMT, MPIG_PTR_CAST(bc)));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_not_init");
+        "**mpig|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_finalized");
+        "**mpig|pm_finalized");
 
     /* if this process is the process group master, then create a process group id and add it to the business card */
     if (mpig_pm_vmpi_pg_rank == 0)
@@ -291,12 +291,12 @@ int mpig_pm_vmpi_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const
         
         mpi_errno = mpig_uuid_generate(&uuid);
         MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {errors++; goto end_create_pg_id_block;},
-            "**globus|pm_pg_id_create");
+            "**mpig|pm_pg_id_create");
 
         mpig_uuid_unparse(&uuid, uuid_str);
         mpi_errno = mpig_bc_add_contact(bc, "PM_VMPI_PG_ID", uuid_str);
         MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER,  {errors++; goto end_create_pg_id_block;},
-            "**globus|bc_add_contact", "**globus|bc_add_contact %s", "PM_VMPI_PG_ID");
+            "**mpig|bc_add_contact", "**mpig|bc_add_contact %s", "PM_VMPI_PG_ID");
 
       end_create_pg_id_block:
         if (mpi_errno) goto fn_fail;
@@ -304,7 +304,7 @@ int mpig_pm_vmpi_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const
     
     /* convert the business card object for this process into a string that can be distributed to other processes */
     mpi_errno = mpig_bc_serialize_object(bc, &bc_str);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_serialize");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_serialize");
 
     /* allocate memory for the array of business cards objects that will result from the exchange, as well as the intermediate
        arrays needed to hold the stringified representations of those objects */
@@ -340,7 +340,7 @@ int mpig_pm_vmpi_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const
     {
         mpig_bc_construct(&bcs[p]);
         mrc = mpig_bc_deserialize_object(&bcs_str[bc_displs[p]], &bcs[p]);
-        MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|bc_deserialize");
+        MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**mpig|bc_deserialize");
     }
 
     /* get the process group id from the process group master */
@@ -350,7 +350,7 @@ int mpig_pm_vmpi_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const
         
         mrc = mpig_bc_get_contact(&bcs[0], "PM_VMPI_PG_ID", &pg_id_str, &found);
         MPIU_ERR_CHKANDSTMT1((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc); goto end_get_pg_id_block;},
-            "**globus|bc_get_contact", "**globus|bc_get_contact %s", "PM_VMPI_PG_ID");
+            "**mpig|bc_get_contact", "**mpig|bc_get_contact %s", "PM_VMPI_PG_ID");
         if (found)
         {
             mpig_pm_vmpi_pg_id = MPIU_Strdup(pg_id_str);
@@ -360,8 +360,8 @@ int mpig_pm_vmpi_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const
         }
         else
         {
-            MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++; goto end_get_pg_id_block;}, "**globus|bc_contact_not_found",
-                "**globus|bc_contact_not_found %s", "PM_VMPI_PG_ID");
+            MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++; goto end_get_pg_id_block;}, "**mpig|bc_contact_not_found",
+                "**mpig|bc_contact_not_found %s", "PM_VMPI_PG_ID");
         }
 
       end_get_pg_id_block: ;
@@ -413,8 +413,8 @@ int mpig_pm_vmpi_free_business_cards(mpig_pm_t * const pm, mpig_bc_t * const bcs
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bcs=" MPIG_PTR_FMT, MPIG_PTR_CAST(bcs)));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
+        "**mpig|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_finalized");
     
     for (p = 0; p < mpig_pm_vmpi_pg_size; p++)
     {
@@ -453,11 +453,11 @@ int mpig_pm_vmpi_get_pg_size(mpig_pm_t * const pm, int * const pg_size)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_not_init");
+        "**mpig|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_finalized");
+        "**mpig|pm_finalized");
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state != MPIG_PM_VMPI_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_no_exchange");
+        "**mpig|pm_no_exchange");
 
     *pg_size = mpig_pm_vmpi_pg_size;
     
@@ -493,11 +493,11 @@ int mpig_pm_vmpi_get_pg_rank(mpig_pm_t * const pm, int * const pg_rank)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_not_init");
+        "**mpig|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_finalized");
+        "**mpig|pm_finalized");
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state != MPIG_PM_VMPI_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_no_exchange");
+        "**mpig|pm_no_exchange");
 
     *pg_rank = mpig_pm_vmpi_pg_rank;
     
@@ -533,11 +533,11 @@ int mpig_pm_vmpi_get_pg_id(mpig_pm_t * const pm, const char ** const pg_id)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_not_init");
+        "**mpig|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_finalized");
+        "**mpig|pm_finalized");
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state != MPIG_PM_VMPI_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_no_exchange");
+        "**mpig|pm_no_exchange");
 
     *pg_id = mpig_pm_vmpi_pg_id;
     
@@ -573,11 +573,11 @@ int mpig_pm_vmpi_get_app_num(mpig_pm_t * const pm, const mpig_bc_t * const bc, i
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_not_init");
+        "**mpig|pm_not_init");
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state == MPIG_PM_VMPI_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_finalized");
+        "**mpig|pm_finalized");
     MPIU_ERR_CHKANDJUMP((mpig_pm_vmpi_state != MPIG_PM_VMPI_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER,
-        "**globus|pm_no_exchange");
+        "**mpig|pm_no_exchange");
 
     *app_num_p = 0;
     

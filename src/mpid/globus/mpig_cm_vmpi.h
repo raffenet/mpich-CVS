@@ -87,8 +87,8 @@ extern struct mpig_cm mpig_cm_vmpi;
     MPIG_ERR_VMPI_SET_vrc__ = mpig_vmpi_error_string((vrc_), MPIG_ERR_VMPI_SET_error_str__, &MPIG_ERR_VMPI_SET_error_str_len__); \
     MPIU_Assert(MPIG_ERR_VMPI_SET_vrc__ == MPI_SUCCESS && "ERROR: vendor MPI_Error_string failed");				 \
 																 \
-    MPIU_ERR_SET2(*(mpi_errno_p_), mpig_cm_vmpi_error_class_vtom(MPIG_ERR_VMPI_SET_error_class__), "**globus|vmpi_fn_failed",	 \
-	"**globus|vmpi_fn_failed %s %s", (vfcname_), MPIG_ERR_VMPI_SET_error_str__);						 \
+    MPIU_ERR_SET2(*(mpi_errno_p_), mpig_cm_vmpi_error_class_vtom(MPIG_ERR_VMPI_SET_error_class__), "**mpig|vmpi_fn_failed",	 \
+	"**mpig|vmpi_fn_failed %s %s", (vfcname_), MPIG_ERR_VMPI_SET_error_str__);						 \
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "ERROR: call to vendor %s failed: %s", (vfcname_),				 \
 	(MPIG_ERR_VMPI_SET_error_str__)));											 \
 }

@@ -293,10 +293,10 @@ static int mpig_cm_xio_rcq_init(void)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "entering"));
 
     rc = mpig_mutex_construct(&mpig_cm_xio_rcq_mutex);
-    MPIU_ERR_CHKANDJUMP((rc), mpi_errno, MPI_ERR_OTHER, "**globus|mutex_init");
+    MPIU_ERR_CHKANDJUMP((rc), mpi_errno, MPI_ERR_OTHER, "**mpig|mutex_init");
     
     rc = mpig_cond_construct(&mpig_cm_xio_rcq_cond);
-    MPIU_ERR_CHKANDJUMP((rc), mpi_errno, MPI_ERR_OTHER, "**globus|cond_init");
+    MPIU_ERR_CHKANDJUMP((rc), mpi_errno, MPI_ERR_OTHER, "**mpig|cond_init");
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
@@ -332,10 +332,10 @@ static int mpig_cm_xio_rcq_finalize(void)
     mpig_genq_destruct(&mpig_cm_xio_rcq, NULL);
 
     rc = mpig_mutex_destruct(&mpig_cm_xio_rcq_mutex);
-    MPIU_ERR_CHKANDSTMT((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|mutex_destroy")
+    MPIU_ERR_CHKANDSTMT((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|mutex_destroy")
     
     rc = mpig_cond_destruct(&mpig_cm_xio_rcq_cond);
-    MPIU_ERR_CHKANDSTMT((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cond_destroy")
+    MPIU_ERR_CHKANDSTMT((rc), mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|cond_destroy")
 
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
@@ -363,7 +363,7 @@ static int mpig_cm_xio_rcq_enq(MPID_Request * const req)
 	req->handle, MPIG_PTR_CAST(req)));
 
     mpi_errno = mpig_genq_entry_create(&rcq_entry);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_entry_create");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|rcq_entry_create");
 
     mpig_genq_entry_set_value(rcq_entry, req);
     

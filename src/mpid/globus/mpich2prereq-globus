@@ -388,9 +388,9 @@ MPIG_TEST_CLD=${MPIG_TEST_CLD:-${MPIG_CLD}}
 if test -n "${CC}" ; then
     mpig_msg_info $LINENO "ignoring CC environment variable.  using the value supplied by Globus."
 fi
-if test -n "${CFLAGS}" ; then
-    mpig_msg_info $LINENO "ignoring CFLAGS environment variable.  using the value supplied by Globus."
-fi
+# if test -n "${CFLAGS}" ; then
+#     mpig_msg_info $LINENO "ignoring CFLAGS environment variable.  using the value supplied by Globus."
+# fi
 
 #
 # gather C++ compiler and flags information
@@ -412,9 +412,9 @@ if test "${enable_cxx}" != "no" ; then
     if test -n "${CXX}" ; then
         mpig_msg_info $LINENO "ignoring CXX environment variable.  using the value supplied by Globus."
     fi
-    if test -n "${CXXFLAGS}" ; then
-        mpig_msg_info $LINENO "ignoring CXXFLAGS environment variable.  using the value supplied by Globus."
-    fi
+    # if test -n "${CXXFLAGS}" ; then
+    #     mpig_msg_info $LINENO "ignoring CXXFLAGS environment variable.  using the value supplied by Globus."
+    # fi
 
     if test -z "${MPIG_CXX}" ; then
         mpig_msg_info $LINENO "C++ compiler not defined by Globus.  Disabling C++ subsystem."
@@ -442,15 +442,15 @@ if test "${enable_f77}" != "no" ; then
     if test -n "${FC}" ; then
         mpig_msg_info $LINENO "ignoring FC environment variable.  using the value supplied by Globus."
     fi
-    if test -n "${FCFLAGS}" ; then
-        mpig_msg_info $LINENO "ignoring FCFLAGS environment variable.  using the value supplied by Globus."
-    fi
+    # if test -n "${FCFLAGS}" ; then
+    #     mpig_msg_info $LINENO "ignoring FCFLAGS environment variable.  using the value supplied by Globus."
+    # fi
     if test -n "${F77}" ; then
         mpig_msg_info $LINENO "ignoring F77 environment variable.  using the value supplied by Globus."
     fi
-    if test -n "${F77FLAGS}" ; then
-        mpig_msg_info $LINENO "ignoring F77FLAGS environment variable.  using the value supplied by Globus."
-    fi
+    # if test -n "${F77FLAGS}" ; then
+    #     mpig_msg_info $LINENO "ignoring F77FLAGS environment variable.  using the value supplied by Globus."
+    # fi
 
     if test -z "${MPIG_F77}" ; then
         mpig_msg_info $LINENO "F77 compiler not defined by Globus.  Disabling F77 subsystem."
@@ -478,9 +478,9 @@ if test "${enable_f90}" != "no" ; then
     if test -n "${F90}" ; then
         mpig_msg_info $LINENO "ignoring F90 environment variable.  using the value supplied by Globus."
     fi
-    if test -n "${F90FLAGS}" ; then
-        mpig_msg_info $LINENO "ignoring F90FLAGS environment variable.  using the value supplied by Globus."
-    fi
+    # if test -n "${F90FLAGS}" ; then
+    #     mpig_msg_info $LINENO "ignoring F90FLAGS environment variable.  using the value supplied by Globus."
+    # fi
 
     if test -z "${MPIG_F90}" ; then
         mpig_msg_info $LINENO "F90 compiler not defined by Globus.  Disabling F90 subsystem."

@@ -454,7 +454,7 @@ static int mpig_cm_other_adi3_recv(
     else if (rank == MPI_ANY_SOURCE)
     {
 	mpi_errno = mpig_cm_other_recv_any_source(buf, cnt, dt, rank, tag, comm, ctxoff, rreqp);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_other|recv_any_source");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_other|recv_any_source");
 	/* the status will be extracted by MPI_Recv() once the request is complete */
     }
     else
@@ -508,7 +508,7 @@ static int mpig_cm_other_adi3_irecv(
     else if (rank == MPI_ANY_SOURCE)
     {
 	mpi_errno = mpig_cm_other_recv_any_source(buf, cnt, dt, rank, tag, comm, ctxoff, rreqp);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_other|recv_any_source");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_other|recv_any_source");
     }
     else
     {
@@ -565,7 +565,7 @@ static int mpig_cm_other_adi3_probe(
 		if (mpig_cm_vmpi_comm_has_remote_vprocs(comm))
 		{
 		    mpi_errno = mpig_cm_vmpi_iprobe_any_source(tag, comm, ctxoff, &found, status);
-		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|iprobe_any_source");
+		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|iprobe_any_source");
 
 		    if (found) break;
 		}
@@ -573,11 +573,11 @@ static int mpig_cm_other_adi3_probe(
 #           endif
     
 	    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_fuaes");
 	    if (found) break;
 
 	    MPID_Progress_poke();
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_poke");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pe_poke");
 
 	    mpig_thread_yield();
 	}
@@ -634,7 +634,7 @@ static int mpig_cm_other_adi3_iprobe(
 	    if (mpig_cm_vmpi_comm_has_remote_vprocs(comm))
 	    {
 		mpi_errno = mpig_cm_vmpi_iprobe_any_source(tag, comm, ctxoff, &found, status);
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|iprobe_any_source");
+		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|iprobe_any_source");
 	    }
 	}
 #       endif
@@ -642,15 +642,15 @@ static int mpig_cm_other_adi3_iprobe(
 	if (MPIG_USING_VMPI == FALSE || found == FALSE)
 	{
 	    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_fuaes");
 	    
 	    if (found == FALSE)
 	    {
 		mpi_errno = MPID_Progress_poke();
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_poke");
+		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pe_poke");
 
 		mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
+		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_fuaes");
 	    }
 	}
     }
@@ -793,8 +793,8 @@ static int mpig_cm_other_recv_any_source(void * const buf, const int cnt, const 
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: receive queue operation failed; dequeue "
 	    "unexpected or enqueue posted: rank=%d, tag=%d, recv_ctx=%d", rank, tag, recv_ctx));
-	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|recvq_deq_unexp_or_enq_posted",
-	    "**globus|recvq_deq_unexp_or_enq_posted %d %d %d", rank, tag, recv_ctx);
+	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|recvq_deq_unexp_or_enq_posted",
+	    "**mpig|recvq_deq_unexp_or_enq_posted %d %d %d", rank, tag, recv_ctx);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -820,7 +820,7 @@ static int mpig_cm_other_recv_any_source(void * const buf, const int cnt, const 
 	if (vc->vtable->recv_any_source != NULL)
 	{
 	    mpi_errno = vc->vtable->recv_any_source(vc, rreq);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_other|vc_recv_any_source");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_other|vc_recv_any_source");
 	}
     }
     else

@@ -161,6 +161,7 @@ mpig_with_ccache=no
 mpig_with_insure_cc=no
 mpig_with_insure_cxx=no
 mpig_enable_gcc_strict=default
+mpig_enable_compiler_optimizations=default
 MPIG_F77_SED=no
 
 for arg in ${ac_configure_args} ; do
@@ -219,6 +220,12 @@ for arg in ${ac_configure_args} ; do
         --disable-gcc-strict)
         mpig_enable_gcc_strict=no
         ;;
+        --enable-compiler-optimizations)
+        mpig_enable_compiler_optimizations=yes
+        ;;
+        --disable-compiler-optimizations)
+        mpig_enable_compiler_optimizations=no
+        ;;
         # NOTE: doing sed replacement on f90 modules can cause problems.  we also believe that f77 programs may no longer require
         # the sed replacement mechanism, and instead can rely on library link order.  for now, we are disabling sed substition.
         # --with-f77-sed)
@@ -269,6 +276,29 @@ if test "${with_pm}" != "no" -a "${with_pm}" != "default" ; then
 fi
 with_pmi=no
 with_pm=no
+
+#
+# if the user has provided compiler options, then assume that those options include the desired optimization settings.  this
+# overrides the MPICH2 behavior of always imposing "default" options on the user.
+#
+if test "$mpig_enable_compiler_optimizations" = "default" ; then
+    if test -n "$CFLAGS" ; then
+	mpig_msg_info $LINENO "CFLAGS supplied by the user.  Default C compiler optimization settings will be disabled."
+        MPID_DEFAULT_COPTS=" "
+    fi
+    if test -n "$CXXFLAGS" ; then
+	mpig_msg_info $LINENO "CXXFLAGS supplied by the user.  Default C++ compiler optimization settings will be disabled."
+        MPID_DEFAULT_CXXOPTS=" "
+    fi
+    if test -n "${FFLAGS:=${F77FLAGS}}" ; then
+	mpig_msg_info $LINENO "FFLAGS supplied by the user.  Default F77 compiler optimization settings will be disabled."
+        MPID_DEFAULT_FOPTS=" "
+    fi
+    if test -n "$F90FLAGS" ; then
+	mpig_msg_info $LINENO "F90FLAGS supplied by the user.  Default F90 compiler optimization settings will be disabled."
+        MPID_DEFAULT_F90OPTS=" "
+    fi
+fi
 
 #
 # add include paths needed by the device
@@ -349,7 +379,8 @@ EXTRA_STATUS_DECL="${EXTRA_STATUS_DECL} ${MPIG_DATA_FORMAT_DESC_STRUCT} mpig_src
 # passed to lower-level configure scripts, effectively overriding our override of the compilers.  *sigh*  if you think this is
 # an ugly hack, you are correct.  suggestions for alternative techniques are most certainly welcome.
 #
-for var in LD LDFLAGS LIBS CC CFLAGS CXX CXXFLAGS FC FCFLAGS F77 F77FLAGS F90 F90FLAGS CPPFLAGS ; do
+# for var in LD LDFLAGS LIBS CC CFLAGS CXX CXXFLAGS FC FCFLAGS F77 FFLAGS F77FLAGS F90 F90FLAGS CPPFLAGS ; do
+for var in LD CC CXX FC F77 F90 ; do
     ac_configure_args=`echo "$ac_configure_args" | sed -e "s/'$var=[^']*' *//"`
     eval unset $var
 done
@@ -364,10 +395,10 @@ if test "${mpig_with_insure_cc}" != "no" ; then
     mpig_msg_info $LINENO "building C code with Insure++ (using ${mpig_with_insure_cc} as the compiler acronym)"
     mpig_insure_cc=`echo $MPIG_CC | sed -e 's/^[ ]*//' -e 's/ .*$//'`
     mpig_insure_ccopts=`echo $MPIG_CC | sed -e 's/^[ ]*[^ ]* \?//'`
-    MPIG_CC="insure -Zop ${MPIG_BUILD_DIR}/mpich2-grid-cc-insure-psrc ${mpig_insure_ccopts}"
-    MPIG_CLD="insure -Zop ${MPIG_BUILD_DIR}/mpich2-grid-cc-insure-psrc -Zsl ${mpig_insure_ccopts}"
-    MPIG_BUILD_CC="insure -Zop ${MPIG_BUILD_DIR}/mpich2-grid-cc-insure-psrc ${mpig_insure_ccopts}"
-    cat >${MPIG_BUILD_DIR}/mpich2-grid-cc-insure-psrc <<EOF 
+    MPIG_CC="insure -Zop ${MPIG_BUILD_DIR}/mpig-cc-insure-psrc ${mpig_insure_ccopts}"
+    MPIG_CLD="insure -Zop ${MPIG_BUILD_DIR}/mpig-cc-insure-psrc -Zsl ${mpig_insure_ccopts}"
+    MPIG_BUILD_CC="insure -Zop ${MPIG_BUILD_DIR}/mpig-cc-insure-psrc ${mpig_insure_ccopts}"
+    cat >${MPIG_BUILD_DIR}/mpig-cc-insure-psrc <<EOF 
 insure++.compiler ${mpig_insure_cc}
 insure++.compiler_acronym ${mpig_with_insure_cc}
 insure++.compile.report_file stderr
@@ -396,10 +427,10 @@ if test "${enable_cxx}" != "no" ; then
         mpig_msg_info $LINENO "building C++ code with Insure++ (using ${mpig_with_insure_cxx} as the compiler acronym)"
         mpig_insure_cxx=`echo $MPIG_CXX | sed -e 's/^[ ]*//' -e 's/ .*$//'`
         mpig_insure_cxxopts=`echo $MPIG_CXX | sed -e 's/^[ ]*[^ ]* \?//'`
-        MPIG_CXX="insure -Zop ${MPIG_BUILD_DIR}/mpich2-grid-cxx-insure-psrc ${mpig_insure_cxxopts}"
-        MPIG_CXXLD="insure -Zop ${MPIG_BUILD_DIR}/mpich2-grid-cxx-insure-psrc -Zsl ${mpig_insure_cxxopts}"
-        MPIG_BUILD_CXX="insure -Zop ${MPIG_BUILD_DIR}/mpich2-grid-cxx-insure-psrc ${mpig_insure_cxxopts}"
-        cat >${MPIG_BUILD_DIR}/mpich2-grid-cxx-insure-psrc <<EOF 
+        MPIG_CXX="insure -Zop ${MPIG_BUILD_DIR}/mpig-cxx-insure-psrc ${mpig_insure_cxxopts}"
+        MPIG_CXXLD="insure -Zop ${MPIG_BUILD_DIR}/mpig-cxx-insure-psrc -Zsl ${mpig_insure_cxxopts}"
+        MPIG_BUILD_CXX="insure -Zop ${MPIG_BUILD_DIR}/mpig-cxx-insure-psrc ${mpig_insure_cxxopts}"
+        cat >${MPIG_BUILD_DIR}/mpig-cxx-insure-psrc <<EOF 
 insure++.compiler ${mpig_insure_cxx}
 insure++.compiler_acronym ${mpig_with_insure_cxx}
 insure++.compile.report_file stderr
@@ -420,13 +451,13 @@ case "${enable_dependencies}" in
         ;;
     yes)
         MPIG_MAKE_DEPEND_C="${MPIG_CC} -MM"
-        enable_dependencies="${MPIG_BUILD_DIR}/mpich2-grid-cc -MM"
+        enable_dependencies="${MPIG_BUILD_DIR}/mpig-cc -MM"
         ;;
     no)
         ;;
     *)
         MPIG_MAKE_DEPEND_C="${enable_dependencies}"
-        enable_dependencies="${MPIG_BUILD_DIR}/mpich2-grid-cc -MM"
+        enable_dependencies="${MPIG_BUILD_DIR}/mpig-cc -MM"
         ;;
 esac
 
@@ -480,9 +511,9 @@ sed -e "s!@GCC@!${MPIG_CC}!" \
     -e "s!@BCC@!${MPIG_BUILD_CC}!" \
     -e "s!@BCFLAGS@!${MPIG_BUILD_CFLAGS}!" \
     -e "s!@MPIG_MAKE_DEPEND_C@!${MPIG_MAKE_DEPEND_C}!" \
-    ${MPIG_SOURCE_DIR}/mpich2-grid-cc.in >${MPIG_BUILD_DIR}/mpich2-grid-cc
-chmod +x ${MPIG_BUILD_DIR}/mpich2-grid-cc
-CC=${MPIG_BUILD_DIR}/mpich2-grid-cc
+    ${MPIG_SOURCE_DIR}/mpig-cc.in >${MPIG_BUILD_DIR}/mpig-cc
+chmod +x ${MPIG_BUILD_DIR}/mpig-cc
+CC=${MPIG_BUILD_DIR}/mpig-cc
 export CC
 
 if test "${enable_cxx}" != "no" ; then
@@ -499,10 +530,10 @@ if test "${enable_cxx}" != "no" ; then
         -e "s!@BCC@!${MPIG_BUILD_CXX}!" \
         -e "s!@BCFLAGS@!${MPIG_CXXFLAGS}!" \
         -e "s!@MPIG_MAKE_DEPEND_C@!${MPIG_MAKE_DEPEND_C}!" \
-        ${MPIG_SOURCE_DIR}/mpich2-grid-cc.in >${MPIG_BUILD_DIR}/mpich2-grid-cxx
-    chmod +x ${MPIG_BUILD_DIR}/mpich2-grid-cxx
+        ${MPIG_SOURCE_DIR}/mpig-cc.in >${MPIG_BUILD_DIR}/mpig-cxx
+    chmod +x ${MPIG_BUILD_DIR}/mpig-cxx
 
-    CXX=${MPIG_BUILD_DIR}/mpich2-grid-cxx
+    CXX=${MPIG_BUILD_DIR}/mpig-cxx
     export CXX
 fi
 
@@ -518,10 +549,10 @@ if test "${enable_f77}" != "no" ; then
         -e "s!@TLDFLAGS@!${MPIG_TEST_LDFLAGS}!" \
         -e "s!@TLIBS@!${MPIG_TEST_LIBS}!" \
         -e "s!@F77_SED@!${MPIG_F77_SED}!" \
-        ${MPIG_SOURCE_DIR}/mpich2-grid-fc.in >${MPIG_BUILD_DIR}/mpich2-grid-f77
-    chmod +x ${MPIG_BUILD_DIR}/mpich2-grid-f77
+        ${MPIG_SOURCE_DIR}/mpig-fc.in >${MPIG_BUILD_DIR}/mpig-f77
+    chmod +x ${MPIG_BUILD_DIR}/mpig-f77
 
-    F77=${MPIG_BUILD_DIR}/mpich2-grid-f77
+    F77=${MPIG_BUILD_DIR}/mpig-f77
     export F77
 fi
 
@@ -537,10 +568,10 @@ if test "${enable_f90}" != "no" ; then
         -e "s!@TLDFLAGS@!${MPIG_TEST_LDFLAGS}!" \
         -e "s!@TLIBS@!${MPIG_TEST_LIBS}!" \
         -e "s!@F77_SED@!${MPIG_F77_SED}!" \
-        ${MPIG_SOURCE_DIR}/mpich2-grid-fc.in >${MPIG_BUILD_DIR}/mpich2-grid-f90
-    chmod +x ${MPIG_BUILD_DIR}/mpich2-grid-f90
+        ${MPIG_SOURCE_DIR}/mpig-fc.in >${MPIG_BUILD_DIR}/mpig-f90
+    chmod +x ${MPIG_BUILD_DIR}/mpig-f90
 
-    F90=${MPIG_BUILD_DIR}/mpich2-grid-f90
+    F90=${MPIG_BUILD_DIR}/mpig-f90
     export F90
 fi
 

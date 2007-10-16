@@ -114,7 +114,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3, "activating globus common module"));
 	grc = globus_module_activate(GLOBUS_COMMON_MODULE);
-	MPIU_ERR_CHKANDJUMP2((grc), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate", "**globus|module_activate %s %s",
+	MPIU_ERR_CHKANDJUMP2((grc), mpi_errno, MPI_ERR_OTHER, "**mpig|module_activate", "**mpig|module_activate %s %s",
 	    "common", globus_error_print_chain(globus_error_peek(grc)));
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3, "globus common module activated"));
     }
@@ -125,16 +125,16 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     
     /* initialize the receive queue */
     mpi_errno = mpig_recvq_init();
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_init");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_init");
     
     /* initialize the datatype processing module */
     mpi_errno = mpig_datatype_init();
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_init");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|datatype_init");
     
     /* initialize the process management module which interfaces with globus */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3, "initializing process management module"));
     mpi_errno = mpig_pm_init(argc, argv);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_init");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_init");
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ADI3, "processes management module initialized"));
 
     /* initialize the process group tracking subsystem */
@@ -150,7 +150,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	    ", cm_name", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
 
 	mpi_errno = mpig_cm_get_vtable(cm)->init(cm, argc, argv);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm|init", "**globus|cm|init %s",
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm|init", "**mpig|cm|init %s",
 	    mpig_cm_get_name(cm));
 
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "communication method initialization complete: cm="
@@ -166,15 +166,15 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	if (mpig_cm_get_vtable(cm)->add_contact_info != NULL)
 	{
 	    mpi_errno = mpig_cm_get_vtable(cm)->add_contact_info(cm, &bc);
-	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm|add_contact_info",
-		"**globus|cm|add_contact_info %s", mpig_cm_get_name(cm));
+	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm|add_contact_info",
+		"**mpig|cm|add_contact_info %s", mpig_cm_get_name(cm));
 	}
     }
 
     /* add information about local datatype sizes, etc.  NOTE: it might be better add to this information only if one of the
        communication methods will require the information. */
     mpi_errno = mpig_datatype_add_info_to_bc(&bc);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_add_info_to_bc");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|datatype_add_info_to_bc");
     
     /* add the LAN identification string to the business card (if one is defined) */
     lan_id = getenv("MPIG_LAN_ID");
@@ -185,14 +185,14 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     if (lan_id != NULL)
     {
 	mpi_errno = mpig_bc_add_contact(&bc, "MPIG_LAN_ID", lan_id);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-	    "**globus|bc_add_contact %s", "MPIG_LAN_ID");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_add_contact",
+	    "**mpig|bc_add_contact %s", "MPIG_LAN_ID");
     }
     
     /* use the process management module to exchange the businesses cards and obtian information about the process group. */
     mpi_errno = mpig_pm_exchange_business_cards(&bc, &bcs);
     mpig_bc_destruct(&bc);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_xchg");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_xchg");
     
     mpig_pm_get_pg_id(&pg_id);
     mpig_pm_get_pg_size(&pg_size);
@@ -219,7 +219,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
     /* acquire, creating if necessary, a reference to the process group object used to manage the virtual connection objects.  if
        creation was necessary, the virtual connection objects within the PG will be initialized at this time. */
     mpi_errno = mpig_pg_acquire_ref(pg_id, pg_size, TRUE, &pg, &pg_committed);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pg_acquire_ref");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pg_acquire_ref");
     pg_locked = TRUE;
     {    
 	mpig_vc_t * vc;
@@ -253,12 +253,12 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 		/* stash a copy of the business card in the VC.  it will be used during the extraction of contact information,
 		   and also by the MPI-2 dynamic process routines when an exchange of business cards is necessary. */
 		mpi_errno = mpig_bc_copy(&bcs[p], mpig_vc_get_bc(vc));
-		MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|bc_copy");
+		MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**mpig|bc_copy");
 
                 /* extract information about remote datatype sizes, etc.  NOTE: this should probably only be done if the selected
                    communication method needs the information. */
                 mpi_errno = mpig_datatype_extract_info_from_bc(vc);
-                MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_extract_info_from_bc");
+                MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|datatype_extract_info_from_bc");
     
 		/* extract the contact information from the business card contained within the VC object.  the information is
 		   extracted from the business card because it is used each time a communicator is created to construct the
@@ -266,7 +266,7 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 		   information is extract to once and store in a form more easily manipulated by the machine. */
 		mpi_errno = mpig_vc_construct_contact_info(vc);
 		MPIU_ERR_CHKANDSTMT2((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;},
-		    "**globus|vc_construct_contact_info", "**globus|vc_construct_contact_info %s %d", pg_id, pg_rank);
+		    "**mpig|vc_construct_contact_info", "**mpig|vc_construct_contact_info %s %d", pg_id, pg_rank);
 		/*
 		 * select the communication method that will be used for each VC
 		 *
@@ -276,8 +276,8 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 		 * internal fields of the VC, causing the existing connection to be corrupted or lost.
 		 */
 		mpi_errno = mpig_vc_select_comm_method(vc);
-		MPIU_ERR_CHKANDSTMT2((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**globus|vc_select_comm_method",
-		    "**globus|vc_select_comm_method %s %d", pg_id, pg_rank);
+		MPIU_ERR_CHKANDSTMT2((mpi_errno), mpi_errno, MPI_ERR_OTHER, {goto vc_unlock;}, "**mpig|vc_select_comm_method",
+		    "**mpig|vc_select_comm_method %s %d", pg_id, pg_rank);
 
 		mpig_vc_set_initialized(vc, TRUE);
 
@@ -294,11 +294,11 @@ int MPID_Init(int * argc, char *** argv, int requested, int * provided, int * ha
 	
 	/* initialize the topology information module */
 	mpi_errno = mpig_topology_init();
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|topology_init");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|topology_init");
 	
 	/* initialize the communicator tracking module */
 	mpi_errno = mpig_comm_init();
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|comm_init");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|comm_init");
 	
 	/* initialize the MPI_COMM_WORLD object */
 	comm = MPIR_Process.comm_world;
@@ -493,7 +493,7 @@ int MPID_Finalize()
      * corrected by canceling any such operations before calling MPI_Finalize().
      */
     mrc = mpig_comm_finalize();
-    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|comm_finalize");
+    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**mpig|comm_finalize");
     
     /* release the virtual connection reference tables allocated in MPID_Init() and associated with MPI_COMM_WORLD and
        MPI_COMM_SELF */
@@ -504,7 +504,7 @@ int MPID_Finalize()
     
     /* shutdown the topology information module */
     mrc = mpig_topology_finalize();
-    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|topology_finalize");
+    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**mpig|topology_finalize");
     
     /* shutdown the communication methods.  each method is responsible for insuring that any VCs managed by it are disconnected
        before returning. */
@@ -512,8 +512,8 @@ int MPID_Finalize()
     {
 	mpig_cm_t * const cm = mpig_cm_table[n];
 	mrc = mpig_cm_get_vtable(cm)->finalize(cm);
-	MPIU_ERR_CHKANDSTMT1((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|cm|finalize",
-	    "**globus|cm|finalize %s", mpig_cm_get_name(cm));
+	MPIU_ERR_CHKANDSTMT1((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**mpig|cm|finalize",
+	    "**mpig|cm|finalize %s", mpig_cm_get_name(cm));
     }
     
     /* release the reference to the process group associated with MPI_COMM_WORLD */
@@ -526,15 +526,15 @@ int MPID_Finalize()
 
     /* shutdown the process management module */
     mrc = mpig_pm_finalize();
-    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|pm_finalize");
+    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**mpig|pm_finalize");
     
     /* shutdown the datatype processing module */
     mrc = mpig_datatype_finalize();
-    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|datatype_finalize");
+    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**mpig|datatype_finalize");
     
     /* shutdown the receive queue module */
     mrc = mpig_recvq_finalize();
-    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|recvq_finalize");
+    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**mpig|recvq_finalize");
     
     /* shutdown the request allocator module */
     mpig_request_alloc_finalize();
@@ -545,8 +545,8 @@ int MPID_Finalize()
 	globus_result_t grc;
 	
 	grc = globus_module_deactivate(GLOBUS_COMMON_MODULE);
-	MPIU_ERR_CHKANDSTMT1((grc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|module_deactivate",
-	    "**globus|module_deactivate %s", "common");
+	MPIU_ERR_CHKANDSTMT1((grc), mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|module_deactivate",
+	    "**mpig|module_deactivate %s", "common");
     }
 #   endif
 

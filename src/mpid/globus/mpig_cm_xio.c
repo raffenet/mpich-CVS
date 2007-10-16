@@ -157,18 +157,18 @@ static int mpig_cm_xio_module_init(void)
 		 size = (int) strtol(env_str, NULL, 0);
 		 if (size == 0 && errno == EINVAL)
 		 {
-		     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|tcp_buf_size_invalid",
-			 "**globus|tcp_buf_size_invalid %s", env_str);
+		     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|tcp_buf_size_invalid",
+			 "**mpig|tcp_buf_size_invalid %s", env_str);
 		 }
 		 else if (size < 0)
 		 {
-		     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|tcp_buf_size_neg",
-			 "**globus|tcp_buf_size_neg %s", env_str);
+		     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|tcp_buf_size_neg",
+			 "**mpig|tcp_buf_size_neg %s", env_str);
 		 }
 		 else if (size >= INT_MAX)
 		 {
-		     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|tcp_buf_size_overflow",
-			 "**globus|tcp_buf_size_overflow %s", env_str);
+		     MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|tcp_buf_size_overflow",
+			 "**mpig|tcp_buf_size_overflow %s", env_str);
 		 }
 
 		 mpig_cm_xio_tcp_buf_size = (int) size;
@@ -177,7 +177,7 @@ static int mpig_cm_xio_module_init(void)
 
 	/* initialize the request completion queue */
         mpi_errno = mpig_cm_xio_rcq_init();
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_init");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|rcq_init");
 
 	/* initialize the XIO CM progress engine info structure and register the CM with the progress engine */
 	mpig_cm_xio_pe_info.active_ops = 0;
@@ -197,7 +197,7 @@ static int mpig_cm_xio_module_init(void)
 	
 	/* activate globus XIO module */
 	grc = globus_module_activate(GLOBUS_XIO_MODULE);
-	MPIU_ERR_CHKANDJUMP1((grc), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate", "**globus|module_activate %s", "XIO");
+	MPIU_ERR_CHKANDJUMP1((grc), mpi_errno, MPI_ERR_OTHER, "**mpig|module_activate", "**mpig|module_activate %s", "XIO");
     }
 
     mpig_cm_xio_methods_active += 1;
@@ -239,8 +239,8 @@ static int mpig_cm_xio_module_finalize(void)
     {
 	/* deactivate the globus XIO module */
 	grc = globus_module_deactivate(GLOBUS_XIO_MODULE);
-	MPIU_ERR_CHKANDSTMT2((grc), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|module_deactivate",
-	    "**globus|module_deactivate %s %s", "XIO", globus_error_print_chain(globus_error_peek(grc)));
+	MPIU_ERR_CHKANDSTMT2((grc), mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|module_deactivate",
+	    "**mpig|module_deactivate %s %s", "XIO", globus_error_print_chain(globus_error_peek(grc)));
 
 	/* clean up the data structures used to handle blocking probes */
 	mpig_cm_xio_probe_finalize();
@@ -253,7 +253,7 @@ static int mpig_cm_xio_module_finalize(void)
     
 	/* shutdown the request completion queue */
 	mrc = mpig_cm_xio_rcq_finalize();
-	MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|cm_xio|rcq_finalize");
+	MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**mpig|cm_xio|rcq_finalize");
     
 	mpig_cm_xio_mutex_destruct();
 
@@ -326,12 +326,12 @@ int mpig_cm_xio_pe_wait(struct MPID_Progress_state * state)
 	if (blocking)
 	{
 	    mpi_errno = mpig_cm_xio_rcq_deq_wait(&req);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_wait");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|rcq_deq_wait");
 	}
 	else
 	{
 	    mpi_errno = mpig_cm_xio_rcq_deq_test(&req);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|rcq_deq_test");
 	}
 
 	while (req != NULL)
@@ -346,7 +346,7 @@ int mpig_cm_xio_pe_wait(struct MPID_Progress_state * state)
             }
 
 	    mpi_errno = mpig_cm_xio_rcq_deq_test(&req);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|rcq_deq_test");
 	}
      }
      
@@ -388,7 +388,7 @@ int mpig_cm_xio_pe_test(void)
     globus_poll_nonblocking();
     
     mpi_errno = mpig_cm_xio_rcq_deq_test(&req);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|rcq_deq_test");
 
     while (req != NULL)
     {
@@ -402,7 +402,7 @@ int mpig_cm_xio_pe_test(void)
         }
 	
 	mpi_errno = mpig_cm_xio_rcq_deq_test(&req);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|rcq_deq_test");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|rcq_deq_test");
     }
 
   fn_return:

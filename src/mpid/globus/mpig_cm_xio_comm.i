@@ -28,8 +28,8 @@
     {   /* --BEGIN ERROR HANDLING-- */												\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: %s operation failed: vc=" MPIG_PTR_FMT	\
 	    ", msg=\"%s\"", "globus_xio_register_write", MPIG_PTR_CAST(vc_), mpig_get_globus_error_msg(grc__)));		\
-	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_write",						\
-	    "**globus|cm_xio|xio_reg_write %s", mpig_get_globus_error_msg(grc__));						\
+	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**mpig|cm_xio|xio_reg_write",						\
+	    "**mpig|cm_xio|xio_reg_write %s", mpig_get_globus_error_msg(grc__));						\
     }   /* --END ERROR HANDLING-- */												\
 }
 
@@ -50,8 +50,8 @@
     {   /* --BEGIN ERROR HANDLING-- */												\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: %s operation failed: vc=" MPIG_PTR_FMT	\
 	    ", msg=\"%s\"", "globus_xio_register_writev", MPIG_PTR_CAST(vc_), mpig_get_globus_error_msg(grc__)));		\
-	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_writev",						\
-	    "**globus|cm_xio|xio_reg_writev %s", mpig_get_globus_error_msg(grc__));						\
+	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**mpig|cm_xio|xio_reg_writev",						\
+	    "**mpig|cm_xio|xio_reg_writev %s", mpig_get_globus_error_msg(grc__));						\
     }   /* --END ERROR HANDLING-- */												\
 }
 
@@ -72,8 +72,8 @@
     {   /* --BEGIN ERROR HANDLING-- */												\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: %s operation failed: vc=" MPIG_PTR_FMT	\
 	    ", msg=\"%s\"", "globus_xio_register_read", MPIG_PTR_CAST(vc_),mpig_get_globus_error_msg(grc__)));			\
-	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_read",						\
-	"**globus|cm_xio|xio_reg_read %s", mpig_get_globus_error_msg(grc__));							\
+	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**mpig|cm_xio|xio_reg_read",						\
+	"**mpig|cm_xio|xio_reg_read %s", mpig_get_globus_error_msg(grc__));							\
     }   /* --END ERROR HANDLING-- */												\
 }
 
@@ -94,8 +94,8 @@
     {   /* --BEGIN ERROR HANDLING-- */												\
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: %s operation failed: vc=" MPIG_PTR_FMT	\
 	    ", msg=\"%s\"", "globus_xio_register_readv", MPIG_PTR_CAST(vc_), mpig_get_globus_error_msg(grc__)));		\
-	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**globus|cm_xio|xio_reg_readv",						\
-	    "**globus|cm_xio|xio_reg_readv %s", mpig_get_globus_error_msg(grc__));						\
+	MPIU_ERR_SET1(*(mpi_errno_p_), MPI_ERR_OTHER, "**mpig|cm_xio|xio_reg_readv",						\
+	    "**mpig|cm_xio|xio_reg_readv %s", mpig_get_globus_error_msg(grc__));						\
     }   /* --END ERROR HANDLING-- */												\
 }
 
@@ -179,7 +179,7 @@ static int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * const 
 		MPIG_PTR_CAST(sreq)));
 		    
 	    mpi_errno = mpig_cm_xio_send_next_sreq(vc);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_next_sreq");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_next_sreq");
 	}
 	else
 	{
@@ -214,7 +214,7 @@ static int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * const 
 		MPIG_PTR_CAST(sreq)));
 		    
 	    mpi_errno = mpig_cm_xio_send_next_sreq(vc);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_next_sreq");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_next_sreq");
 	}
 	else
 	{
@@ -245,7 +245,7 @@ static int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * const 
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "VC unconnected; enqueuing request and starting connect; vc=" MPIG_PTR_FMT
 		", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
 	    mpi_errno = mpig_cm_xio_client_connect_proc(vc);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|client_connect_proc");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|client_connect_proc");
 	}
 	else
 	{
@@ -262,8 +262,8 @@ static int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * const 
 	    ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
 
 	/* MT-RC-NOTE: the mutex lock/unlock in the RCQ routines will insure that the sreq data is released and acquired */
-	MPIU_ERR_SETANDSTMT3(sreq->status.MPI_ERROR, MPI_ERR_OTHER, {;}, "**globus|cm_xio|vc_connection",
-	    "**globus|cm_xio|vc_connection %s %d %s", mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc),
+	MPIU_ERR_SETANDSTMT3(sreq->status.MPI_ERROR, MPI_ERR_OTHER, {;}, "**mpig|cm_xio|vc_connection",
+	    "**mpig|cm_xio|vc_connection %s %d %s", mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc),
 	    mpig_cm_xio_vc_get_contact_string(vc));
 	mpig_cm_xio_request_set_cc(sreq, 0);
         mrc = mpig_cm_xio_rcq_enq(sreq);
@@ -272,7 +272,7 @@ static int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * const 
             MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure occurred "
                 "while attempting to enqueue sreq on the completion queue, vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
                 ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
-            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_sreq");
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**mpig|cm_xio|rcq_enq_sreq");
             goto fn_fail;
         }
     }
@@ -282,14 +282,14 @@ static int mpig_cm_xio_send_enq_sreq(mpig_vc_t * const vc, MPID_Request * const 
 	/* VC is unitialized.  this should never happen! */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "FATAL ERROR: VC state is uninitialized; vc=" MPIG_PTR_FMT,
 	    MPIG_PTR_CAST(vc)));
-	MPIU_ERR_SETFATALANDJUMP1(mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|vc_uninit", "**globus|cm_xio|vc_uninit %p", vc);
+	MPIU_ERR_SETFATALANDJUMP1(mpi_errno, MPI_ERR_INTERN, "**mpig|cm_xio|vc_uninit", "**mpig|cm_xio|vc_uninit %p", vc);
     }   /* --END ERROR HANDLING-- */
     else
     {   /* --BEGIN ERROR HANDLING-- */
 	/* VC state is not valid.  this should never happen! */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "FATAL ERROR: VC state is corrupt; vc=" MPIG_PTR_FMT ", state=%d",
 	    MPIG_PTR_CAST(vc), (int) mpig_cm_xio_vc_get_state(vc)));
-	MPIU_ERR_SETFATALANDJUMP1(mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|vc_corrupt", "**globus|cm_xio|vc_corrupt %p", vc);
+	MPIU_ERR_SETFATALANDJUMP1(mpi_errno, MPI_ERR_INTERN, "**mpig|cm_xio|vc_corrupt", "**mpig|cm_xio|vc_corrupt %p", vc);
     }   /* --END ERROR HANDLING-- */
     
   fn_return:
@@ -350,7 +350,7 @@ static int mpig_cm_xio_send_next_sreq(mpig_vc_t * const vc)
 	/* TODO: try an immediate send first; only queue if necessary */
 
 	mpig_cm_xio_register_write_sreq(vc, sreq, &mpi_errno);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_write_sreq");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_write_sreq");
     }
 
   fn_return:
@@ -412,8 +412,8 @@ static int mpig_cm_xio_send_enq_isend(mpig_vc_t * const vc, MPID_Request * const
             MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "datatype is packed, but msg size is too small: sreq=" MPIG_HANDLE_FMT
                 ", sreqp=" MPIG_PTR_FMT ", msg_size=" MPIG_SIZE_FMT ", expected_hdr_size=%d", sreq->handle, MPIG_PTR_CAST(sreq),
                 mpig_request_get_cnt(sreq), MPIG_PACK_HEADER_SIZE));
-            MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|packed_buf_too_small",
-                "**globus|cm_xio|packed_buf_too_small %d", mpig_request_get_cnt(sreq));
+            MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|packed_buf_too_small",
+                "**mpig|cm_xio|packed_buf_too_small %d", mpig_request_get_cnt(sreq));
             goto fn_fail;
         }   /* --END ERROR HANDLING-- */
         
@@ -428,14 +428,14 @@ static int mpig_cm_xio_send_enq_isend(mpig_vc_t * const vc, MPID_Request * const
        being sent with this message.  in the case of a rendezvous request-to-send message, the exact count cannot be determined
        before the data is packed by the dataloop engine, so the data must be packed before the header is generated. */
     mpi_errno = mpig_cm_xio_stream_sreq_init(sreq);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_sreq_init");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_sreq_init");
 
     if (mpig_request_get_type(sreq) != MPIG_REQUEST_TYPE_RSEND)
     {
 	mpig_cm_xio_stream_set_max_pos(sreq, MPIG_CM_XIO_EAGER_MAX_SIZE);
     }
     mpi_errno = mpig_cm_xio_stream_sreq_pack(sreq);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_sreq_pack");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_sreq_pack");
     
     if (mpig_cm_xio_stream_get_size(sreq) == 0)
     {
@@ -513,7 +513,7 @@ static int mpig_cm_xio_send_enq_isend(mpig_vc_t * const vc, MPID_Request * const
     }
     mpig_vc_mutex_unlock(vc);
     /* MT-RC-NOTE: the unlock of the VC mutex will cause changes made to the sreq to be released as well */
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_sreq");
  
     /* add to usage bytes sent counter */
     MPIG_USAGE_INC_NBYTES_SENT(mpig_cm_xio_stream_get_size(sreq));
@@ -603,7 +603,7 @@ static int mpig_cm_xio_send_enq_rndv_cts_msg(mpig_vc_t * const vc, const MPI_Req
     /* send the rendezvous clear-to-send message */
     sreq_cmu->gcb = mpig_cm_xio_send_handle_write_control_msg;
     mpi_errno = mpig_cm_xio_send_enq_sreq(vc, sreq);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_sreq");
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: vc=" MPIG_PTR_FMT ", local_rreq_id="
@@ -673,13 +673,13 @@ static int mpig_cm_xio_send_enq_rndv_data_msg(mpig_vc_t * const vc, MPID_Request
     /* pack the first (and possible final) set of data */
     mpig_cm_xio_stream_set_max_pos(sreq, mpig_cm_xio_stream_get_size(sreq));
     mpi_errno = mpig_cm_xio_stream_sreq_pack(sreq);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_sreq_pack");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_sreq_pack");
     MPIU_Assert(mpig_iov_get_num_bytes(sreq_cmu->iov) > 0);
 
     /* send the rendezvous data message */
     sreq_cmu->gcb = mpig_cm_xio_send_handle_write_msg_data;
     mpi_errno = mpig_cm_xio_send_enq_sreq(vc, sreq);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_sreq");
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
@@ -761,7 +761,7 @@ static int mpig_cm_xio_send_enq_ssend_ack_msg(mpig_vc_t * const vc, const MPI_Re
     /* send the ssend acknowledgement message */
     sreq_cmu->gcb = mpig_cm_xio_send_handle_write_control_msg;
     mpi_errno = mpig_cm_xio_send_enq_sreq(vc, sreq);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_sreq");
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: remote_sreq_id=" MPIG_HANDLE_FMT ", sreq="
@@ -844,7 +844,7 @@ static int mpig_cm_xio_send_enq_cancel_send_msg(mpig_vc_t * const vc, const int 
     /* send the cancel send message */
     sreq_cmu->gcb = mpig_cm_xio_send_handle_write_control_msg;
     mpi_errno = mpig_cm_xio_send_enq_sreq(vc, sreq);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_sreq");
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: remote_sreq_id=" MPIG_HANDLE_FMT ", sreq="
@@ -929,7 +929,7 @@ static int mpig_cm_xio_send_enq_cancel_send_resp_msg(mpig_vc_t * const vc, const
     /* send the cancel send message */
     sreq_cmu->gcb = mpig_cm_xio_send_handle_write_control_msg;
     mpi_errno = mpig_cm_xio_send_enq_sreq(vc, sreq);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_sreq");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_sreq");
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PT2PT, "exiting: remote_sreq_id=" MPIG_HANDLE_FMT ", sreq="
@@ -990,8 +990,8 @@ static void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_t han
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: %s operation failed: vc=" MPIG_PTR_FMT
 		    ", handle=" MPIG_PTR_FMT ", msg=%s", "globus_xio_register_write", MPIG_PTR_CAST(vc), MPIG_PTR_CAST(handle),
 		    globus_error_print_chain(globus_error_peek(op_grc))));
-		MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_handle_msg_data",
-		    "**globus|cm_xio|send_handle_write_msg_data %s", globus_error_print_chain(globus_error_peek(op_grc)));
+		MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_handle_msg_data",
+		    "**mpig|cm_xio|send_handle_write_msg_data %s", globus_error_print_chain(globus_error_peek(op_grc)));
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
     
@@ -1007,7 +1007,7 @@ static void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_t han
 	    /* get the next set of data to send */
 	    mpig_iov_reset(sreq_cmu->iov, 0);
 	    mpi_errno = mpig_cm_xio_stream_sreq_pack(sreq);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_sreq_pack");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_sreq_pack");
 
 	    if (mpig_iov_get_num_bytes(sreq_cmu->iov) == 0)
 	    {
@@ -1017,7 +1017,7 @@ static void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_t han
 		/* if the send queue contains any messages, then start sending the one at the head of the queue */
 		vc_cmu->active_sreq = NULL;
 		mpi_errno = mpig_cm_xio_send_next_sreq(vc);
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_next_sreq");
+		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_next_sreq");
 		
 		if (mpig_cm_xio_request_get_msg_type(sreq) == MPIG_CM_XIO_MSG_TYPE_RNDV_RTS)
 		{
@@ -1033,7 +1033,7 @@ static void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_t han
 			
 			/* MT-NOTE: the enq routine assumes the send request's mutex is being held by the current context */
 			mpi_errno = mpig_cm_xio_send_enq_rndv_data_msg(vc, sreq, mpig_request_get_remote_req_id(sreq));
-			MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_rndv_data_msg");
+			MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_rndv_data_msg");
 		    }
 		    else
 		    {
@@ -1067,7 +1067,7 @@ static void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_t han
 		    MPIG_PTR_CAST(sreq)));
 	    
 		mpig_cm_xio_register_write_sreq(vc, sreq, &mpi_errno);
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_write_sreq");
+		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_write_sreq");
 	    }
 	}
 	mpig_request_mutex_unlock(sreq);
@@ -1090,7 +1090,7 @@ static void mpig_cm_xio_send_handle_write_msg_data(const globus_xio_handle_t han
                 MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
                     "occurred while attempting to enqueue sreq on the completion queue, vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
                     ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
-                MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_sreq");
+                MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**mpig|cm_xio|rcq_enq_sreq");
                 goto fn_fail;
             }
         }
@@ -1161,13 +1161,13 @@ static void mpig_cm_xio_send_handle_write_control_msg(const globus_xio_handle_t 
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: %s operation failed: vc=" MPIG_PTR_FMT
 		", handle=" MPIG_PTR_FMT ", msg=%s", "globus_xio_register_write", MPIG_PTR_CAST(vc), MPIG_PTR_CAST(handle),
 		globus_error_print_chain(globus_error_peek(op_grc))));
-	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_handle_write_control_msg",
-		"**globus|cm_xio|send_handle_write_contro_msg %s", globus_error_print_chain(globus_error_peek(op_grc)));
+	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_handle_write_control_msg",
+		"**mpig|cm_xio|send_handle_write_contro_msg %s", globus_error_print_chain(globus_error_peek(op_grc)));
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
 	mpi_errno = mpig_cm_xio_send_next_sreq(vc);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_next_sreq");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_next_sreq");
     }
     mpig_vc_mutex_unlock(vc);
     vc_locked = FALSE;
@@ -1302,7 +1302,7 @@ static int mpig_cm_xio_recv_next_msg(mpig_vc_t * const vc)
 	
 	mpig_cm_xio_register_read_vc_msgbuf(vc, min_nbytes, mpig_databuf_get_free_bytes(vc_cmu->msgbuf),
 					    mpig_cm_xio_recv_handle_incoming_msg, &mpi_errno);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_vc_msgbuf");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_read_vc_msgbuf");
     }
     else
     {
@@ -1386,8 +1386,8 @@ static void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t handl
 		", handle=" MPIG_PTR_FMT "vc_state=%s, msg=%s", "globus_xio_register_write", MPIG_PTR_CAST(vc),
 		MPIG_PTR_CAST(handle),	mpig_cm_xio_vc_state_get_string(mpig_cm_xio_vc_get_state(vc)),
 		globus_error_print_chain(globus_error_peek(op_grc))));
-	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|recv_handle_incoming_msg",
-		"**globus|cm_xio|recv_handle_incoming_msg %s", globus_error_print_chain(globus_error_peek(op_grc)));
+	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|recv_handle_incoming_msg",
+		"**mpig|cm_xio|recv_handle_incoming_msg %s", globus_error_print_chain(globus_error_peek(op_grc)));
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
@@ -1448,7 +1448,7 @@ static void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t handl
 		vc_cmu->msg_hdr_size = 0;
 		if (mpig_cm_xio_vc_is_connected(vc) || mpig_cm_xio_vc_is_disconnecting(vc))
 		{
-		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|msg_handler");
+		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|msg_handler");
 		}
 		else
 		{
@@ -1500,7 +1500,7 @@ static void mpig_cm_xio_recv_handle_incoming_msg(const globus_xio_handle_t handl
 	    /* register a receive to receive, at a minimum, the number of bytes specified by "bytes_needed" */
 	    mpig_cm_xio_register_read_vc_msgbuf(vc, bytes_needed, mpig_databuf_get_free_bytes(vc_cmu->msgbuf),
 		mpig_cm_xio_recv_handle_incoming_msg, &mpi_errno);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_vc_msgbuf");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_read_vc_msgbuf");
 	}
 	else
 	{
@@ -1608,8 +1608,8 @@ static int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: receive queue operation failed; dequeue "
 	    "posted or enqueue unexpected: rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
-	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|recvq_deq_posted_or_enq_unexp",
-	    "**globus|recvq_deq_posted_or_enq_unexp %d %d %d", rank, tag, ctx);
+	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|recvq_deq_posted_or_enq_unexp",
+	    "**mpig|recvq_deq_posted_or_enq_unexp %d %d %d", rank, tag, ctx);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -1670,23 +1670,23 @@ static int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 	if (mpig_cm_xio_request_get_sreq_type(rreq) == MPIG_REQUEST_TYPE_SSEND)
 	{
 	    mpi_errno = mpig_cm_xio_send_enq_ssend_ack_msg(vc, mpig_request_get_remote_req_id(rreq));
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_ssend_ack_msg");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_ssend_ack_msg");
 	}
 
 	/* initialize the stream, and start the process of unpacking and receiving the data.  if the message is not a zero-byte
 	   message, the unpack routine will set the IOV with the locations to place the data. */
 	mpi_errno = mpig_cm_xio_stream_rreq_init(rreq);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_init");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_rreq_init");
 
 	mpig_iov_reset(rreq_cmu->iov, 0);
 	mpi_errno = mpig_cm_xio_stream_rreq_unpack(rreq);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_rreq_unpack");
 
 	/* if the message was not a zero-byte message, then first try to get the bytes from the message buffer */
 	if (mpig_iov_get_num_bytes(rreq_cmu->iov) > 0)
 	{
 	    mpi_errno = mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(vc, rreq);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack_vc_msgbuf");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_rreq_unpack_vc_msgbuf");
 	}
 
 	if (mpig_iov_get_num_bytes(rreq_cmu->iov) == 0)
@@ -1703,7 +1703,7 @@ static int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 	    rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
 	    MPIU_Assert(vc_cmu->active_rreq == NULL);
 	    mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_read_rreq");
 	    vc_cmu->active_rreq = rreq;
 	}
     }
@@ -1733,7 +1733,7 @@ static int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 	    
 	    MPIU_ERR_SET2(rreq->status.MPI_ERROR, MPI_ERR_OTHER, "**rsendnomatch", "**rsendnomatch %d %d", rank, tag);
             mrc = mpig_cm_xio_rreq_drain_data(rreq, &rreq_complete);
-            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rreq_drain_data");
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**mpig|cm_xio|rreq_drain_data");
 	}
 	else if (mpig_cm_xio_stream_get_size(rreq) > 0)
 	{
@@ -1769,7 +1769,7 @@ static int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
 		rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
 		MPIU_Assert(vc_cmu->active_rreq == NULL);
 		mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
+		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_read_rreq");
 		vc_cmu->active_rreq = rreq;
 	    }
 	    else
@@ -1804,7 +1804,7 @@ static int mpig_cm_xio_recv_handle_eager_data_msg(mpig_vc_t * const vc)
                 MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
                     "occurred while attempting to enqueue rreq on the completion queue, vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
                     ", rreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), rreq->handle, MPIG_PTR_CAST(rreq)));
-                MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_rreq");
+                MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**mpig|cm_xio|rcq_enq_rreq");
                 goto fn_fail;
             }
 	}
@@ -1896,8 +1896,8 @@ static int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: receive queue operation failed; dequeue "
 	    "posted or enqueue unexpected: rank=%d, tag=%d, ctx=%d", rank, tag, ctx));
-	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|recvq_deq_posted_or_enq_unexp",
-	    "**globus|recvq_deq_posted_or_enq_unexp %d %d %d", rank, tag, ctx);
+	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|recvq_deq_posted_or_enq_unexp",
+	    "**mpig|recvq_deq_posted_or_enq_unexp %d %d %d", rank, tag, ctx);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -1954,24 +1954,24 @@ static int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
     
 	/* send the clear-to-send message */
 	mpi_errno = mpig_cm_xio_send_enq_rndv_cts_msg(vc, rreq->handle, sreq_id);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_rndv_cts_msg");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_rndv_cts_msg");
 	
 	MPIU_Assertp(mpig_cm_xio_request_get_state(rreq) == MPIG_CM_XIO_REQ_STATE_RECV_RREQ_POSTED);
 
 	/* initialize the stream, and start the process of unpacking and receiving the data.  if the message is not a zero-byte
 	   message, the unpack routine will set the IOV with the locations to place the data. */
 	mpi_errno = mpig_cm_xio_stream_rreq_init(rreq);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_init");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_rreq_init");
 
 	mpig_iov_reset(rreq_cmu->iov, 0);
 	mpig_cm_xio_stream_set_max_pos(rreq, rts_size);
 	mpi_errno = mpig_cm_xio_stream_rreq_unpack(rreq);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_rreq_unpack");
 	
 	/* first try to get the bytes from the message buffer */
 	MPIU_Assert(mpig_iov_get_num_bytes(rreq_cmu->iov) > 0);
 	mpi_errno = mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(vc, rreq);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack_vc_msgbuf");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_rreq_unpack_vc_msgbuf");
 
 	if (mpig_iov_get_num_bytes(rreq_cmu->iov) == 0)
 	{
@@ -1986,7 +1986,7 @@ static int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
 	    rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
 	    MPIU_Assert(vc_cmu->active_rreq == NULL);
 	    mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_read_rreq");
 	    vc_cmu->active_rreq = rreq;
 	}
     }
@@ -2028,7 +2028,7 @@ static int mpig_cm_xio_recv_handle_rndv_rts_msg(mpig_vc_t * const vc)
 	    rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
 	    MPIU_Assert(vc_cmu->active_rreq == NULL);
 	    mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_read_rreq");
 	    vc_cmu->active_rreq = rreq;
 	}
 	else
@@ -2110,7 +2110,7 @@ static int mpig_cm_xio_recv_handle_rndv_cts_msg(mpig_vc_t * const vc)
 	{
 	    /* enqueue the remainder of the data */
 	    mpi_errno = mpig_cm_xio_send_enq_rndv_data_msg(vc, sreq, rreq_id);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_rndv_data_msg");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_rndv_data_msg");
 	}
 	else
 	{
@@ -2191,12 +2191,12 @@ static int mpig_cm_xio_recv_handle_rndv_data_msg(mpig_vc_t * const vc)
 	/* prepare to start reading the data */
 	mpig_cm_xio_stream_set_max_pos(rreq, mpig_cm_xio_stream_get_size(rreq));
 	mpi_errno = mpig_cm_xio_stream_rreq_unpack(rreq);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_rreq_unpack");
 	MPIU_Assert(mpig_iov_get_num_bytes(rreq_cmu->iov) > 0);
 
 	/* first try to get the bytes from the message buffer */
 	mpi_errno = mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(vc, rreq);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack_vc_msgbuf");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_rreq_unpack_vc_msgbuf");
 
 	/* if there is more data to receive, then register a read; otherwise, mark the request as complete and enqueue it on the
 	   completion queue */
@@ -2207,7 +2207,7 @@ static int mpig_cm_xio_recv_handle_rndv_data_msg(mpig_vc_t * const vc)
 	    rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
 	    MPIU_Assert(vc_cmu->active_rreq == NULL);
 	    mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_read_rreq");
 	    vc_cmu->active_rreq = rreq;
 	}
 	else
@@ -2230,7 +2230,7 @@ static int mpig_cm_xio_recv_handle_rndv_data_msg(mpig_vc_t * const vc)
             MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
                 "occurred while attempting to enqueue rreq on the completion queue, vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
                 ", rreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), rreq->handle, MPIG_PTR_CAST(rreq)));
-            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_rreq");
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**mpig|cm_xio|rcq_enq_rreq");
             goto fn_fail;
         }
     }
@@ -2290,7 +2290,7 @@ static int mpig_cm_xio_recv_handle_ssend_ack_msg(mpig_vc_t * const vc)
     if (sreq == NULL)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "failed to locate send request: sreq_id=" MPIG_HANDLE_FMT, sreq_id));
-	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|request_get_ptr", "**globus|request_get_ptr %R", sreq_id);
+	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|request_get_ptr", "**mpig|request_get_ptr %R", sreq_id);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -2315,7 +2315,7 @@ static int mpig_cm_xio_recv_handle_ssend_ack_msg(mpig_vc_t * const vc)
             MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
                 "occurred while attempting to enqueue sreq on the completion queue, vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
                 ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
-            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_sreq");
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**mpig|cm_xio|rcq_enq_sreq");
             goto fn_fail;
         }
     }
@@ -2394,7 +2394,7 @@ static int mpig_cm_xio_recv_handle_cancel_send_msg(mpig_vc_t * const vc)
 	
 	/* send a reply to the sender inidicating if the request was cancelled */
 	mpi_errno = mpig_cm_xio_send_enq_cancel_send_resp_msg(vc, sreq_id, cancelled);
-	MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_xio|send_enq_cancel_send_resp_msg");
+	MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|cm_xio|send_enq_cancel_send_resp_msg");
 	
 	if (cancelled)
 	{
@@ -2420,7 +2420,7 @@ static int mpig_cm_xio_recv_handle_cancel_send_msg(mpig_vc_t * const vc)
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "INTERNAL ERROR - receive request state not valid for operation: "
 		    "state=%s", mpig_cm_xio_request_state_get_string(mpig_cm_xio_request_get_state(rreq))));
 		MPIU_ERR_SETFATALANDSTMT1(mpi_errno, MPI_ERR_INTERN, {;},
-		    "**globus|cm_xio|req_recv_state", "**globus|cm_xio|req_recv_state %s",
+		    "**mpig|cm_xio|req_recv_state", "**mpig|cm_xio|req_recv_state %s",
 		    mpig_cm_xio_request_state_get_string(mpig_cm_xio_request_get_state(rreq)));
 	    }
 	}
@@ -2486,7 +2486,7 @@ static int mpig_cm_xio_recv_handle_cancel_send_resp_msg(mpig_vc_t * const vc)
     if (sreq == NULL)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR, "failed to locate send request: sreq_id=" MPIG_HANDLE_FMT, sreq_id));
-	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|request_get_ptr", "**globus|request_get_ptr %R", sreq_id);
+	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|request_get_ptr", "**mpig|request_get_ptr %R", sreq_id);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -2541,7 +2541,7 @@ static int mpig_cm_xio_recv_handle_cancel_send_resp_msg(mpig_vc_t * const vc)
             MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
                 "occurred while attempting to enqueue sreq on the completion queue, vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
                 ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
-            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_sreq");
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**mpig|cm_xio|rcq_enq_sreq");
             goto fn_fail;
         }
     }
@@ -2605,8 +2605,8 @@ static void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t hand
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: %s operation failed: vc=" MPIG_PTR_FMT
 		    ", handle=" MPIG_PTR_FMT ", msg=%s", "globus_xio_register_write", MPIG_PTR_CAST(vc), MPIG_PTR_CAST(handle),
 		    globus_error_print_chain(globus_error_peek(op_grc))));
-		MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|recv_handle_xio_read_msg_data",
-		    "**globus|cm_xio|recv_handle_read_msg_data %s", globus_error_print_chain(globus_error_peek(op_grc)));
+		MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|recv_handle_xio_read_msg_data",
+		    "**mpig|cm_xio|recv_handle_read_msg_data %s", globus_error_print_chain(globus_error_peek(op_grc)));
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
     
@@ -2623,7 +2623,7 @@ static void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t hand
 		    /* unpack any data in the request's databuf, and get the next set of data to be read */
 		    mpig_iov_reset(rreq_cmu->iov, 0);
 		    mpi_errno = mpig_cm_xio_stream_rreq_unpack(rreq);
-		    MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm_xio|stream_rreq_unpack");
+		    MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|cm_xio|stream_rreq_unpack");
 		    /* FIXME: better error handling is needed here.  the network should be drained of any remaining data from the
 		       current message.  is this covered by the error handling in stream_rreq_unpack() ??? */
 
@@ -2669,7 +2669,7 @@ static void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t hand
 			    MPIG_PTR_CAST(vc), rreq->handle, MPIG_PTR_CAST(rreq)));
 	    
 			mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
-			MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
+			MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_read_rreq");
 		    }
 		    break;
 		}
@@ -2716,12 +2716,12 @@ static void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t hand
 			mpig_cm_xio_stream_set_max_pos(rreq, mpig_databuf_get_remaining_bytes(rreq_cmu->databuf));
 			mrc = mpig_cm_xio_stream_rreq_unpack(rreq);
 			MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(rreq->status.MPI_ERROR, mrc);},
-			    "**globus|cm_xio|stream_rreq_unpack");
+			    "**mpig|cm_xio|stream_rreq_unpack");
 		    }
 		    else
 		    {
 			MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(rreq->status.MPI_ERROR, mrc);},
-			    "**globus|cm_xio|stream_req_init");
+			    "**mpig|cm_xio|stream_req_init");
 		    }
 
 		    /* if this was an eager message, then decrement the internal (cm_xio) completion counter and set the request
@@ -2816,7 +2816,7 @@ static void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t hand
 			    MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), rreq->handle, MPIG_PTR_CAST(rreq)));
 	    
 			mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
-			MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
+			MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_read_rreq");
 		    }
 		    else
 		    {
@@ -2836,7 +2836,7 @@ static void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t hand
 			"INTERNAL ERROR - receive request state not valid for operation: %s",
 			mpig_cm_xio_request_state_get_string(mpig_cm_xio_request_get_state(rreq))));
 		    MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_INTERN,
-			"**globus|cm_xio|req_recv_state", "**globus|cm_xio|req_recv_state %s",
+			"**mpig|cm_xio|req_recv_state", "**mpig|cm_xio|req_recv_state %s",
 			mpig_cm_xio_request_state_get_string(mpig_cm_xio_request_get_state(rreq)));
 		    break;
 		}
@@ -2850,7 +2850,7 @@ static void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t hand
 	{
 	    vc_cmu->active_rreq = NULL;
 	    mpi_errno = mpig_cm_xio_recv_next_msg(vc);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|recv_next_msg");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_INTERN, "**mpig|cm_xio|recv_next_msg");
 	}
     }
     mpig_vc_mutex_unlock(vc);
@@ -2868,7 +2868,7 @@ static void mpig_cm_xio_recv_handle_read_msg_data(const globus_xio_handle_t hand
             MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure "
                 "occurred while attempting to enqueue rreq on the completion queue, vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
                 ", rreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), rreq->handle, MPIG_PTR_CAST(rreq)));
-            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_rreq");
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**mpig|cm_xio|rcq_enq_rreq");
             goto fn_fail;
         }
     }
@@ -2977,7 +2977,7 @@ static int mpig_cm_xio_rreq_drain_data(MPID_Request * rreq, bool_t * rreq_comple
         rreq_cmu->gcb = mpig_cm_xio_recv_handle_read_msg_data;
         MPIU_Assert(vc_cmu->active_rreq == NULL);
         mpig_cm_xio_register_read_rreq(vc, rreq, &mpi_errno);
-        MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|reg_read_rreq");
+        MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|reg_read_rreq");
 
         mpig_cm_xio_request_inc_cc(rreq, &was_complete);
         if (was_complete) *rreq_complete = FALSE;
@@ -3165,7 +3165,7 @@ static int mpig_cm_xio_fault_handle_sync_proc_vc_error(mpig_vc_t * proc_vc, int 
 	{
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: attempt to close the proc VC failed: "
 		"proc_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(proc_vc)));
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_close_proc");
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|disconnect_close_proc");
 	}
     }
 

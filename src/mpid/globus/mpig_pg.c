@@ -162,7 +162,7 @@ int mpig_pg_acquire_ref(const char * const pg_id, const int pg_size, const bool_
 	{
 	    /* no matching process group was found, so create a new one */
 	    mpi_errno = mpig_pg_create(pg_id, pg_size, pg_p);
-	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pg_create", "**globus|pg_create %s %d",
+	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pg_create", "**mpig|pg_create %s %d",
 		pg_id, pg_size);
 	}
 
@@ -383,7 +383,7 @@ static int mpig_pg_create(const char * const pg_id, const int pg_size, mpig_pg_t
 	mpig_vc_i_set_ref_count(vc, 1);
 	mpig_vc_set_pg_info(vc, pg, p);
 	vc->lpid = mpig_pg_lpid_counter++;
-	MPIU_ERR_CHKANDJUMP((mpig_pg_lpid_counter < 0), mpi_errno, MPI_ERR_INTERN, "**globus|pg|lpid_counter");
+	MPIU_ERR_CHKANDJUMP((mpig_pg_lpid_counter < 0), mpi_errno, MPI_ERR_INTERN, "**mpig|pg|lpid_counter");
     }
 
     /* add the new process group into the list of outstanding process group structures */

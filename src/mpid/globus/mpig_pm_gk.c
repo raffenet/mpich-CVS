@@ -197,13 +197,13 @@ int mpig_pm_gk_init(int * argc, char *** argv, mpig_pm_t * const pm, bool_t * co
     }
 
     /* XXX: move as much error checking as possible to mpig_pm.c */
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_finalized");
 
     /* activate the duroc runtime module, and wait for all other processes to startup */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "activating duroc runtime module"));
     grc = globus_module_activate(GLOBUS_DUROC_RUNTIME_MODULE);
-    MPIU_ERR_CHKANDJUMP2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
-	"**globus|module_activate %s %s", "DUROC runtime", globus_error_print_chain(globus_error_peek(grc)));
+    MPIU_ERR_CHKANDJUMP2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**mpig|module_activate",
+	"**mpig|module_activate %s %s", "DUROC runtime", globus_error_print_chain(globus_error_peek(grc)));
     func_state = FUNC_STATE_DUROC_INIT;
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "entering duroc barrier"));
@@ -216,8 +216,8 @@ int mpig_pm_gk_init(int * argc, char *** argv, mpig_pm_t * const pm, bool_t * co
        the extraneous error messages and prevent our process from terminating unexpectedly. */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "activating nexus module"));
     grc = globus_module_activate(GLOBUS_NEXUS_MODULE);
-    MPIU_ERR_CHKANDJUMP2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|module_activate",
-	"**globus|module_activate %s %s", "Nexus", globus_error_print_chain(globus_error_peek(grc)));
+    MPIU_ERR_CHKANDJUMP2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**mpig|module_activate",
+	"**mpig|module_activate %s %s", "Nexus", globus_error_print_chain(globus_error_peek(grc)));
     func_state = FUNC_STATE_NEXUS_INIT;
 
     nexus_enable_fault_tolerance (NULL, NULL);
@@ -225,10 +225,10 @@ int mpig_pm_gk_init(int * argc, char *** argv, mpig_pm_t * const pm, bool_t * co
     /* get the topology info, including the process group size and the rank of this process in that group */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "getting subjob size and rank from duroc"));
     grc = globus_duroc_runtime_intra_subjob_size(&mpig_pm_gk_my_sj_size);
-    MPIU_ERR_CHKANDJUMP((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_sjsize");
+    MPIU_ERR_CHKANDJUMP((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_get_sjsize");
 	
     grc = globus_duroc_runtime_intra_subjob_rank(&mpig_pm_gk_my_sj_rank);
-    MPIU_ERR_CHKANDJUMP((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_sjrank");
+    MPIU_ERR_CHKANDJUMP((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_get_sjrank");
 
 #   if defined(MPIG_VMPI)
     {
@@ -267,7 +267,7 @@ int mpig_pm_gk_init(int * argc, char *** argv, mpig_pm_t * const pm, bool_t * co
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PM, "gather topology information"));
     mpi_errno = mpig_pm_gk_get_topology(mpig_pm_gk_my_sj_size, mpig_pm_gk_my_sj_rank, &mpig_pm_gk_pg_size, &mpig_pm_gk_pg_rank,
 	&mpig_pm_gk_sj_num, &mpig_pm_gk_my_sj_index, &mpig_pm_gk_sj_addrs);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_topology");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_get_topology");
 
     /* determine if the job should be cancelled or abort() should be called if an error occurs.  this feature is used to get a
        core dump while debugging and is not some users will normally set. */
@@ -335,8 +335,8 @@ int mpig_pm_gk_finalize(mpig_pm_t * const pm)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_finalize);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_finalized");
     
     mpig_pm_gk_state = MPIG_PM_GK_STATE_FINALIZED;
 
@@ -353,12 +353,12 @@ int mpig_pm_gk_finalize(mpig_pm_t * const pm)
     /* deactivate the duroc and nexus modules.  remember, nexus was activated in init to prevent excessive and confusing error
        messages. */
     grc = globus_module_deactivate(GLOBUS_NEXUS_MODULE);
-    MPIU_ERR_CHKANDSTMT2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|module_deactivate",
-	"**globus|module_deactivate %s %s", "Nexus", globus_error_print_chain(globus_error_peek(grc)));
+    MPIU_ERR_CHKANDSTMT2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|module_deactivate",
+	"**mpig|module_deactivate %s %s", "Nexus", globus_error_print_chain(globus_error_peek(grc)));
 
     grc = globus_module_deactivate(GLOBUS_DUROC_RUNTIME_MODULE);
-    MPIU_ERR_CHKANDSTMT2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|module_deactivate",
-	"**globus|module_deactivate %s %s", "DUROC runtime", globus_error_print_chain(globus_error_peek(grc)));
+    MPIU_ERR_CHKANDSTMT2((grc != GLOBUS_SUCCESS), mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|module_deactivate",
+	"**mpig|module_deactivate %s %s", "DUROC runtime", globus_error_print_chain(globus_error_peek(grc)));
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));
@@ -500,8 +500,8 @@ int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const b
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_exchange_business_cards);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bc=" MPIG_PTR_FMT, MPIG_PTR_CAST(bc)));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_finalized");
 
     /* if this process is the process group master, then create a process group id and add it to the business card */
     if (mpig_pm_gk_pg_rank == 0)
@@ -511,12 +511,12 @@ int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const b
         
 	mpi_errno = mpig_uuid_generate(&uuid);
 	MPIU_ERR_CHKANDSTMT((mpi_errno), mpi_errno, MPI_ERR_OTHER, {errors++; goto end_create_pg_id_block;},
-            "**globus|pm_pg_id_create");
+            "**mpig|pm_pg_id_create");
 
         mpig_uuid_unparse(&uuid, uuid_str);
 	mpi_errno = mpig_bc_add_contact(bc, "PM_GK_PG_ID", uuid_str);
 	MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER,  {errors++; goto end_create_pg_id_block;},
-	    "**globus|bc_add_contact", "**globus|bc_add_contact %s", "PM_GK_PG_ID");
+	    "**mpig|bc_add_contact", "**mpig|bc_add_contact %s", "PM_GK_PG_ID");
 
       end_create_pg_id_block: ;
     }
@@ -529,8 +529,8 @@ int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const b
     if (mpig_pm_gk_my_sj_rank == 0)
     {
 	mpi_errno = mpig_bc_add_contact(bc, "PM_GK_GRAM_SUBJOB_CONTACT", mpig_pm_gk_sj_contact_str);
-	MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|bc_add_contact",
-	    "**globus|bc_add_contact %s", "PM_GK_GRAM_SUBJOB_CONTACT");
+	MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**mpig|bc_add_contact",
+	    "**mpig|bc_add_contact %s", "PM_GK_GRAM_SUBJOB_CONTACT");
     }
 
     /* add the subjob index to the business card.  in addition to helping order the list of the GRAM subjob contacts, the subjob
@@ -542,19 +542,19 @@ int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const b
 	if (MPIU_Snprintf(sj_index_str, MPIG_INT_MAX_STRLEN, "%d", mpig_pm_gk_my_sj_index) < MPIG_INT_MAX_STRLEN)
 	{
 	    mpi_errno = mpig_bc_add_contact(bc, "PM_GK_APP_NUM", sj_index_str);
-	    MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|bc_add_contact",
-		"**globus|bc_add_contact %s", "PM_GK_APP_NUM");
+	    MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {errors++;}, "**mpig|bc_add_contact",
+		"**mpig|bc_add_contact %s", "PM_GK_APP_NUM");
 	}
 	else
 	{
-	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++;}, "**globus|pm_gk_sj_index_atoi",
-	    "**globus|pm_gk_sj_index_atoi %s", sj_index_str);
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++;}, "**mpig|pm_gk_sj_index_atoi",
+	    "**mpig|pm_gk_sj_index_atoi %s", sj_index_str);
 	}
     }	
 	
     /* convert the business card object for this process into a string that can be distributed to other processes */
     mpi_errno = mpig_bc_serialize_object(bc, &bc_str);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_serialize");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_serialize");
 
     /* allocate memory for the array of business cards objects that will result from the exchange, as well as the intermediate
        arrays needed to hold the stringified representations of those objects */
@@ -569,7 +569,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const b
     mpi_errno = mpig_pm_gk_distribute_byte_array(mpig_pm_gk_pg_size, mpig_pm_gk_pg_rank, mpig_pm_gk_sj_num,
 	mpig_pm_gk_my_sj_size, mpig_pm_gk_my_sj_rank, mpig_pm_gk_sj_addrs, (globus_byte_t *) bc_str, (int) strlen(bc_str) + 1,
 	(globus_byte_t **) bc_strs, bc_lens);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_distribute_business_cards");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_distribute_business_cards");
 
     /* free the memory used by the stringified respresentation of business card for this process */
     mpig_bc_free_serialized_object(bc_str);
@@ -579,7 +579,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const b
     {
 	mpig_bc_construct(&bcs[p]);
 	mrc = mpig_bc_deserialize_object((char *) bc_strs[p], &bcs[p]);
-	MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**globus|bc_deserialize");
+	MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);}, "**mpig|bc_deserialize");
 	MPIU_Free(bc_strs[p]);
     }
 
@@ -606,11 +606,11 @@ int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const b
 
 	   mrc = mpig_bc_get_contact(&bcs[p], "PM_GK_GRAM_SUBJOB_CONTACT", &sj_contact_str, &sj_contact_found);
 	   MPIU_ERR_CHKANDSTMT1((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(bmpi_errno, mrc); goto cont_foreach_process;},
-		"**globus|bc_get_contact", "**globus|bc_get_contact %s", "PM_GK_GRAM_SUBJOB_CONTACT");
+		"**mpig|bc_get_contact", "**mpig|bc_get_contact %s", "PM_GK_GRAM_SUBJOB_CONTACT");
 	    
 	    mrc = mpig_bc_get_contact(&bcs[p], "PM_GK_APP_NUM", &sj_index_str, &sj_index_found);
 	    MPIU_ERR_CHKANDSTMT1((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(bmpi_errno, mrc); goto cont_foreach_process;},
-		"**globus|bc_get_contact", "**globus|bc_get_contact %s", "PM_GK_APP_NUM");
+		"**mpig|bc_get_contact", "**mpig|bc_get_contact %s", "PM_GK_APP_NUM");
 	    
 	    if (sj_contact_found && sj_index_found)
 	    {
@@ -628,7 +628,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const b
 		else
 		{
 		    MPIU_ERR_SETANDSTMT1(bmpi_errno, MPI_ERR_OTHER, {goto cont_foreach_process;},
-			"**globus|pm_gk_malformed_app_num", "**globus|pm_gk_malformed_app_num %s", sj_index_str);
+			"**mpig|pm_gk_malformed_app_num", "**mpig|pm_gk_malformed_app_num %s", sj_index_str);
 		}
 	    }
 
@@ -639,8 +639,8 @@ int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const b
 
 	if (n != mpig_pm_gk_sj_num - 1)
 	{
-	    MPIU_ERR_SET2(bmpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_insufficient_bc",
-		"**globus|pm_gk_insufficient_bc %d %d", n, mpig_pm_gk_sj_num - 1);
+	    MPIU_ERR_SET2(bmpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_insufficient_bc",
+		"**mpig|pm_gk_insufficient_bc %d %d", n, mpig_pm_gk_sj_num - 1);
 	}
 
 	/* if any errors have occurred while creating the array of contact strings, then nullify the pointer to the array.  the
@@ -659,7 +659,7 @@ int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const b
 	
 	mrc = mpig_bc_get_contact(&bcs[0], "PM_GK_PG_ID", &pg_id_str, &found);
 	MPIU_ERR_CHKANDSTMT1((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc); goto end_get_pg_id_block;},
-	    "**globus|bc_get_contact", "**globus|bc_get_contact %s", "PM_GK_PG_ID");
+	    "**mpig|bc_get_contact", "**mpig|bc_get_contact %s", "PM_GK_PG_ID");
 	if (found)
 	{
 	    mpig_pm_gk_pg_id = MPIU_Strdup(pg_id_str);
@@ -669,8 +669,8 @@ int mpig_pm_gk_exchange_business_cards(mpig_pm_t * const pm, mpig_bc_t * const b
 	}
 	else
 	{
-	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++; goto end_get_pg_id_block;}, "**globus|bc_contact_not_found",
-		"**globus|bc_contact_not_found %s", "PM_GK_PG_ID");
+	    MPIU_ERR_SETANDSTMT1(mpi_errno, MPI_ERR_OTHER, {errors++; goto end_get_pg_id_block;}, "**mpig|bc_contact_not_found",
+		"**mpig|bc_contact_not_found %s", "PM_GK_PG_ID");
 	}
 
       end_get_pg_id_block: ;
@@ -718,8 +718,8 @@ int mpig_pm_gk_free_business_cards(mpig_pm_t * const pm, mpig_bc_t * const bcs)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_free_business_cards);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering: bcs=" MPIG_PTR_FMT, MPIG_PTR_CAST(bcs)));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_finalized");
     
     for (p = 0; p < mpig_pm_gk_pg_size; p++)
     {
@@ -757,9 +757,9 @@ int mpig_pm_gk_get_pg_size(mpig_pm_t * const pm, int * const pg_size)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_size);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**globus|pm_no_exchange");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_no_exchange");
     *pg_size = mpig_pm_gk_pg_size;
     
   fn_return:
@@ -793,9 +793,9 @@ int mpig_pm_gk_get_pg_rank(mpig_pm_t * const pm, int * const pg_rank)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_rank);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**globus|pm_no_exchange");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_no_exchange");
     *pg_rank = mpig_pm_gk_pg_rank;
     
   fn_return:
@@ -829,9 +829,9 @@ int mpig_pm_gk_get_pg_id(mpig_pm_t * const pm, const char ** const pg_id)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_pg_id);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**globus|pm_no_exchange");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_no_exchange");
     *pg_id = mpig_pm_gk_pg_id;
     
   fn_return:
@@ -869,18 +869,18 @@ int mpig_pm_gk_get_app_num(mpig_pm_t * const pm, const mpig_bc_t * const bc, int
     MPIG_FUNC_ENTER(MPID_STATE_mpig_pm_gk_get_app_num);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "entering"));
 
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_not_init");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**globus|pm_finalized");
-    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**globus|pm_no_exchange");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_UNINITIALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_not_init");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state == MPIG_PM_GK_STATE_FINALIZED), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_finalized");
+    MPIU_ERR_CHKANDJUMP((mpig_pm_gk_state != MPIG_PM_GK_STATE_GOT_PG_INFO), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_no_exchange");
     
     mpi_errno = mpig_bc_get_contact(bc, "PM_GK_APP_NUM", &app_num_str, &found);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact", "**globus|bc_get_contact %s",
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_get_contact", "**mpig|bc_get_contact %s",
 	"PM_GK_APP_NUM");
-    MPIU_ERR_CHKANDJUMP((!found), mpi_errno, MPI_ERR_INTERN, "**globus|pm_gk_no_app_num");
+    MPIU_ERR_CHKANDJUMP((!found), mpi_errno, MPI_ERR_INTERN, "**mpig|pm_gk_no_app_num");
 
     rc = sscanf(app_num_str, "%d", &app_num);
-    MPIU_ERR_CHKANDJUMP1((rc != 1), mpi_errno, MPI_ERR_INTERN, "**globus|pm_gk_malformed_app_num",
-	"**globus|pm_gk_malformed_app_num %s", app_num_str);
+    MPIU_ERR_CHKANDJUMP1((rc != 1), mpi_errno, MPI_ERR_INTERN, "**mpig|pm_gk_malformed_app_num",
+	"**mpig|pm_gk_malformed_app_num %s", app_num_str);
    
     *app_num_p = app_num;
     
@@ -984,8 +984,8 @@ static int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * const p
         {
 	    sprintf(tag, "%s%d", MPIG_PM_GK_TAG_SJ_MASTER_TO_SJ_SLAVE_TOPOLOGY, call_count);
 	    mpi_errno = mpig_pm_gk_intra_subjob_receive(tag, &rbuf_len, &rbuf);
-	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_receive",
-		"**globus|pm_gk_intra_subjob_receive %s", tag);
+	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_intra_subjob_receive",
+		"**mpig|pm_gk_intra_subjob_receive %s", tag);
 	    sscanf((char *) rbuf, "%d %d %d %d", pg_size, my_pg_rank, sj_num, my_rsl_index);
 	    MPIU_Free(rbuf);
         }
@@ -1176,8 +1176,8 @@ static int mpig_pm_gk_get_topology(int my_sj_size, int my_sj_rank, int * const p
 		sprintf(tag, "%s%d", MPIG_PM_GK_TAG_SJ_MASTER_TO_SJ_SLAVE_TOPOLOGY, call_count);
 		sprintf((char *) sbuf, "%d %d %d %d", *pg_size, sj_pg_rank + sj_index, *sj_num, *my_rsl_index);
 		mpi_errno = mpig_pm_gk_intra_subjob_send(sj_index, tag, (int) strlen((char *) sbuf) + 1, sbuf);
-		MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_send",
-		    "**globus|pm_gk_intra_subjob_send %s", tag);
+		MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_intra_subjob_send",
+		    "**mpig|pm_gk_intra_subjob_send %s", tag);
 	    }
 
 	    *my_pg_rank = sj_pg_rank;
@@ -1274,8 +1274,8 @@ static int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg_rank
 	    sprintf(tag, "%s%d", MPIG_PM_GK_TAG_SJ_SLAVE_TO_SJ_MASTER_DATA, call_count);
 	    mpi_errno = mpig_pm_gk_intra_subjob_gather(my_sj_size, my_sj_rank, msg_buf, 2 * MPIG_INT_MAX_STRLEN + in_buf_len, tag,
 		(int *) NULL, (globus_byte_t **) NULL);
-	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_gather",
-		"**globus|pm_gk_intra_subjob_gather %d %s", my_sj_rank, tag);
+	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_intra_subjob_gather",
+		"**mpig|pm_gk_intra_subjob_gather %d %s", my_sj_rank, tag);
 
 	    MPIU_CHKLMEM_FREEALL();
 	}
@@ -1312,8 +1312,8 @@ static int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg_rank
 		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob slave: before intra_subjob_bcast\n",
 		                       MPID_MyWorldRank); */
 		mpi_errno = mpig_pm_gk_intra_subjob_bcast(my_sj_size, my_sj_rank, tag, &rbuf_len, &rbuf);
-		MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_bcast",
-		    "**globus|pm_gk_intra_subjob_bcast %d %s", my_sj_rank, tag);
+		MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_intra_subjob_bcast",
+		    "**mpig|pm_gk_intra_subjob_bcast %d %s", my_sj_rank, tag);
 		MPIU_CHKPMEM_REGISTER(rbuf);
 		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob slave: after intra_subjob_bcast\n",
 		                       MPID_MyWorldRank); */
@@ -1411,8 +1411,8 @@ static int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg_rank
 
 	    mpi_errno = mpig_pm_gk_intra_subjob_gather(my_sj_size, my_sj_rank, msg_buf, msg_buf_len, tag,
 		&my_sj_buf_len, &my_sj_buf);
-	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_gather",
-		"**globus|pm_gk_intra_subjob_gather %d %s", my_sj_rank, tag);
+	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_intra_subjob_gather",
+		"**mpig|pm_gk_intra_subjob_gather %d %s", my_sj_rank, tag);
 
 	    /* add the subjob data buffer to the list of allocated memory to be reaped if a failure occurs */
 	    MPIU_CHKPMEM_REGISTER(my_sj_buf);
@@ -1443,8 +1443,8 @@ static int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg_rank
 	    /* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: before intra_subjob_bcast our subjob\n",
 	                           MPID_MyWorldRank); */
 	    mpi_errno = mpig_pm_gk_intra_subjob_bcast(my_sj_size, my_sj_rank, tag, &my_sj_buf_len, &my_sj_buf);
-	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_gather",
-		"**globus|pm_gk_intra_subjob_gather %d %s", my_sj_rank, tag);
+	    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_intra_subjob_gather",
+		"**mpig|pm_gk_intra_subjob_gather %d %s", my_sj_rank, tag);
 
 	    /* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: after intra_subjob_bcast our subjob\n",
 	                           MPID_MyWorldRank); */
@@ -1489,8 +1489,8 @@ static int mpig_pm_gk_distribute_byte_array(const int pg_size, const int pg_rank
 		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: before intra_subjob_bcast"
 		   " other subjob\n", MPID_MyWorldRank); */
 		mpi_errno = mpig_pm_gk_intra_subjob_bcast(my_sj_size, my_sj_rank, tag, &sj_buf_len, &sj_buf);
-		MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_bcast",
-		    "**globus|pm_gk_intra_subjob_bcast %d %s", my_sj_rank, tag);
+		MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_intra_subjob_bcast",
+		    "**mpig|pm_gk_intra_subjob_bcast %d %s", my_sj_rank, tag);
 		/* globus_libc_fprintf(stderr, "%d: mpig_pm_gk_distribute_byte_array: subjob master: after intra_subjob_bcast"
 		   " other subjob\n", MPID_MyWorldRank); */
 	    }
@@ -1851,8 +1851,8 @@ static int mpig_pm_gk_intra_subjob_bcast(const int my_sj_size, const int my_sj_r
     {
 	/* i am not root */
 	mpi_errno = mpig_pm_gk_intra_subjob_receive(tag_base, rcvd_nbytes, buf);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_receive",
-	    "**globus|pm_gk_intra_subjob_receive %s", tag_base);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_intra_subjob_receive",
+	    "**mpig|pm_gk_intra_subjob_receive %s", tag_base);
     }
 
     /*
@@ -1866,8 +1866,8 @@ static int mpig_pm_gk_intra_subjob_bcast(const int my_sj_size, const int my_sj_r
 	if (my_sj_rank + mask < my_sj_size) 
 	{
 	    mpi_errno = mpig_pm_gk_intra_subjob_send(my_sj_rank + mask, tag_base, *rcvd_nbytes, *buf);
-	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_send",
-		"**globus|pm_gk_intra_subjob_send %s", tag_base);
+	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_intra_subjob_send",
+		"**mpig|pm_gk_intra_subjob_send %s", tag_base);
 	}
 	mask >>= 1;
     }
@@ -1929,8 +1929,8 @@ static int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int my_sj_
 	{
 	    sprintf(tag, "%s%d", tag_base, my_sj_rank + mask);
 	    mpi_errno = mpig_pm_gk_intra_subjob_receive(tag, &rbuf_len, &rbuf);
-	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_receive",
-		"**globus|pm_gk_intra_subjob_receive %s", tag);
+	    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_intra_subjob_receive",
+		"**mpig|pm_gk_intra_subjob_receive %s", tag);
 
 	    if (my_sj_buf_len - (dest - my_sj_buf) < rbuf_len)
 	    {
@@ -1957,8 +1957,8 @@ static int mpig_pm_gk_intra_subjob_gather(const int my_sj_size, const int my_sj_
 	/* subjob slave */
 	sprintf(tag, "%s%d", tag_base, my_sj_rank);
 	mpi_errno = mpig_pm_gk_intra_subjob_send(my_sj_rank - mask, tag, (int)(dest - my_sj_buf), my_sj_buf);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pm_gk_intra_subjob_send",
-	    "**globus|pm_gk_intra_subjob_send %s", tag);
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pm_gk_intra_subjob_send",
+	    "**mpig|pm_gk_intra_subjob_send %s", tag);
 	MPIU_Free(my_sj_buf);
 	my_sj_buf = NULL;
     } 

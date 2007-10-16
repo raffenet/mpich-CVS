@@ -93,7 +93,7 @@ int mpig_comm_finalize(void)
 		mpi_errno = MPID_Progress_wait(&pe_state);
 		if (mpi_errno)
 		{   /* --BEGIN ERROR HANDLING-- */
-		    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|pe_wait");
+		    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|pe_wait");
 		    MPID_Progress_end(&pe_state);
 		    goto fn_fail;
 		}   /* --END ERROR HANDLING-- */
@@ -145,7 +145,7 @@ int mpig_comm_construct(MPID_Comm * const comm)
 	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, MPIG_PTR_CAST(comm)));
 
     mpi_errno = mpig_topology_comm_construct(comm);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|topology_comm_construct",
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|topology_comm_construct",
 	"*globus|topology_comm_construct %C", comm->handle);
 
     comm->dev.app_ref = TRUE;
@@ -296,7 +296,7 @@ int mpig_comm_destruct(MPID_Comm * const comm)
     if (mrc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIU_ERR_ADD(mpi_errno, mrc);
-	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|topology_comm_destruct", "*globus|topology_comm_destruct %C",
+	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|topology_comm_destruct", "*globus|topology_comm_destruct %C",
 	    comm->handle);
     }   /* --BEGIN ERROR HANDLING-- */
 

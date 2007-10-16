@@ -507,7 +507,7 @@ int mpig_vcrt_serialize_object(mpig_vcrt_t * const vcrt, char ** const str_p)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: conversion of VCRT size to a string "
 		"failed: vcrt=" MPIG_PTR_FMT ", vcrt->size=%d, rc=%d", MPIG_PTR_CAST(vcrt), vcrt->size, rc));
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|inttostrconv");
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|inttostrconv");
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 		
@@ -579,7 +579,7 @@ int mpig_vcrt_serialize_object(mpig_vcrt_t * const vcrt, char ** const str_p)
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: conversion of pg_index to a string "
 		"failed: vcrt=" MPIG_PTR_FMT ", pg_index=%d, rc=%d", MPIG_PTR_CAST(vcrt), pg_index, rc));
-		    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|inttostrconv");
+		    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|inttostrconv");
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
 		
@@ -599,7 +599,7 @@ int mpig_vcrt_serialize_object(mpig_vcrt_t * const vcrt, char ** const str_p)
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: conversion of pg_rank to a string "
 		    "failed: vcrt=" MPIG_PTR_FMT ", pg_rank=%d, rc=%d", MPIG_PTR_CAST(vcrt), pg_rank, rc));
-		MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|inttostrconv");
+		MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|inttostrconv");
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
 		
@@ -638,7 +638,7 @@ int mpig_vcrt_serialize_object(mpig_vcrt_t * const vcrt, char ** const str_p)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: conversion of pg_count to a string failed: "
 	    "vcrt=" MPIG_PTR_FMT ", pg_count=%d, rc=%d", MPIG_PTR_CAST(vcrt), pg_count, rc));
-	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|inttostrconv");
+	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|inttostrconv");
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -666,7 +666,7 @@ int mpig_vcrt_serialize_object(mpig_vcrt_t * const vcrt, char ** const str_p)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: conversion of pg_index to a string "
 		"failed: vcrt=" MPIG_PTR_FMT ", pg_index=%d, rc=%d", MPIG_PTR_CAST(vcrt), pg_index, rc));
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|inttostrconv");
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|inttostrconv");
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 		
@@ -685,7 +685,7 @@ int mpig_vcrt_serialize_object(mpig_vcrt_t * const vcrt, char ** const str_p)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: conversion of pg_size to a string "
 		"failed: vcrt=" MPIG_PTR_FMT ", pg_size=%d, rc=%d", MPIG_PTR_CAST(vcrt), pg_size, rc));
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|inttostrconv");
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|inttostrconv");
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 		
@@ -847,8 +847,8 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: extraction of the process group count failed: "
 	    "vcrt_str=" MPIG_PTR_FMT ", space=" MPIG_PTR_FMT, MPIG_PTR_CAST(vcrt_str), MPIG_PTR_CAST(&space)));
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strspace_extract_element",
-	    "**globus|strspace_extract_element %s %p", "pg_count", &space);
+	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strspace_extract_element",
+	    "**mpig|strspace_extract_element %s %p", "pg_count", &space);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -857,7 +857,7 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: conversion of the process group size string to "
 	    "an integer failed: vcrt_str=" MPIG_PTR_FMT ", elem_str=%s", MPIG_PTR_CAST(vcrt_str), elem_str));
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strtointconv", "**globus|strtointconv %s %s", "pg_count", elem_str);
+	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strtointconv", "**mpig|strtointconv %s %s", "pg_count", elem_str);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -893,8 +893,8 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: extraction of the process group index "
 		"failed: vcrt_str=" MPIG_PTR_FMT ", space=" MPIG_PTR_FMT, MPIG_PTR_CAST(vcrt_str), MPIG_PTR_CAST(&space)));
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strspace_extract_element",
-		"**globus|strspace_extract_element %s %p", "pg_index", &space);
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strspace_extract_element",
+		"**mpig|strspace_extract_element %s %p", "pg_index", &space);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
@@ -903,7 +903,7 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: converstion of the process group index "
 		"string to an integer failed: vcrt_str=" MPIG_PTR_FMT ", elem_str=%s", MPIG_PTR_CAST(vcrt_str), elem_str));
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strtointconv", "**globus|strtointconv %s %s", "pg_index", elem_str);
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strtointconv", "**mpig|strtointconv %s %s", "pg_index", elem_str);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 	mpig_strspace_free_extracted_element(elem_str);
@@ -915,8 +915,8 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: extraction of the process group size "
 		"failed: vcrt_str=" MPIG_PTR_FMT ", space=" MPIG_PTR_FMT, MPIG_PTR_CAST(vcrt_str), MPIG_PTR_CAST(&space)));
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strspace_extract_element",
-		"**globus|strspace_extract_element %s %p", "pg_size", &space);
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strspace_extract_element",
+		"**mpig|strspace_extract_element %s %p", "pg_size", &space);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
@@ -925,7 +925,7 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: converstion of the process group size "
 		"string to an integer failed: vcrt_str=" MPIG_PTR_FMT ", elem_str=%s", MPIG_PTR_CAST(vcrt_str), elem_str));
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strtointconv", "**globus|strtointconv %s %s", "pg_size", elem_str);
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strtointconv", "**mpig|strtointconv %s %s", "pg_size", elem_str);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
@@ -938,8 +938,8 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: extraction of the process group id string "
 		"failed: vcrt_str=" MPIG_PTR_FMT ", space=" MPIG_PTR_FMT, MPIG_PTR_CAST(vcrt_str), MPIG_PTR_CAST(&space)));
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strspace_extract_element",
-		"**globus|strspace_extract_element %s %p", "pg_id", &space);
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strspace_extract_element",
+		"**mpig|strspace_extract_element %s %p", "pg_id", &space);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
@@ -954,8 +954,8 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: acquisition/creation of the process group "
 		"failed: vcrt_str=" MPIG_PTR_FMT ", pg_id=%s, pg_size=%d", MPIG_PTR_CAST(vcrt_str), elem_str, pg_size));
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|pg_acquire_ref",
-		"**globus|pg_acquire_ref %s %d", elem_str, pg_size);
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|pg_acquire_ref",
+		"**mpig|pg_acquire_ref %s %d", elem_str, pg_size);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
@@ -973,8 +973,8 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: extraction of the VCRT size failed: vcrt_str="
 	    MPIG_PTR_FMT ", space=" MPIG_PTR_FMT, MPIG_PTR_CAST(vcrt_str), MPIG_PTR_CAST(&space)));
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strspace_extract_element",
-	    "**globus|strspace_extract_element %s %p", "vcrt_size", &space);
+	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strspace_extract_element",
+	    "**mpig|strspace_extract_element %s %p", "vcrt_size", &space);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -983,7 +983,7 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: conversion of the VCRT size string to an "
 	    "integer failed: vcrt_str=" MPIG_PTR_FMT "elem_str=%s", MPIG_PTR_CAST(vcrt_str), elem_str));
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strtointconv", "**globus|strtointconv %s %s", "pg_count", elem_str);
+	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strtointconv", "**mpig|strtointconv %s %s", "pg_count", elem_str);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -1022,8 +1022,8 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: extraction of the process group index "
 		    "failed: vcrt_str=" MPIG_PTR_FMT ", space=" MPIG_PTR_FMT "p=%d", MPIG_PTR_CAST(vcrt_str),
 		    MPIG_PTR_CAST(&space), p));
-		MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strspace_extract_element",
-		    "**globus|strspace_extract_element %s %p", "pg_index", &space);
+		MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strspace_extract_element",
+		    "**mpig|strspace_extract_element %s %p", "pg_index", &space);
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
 
@@ -1033,7 +1033,7 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: conversion of the process group index "
 		    "string to an integer failed: vcrt_str=" MPIG_PTR_FMT "p=%d, elem_str=%s", MPIG_PTR_CAST(vcrt_str), p,
 		    elem_str));
-		MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strtointconv", "**globus|strtointconv %s %s",
+		MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strtointconv", "**mpig|strtointconv %s %s",
 		    "pg_index", elem_str);
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
@@ -1050,8 +1050,8 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: extraction of the process group rank "
 		    "failed: vcrt_str=" MPIG_PTR_FMT ", space=" MPIG_PTR_FMT "p=%d", MPIG_PTR_CAST(vcrt_str),
 		    MPIG_PTR_CAST(&space), p));
-		MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strspace_extract_element",
-		    "**globus|strspace_extract_element %s %p", "pg_rank", &space);
+		MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strspace_extract_element",
+		    "**mpig|strspace_extract_element %s %p", "pg_rank", &space);
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
 
@@ -1061,7 +1061,7 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: conversion of the process group rank "
 		    "string to an integer failed: vcrt_str=" MPIG_PTR_FMT "p=%d, elem_str=%s", MPIG_PTR_CAST(vcrt_str), p,
 		    elem_str));
-		MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strtointconv", "**globus|strtointconv %s %s",
+		MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strtointconv", "**mpig|strtointconv %s %s",
 		    "pg_index", elem_str);
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
@@ -1076,8 +1076,8 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: extraction of the business card "
 		    "failed: vcrt_str=" MPIG_PTR_FMT ", space=" MPIG_PTR_FMT "proc=%d", MPIG_PTR_CAST(vcrt_str),
 		    MPIG_PTR_CAST(&space), p));
-		MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|strspace_extract_element",
-		    "**globus|strspace_extract_element %s %p", "bc", &space);
+		MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|strspace_extract_element",
+		    "**mpig|strspace_extract_element %s %p", "bc", &space);
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
 
@@ -1095,7 +1095,7 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 			MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: business card deserialization "
 			    "failed: vcrt_str=" MPIG_PTR_FMT ", vc=" MPIG_PTR_FMT "pg_id=%s, pg_rank=%d", MPIG_PTR_CAST(vcrt_str),
 			    MPIG_PTR_CAST(vc), pg_id, pg_rank));
-			MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|bc_deserialize");
+			MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|bc_deserialize");
 			goto fn_fail;
 		    }   /* --END ERROR HANDLING-- */
 
@@ -1110,7 +1110,7 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 			MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: construction of VC contact "
 			    "information failed: vcrt_str=" MPIG_PTR_FMT ", vc=" MPIG_PTR_FMT "pg_id=%s, pg_rank=%d",
 			    MPIG_PTR_CAST(vcrt_str), MPIG_PTR_CAST(vc), pg_id, pg_rank));
-			MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|bc_deserialize");
+			MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|bc_deserialize");
 			goto fn_fail;
 		    }   /* --END ERROR HANDLING-- */
 
@@ -1121,8 +1121,8 @@ int mpig_vcrt_deserialize_object(char * vcrt_str, mpig_vcrt_t ** const vcrt_p)
 			MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_COMM, "ERROR: selection of a "
 			    "communication method failed: vcrt_str=" MPIG_PTR_FMT ", vc=" MPIG_PTR_FMT "pg_id=%s, pg_rank=%d",
 			    MPIG_PTR_CAST(vcrt_str), MPIG_PTR_CAST(vc), pg_id, pg_rank));
-			MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|vc_select_comm_method",
-			    "**globus|vc_select_comm_method %s %d", pg_id, pg_rank);
+			MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|vc_select_comm_method",
+			    "**mpig|vc_select_comm_method %s %d", pg_id, pg_rank);
 			goto fn_fail;
 		    }   /* --END ERROR HANDLING-- */
 
@@ -1243,7 +1243,7 @@ int mpig_vc_construct_contact_info(mpig_vc_t * vc)
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: extraction of the APP_NUM from "
 	    "the business card failed: vc=" MPIG_PTR_FMT "pg_id=%s, pg_rank=%d", MPIG_PTR_CAST(vc), mpig_vc_get_pg_id(vc),
 	    mpig_vc_get_pg_rank(vc)));
-	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|pm_get_app_num");
+	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|pm_get_app_num");
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -1254,7 +1254,7 @@ int mpig_vc_construct_contact_info(mpig_vc_t * vc)
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: extraction of the LAN ID from "
 	    "the business card failed: vc=" MPIG_PTR_FMT "pg_id=%s, pg_rank=%d", MPIG_PTR_CAST(vc), mpig_vc_get_pg_id(vc),
 	    mpig_vc_get_pg_rank(vc)));
-	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact", "**globus|bc_get_contact %s",
+	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|bc_get_contact", "**mpig|bc_get_contact %s",
 	    "MPIG_LAN_ID");
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
@@ -1285,8 +1285,8 @@ int mpig_vc_construct_contact_info(mpig_vc_t * vc)
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: construction of contact "
 		    "information failed: vc=" MPIG_PTR_FMT "pg_id=%s, pg_rank=%d, cm=%s", MPIG_PTR_CAST(vc),
 		    mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc), mpig_cm_get_name(cm)));
-		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm|construct_vc_contact_info",
-		    "**globus|cm|construct_vc_contact_info %s %s %d", mpig_cm_get_name(cm), mpig_vc_get_pg_id(vc),
+		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|cm|construct_vc_contact_info",
+		    "**mpig|cm|construct_vc_contact_info %s %s %d", mpig_cm_get_name(cm), mpig_vc_get_pg_id(vc),
 		    mpig_vc_get_pg_rank(vc));
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
@@ -1417,8 +1417,8 @@ int mpig_vc_select_comm_method(mpig_vc_t * vc)
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: selection of communication method "
 		    "failed: vc=" MPIG_PTR_FMT "pg_id=%s, pg_rank=%d, cm=%s", MPIG_PTR_CAST(vc), mpig_vc_get_pg_id(vc),
 		    mpig_vc_get_pg_rank(vc), mpig_cm_get_name(cm)));
-		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|cm|select_comm_method",
-		    "**globus|cm|select_comm_method %s %s %d", mpig_cm_get_name(cm), mpig_vc_get_pg_id(vc),
+		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|cm|select_comm_method",
+		    "**mpig|cm|select_comm_method %s %s %d", mpig_cm_get_name(cm), mpig_vc_get_pg_id(vc),
 		    mpig_vc_get_pg_rank(vc));
 		goto fn_fail;
 	    }   /* --END ERROR HANDLING-- */
@@ -1431,8 +1431,8 @@ int mpig_vc_select_comm_method(mpig_vc_t * vc)
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: no communication method accepted the VC: vc="
 	    MPIG_PTR_FMT "pg_id=%s, pg_rank=%d", MPIG_PTR_CAST(vc), mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc)));
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cm|select_comm_method_none",
-	    "**globus|cm|select_comm_method_none %s %d", mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc));
+	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cm|select_comm_method_none",
+	    "**mpig|cm|select_comm_method_none %s %d", mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc));
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 

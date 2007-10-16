@@ -27,8 +27,8 @@ int MPID_Open_port(MPID_Info * info, char * port_name)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_DYNAMIC, "entering"));
 
     mpi_errno = mpig_port_open(info, port_name);
-    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|connacc|open_port",
-	"**globus|connacc|open_port %p %p", info, port_name);
+    MPIU_ERR_CHKANDJUMP2((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|open_port",
+	"**mpig|connacc|open_port %p %p", info, port_name);
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_DYNAMIC, "exiting: port_name=%s",
@@ -62,8 +62,8 @@ int MPID_Close_port(const char * port_name)
 		       port_name));
 
     mpi_errno = mpig_port_close(port_name);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|connacc|close_port",
-	"**globus|connacc|close_port %s", port_name);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|close_port",
+	"**mpig|connacc|close_port %s", port_name);
     
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_ADI3 | MPIG_DEBUG_LEVEL_DYNAMIC, "exiting"));
@@ -124,7 +124,7 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
     {   /* --BEGIN ERROR HANDLING-- */
         MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: failed to allocate a new context "
             "id: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-        MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|connacc|ctxalloc", "**globus|connacc|ctxalloc %p", port_vc);
+        MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|ctxalloc", "**mpig|connacc|ctxalloc %p", port_vc);
         goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -140,8 +140,8 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: serializing the VCRT failed: "
 		"port_name=%s, comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, port_name, comm->handle, MPIG_PTR_CAST(comm)));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|vcrt_serialize",
-		"**globus|connacc|vcrt_serialize %s %C %p", port_name, comm->handle, comm->vcrt);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|vcrt_serialize",
+		"**mpig|connacc|vcrt_serialize %s %C %p", port_name, comm->handle, comm->vcrt);
 	    goto endblk;
 	}   /* --END ERROR HANDLING-- */
 
@@ -153,8 +153,8 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: accepting a new connection failed:"
 		"port_name=%s", port_name));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|port_accept",
-		"**globus|connacc|port_accept %s %i %C", port_name, root, comm->handle);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|port_accept",
+		"**mpig|connacc|port_accept %s %i %C", port_name, root, comm->handle);
 	    goto endblk;
 	}   /* --END ERROR HANDLING-- */
 
@@ -176,8 +176,8 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: sending local context id and "
                     "VCT string length failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|port_vc_send",
-		    "**globus|connacc|port_vc_send %p %p %d", port_vc, buf, sizeof(buf));
+		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|port_vc_send",
+		    "**mpig|connacc|port_vc_send %p %p %d", port_vc, buf, sizeof(buf));
 		goto endblk;
 	    }   /* --END ERROR HANDLING-- */
 
@@ -186,8 +186,8 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: receiving remote context id and "
                     "VCT string length failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|port_vc_recv",
-		    "**globus|connacc|port_vc_recv %p %p %d", port_vc, buf, sizeof(buf));
+		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|port_vc_recv",
+		    "**mpig|connacc|port_vc_recv %p %p %d", port_vc, buf, sizeof(buf));
 		goto endblk;
 	    }   /* --END ERROR HANDLING-- */
 
@@ -217,8 +217,8 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: sending local VCT string failed: "
 		"port_vc=" MPIG_PTR_FMT ",str=" MPIG_PTR_FMT ", len=%u", MPIG_PTR_CAST(port_vc), MPIG_PTR_CAST(local_vct_str),
 		local_vct_len));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|port_vc_send",
-		"**globus|connacc|port_vc_send %p %p %d", port_vc, local_vct_str, (int) local_vct_len);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|port_vc_send",
+		"**mpig|connacc|port_vc_send %p %p %d", port_vc, local_vct_str, (int) local_vct_len);
 	    goto endblk;
 	}   /* --END ERROR HANDLING-- */
 
@@ -231,8 +231,8 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: receiving remote VCT string failed: "
 		"port_vc=" MPIG_PTR_FMT ", str=" MPIG_PTR_FMT ", len=%u", MPIG_PTR_CAST(port_vc),
 		MPIG_PTR_CAST(remote_vct_str), remote_vct_len));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|port_vc_recv",
-		"**globus|connacc|port_vc_recv %p %p %d", port_vc, remote_vct_str, (int) remote_vct_len);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|port_vc_recv",
+		"**mpig|connacc|port_vc_recv %p %p %d", port_vc, remote_vct_str, (int) remote_vct_len);
 	    goto endblk;
 	}   /* --END ERROR HANDLING-- */
 	
@@ -248,7 +248,7 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: broadcast of an error condition "
 		    "to processes in the local communicator failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
 		MPIU_ERR_SETANDSTMT1(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);},
-		    "**globus|connacc|bcast_vct_error_status", "**globus|connacc|bcast_vct_error_status %p", port_vc);
+		    "**mpig|connacc|bcast_vct_error_status", "**mpig|connacc|bcast_vct_error_status %p", port_vc);
 		goto fn_fail;
 	    }
 	    
@@ -261,8 +261,8 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: broadcast of remote VCT string length "
 		"to processes in the local communicator failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|connacc|bcast_vct_len",
-		"**globus|connacc|bcast_vct_len %p", port_vc);
+	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|bcast_vct_len",
+		"**mpig|connacc|bcast_vct_len %p", port_vc);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
@@ -271,8 +271,8 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: broadcast of remote VCT string to "
 		"processes in the local communicator failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|bcast_vct_str",
-		"**globus|connacc|bcast_vct_str %p %p %d", port_vc, remote_vct_str, remote_vct_len);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|bcast_vct_str",
+		"**mpig|connacc|bcast_vct_str %p %p %d", port_vc, remote_vct_str, remote_vct_len);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
     }
@@ -284,7 +284,7 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: reception of remote VCT string length "
 		"from the root process in the local communicator failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|connacc|bcast_vct_len", "**globus|connacc|bcast_vct_len %p",
+	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|bcast_vct_len", "**mpig|connacc|bcast_vct_len %p",
 		port_vc);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
@@ -293,8 +293,8 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: communication between the two root "
 		"processes failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|connacc|bcast_vct_error_status_recvd",
-		"**globus|connacc|bcast_vct_error_status_recvd %p", port_vc);
+	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|bcast_vct_error_status_recvd",
+		"**mpig|connacc|bcast_vct_error_status_recvd %p", port_vc);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 	
@@ -314,8 +314,8 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: reception of  remote VCT string from "
 		"the root process in the local communicator failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|bcast_vct_str",
-		"**globus|connacc|bcast_vct_str %p %p %d", port_vc, remote_vct_str, remote_vct_len);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|bcast_vct_str",
+		"**mpig|connacc|bcast_vct_str %p %p %d", port_vc, remote_vct_str, remote_vct_len);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
     }
@@ -328,7 +328,7 @@ int MPID_Comm_accept(char * const port_name, MPID_Info * const info, const int r
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: serializing the VCRT failed: "
 	    "port_name=%s, comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, port_name, comm->handle, MPIG_PTR_CAST(comm)));
-	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|connacc|vcrt_deserialize");
+	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|vcrt_deserialize");
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
     
@@ -445,7 +445,7 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
     {   /* --BEGIN ERROR HANDLING-- */
         MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: failed to allocate a new context id: "
             "port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-        MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|connacc|ctxalloc", "**globus|connacc|ctxalloc %p", port_vc);
+        MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|ctxalloc", "**mpig|connacc|ctxalloc %p", port_vc);
         goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -461,8 +461,8 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: serializing the VCRT failed: "
 		"port_name=%s, comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, port_name, comm->handle, MPIG_PTR_CAST(comm)));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|vcrt_serialize",
-		"**globus|connacc|vcrt_serialize %s %C %p", port_name, comm->handle, comm->vcrt);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|vcrt_serialize",
+		"**mpig|connacc|vcrt_serialize %s %C %p", port_name, comm->handle, comm->vcrt);
 	    goto endblk;
 	}   /* --END ERROR HANDLING-- */
 
@@ -474,8 +474,8 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: connecting to the port failed:"
 		"port_name=%s", port_name));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|port_connect",
-		"**globus|connacc|port_connect %s %i %C", port_name, root, comm->handle);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|port_connect",
+		"**mpig|connacc|port_connect %s %i %C", port_name, root, comm->handle);
 	    goto endblk;
 	}   /* --END ERROR HANDLING-- */
 
@@ -492,8 +492,8 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: receiving remote context id and "
                     "VCT string length failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|port_vc_recv",
-		    "**globus|connacc|port_vc_recv %p %p %d", port_vc, buf, sizeof(buf));
+		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|port_vc_recv",
+		    "**mpig|connacc|port_vc_recv %p %p %d", port_vc, buf, sizeof(buf));
 		goto endblk;
 	    }   /* --END ERROR HANDLING-- */
 
@@ -512,8 +512,8 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: sending local context id and "
                     "VCT string length failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|port_vc_send",
-		    "**globus|connacc|port_vc_send %p %p %d", port_vc, buf, sizeof(buf));
+		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|port_vc_send",
+		    "**mpig|connacc|port_vc_send %p %p %d", port_vc, buf, sizeof(buf));
 		goto endblk;
 	    }   /* --END ERROR HANDLING-- */
 
@@ -538,8 +538,8 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: receiving remote VCT string failed: "
 		"port_vc=" MPIG_PTR_FMT ", str=" MPIG_PTR_FMT ", len=%u", MPIG_PTR_CAST(port_vc),
 		MPIG_PTR_CAST(remote_vct_str), remote_vct_len));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|port_vc_recv",
-		"**globus|connacc|port_vc_recv %p %p %d", port_vc, remote_vct_str, (int) remote_vct_len);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|port_vc_recv",
+		"**mpig|connacc|port_vc_recv %p %p %d", port_vc, remote_vct_str, (int) remote_vct_len);
 	    goto endblk;
 	}   /* --END ERROR HANDLING-- */
 	
@@ -550,8 +550,8 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: sending local VCT string failed: "
 		"port_vc=" MPIG_PTR_FMT ",str=" MPIG_PTR_FMT ", len=%u", MPIG_PTR_CAST(port_vc), MPIG_PTR_CAST(local_vct_str),
 		local_vct_len));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|port_vc_send",
-		"**globus|connacc|port_vc_send %p %p %d", port_vc, local_vct_str, (int) local_vct_len);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|port_vc_send",
+		"**mpig|connacc|port_vc_send %p %p %d", port_vc, local_vct_str, (int) local_vct_len);
 	    goto endblk;
 	}   /* --END ERROR HANDLING-- */
 
@@ -569,7 +569,7 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: broadcast of an error condition "
 		    "to processes in the local communicator failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
 		MPIU_ERR_SETANDSTMT1(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc);},
-		    "**globus|connacc|bcast_vct_error_status", "**globus|connacc|bcast_vct_error_status %p", port_vc);
+		    "**mpig|connacc|bcast_vct_error_status", "**mpig|connacc|bcast_vct_error_status %p", port_vc);
 		goto fn_fail;
 	    }
 	    
@@ -582,8 +582,8 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: broadcast of remote VCT string length "
 		"to processes in the local communicator failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|connacc|bcast_vct_len",
-		"**globus|connacc|bcast_vct_len %p", port_vc);
+	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|bcast_vct_len",
+		"**mpig|connacc|bcast_vct_len %p", port_vc);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
@@ -592,8 +592,8 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: broadcast of remote VCT string to "
 		"processes in the local communicator failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|bcast_vct_str",
-		"**globus|connacc|bcast_vct_str %p %p %d", port_vc, remote_vct_str, remote_vct_len);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|bcast_vct_str",
+		"**mpig|connacc|bcast_vct_str %p %p %d", port_vc, remote_vct_str, remote_vct_len);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
     }
@@ -605,7 +605,7 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: reception of remote VCT string length "
 		"from the root process in the local communicator failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|connacc|bcast_vct_len", "**globus|connacc|bcast_vct_len %p",
+	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|bcast_vct_len", "**mpig|connacc|bcast_vct_len %p",
 		port_vc);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
@@ -614,8 +614,8 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: communication between the two root "
 		"processes failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|connacc|bcast_vct_error_status_recvd",
-		"**globus|connacc|bcast_vct_error_status_recvd %p", port_vc);
+	    MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|bcast_vct_error_status_recvd",
+		"**mpig|connacc|bcast_vct_error_status_recvd %p", port_vc);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 	
@@ -635,8 +635,8 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
 	{   /* --BEGIN ERROR HANDLING-- */
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: reception of  remote VCT string from "
 		"the root process in the local communicator failed: port_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(port_vc)));
-	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|connacc|bcast_vct_str",
-		"**globus|connacc|bcast_vct_str %p %p %d", port_vc, remote_vct_str, remote_vct_len);
+	    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|connacc|bcast_vct_str",
+		"**mpig|connacc|bcast_vct_str %p %p %d", port_vc, remote_vct_str, remote_vct_len);
 	    goto fn_fail;
 	}   /* --END ERROR HANDLING-- */
 
@@ -650,7 +650,7 @@ int MPID_Comm_connect(const char * const port_name, MPID_Info * const info, cons
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DYNAMIC, "ERROR: serializing the VCRT failed: "
 	    "port_name=%s, comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, port_name, comm->handle, MPIG_PTR_CAST(comm)));
-	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|connacc|vcrt_deserialize");
+	MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|connacc|vcrt_deserialize");
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
     

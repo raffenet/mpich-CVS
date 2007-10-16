@@ -6,8 +6,6 @@
  * See COPYRIGHT.txt in the src/mpid/globus directory.
  */
 
-#if defined(MPID_HAS_HETERO)
-
 /*
  * This file contains the integration of MPICH2 segment (i.e., DATA LOOP) functions and Globus data conversion functions.
  */
@@ -16,6 +14,8 @@
 #include <stdlib.h>
 
 #include "mpidimpl.h"
+
+#if defined(MPID_HAS_HETERO)
 
 #undef MPID_SP_VERBOSE
 #undef MPID_SU_VERBOSE

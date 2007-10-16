@@ -85,8 +85,8 @@ int MPID_Startall(int count, MPID_Request * requests[])
 	    default:
 	    {
 		/* --BEGIN ERROR HANDLING-- */
-		rc = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, fcname, __LINE__, MPI_ERR_INTERN, "**globus|badreqtype",
-		    "**globus|badreqtype %d", mpig_request_get_type(preq));
+		rc = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, fcname, __LINE__, MPI_ERR_INTERN, "**mpig|badreqtype",
+		    "**mpig|badreqtype %d", mpig_request_get_type(preq));
 		/* --END ERROR HANDLING-- */
 	    }
 	}

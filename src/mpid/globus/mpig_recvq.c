@@ -514,8 +514,8 @@ int mpig_recvq_cancel_posted_rreq(MPID_Request * const rreq, bool_t * cancelled_
 				MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_RECVQ, "ERROR: attempt to cancel the "
 				    "vendor MPI request failed: rreq=" MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT, rreq->handle,
 				    MPIG_PTR_CAST(rreq)));
-				MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|cancel_ras",
-				    "**globus|cm_vmpi|cancel_ras %R", rreq);
+				MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|cancel_ras",
+				    "**mpig|cm_vmpi|cancel_ras %R", rreq);
 			    }  /* --END ERROR HANDLING-- */
 			}
 		    }
@@ -760,7 +760,7 @@ int mpig_recvq_deq_unexp_or_enq_posted(const int rank, const int tag, const int 
 			    "source with the VMPI CM failed: rank=%d, tag=%d, ctx=%d, comm=" MPIG_HANDLE_FMT ", commp="
 			    MPIG_PTR_FMT ", ctxoff=%d", ras_params->rank, ras_params->tag, ras_params->comm->context_id +
 			    ras_params->ctxoff, MPIG_PTR_CAST(ras_params->comm), ras_params->ctxoff));
-			MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|reg_ras");
+			MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|reg_ras");
 			goto fn_fail;
 		    }   /* --END ERROR HANDLING-- */
 
@@ -952,7 +952,7 @@ int mpig_recvq_deq_posted_or_enq_unexp(mpig_vc_t * const vc, const int rank, con
 			    if (mpig_cm_vmpi_thread_is_main())
 			    {
 				mpi_errno = mpig_cm_vmpi_unregister_recv_any_source(&ras_op);
-				MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|unreg_ras");
+				MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|unreg_ras");
 			    }
 			    else
 			    {
@@ -1091,7 +1091,7 @@ int mpig_recvq_unregister_ras_vreqs(void)
 	while(ras_op != NULL)
 	{
 	    mpi_errno = mpig_cm_vmpi_unregister_recv_any_source(ras_op);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_vmpi|unreg_ras");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|unreg_ras");
 
 	    ras_op = mpig_recvq_unreg_rasq_dequeue_op();
 	}

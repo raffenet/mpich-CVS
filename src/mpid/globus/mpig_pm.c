@@ -70,7 +70,7 @@ int mpig_pm_init(int * argc, char *** argv)
 	}
     }
 
-    MPIU_ERR_CHKANDSTMT((mpig_pm_my_object == NULL), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|pm_no_module");
+    MPIU_ERR_CHKANDSTMT((mpig_pm_my_object == NULL), mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|pm_no_module");
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PM, "exiting: mpi_errno=" MPIG_ERRNO_FMT, mpi_errno));

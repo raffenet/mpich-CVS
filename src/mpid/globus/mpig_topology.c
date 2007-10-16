@@ -42,10 +42,10 @@ int mpig_topology_init(void)
     
     /* create the toplogy attribute keys */
     mpi_errno = NMPI_Comm_create_keyval(MPI_NULL_COPY_FN, mpig_topology_destroy_depths_attr, &mpig_topology_depths_keyval, NULL);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|comm_create_key", "**globus|comm_create_key %s",
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|comm_create_key", "**mpig|comm_create_key %s",
 	"topology depths keyval");
     mpi_errno = NMPI_Comm_create_keyval(MPI_NULL_COPY_FN, mpig_topology_destroy_colors_attr, &mpig_topology_colors_keyval, NULL);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|comm_create_key", "**globus|comm_create_key %s",
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|comm_create_key", "**mpig|comm_create_key %s",
 	"topology colors keyval");
     
   fn_return:
@@ -88,10 +88,10 @@ int mpig_topology_finalize(void)
     
     /* destroy the toplogy attribute keys */
     mpi_errno = NMPI_Comm_free_keyval(&mpig_topology_depths_keyval);
-    MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|comm_destroy_key", "**globus|comm_destroy_key %s",
+    MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|comm_destroy_key", "**mpig|comm_destroy_key %s",
 	"topology depths keyval");
     NMPI_Comm_free_keyval(&mpig_topology_colors_keyval);
-    MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {;}, "**globus|comm_destroy_key", "**globus|comm_destroy_key %s",
+    MPIU_ERR_CHKANDSTMT1((mpi_errno), mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|comm_destroy_key", "**mpig|comm_destroy_key %s",
 	"topology colors keyval");
 
     /* fn_return: */
@@ -401,14 +401,14 @@ int mpig_topology_comm_construct(MPID_Comm * const comm)
 
     /* attach a the copies of the topology depths and colors information to the communicator using the attribute keys */
     mpi_errno = NMPI_Comm_set_attr(comm->handle, mpig_topology_colors_keyval, colors_attr_copy);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|comm_set_attr", "**globus|comm_set_attr %s",
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|comm_set_attr", "**mpig|comm_set_attr %s",
 	"topology colors attribute");
     mpi_errno = NMPI_Comm_set_attr(comm->handle, mpig_topology_depths_keyval, depths_attr_copy);
     if (mpi_errno)
     {
 	NMPI_Comm_delete_attr(comm->handle, mpig_topology_colors_keyval);
 	colors_attr_copy = NULL;
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|comm_set_attr", "**globus|comm_set_attr %s",
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|comm_set_attr", "**mpig|comm_set_attr %s",
 	    "topology depths attribute");
     }
 
@@ -563,8 +563,8 @@ static int mpig_topology_get_vc_match(const mpig_vc_t * const vc1, const mpig_vc
 	    {
 		mpi_errno = mpig_cm_get_vtable(mpig_cm_table[n])->get_vc_compatability(mpig_cm_table[n], vc1, vc2,
 		    ((unsigned) 1 << level), &levels_out);
-		MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|get_vc_compatability",
-		    "**globus|get_vc_compatability %s", mpig_cm_get_name(mpig_cm_table[n]));
+		MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|get_vc_compatability",
+		    "**mpig|get_vc_compatability %s", mpig_cm_get_name(mpig_cm_table[n]));
 		
 		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_TOPO, "cm=%s, level_mask=0x%02x, levels_out=0x%02x",
 		    mpig_cm_get_name(mpig_cm_table[n]), ((unsigned) 1 << level), levels_out));

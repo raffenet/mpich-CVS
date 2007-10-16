@@ -415,7 +415,7 @@ static int mpig_cm_xio_adi3_isend(const void * const buf, const int cnt, const M
     mpig_cm_xio_request_set_cc(sreq, 1);
     
     mpi_errno = mpig_cm_xio_send_enq_isend(vc, sreq);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_isend");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_isend");
 
     mpig_cm_xio_pe_start_op();
     *sreqp = sreq;
@@ -469,7 +469,7 @@ static int mpig_cm_xio_adi3_irsend(const void * const buf, const int cnt, const 
     mpig_cm_xio_request_set_cc(sreq, 1);
 
     mpi_errno = mpig_cm_xio_send_enq_isend(vc, sreq);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_isend");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_isend");
 
     mpig_cm_xio_pe_start_op();
     *sreqp = sreq;
@@ -525,7 +525,7 @@ static int mpig_cm_xio_adi3_issend(const void * const buf, const int cnt, const 
     mpig_cm_xio_pe_start_op();
     
     mpi_errno = mpig_cm_xio_send_enq_isend(vc, sreq);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_isend");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_isend");
 
     *sreqp = sreq;
     
@@ -610,8 +610,8 @@ static int mpig_cm_xio_adi3_irecv(void * const buf, const int cnt, const MPI_Dat
     {   /* --BEGIN ERROR HANDLING-- */
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: receive queue operation failed; dequeue "
 	    "unexpected or enqueue posted: rank=%d, tag=%d, recv_ctx=%d", rank, tag, recv_ctx));
-	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**globus|recvq_deq_unexp_or_enq_posted",
-	    "**globus|recvq_deq_unexp_or_enq_posted %d %d %d", rank, tag, recv_ctx);
+	MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|recvq_deq_unexp_or_enq_posted",
+	    "**mpig|recvq_deq_unexp_or_enq_posted %d %d %d", rank, tag, recv_ctx);
 	goto fn_fail;
     }   /* --END ERROR HANDLING-- */
 
@@ -690,7 +690,7 @@ static int mpig_cm_xio_adi3_probe(
 	mpig_cm_xio_probe_start();
 	{
 	    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_fuaes");
 	    while (found == FALSE)
 	    {
 		mpig_cm_xio_probe_wait();
@@ -698,7 +698,7 @@ static int mpig_cm_xio_adi3_probe(
 		mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
 		if (mpi_errno)
 		{   /* --BEGIN ERROR HANDLING-- */
-		    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
+		    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_fuaes");
 		    mpig_cm_xio_probe_end();
 		    goto fn_fail;
 		}   /* --BEGIN ERROR HANDLING-- */
@@ -709,17 +709,17 @@ static int mpig_cm_xio_adi3_probe(
     else
     {
 	mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
-	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
+	MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_fuaes");
 	while (found == FALSE)
 	{
 	    /* give the XIO communication threads a chance to make progress */
 	    mpig_thread_yield();
 
 	    mpi_errno = MPID_Progress_poke();
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|pe_poke");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|pe_poke");
 	    
 	    mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_fuaes");
 	}
     }
 
@@ -758,7 +758,7 @@ static int mpig_cm_xio_adi3_iprobe(
 	MPIG_PTR_FMT ", recv_ctx=%d, status=" MPIG_PTR_FMT, rank, tag, MPIG_PTR_CAST(comm), recv_ctx, MPIG_PTR_CAST(status)));
 
     mpi_errno = mpig_recvq_find_unexp_and_extract_status(rank, tag, comm, recv_ctx, &found, status);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|recvq_fuaes");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|recvq_fuaes");
 
     *found_p = found;
 
@@ -877,7 +877,7 @@ static int mpig_cm_xio_adi3_cancel_send(MPID_Request * const sreq)
 		    MPIG_PTR_CAST(sreq), rank, tag, send_ctx));
 	    
 		mpi_errno = mpig_cm_xio_send_enq_cancel_send_msg(vc, sreq->comm->rank, tag, send_ctx, sreq->handle);
-		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|send_enq_cancel_send_msg");
+		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_cancel_send_msg");
 	
 		/* adjust the request's completion counters and reference count to insure the request lives until the response is
 		   received is received from the remote process */
@@ -892,8 +892,8 @@ static int mpig_cm_xio_adi3_cancel_send(MPID_Request * const sreq)
 			{   /* --BEGIN ERROR HANDLING-- */
 			    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: attempt to cancel "
 				"completed request; likely a dangling handle, sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(sreq)));
-			    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**globus|cancel_completed_sreq",
-				"**globus|cancel_completed_sreq %R %p", sreq->handle, sreq);
+			    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cancel_completed_sreq",
+				"**mpig|cancel_completed_sreq %R %p", sreq->handle, sreq);
 			    MPID_Abort(NULL, mpi_errno, 13, NULL);
 			}   /* --END ERROR HANDLING-- */
 		    }
@@ -918,7 +918,7 @@ static int mpig_cm_xio_adi3_cancel_send(MPID_Request * const sreq)
             MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure occurred "
                 "while attempting to enqueue sreq on the completion queue, vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT
                 ", sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
-            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_sreq");
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**mpig|cm_xio|rcq_enq_sreq");
             goto fn_fail;
         }
     }
@@ -1014,7 +1014,7 @@ static void mpig_cm_xio_vc_dec_ref_count_and_close(mpig_vc_t * const vc, bool_t 
 	    }
 	    else
 	    {
-		MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|disconnect_close_proc");
+		MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|disconnect_close_proc");
 		mpig_cm_xio_fault_handle_async_error(mpi_errno);
 		mpig_cm_xio_vc_list_remove(vc);
 	    }
@@ -1069,7 +1069,7 @@ static int mpig_cm_xio_vc_recv_unexpected(mpig_vc_t * const vc, MPID_Request * c
 	{
 	    mrc = mpig_cm_xio_send_enq_ssend_ack_msg(vc, mpig_request_get_remote_req_id(rreq));
 	    MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(rreq->status.MPI_ERROR, mrc);},
-		"**globus|cm_xio|send_enq_ssend_ack_msg");
+		"**mpig|cm_xio|send_enq_ssend_ack_msg");
 
 	    /* NOTE: it is safe to fall through here.  message reception will completed as it would normally.  the only
 	       difference is that the request will have an error attached to it. */
@@ -1084,12 +1084,12 @@ static int mpig_cm_xio_vc_recv_unexpected(mpig_vc_t * const vc, MPID_Request * c
 		mpig_iov_reset(rreq_cmu->iov, 0);
 		mrc = mpig_cm_xio_stream_rreq_unpack(rreq);
 		MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(rreq->status.MPI_ERROR, mrc);},
-		    "**globus|cm_xio|stream_rreq_unpack");
+		    "**mpig|cm_xio|stream_rreq_unpack");
 	    }
 	    else
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(rreq->status.MPI_ERROR, mrc);},
-		    "**globus|cm_xio|stream_req_init");
+		    "**mpig|cm_xio|stream_req_init");
 	    }   /* --END ERROR HANDLING-- */
 		    
 		/* mpig_databuf_destroy(rreq_cmu->databuf); -- destroyed by unpack routine */
@@ -1129,7 +1129,7 @@ static int mpig_cm_xio_vc_recv_unexpected(mpig_vc_t * const vc, MPID_Request * c
 	       received, then set the request state to complete; otherwise, set an error state so that the read handler will
 	       complete the request when the read finishes. */
 	    MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(rreq->status.MPI_ERROR, mrc);},
-		"**globus|cm_xio|send_enq_rndv_cts_msg");
+		"**mpig|cm_xio|send_enq_rndv_cts_msg");
 
 	    if (mpig_cm_xio_request_get_state(rreq) == MPIG_CM_XIO_REQ_STATE_WAIT_RNDV_DATA)
 	    {
@@ -1153,14 +1153,14 @@ static int mpig_cm_xio_vc_recv_unexpected(mpig_vc_t * const vc, MPID_Request * c
                 if (mrc)
                 {   /* --BEGIN ERROR HANDLING-- */
                     MPIU_ERR_CHKANDSTMT((mrc), mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(rreq->status.MPI_ERROR, mrc);},
-                        "**globus|cm_xio|stream_rreq_unpack");
+                        "**mpig|cm_xio|stream_rreq_unpack");
                     /* XXX: switch to some state that will drain data associated with this request once it arrives??? */
                 }   /* --END ERROR HANDLING-- */
 	    }
 	    else
 	    {   /* --BEGIN ERROR HANDLING-- */
 		MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(rreq->status.MPI_ERROR, mrc);},
-		    "**globus|cm_xio|stream_req_init");
+		    "**mpig|cm_xio|stream_req_init");
                 /* XXX: switch to some state that will drain data associated with this request once it arrives??? */
 	    }   /* --END ERROR HANDLING-- */
 	}
@@ -1186,7 +1186,7 @@ static int mpig_cm_xio_vc_recv_unexpected(mpig_vc_t * const vc, MPID_Request * c
             MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT | MPIG_DEBUG_LEVEL_REQ, "ERROR: failure occurred "
                 "while attempted to enqueue rreq on the completion queue, vc=" MPIG_PTR_FMT ", rreq=" MPIG_HANDLE_FMT
                 ", rreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc), rreq->handle, MPIG_PTR_CAST(rreq)));
-            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**globus|cm_xio|rcq_enq_rreq");
+            MPIU_ERR_SETANDSTMT(mrc, MPI_ERR_OTHER, {MPIU_ERR_ADD(mpi_errno, mrc)}, "**mpig|cm_xio|rcq_enq_rreq");
         }
     }
 

@@ -263,14 +263,14 @@ int mpig_datatype_add_info_to_bc(mpig_bc_t * const bc)
 
     /* add the endianess of the local system to the business card */
     mpi_errno = mpig_bc_add_contact(bc, "DT_ENDIAN", MPIG_ENDIAN_STR(MPIG_MY_ENDIAN));
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-        "**globus|bc_add_contact %s", "DT_ENDIAN");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_add_contact",
+        "**mpig|bc_add_contact %s", "DT_ENDIAN");
 
     /* add the globus data conversion format if we are using globus_dc module */
     MPIU_Snprintf(uint_str, (size_t) 10, "%u", (unsigned) GLOBUS_DC_FORMAT_LOCAL);
     mpi_errno = mpig_bc_add_contact(bc, "DT_GDC_FORMAT", uint_str);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_add_contact",
-        "**globus|bc_add_contact %s", "DT_GDC_FORMAT");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_add_contact",
+        "**mpig|bc_add_contact %s", "DT_GDC_FORMAT");
     
     /* prepare a text version of the MPI datatype to C type mappings */
     for (i = 0; i < MPIG_DATATYPE_MAX_BASIC_TYPES; i++)
@@ -284,7 +284,7 @@ int mpig_datatype_add_info_to_bc(mpig_bc_t * const bc)
 
     /* add mappings to the business card */
     mpi_errno = mpig_bc_add_contact(bc, "DT_CTYPE_MAP", ctype_map_str);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_add_ctype_map");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|datatype_add_ctype_map");
 
     /* prepare a text version of the local C type size array */
     for (i = 0; i < MPIG_CTYPE_LAST; i++)
@@ -298,7 +298,7 @@ int mpig_datatype_add_info_to_bc(mpig_bc_t * const bc)
 
     /* add the local C type sizes to the business card */
     mpi_errno = mpig_bc_add_contact(bc, "DT_CTYPE_SIZES", ctype_sizes_str);
-    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|datatype_add_ctype_sizes");
+    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|datatype_add_ctype_sizes");
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_BC | MPIG_DEBUG_LEVEL_DT, "exiting: bc=" MPIG_PTR_FMT
@@ -348,16 +348,16 @@ int mpig_datatype_extract_info_from_bc(mpig_vc_t * const vc)
 
     /* get the endianess of source system */
     mpi_errno = mpig_bc_get_contact(bc, "DT_ENDIAN", &endian_str, &found);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
-        "**globus|bc_get_contact %s", "DT_ENDIAN");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_get_contact",
+        "**mpig|bc_get_contact %s", "DT_ENDIAN");
     if (!found) goto fn_return;
 
     endian = (strcmp(endian_str, "little") == 0) ? MPIG_ENDIAN_LITTLE : MPIG_ENDIAN_BIG;
 	
     /* get the globus data conversion format if we are using globus_dc module */
     mpi_errno = mpig_bc_get_contact(bc, "DT_GDC_FORMAT", &gdc_format_str, &found);
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|bc_get_contact",
-        "**globus|bc_get_contact %s", "DT_GDC_FORMAT");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_get_contact",
+        "**mpig|bc_get_contact %s", "DT_GDC_FORMAT");
     if (!found) goto fn_return;
 
     rc = sscanf(gdc_format_str, "%d", &gdc_format);
@@ -365,13 +365,13 @@ int mpig_datatype_extract_info_from_bc(mpig_vc_t * const vc)
 
     /* get the MPI datatype to C type map */
     mpi_errno = mpig_bc_get_contact(bc, "DT_CTYPE_MAP", &ctype_map_str, &found);
-    MPIU_ERR_CHKANDJUMP2((mpi_errno || found == FALSE), mpi_errno, MPI_ERR_INTERN, "**globus|datatype_extract_ctype_map",
-	"**globus|datatype_extract_ctype_map %s %d", mpig_vc_get_pg(vc), mpig_vc_get_pg_rank(vc));
+    MPIU_ERR_CHKANDJUMP2((mpi_errno || found == FALSE), mpi_errno, MPI_ERR_INTERN, "**mpig|datatype_extract_ctype_map",
+	"**mpig|datatype_extract_ctype_map %s %d", mpig_vc_get_pg(vc), mpig_vc_get_pg_rank(vc));
 
     /* get the the C type size information */
     mpi_errno = mpig_bc_get_contact(bc, "DT_CTYPE_SIZES", &ctype_sizes_str, &found);
-    MPIU_ERR_CHKANDJUMP2((mpi_errno || found == FALSE), mpi_errno, MPI_ERR_INTERN, "**globus|datatype_extract_ctype_sizes",
-	"**globus|datatype_extract_ctype_sizes %s %d", mpig_vc_get_pg(vc), mpig_vc_get_pg_rank(vc));
+    MPIU_ERR_CHKANDJUMP2((mpi_errno || found == FALSE), mpi_errno, MPI_ERR_INTERN, "**mpig|datatype_extract_ctype_sizes",
+	"**mpig|datatype_extract_ctype_sizes %s %d", mpig_vc_get_pg(vc), mpig_vc_get_pg_rank(vc));
 
     MPIU_Assert(strlen(ctype_map_str) == MPIG_DATATYPE_MAX_BASIC_TYPES * 2);
     MPIU_Assert(strlen(ctype_sizes_str) == MPIG_CTYPE_LAST * 2);
@@ -475,8 +475,8 @@ int mpig_datatype_pack(void * inbuf, int incount, MPI_Datatype dt, void * outbuf
     MPID_Segment_pack(&seg, 0, &last, (void *) ((char *) outbuf + *position));
     if (last != dt_size * incount)
     {
-        MPIU_ERR_SETANDJUMP2(mpi_errno, MPI_ERR_ARG, "**globus|dt_pack_failed",
-            "**globus|dt_pack_failed %d %d", dt_size * incount, outsize - *position );
+        MPIU_ERR_SETANDJUMP2(mpi_errno, MPI_ERR_ARG, "**mpig|dt_pack_failed",
+            "**mpig|dt_pack_failed %d %d", dt_size * incount, outsize - *position );
     }
     
     *position += (int) last;
@@ -517,8 +517,8 @@ int mpig_datatype_unpack(void * inbuf, int insize, int * position, void * outbuf
         ", insize=%d, dt=" MPIG_HANDLE_FMT ", outbuf=" MPIG_PTR_FMT "outcoutn=%d, position=%d", MPIG_PTR_CAST(inbuf), insize, dt,
         MPIG_PTR_CAST(outbuf), outcount, *position));
 
-    MPIU_ERR_CHKANDJUMP2((insize < MPIG_PACK_HEADER_SIZE), mpi_errno, MPI_ERR_OTHER, "**globus|unpack_header_incomplete",
-        "**globus|unpack_header_incomplete %d %d", MPIG_PACK_HEADER_SIZE, insize);
+    MPIU_ERR_CHKANDJUMP2((insize < MPIG_PACK_HEADER_SIZE), mpi_errno, MPI_ERR_OTHER, "**mpig|unpack_header_incomplete",
+        "**mpig|unpack_header_incomplete %d %d", MPIG_PACK_HEADER_SIZE, insize);
 
     /* first, we must determine if the buffer data is in a format compatible with the local format.  if would be nice if we could
        store that information in the header of the packed buffer for future calls to unpack, but the C++ binding declares inbuf
@@ -535,8 +535,8 @@ int mpig_datatype_unpack(void * inbuf, int insize, int * position, void * outbuf
         {
             if (dt_size * outcount > insize - *position)
             {
-                MPIU_ERR_SETANDJUMP2(mpi_errno, MPI_ERR_ARG, "**globus|argunpackbuf",
-                    "**globus|argunpackbuf %d %d", dt_size * outcount, insize - *position );
+                MPIU_ERR_SETANDJUMP2(mpi_errno, MPI_ERR_ARG, "**mpig|argunpackbuf",
+                    "**mpig|argunpackbuf %d %d", dt_size * outcount, insize - *position );
             }
         }
     }
@@ -549,8 +549,8 @@ int mpig_datatype_unpack(void * inbuf, int insize, int * position, void * outbuf
     
     if (last != dt_size * outcount)
     {
-        MPIU_ERR_SETANDJUMP2(mpi_errno, MPI_ERR_ARG, "**globus|dt_unpack_failed",
-            "**globus|dt_unpack_failed %d %d", dt_size * outcount, insize - *position );
+        MPIU_ERR_SETANDJUMP2(mpi_errno, MPI_ERR_ARG, "**mpig|dt_unpack_failed",
+            "**mpig|dt_unpack_failed %d %d", dt_size * outcount, insize - *position );
     }
     
     *position += (int) last;

@@ -93,12 +93,12 @@ int MPID_Progress_wait(MPID_Progress_state * state)
 
 #if defined(MPIG_VMPI)
 	mpi_errno = mpig_cm_vmpi_pe_wait(state);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_pe_wait", "**globus|cm_pe_wait %s", "VMPI");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_pe_wait", "**mpig|cm_pe_wait %s", "VMPI");
 #endif
 
 #if defined(HAVE_GLOBUS_XIO_MODULE)
 	mpi_errno = mpig_cm_xio_pe_wait(state);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_pe_wait", "**globus|cm_pe_wait %s", "XIO");
+	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_pe_wait", "**mpig|cm_pe_wait %s", "XIO");
 #endif
 	
         if (mpig_pe_op_has_completed(state)) break;
@@ -144,12 +144,12 @@ int MPID_Progress_test(void)
 
 #if defined(MPIG_VMPI)
     mpi_errno = mpig_cm_vmpi_pe_test();
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_pe_test", "**globus|cm_pe_test %s", "VMPI");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_pe_test", "**mpig|cm_pe_test %s", "VMPI");
 #endif
 
 #if defined(HAVE_GLOBUS_XIO_MODULE)
     mpi_errno = mpig_cm_xio_pe_test();
-    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_pe_test", "**globus|cm_pe_test %s", "XIO");
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_pe_test", "**mpig|cm_pe_test %s", "XIO");
 #endif
     
   fn_return:

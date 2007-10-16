@@ -566,7 +566,7 @@ static int mpig_cm_xio_stream_sreq_pack(MPID_Request * const sreq)
 		"MPID_Segment_pack_vector() failed to advance the stream position: sreq=" MPIG_HANDLE_FMT ", sreq_p=" MPIG_PTR_FMT
 		", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT ", iov_count=%d", sreq->handle,
 		MPIG_PTR_CAST(sreq), sreq_cmu->stream_pos, sreq_cmu->stream_max_pos, sreq_cmu->stream_size, iov_count));
-	    MPIU_ERR_SETFATALANDSTMT(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**globus|cm_xio|seg_pack_iov");
+	    MPIU_ERR_SETFATALANDSTMT(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**mpig|cm_xio|seg_pack_iov");
 	}   /* --END ERROR HANDLING-- */
 	
 	mpig_iov_inc_num_inuse_entries(sreq_cmu->iov, iov_count);
@@ -603,7 +603,7 @@ static int mpig_cm_xio_stream_sreq_pack(MPID_Request * const sreq)
 		"MPID_Segment_pack() failed to advance the stream position: sreq=" MPIG_HANDLE_FMT ", sreq_p=" MPIG_PTR_FMT
 		", pos=" MPIG_SIZE_FMT ", max_pos=" MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT, sreq->handle, MPIG_PTR_CAST(sreq),
 		sreq_cmu->stream_pos, sreq_cmu->stream_max_pos, sreq_cmu->stream_size));
-	    MPIU_ERR_SETFATALANDSTMT(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**globus|cm_xio|seg_pack_iov");
+	    MPIU_ERR_SETFATALANDSTMT(mpi_errno, MPI_ERR_INTERN, {goto fn_fail;}, "**mpig|cm_xio|seg_pack_iov");
 	}   /* --END ERROR HANDLING-- */
 
 	mpig_iov_add_entry(sreq_cmu->iov, mpig_databuf_get_base_ptr(sreq_cmu->databuf), last - sreq_cmu->stream_pos);
@@ -711,8 +711,8 @@ static int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
                 MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "request datatype is MPI_PACKED; not enough space in buffer for pack "
                     "header: rreq= " MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", avail=%d, required=%d", rreq->handle,
                     MPIG_PTR_CAST(rreq), mpig_iov_get_num_bytes(rreq_cmu->iov), MPIG_PACK_HEADER_SIZE));
-                MPIU_ERR_SET2(mpi_errno, MPI_ERR_TRUNCATE, "**globus|cm_xio|no_room_for_pack_hdr",
-                    "**globus|cm_xio|no_room_for_pack_hdr %d %d", mpig_iov_get_num_bytes(rreq_cmu->iov), MPIG_PACK_HEADER_SIZE);
+                MPIU_ERR_SET2(mpi_errno, MPI_ERR_TRUNCATE, "**mpig|cm_xio|no_room_for_pack_hdr",
+                    "**mpig|cm_xio|no_room_for_pack_hdr %d %d", mpig_iov_get_num_bytes(rreq_cmu->iov), MPIG_PACK_HEADER_SIZE);
                 goto fn_fail;
             }   /* --END ERROR HANDLING-- */
         }
@@ -915,7 +915,7 @@ static int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 	{
 	    nbytes = (rreq_cmu->databuf != NULL) ? mpig_databuf_get_remaining_bytes(rreq_cmu->databuf) : 0;
 	    mpi_errno = mpig_cm_xio_stream_rreq_handle_truncation(rreq, nbytes);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_trunc");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_trunc");
 	}
     }
     else if (rreq_cmu->buf_type == MPIG_CM_XIO_APP_BUF_TYPE_DENSE)
@@ -1026,7 +1026,7 @@ static int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 			    
 			    nbytes = (rreq_cmu->databuf != NULL) ? mpig_databuf_get_remaining_bytes(rreq_cmu->databuf) : 0;
 			    mpi_errno = mpig_cm_xio_stream_rreq_handle_truncation(rreq, nbytes);
-			    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_trunc");
+			    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_trunc");
 			}
 		    }
 		} /* endif (rreq_cmu->databuf != NULL) */
@@ -1067,7 +1067,7 @@ static int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 
 		    nbytes = (rreq_cmu->databuf != NULL) ? mpig_databuf_get_remaining_bytes(rreq_cmu->databuf) : 0;
 		    mpi_errno = mpig_cm_xio_stream_rreq_handle_truncation(rreq, nbytes);
-		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_trunc");
+		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_trunc");
 		}
 	    }
 	}
@@ -1184,7 +1184,7 @@ static int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 		    
 		    mpi_errno = mpig_cm_xio_stream_rreq_handle_truncation(rreq,
 			mpig_databuf_get_remaining_bytes(rreq_cmu->databuf));
-		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_trunc");
+		    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_trunc");
 		    
 		    reload_iov = FALSE;
 		}
@@ -1250,7 +1250,7 @@ static int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
     {
         MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_DATA, "ERROR: unknown buffer typee: rreq=" MPIG_HANDLE_FMT
             ", rreqp=" MPIG_PTR_FMT ", buf_type=%d", rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->buf_type));
-        MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_INTERN, "**globus|cm_xio|invalid_buf_type");
+        MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_INTERN, "**mpig|cm_xio|invalid_buf_type");
     }
     
   fn_return:
@@ -1302,7 +1302,7 @@ static int mpig_cm_xio_stream_rreq_unpack_vc_msgbuf(mpig_vc_t * const vc, MPID_R
 	{
 	    /* the IOV was satisfied by the message buffer, so reload the IOV */
 	    mpi_errno = mpig_cm_xio_stream_rreq_unpack(rreq);
-	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**globus|cm_xio|stream_rreq_unpack");
+	    MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_rreq_unpack");
 	}
     }
 

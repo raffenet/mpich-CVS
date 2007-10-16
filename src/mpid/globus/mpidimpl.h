@@ -6,17 +6,17 @@
  * See COPYRIGHT.txt in the src/mpid/globus directory.
  */
 
+#if !defined(MPICH2_MPIDIMPL_H_INCLUDED)
+#define MPICH2_MPIDIMPL_H_INCLUDED
+
+#include "mpiimpl.h"
+
 /* NOTE: MPIG_FAKING_HETERO should be set to FALSE for normal operations */
 #if TRUE || !defined(MPID_HAS_HETERO)
 #define MPIG_FAKING_HETERO (FALSE)
 #else
 #define MPIG_FAKING_HETERO (TRUE)
 #endif
-
-#if !defined(MPICH2_MPIDIMPL_H_INCLUDED)
-#define MPICH2_MPIDIMPL_H_INCLUDED
-
-#include "mpiimpl.h"
 
 #if defined(HAVE_GLOBUS_COMMON_MODULE)
 #include "globus_module.h"
