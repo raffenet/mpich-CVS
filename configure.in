@@ -4603,12 +4603,16 @@ dnl We also allow --enable-timer-type=name to select a timer type
 AC_ARG_ENABLE(timer-type,[--enable-timer-type=name - Select the timer to use
 for MPI_Wtime and internal timestamps.  name may be one of
     gethrtime - Solaris timer (Solaris systems only)
-    clock_gettime   - Posix timer (where available)
+    clock_gettime - Posix timer (where available)
     gettimeofday - Most Unix systems
-    linux86_cycle - Linux x86; returns cycle counts, not time in seconds
-    linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha
-    gcc_ia64_cycle - IPF ar.itc timer
+    linux86_cycle - Linux x86; returns cycle counts, not time in seconds*
+    linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha*
+    gcc_ia64_cycle - IPF ar.itc timer*
     device - The timer is provided by the device
+       *Note that the cycle timers are intended to be used by MPICH2
+        developers for internal low-level timing.  Normal users should
+        not use these as they are not guaranteed to be accurate in
+        certain situations.
     ],timer_type=$enable_timer_type)
 
 if test -z "$timer_type" ; then 
