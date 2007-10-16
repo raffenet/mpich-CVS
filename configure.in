@@ -1324,8 +1324,10 @@ if test -z "$saveCFLAGS" -a -n "$CFLAGS" ; then
     CFLAGS=$saveCFLAGS
 fi
 
-MPI_DEFAULT_COPTS="-O2"
-if test "$compiler_optimizations" == "yes"; then
+if test "$compiler_optimizations" == "yes" ; then
+    MPI_DEFAULT_COPTS=`echo "${MPID_DEFAULT_COPTS:--O2}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'`
+fi
+if test -n "$MPI_DEFAULT_COPTS" ; then
    AC_MSG_CHECKING([whether $CC accepts default optimizations])
    rm -f conftest.c
    cat > conftest.c <<EOF
@@ -1454,9 +1456,11 @@ elif test "$enable_f77" = "yes" ; then
     FFLAGS=$saveFFLAGS
 fi
 
-MPI_DEFAULT_FOPTS="-O2"
 if test "$enable_f77" = yes ; then
-    if test "$compiler_optimizations" == "yes"; then
+    if test "$compiler_optimizations" == "yes" ; then
+        MPI_DEFAULT_FOPTS=`echo "${MPID_DEFAULT_FOPTS:--O2}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'`
+    fi
+    if test -n "$MPI_DEFAULT_FOPTS" ; then
         AC_MSG_CHECKING([whether $F77 accepts default optimizations])
             rm -f conftest.f
             cat > conftest.f <<EOF
@@ -1650,9 +1654,11 @@ if test "$enable_f90" = "yes" -a "$enable_f77" != "yes" ; then
    enable_f77=yes
 fi
 
-MPI_DEFAULT_F90OPTS="-O2"
 if test "$enable_f90" = yes ; then
-    if test "$compiler_optimizations" == "yes"; then
+    if test "$compiler_optimizations" == "yes" ; then
+        MPI_DEFAULT_F90OPTS=`echo "${MPID_DEFAULT_F90OPTS:--O2}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'`
+    fi
+    if test -n "$MPI_DEFAULT_F90OPTS" ; then
         AC_MSG_CHECKING([whether $F90 accepts default optimizations])
             rm -f conftest.f
             cat > conftest.f <<EOF
@@ -2310,9 +2316,11 @@ int main() {
 
 fi
 
-MPI_DEFAULT_CXXOPTS="-O2"
 if test "$enable_cxx" = yes; then
-    if test "$compiler_optimizations" == "yes"; then
+    if test "$compiler_optimizations" == "yes" ; then
+        MPI_DEFAULT_CXXOPTS=`echo "${MPID_DEFAULT_CXXOPTS:--O2}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'`
+    fi
+    if test -n "$MPI_DEFAULT_CXXOPTS" ; then
         AC_MSG_CHECKING([whether $CXX accepts default optimizations])
             rm -f conftest.cpp
             cat > conftest.cpp <<EOF
