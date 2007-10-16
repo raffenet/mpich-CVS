@@ -71,6 +71,9 @@
 
 #include "mpi.h"
 #include "mpio.h"
+#ifdef HAVE_STDINT_H
+#include "stdint.h"
+#endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
