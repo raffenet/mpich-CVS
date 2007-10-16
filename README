@@ -486,6 +486,17 @@ TCP.
   (Note : This module is still in *experimental* state. It has not 
   been thoroughly tested and performance issues remain.)
 
+  Note that if the GM, MX or Elan libraries are shared libraries, they
+  need to be in the shared library search path.  This can be done by
+  adding the path to /etc/ld.so.conf, or by setting the
+  LD_LIBRARY_PATH variable in your .bashrc (or .tcshrc) file.  It's
+  also possible to set the shared library search path in the binary.
+  If you're using gcc, you can do this by adding 
+    LD_LIBRARY_PATH=/path/to/lib 
+  and
+    MPI_LDFLAGS="-Wl,-rpath -Wl,/path/to/lib"
+  as arguments to configure.
+
   Using the --enable-fast configure option significantly improves
   intra-node performance.
 
@@ -690,6 +701,23 @@ Compilation options for development:
                  understand the performance of the internals of MPICH2.
                  More information on the logging options, capabilities
                  and usage can be found in doc/logging/logging.pdf.
+
+  --enable-timer-type=name -  Select the timer to use for MPI_Wtime
+                 and internal timestamps.  name may be one of:
+                     gethrtime        - Solaris timer (Solaris systems
+                                        only) 
+                     clock_gettime    - Posix timer (where available)
+                     gettimeofday     - Most Unix systems
+                     linux86_cycle    - Linux x86; returns cycle
+                                        counts, not time in seconds 
+                     linuxalpha_cycle - Like linux86_cycle, but for
+                                        Linux Alpha 
+                     gcc_ia64_cycle   - IPF ar.itc timer
+                 Note that the cycle timers are intended to be used by
+                 MPICH2 developers for internal low-level timing.
+                 Normal users should not use these as they are not
+                 guaranteed to be accurate in certain situations.
+
 
 
 Status of MPI-2 Features in MPICH2
