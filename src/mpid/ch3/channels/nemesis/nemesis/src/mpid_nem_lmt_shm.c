@@ -61,7 +61,8 @@ typedef struct MPID_nem_lmt_shm_wait_element
 
 
 /* copy buffer in shared memory */
-#define MPID_NEM_COPY_BUF_LEN (64 * 1024)
+#define NUM_BUFS 8
+#define MPID_NEM_COPY_BUF_LEN (32 * 1024)
 
 typedef union
 {
@@ -85,15 +86,19 @@ typedef struct MPID_nem_copy_buf
 /*     MPID_nem_cacheline_int_t reader_rank; /\* is the copy buffer in use?  Sender sets this to TRUE, receiver sets this to FALSE. *\/ */
     MPID_nem_cacheline_int_t sender_present; /* is the sender currently in the lmt progress function for this buffer */
     MPID_nem_cacheline_int_t receiver_present; /* is the receiver currently in the lmt progress function for this buffer */
-    MPID_nem_cacheline_int_t flag[2];
-    char buf[2][MPID_NEM_COPY_BUF_LEN];
+    MPID_nem_cacheline_int_t flag[NUM_BUFS];
+    char buf[NUM_BUFS][MPID_NEM_COPY_BUF_LEN];
 } MPID_nem_copy_buf_t;
 /* copy buffer flag values */
 #define BUF_EMPTY 0
 #define BUF_FULL  1
-#define BUF_DONE  2
 
 #define NO_OWNER -1
+
+/* pipeline values : if the data size is less than PIPELINE_THRESHOLD,
+   then copy no more than PIPELINE_MAX_SIZE at a time. */
+#define PIPELINE_MAX_SIZE (16 * 1024)
+#define PIPELINE_THRESHOLD (128 * 1024)
 
 
 static inline int lmt_shm_progress_vc(MPIDI_VC_t *vc, int *done);
@@ -153,14 +158,15 @@ int MPID_nem_lmt_shm_start_recv(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_co
 
     if (vc_ch->lmt_copy_buf == NULL)
     {
+        int i;
         mpi_errno = MPID_nem_allocate_shm_region(&vc_ch->lmt_copy_buf, &vc_ch->lmt_copy_buf_handle);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
         vc_ch->lmt_copy_buf->sender_present.val   = 0;
         vc_ch->lmt_copy_buf->receiver_present.val = 0;
-        
-        vc_ch->lmt_copy_buf->flag[0].val = BUF_EMPTY;
-        vc_ch->lmt_copy_buf->flag[1].val = BUF_EMPTY;
+
+        for (i = 0; i < NUM_BUFS; ++i)
+            vc_ch->lmt_copy_buf->flag[i].val = BUF_EMPTY;
 
         vc_ch->lmt_copy_buf->owner_info.val.rank          = NO_OWNER;
         vc_ch->lmt_copy_buf->owner_info.val.remote_req_id = MPI_REQUEST_NULL;
@@ -314,10 +320,11 @@ static int get_next_req(MPIDI_VC_t *vc)
 
     if (prev_owner_rank == NO_OWNER)
     {
+        int i;
         /* successfully grabbed idle copy buf */
 	MPID_NEM_WRITE_BARRIER();
-	copy_buf->flag[0].val = BUF_EMPTY;
-        copy_buf->flag[1].val = BUF_EMPTY;
+        for (i = 0; i < NUM_BUFS; ++i)
+            copy_buf->flag[i].val = BUF_EMPTY;
 
         MPID_NEM_WRITE_BARRIER();
 
@@ -380,7 +387,7 @@ static int lmt_shm_send_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
     MPIDI_msg_sz_t first;
     MPIDI_msg_sz_t last;
     int buf_num;
-    MPIDI_msg_sz_t data_sz;
+    MPIDI_msg_sz_t data_sz, copy_limit;
     MPIDI_STATE_DECL(MPID_STATE_LMT_SHM_SEND_PROGRESS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_LMT_SHM_SEND_PROGRESS);
@@ -427,21 +434,20 @@ static int lmt_shm_send_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
             ++i;
         }
 
-/*        /\* quit if receiver indicates that its done receiving *\/ */
-/*        if (copy_buf->flag[buf_num].val == BUF_DONE)*/
-/*            break;*/
-        
         MPID_NEM_READ_WRITE_BARRIER();
 
         /* we have a free buffer, fill it */
-        last = (data_sz - first <= MPID_NEM_COPY_BUF_LEN) ? data_sz : first + MPID_NEM_COPY_BUF_LEN;
+        if (data_sz <= PIPELINE_THRESHOLD)
+            copy_limit = PIPELINE_MAX_SIZE;
+        else
+            copy_limit = MPID_NEM_COPY_BUF_LEN;
+        last = (data_sz - first <= copy_limit) ? data_sz : first + copy_limit;
 	MPID_Segment_pack(req->dev.segment_ptr, first, &last, (void *)copy_buf->buf[buf_num]); /* cast away volatile */
         MPID_NEM_WRITE_BARRIER();
         copy_buf->flag[buf_num].val = BUF_FULL;
-        MPID_NEM_WRITE_BARRIER();
 
         first = last;
-        buf_num = 1 - buf_num;
+        buf_num = (buf_num+1) % NUM_BUFS;
     }
     while (last < data_sz);
 
@@ -466,7 +472,7 @@ static int lmt_shm_recv_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
     MPIDI_msg_sz_t first;
     MPIDI_msg_sz_t last;
     int buf_num;
-    MPIDI_msg_sz_t data_sz;
+    MPIDI_msg_sz_t data_sz, copy_limit;
     int i;
     MPIDI_STATE_DECL(MPID_STATE_LMT_SHM_RECV_PROGRESS);
 
@@ -510,29 +516,26 @@ static int lmt_shm_recv_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
             ++i;
         }
 
- /*       /\* receiver should never find a buffer with the DONE flag *\/ */
- /*       MPIU_Assert(copy_buf->flag[buf_num].val != BUF_DONE); */
-      
         MPID_NEM_READ_BARRIER();
-        
-        last = (data_sz - first <= MPID_NEM_COPY_BUF_LEN) ? data_sz : first + MPID_NEM_COPY_BUF_LEN;
+
+        if (data_sz <= PIPELINE_THRESHOLD)
+            copy_limit = PIPELINE_MAX_SIZE;
+        else
+            copy_limit = MPID_NEM_COPY_BUF_LEN;
+        last = (data_sz - first <= copy_limit) ? data_sz : first + copy_limit;
 	MPID_Segment_unpack(req->dev.segment_ptr, first, &last, (void *)copy_buf->buf[buf_num]); /* cast away volatile */
 
         MPID_NEM_READ_WRITE_BARRIER();
         copy_buf->flag[buf_num].val = BUF_EMPTY;	
-/*	if (last < data_sz) */
-/*           copy_buf->flag[buf_num].val = BUF_EMPTY; */
-/*        else */
-/*            copy_buf->flag[buf_num].val = BUF_DONE; */
-        MPID_NEM_WRITE_BARRIER();
 
         first = last;
-        buf_num = 1 - buf_num;
+        buf_num = (buf_num+1) % NUM_BUFS;
     }
     while (last < data_sz); 
 
-    copy_buf->flag[0].val                  = BUF_EMPTY;
-    copy_buf->flag[1].val                  = BUF_EMPTY;
+    for (i = 0; i < NUM_BUFS; ++i)
+        copy_buf->flag[i].val = BUF_EMPTY;
+
     copy_buf->owner_info.val.remote_req_id = MPI_REQUEST_NULL;
     MPID_NEM_WRITE_BARRIER();
     copy_buf->owner_info.val.rank          = NO_OWNER;

@@ -649,6 +649,8 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
         vc_ch->lmt_queue.tail      = NULL;        
         vc_ch->lmt_active_lmt      = NULL;
         vc_ch->lmt_enqueued        = FALSE;
+
+        vc->eager_max_msg_sz = MPID_NEM_MPICH2_DATA_LEN - sizeof(MPIDI_CH3_Pkt_t);
     }
     else
     {
