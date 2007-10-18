@@ -11,14 +11,14 @@
  * In particular, this module makes use of the GRAM and Redezvous services.
  */
 
+#include "mpidconf.h"
+
+#if defined(HAVE_GLOBUS_RENDEZVOUS_MODULE)
+
 /* XXX: this is a hack to work around the Globus xsd_long.h header file also defining int64_t */
-#include "mpichconf.h"
 #if !defined(HAVE_INT64_T)
 #define HAVE_INT64_T 1
 #endif
-#include "mpidimpl.h"
-
-#if defined(HAVE_GLOBUS_RENDEZVOUS_MODULE)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +40,8 @@
 #include "globus_wsrf_core_tools.h"
 #include "wsa_EndpointReferenceType.h"
 #include "ManagedMultiJobService_client.h"
+
+#include "mpidimpl.h"
 
 /*
  * prototypes and data structures exposing the "web services" process management class
