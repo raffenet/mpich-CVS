@@ -49,9 +49,6 @@ int MPID_nem_remove_shared_memory (const char handle[]);
 /* MPID_nem_detach_shared_memory detaches the shared memory region from this process */
 int MPID_nem_detach_shared_memory (const char *buf_p, const int length);
 
-/* initialize shared-memory MPI_Barrier variables */
-int MPID_nem_barrier_vars_init (MPID_nem_barrier_vars_t *barrier_region);
-
 static inline void
 MPID_nem_waitforlock (MPID_nem_fbox_common_ptr_t pbox, int value, int count)
 {

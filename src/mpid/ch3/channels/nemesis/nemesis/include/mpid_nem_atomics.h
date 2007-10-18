@@ -101,6 +101,7 @@ static inline int MPID_NEM_CAS_INT (volatile int *ptr, int oldv, int newv)
 #endif
 }
 
+#if 0
 static inline int MPID_NEM_FETCH_AND_ADD (volatile int *ptr, int val)
 {
 #if defined(HAVE_GCC_AND_PENTIUM_ASM) || defined(HAVE_GCC_AND_X86_64_ASM)
@@ -246,6 +247,7 @@ static inline void MPID_NEM_ATOMIC_DEC (volatile int *ptr)
 #error No fetch-and-add function defined for this architecture
 #endif
 }
+#endif
 
 
 #ifdef HAVE_GCC_AND_PENTIUM_ASM

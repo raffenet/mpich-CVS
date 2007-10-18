@@ -10,6 +10,8 @@
 #include <sys/shm.h>
 #include <errno.h>
 
+#include "mpiatomic.h"
+
 #ifdef ENABLE_NO_SCHED_YIELD
 #define SCHED_YIELD() do { } while(0)
 #else
@@ -73,7 +75,7 @@ typedef union
 {
     struct
     {
-        int rank;
+        MPIDU_Owner_info owner;
         int remote_req_id;
     } val;
     char padding[MPID_NEM_CACHE_LINE_LEN];
@@ -93,9 +95,7 @@ typedef struct MPID_nem_copy_buf
 #define BUF_FULL  1
 #define BUF_DONE  2
 
-#define NO_OWNER -1
-
-
+static inline void lmt_sanity_check(MPIDI_VC_t *vc, MPIDI_CH3I_VC *vc_ch);
 static inline int lmt_shm_progress_vc(MPIDI_VC_t *vc, int *done);
 static int lmt_shm_send_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done);
 static int lmt_shm_recv_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done);
@@ -103,6 +103,17 @@ static int MPID_nem_allocate_shm_region(volatile MPID_nem_copy_buf_t **buf_p, ch
 static int MPID_nem_attach_shm_region(volatile MPID_nem_copy_buf_t **buf_p, const char handle[]);
 static int MPID_nem_detach_shm_region(volatile MPID_nem_copy_buf_t *buf, char handle[]);
 static int MPID_nem_delete_shm_region(volatile MPID_nem_copy_buf_t *buf, char handle[]);
+
+/* This function asserts that there is an ongoing LMT transfer and that the
+   owner and request_id match with the information given in the specified VC. */
+void lmt_sanity_check(MPIDI_VC_t *vc, MPIDI_CH3I_VC *vc_ch)
+{
+    MPIU_Assert((MPIDU_Owner_peek(&vc_ch->lmt_copy_buf->owner_info.val.owner) == MPIDI_Process.my_pg_rank &&
+                 vc_ch->lmt_copy_buf->owner_info.val.remote_req_id == vc_ch->lmt_active_lmt->req->ch.lmt_req_id) ||
+                (MPIDU_Owner_peek(&vc_ch->lmt_copy_buf->owner_info.val.owner) == vc->pg_rank &&
+                 vc_ch->lmt_copy_buf->owner_info.val.remote_req_id == vc_ch->lmt_active_lmt->req->handle));
+}
+
 
 /* number of iterations to wait for the other side to process a buffer */
 #define NUM_BUSY_POLLS 1000
@@ -162,7 +173,7 @@ int MPID_nem_lmt_shm_start_recv(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_co
         vc_ch->lmt_copy_buf->flag[0].val = BUF_EMPTY;
         vc_ch->lmt_copy_buf->flag[1].val = BUF_EMPTY;
 
-        vc_ch->lmt_copy_buf->owner_info.val.rank          = NO_OWNER;
+        MPIDU_Owner_init(&vc_ch->lmt_copy_buf->owner_info.val.owner);
         vc_ch->lmt_copy_buf->owner_info.val.remote_req_id = MPI_REQUEST_NULL;
     }
 
@@ -298,55 +309,61 @@ static int get_next_req(MPIDI_VC_t *vc)
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     volatile MPID_nem_copy_buf_t * const copy_buf = vc_ch->lmt_copy_buf;
-    int prev_owner_rank;
     MPID_Request *req;
+    MPIDU_Owner_result owner_result;
+    int i;
     MPIDI_STATE_DECL(MPID_STATE_GET_NEXT_REQ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_GET_NEXT_REQ);
 
-    prev_owner_rank = MPID_NEM_CAS_INT(&copy_buf->owner_info.val.rank, NO_OWNER, MPIDI_Process.my_pg_rank);
-
-    if (prev_owner_rank == MPIDI_Process.my_pg_rank)
-    {
-        /* last lmt is not complete (receiver still receiving */
-        goto fn_exit;
-    }
-
-    if (prev_owner_rank == NO_OWNER)
-    {
-        /* successfully grabbed idle copy buf */
-	MPID_NEM_WRITE_BARRIER();
-	copy_buf->flag[0].val = BUF_EMPTY;
-        copy_buf->flag[1].val = BUF_EMPTY;
-
-        MPID_NEM_WRITE_BARRIER();
-
-        LMT_SHM_Q_DEQUEUE(&vc_ch->lmt_queue, &vc_ch->lmt_active_lmt);
-        copy_buf->owner_info.val.remote_req_id = vc_ch->lmt_active_lmt->req->ch.lmt_req_id;
-    }
-    else
-    {
-        /* copy buf is owned by the remote side */
-        /* remote side chooses next transfer */
-        int i = 0;
-        
-        MPID_NEM_READ_BARRIER();
-        while (copy_buf->owner_info.val.remote_req_id == MPI_REQUEST_NULL)
-        {
-            if (i == NUM_BUSY_POLLS)
-            {
-                SCHED_YIELD();
-                i = 0;
-            }
-            ++i;
-        }    
-
-        MPID_NEM_READ_BARRIER();
-        LMT_SHM_Q_SEARCH_REMOVE(&vc_ch->lmt_queue, copy_buf->owner_info.val.remote_req_id, &vc_ch->lmt_active_lmt);
-        
-        if (vc_ch->lmt_active_lmt == NULL)
-            /* request not found  */
+    owner_result = MPIDU_Owner_try_acquire(&copy_buf->owner_info.val.owner, MPIDI_Process.my_pg_rank, NULL);
+    switch (owner_result) {
+        case MPIDU_OWNERSHIP_ALREADY_ACQUIRED:
+            /* last lmt is not complete (receiver still receiving) */
             goto fn_exit;
+            break;
+
+        case MPIDU_OWNERSHIP_ACQUIRED:
+            /* successfully grabbed idle copy buf */
+            MPID_NEM_WRITE_BARRIER();
+            copy_buf->flag[0].val = BUF_EMPTY;
+            copy_buf->flag[1].val = BUF_EMPTY;
+
+            MPID_NEM_WRITE_BARRIER();
+
+            LMT_SHM_Q_DEQUEUE(&vc_ch->lmt_queue, &vc_ch->lmt_active_lmt);
+            copy_buf->owner_info.val.remote_req_id = vc_ch->lmt_active_lmt->req->ch.lmt_req_id;
+            break;
+
+        case MPIDU_OWNERSHIP_BUSY:
+            /* copy buf is owned by the remote side */
+            /* remote side chooses next transfer */
+            i = 0;
+            
+            MPID_NEM_READ_BARRIER();
+            while (copy_buf->owner_info.val.remote_req_id == MPI_REQUEST_NULL)
+            {
+                if (i == NUM_BUSY_POLLS)
+                {
+                    SCHED_YIELD();
+                    i = 0;
+                }
+                ++i;
+            }    
+
+            MPID_NEM_READ_BARRIER();
+            LMT_SHM_Q_SEARCH_REMOVE(&vc_ch->lmt_queue, copy_buf->owner_info.val.remote_req_id, &vc_ch->lmt_active_lmt);
+            
+            if (vc_ch->lmt_active_lmt == NULL)
+                /* request not found  */
+                goto fn_exit;
+            break;
+
+        case MPIDU_OWNERSHIP_ERROR:
+        default:
+            MPIU_ERR_POP(mpi_errno);
+            goto fn_exit;
+            break;
     }
 
     req = vc_ch->lmt_active_lmt->req;
@@ -357,16 +374,13 @@ static int get_next_req(MPIDI_VC_t *vc)
     req->dev.segment_first = 0;
     vc_ch->lmt_buf_num = 0;
 
-    MPIU_Assert((vc_ch->lmt_copy_buf->owner_info.val.rank == MPIDI_Process.my_pg_rank &&
-                 vc_ch->lmt_copy_buf->owner_info.val.remote_req_id == vc_ch->lmt_active_lmt->req->ch.lmt_req_id) ||
-                (vc_ch->lmt_copy_buf->owner_info.val.rank == vc->pg_rank &&
-                 vc_ch->lmt_copy_buf->owner_info.val.remote_req_id == vc_ch->lmt_active_lmt->req->handle));
+    lmt_sanity_check(vc, vc_ch);
     
+ fn_fail:
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_GET_NEXT_REQ);
     return mpi_errno;
 }
-
 
 #undef FUNCNAME
 #define FUNCNAME lmt_shm_send_progress
@@ -385,10 +399,7 @@ static int lmt_shm_send_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
 
     MPIDI_FUNC_ENTER(MPID_STATE_LMT_SHM_SEND_PROGRESS);
 
-    MPIU_Assert((vc_ch->lmt_copy_buf->owner_info.val.rank == MPIDI_Process.my_pg_rank &&
-                 vc_ch->lmt_copy_buf->owner_info.val.remote_req_id == vc_ch->lmt_active_lmt->req->ch.lmt_req_id) ||
-                (vc_ch->lmt_copy_buf->owner_info.val.rank == vc->pg_rank &&
-                 vc_ch->lmt_copy_buf->owner_info.val.remote_req_id == vc_ch->lmt_active_lmt->req->handle));
+    lmt_sanity_check(vc, vc_ch);
 
     copy_buf->sender_present.val = TRUE;    
 
@@ -468,14 +479,12 @@ static int lmt_shm_recv_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
     int buf_num;
     MPIDI_msg_sz_t data_sz;
     int i;
+    MPIDU_Owner_result owner_result;
     MPIDI_STATE_DECL(MPID_STATE_LMT_SHM_RECV_PROGRESS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_LMT_SHM_RECV_PROGRESS);
 
-    MPIU_Assert((vc_ch->lmt_copy_buf->owner_info.val.rank == MPIDI_Process.my_pg_rank &&
-                 vc_ch->lmt_copy_buf->owner_info.val.remote_req_id == vc_ch->lmt_active_lmt->req->ch.lmt_req_id) ||
-                (vc_ch->lmt_copy_buf->owner_info.val.rank == vc->pg_rank &&
-                 vc_ch->lmt_copy_buf->owner_info.val.remote_req_id == vc_ch->lmt_active_lmt->req->handle));
+    lmt_sanity_check(vc, vc_ch);
 
     copy_buf->receiver_present.val = TRUE;
 
@@ -535,7 +544,23 @@ static int lmt_shm_recv_progress(MPIDI_VC_t *vc, MPID_Request *req, int *done)
     copy_buf->flag[1].val                  = BUF_EMPTY;
     copy_buf->owner_info.val.remote_req_id = MPI_REQUEST_NULL;
     MPID_NEM_WRITE_BARRIER();
-    copy_buf->owner_info.val.rank          = NO_OWNER;
+    /* Either side could have claimed the copy buf yet the receiver always
+       releases it.  So we pass MPIDU_OWNER_ID_ANY when releasing. */
+    owner_result = MPIDU_Owner_release(&copy_buf->owner_info.val.owner, MPIDU_OWNER_ID_ANY, NULL);
+    switch (owner_result) {
+        case MPIDU_OWNERSHIP_RELEASED:
+            /* common case, do nothing */
+            break;
+        case MPIDU_OWNERSHIP_ALREADY_RELEASED:
+            MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "owner_result==MPIDU_OWNERSHIP_ALREADY_RELEASED, possible error");
+            break;
+        default:
+            /* Reaching this means that there is a flaw in our algorithm or a flaw in our atomic
+               operations implementation.  In either case it's a pretty bad thing. */
+            MPIU_DBG_MSG_D(CH3_CHANNEL, TERSE, "unexpected owner_result=%d, aborting", owner_result);
+            MPIU_Assert(0);
+            break;
+    }
 
     *done = TRUE;
     MPIDI_CH3U_Request_complete(req);

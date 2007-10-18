@@ -254,7 +254,6 @@ static inline void amd64_cpy_nt (volatile void *dst, volatile void *src, size_t 
 		      "movnti %%r9, -8(%2)  \n"
 		      "jnz 1b  \n"
 		      "sfence  \n"
-		      "mfence  \n"
 		      : "+a" (n32), "+S" (src), "+D" (dst)
 		      : : "r8", "r9" /*, "memory" is this needed? */);
     }

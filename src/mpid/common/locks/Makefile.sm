@@ -1,5 +1,6 @@
-lib${MPILIBNAME}_a_SOURCES = mpidu_process_locks.c
-HEADERS = mpidu_process_locks.h
+# mpidu_queue.c is intentionally not built at this point.  It will not properly compile
+lib${MPILIBNAME}_a_SOURCES = mpidu_process_locks.c mpidu_atomic_primitives.c
+HEADERS = mpidu_process_locks.h mpidu_atomic_primitives.h
 INCLUDES = -I${srcdir} -I../../../include -I${master_top_srcdir}/src/include
 
 # Create a local library as an option

@@ -15,8 +15,6 @@ int MPID_nem_init(int rank, struct MPIDI_PG *pg_p);
 int _MPID_nem_init(int rank, struct MPIDI_PG *pg_p, int ckpt_restart);
 int MPID_nem_finalize(void);
 int MPID_nem_ckpt_shutdown(void);
-int MPID_nem_barrier_init(MPID_nem_barrier_t *barrier_region);
-int MPID_nem_barrier(int num_processes, int rank);
 int MPID_nem_vc_init(struct MPIDI_VC *vc, const char *business_card);
 int MPID_nem_vc_destroy(struct MPIDI_VC *vc);
 int MPID_nem_get_business_card(int myRank, char *value, int length);

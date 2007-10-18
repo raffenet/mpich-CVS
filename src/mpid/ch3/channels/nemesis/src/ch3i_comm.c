@@ -4,6 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpiatomic.h"
 #include "mpid_nem_impl.h"
 #include <sched.h>
 #define BUSY_WAIT() sched_yield()
@@ -147,6 +148,7 @@ int MPIDI_CH3I_comm_create (MPID_Comm *comm)
     goto fn_exit;
 }
 
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_comm_destroy
 #undef FCNAME
@@ -155,10 +157,10 @@ int MPIDI_CH3I_comm_destroy (MPID_Comm *comm)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    if (comm->ch.barrier_vars && MPID_NEM_FETCH_AND_DEC (&comm->ch.barrier_vars->usage_cnt) == 1)
+    if (comm->ch.barrier_vars && MPIDU_Ref_release_and_test(&comm->ch.barrier_vars->usage_cnt))
     {
 	MPID_NEM_WRITE_BARRIER();
-	comm->ch.barrier_vars->context_id = NULL_CONTEXT_ID;
+        MPIDU_Alloc_free(MPID_nem_mem_region.barrier_pool, &comm->ch.barrier_vars);
     }
     if (comm->ch.local_size)
         MPIU_Free (comm->ch.local_ranks);
@@ -172,25 +174,12 @@ int MPIDI_CH3I_comm_destroy (MPID_Comm *comm)
 #define FUNCNAME alloc_barrier_vars
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int alloc_barrier_vars (MPID_Comm *comm, MPID_nem_barrier_vars_t **vars)
+static int alloc_barrier_vars (MPID_Comm *comm, MPID_nem_barrier_vars_t **var)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i;
-    int c;
-    
-    for (i = 0; i < MPID_NEM_NUM_BARRIER_VARS; ++i)
-    {
-	c = MPID_NEM_CAS_INT (&MPID_nem_mem_region.barrier_vars[i].context_id, NULL_CONTEXT_ID, comm->context_id);
-        if (c == NULL_CONTEXT_ID || c == comm->context_id)
-        {
-            *vars = &MPID_nem_mem_region.barrier_vars[i];
-	    MPID_NEM_WRITE_BARRIER();
-            MPID_NEM_ATOMIC_INC (&(*vars)->usage_cnt);
-            goto fn_exit;
-        }
-    }
 
-    *vars = NULL;
+    *var = (MPID_nem_barrier_vars_t *)MPIDU_Alloc_by_id(MPID_nem_mem_region.barrier_pool, comm->context_id);
+    if (*var) MPIDU_Ref_add(&((*var)->usage_cnt));
     
  fn_exit:
     return mpi_errno;
@@ -223,8 +212,6 @@ static int msg_barrier (MPID_Comm *comm_ptr, int rank, int size, int *rank_array
     goto fn_exit;
 }
 
-
-
 #undef FUNCNAME
 #define FUNCNAME barrier
 #undef FCNAME
@@ -232,9 +219,16 @@ static int msg_barrier (MPID_Comm *comm_ptr, int rank, int size, int *rank_array
 static int barrier (MPID_Comm *comm_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-    volatile MPID_nem_barrier_vars_t *barrier_vars;
-    int local_size = comm_ptr->ch.local_size;
-    int external_size = comm_ptr->ch.external_size;
+    MPID_nem_barrier_vars_t *barrier_vars;
+
+    /* convenience vars, should be optimized out */
+    int *external_ranks = comm_ptr->ch.external_ranks;
+    int external_rank   = comm_ptr->ch.external_rank;
+    int external_size   = comm_ptr->ch.external_size;
+    int *local_ranks    = comm_ptr->ch.local_ranks;
+    int local_rank      = comm_ptr->ch.local_rank;
+    int local_size      = comm_ptr->ch.local_size;
+        
 
     /* Trivial barriers return immediately */
     if (comm_ptr->local_size == 1)
@@ -247,7 +241,7 @@ static int barrier (MPID_Comm *comm_ptr)
     if (local_size == 1)
     {
         /* there are only external processes -- do msg barrier only */
-        mpi_errno = msg_barrier (comm_ptr, comm_ptr->ch.external_rank, external_size, comm_ptr->ch.external_ranks);
+        mpi_errno = msg_barrier (comm_ptr, external_rank, external_size, external_ranks);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
         
         goto fn_exit;
@@ -257,107 +251,63 @@ static int barrier (MPID_Comm *comm_ptr)
     {
         mpi_errno = alloc_barrier_vars (comm_ptr, &comm_ptr->ch.barrier_vars);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-            
-        if (comm_ptr->ch.barrier_vars == NULL)
-        {
-            /* no barrier_vars left -- revert to safe but inefficient
-               implementation: do a barrier using messages with local
-               procs, then with external procs, then again with local
-               procs. */
-            /* FIXME: need a better solution here.  e.g., allocate
-               some barrier_vars on the first barrier for the life of
-               the communicator (as is the case now), others must be
-               allocated for each barrier, then released.  If we run
-               out of barrier_vars after that, then use msg_barrier.
-            */
-            mpi_errno = msg_barrier (comm_ptr, comm_ptr->ch.local_rank, local_size, comm_ptr->ch.local_ranks);
-            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-
-            if (comm_ptr->ch.local_rank == 0)
-            {
-                mpi_errno = msg_barrier (comm_ptr, comm_ptr->ch.external_rank, external_size, comm_ptr->ch.external_ranks);
-                if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-            }
-
-            mpi_errno = msg_barrier (comm_ptr, comm_ptr->ch.local_rank, local_size, comm_ptr->ch.local_ranks);
-            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-                
-            goto fn_exit;
-        }
-    }   
-    
-    barrier_vars = comm_ptr->ch.barrier_vars;
-
-    if (external_size == 1)
-    {
-        /* there are only local procs -- do shared memory barrier only */
-        int prev;
-        int sense;
-
-        sense = barrier_vars->sig;
-	MPID_NEM_READ_BARRIER();
-
-        prev = MPID_NEM_FETCH_AND_INC (&barrier_vars->cnt);
-        if (prev == local_size - 1)
-        {
-            barrier_vars->cnt = 0;
-            MPID_NEM_WRITE_BARRIER();
-            barrier_vars->sig = 1 - sense;
-        }
-        else
-        {
-            while (barrier_vars->sig == sense)
-                BUSY_WAIT();
-        }
-
-        goto fn_exit;
     }
 
-    /* there are both local and external processes */
-    
-    if (comm_ptr->ch.local_rank == 0)
+    barrier_vars = comm_ptr->ch.barrier_vars;
+            
+    if (barrier_vars == NULL)
     {
-        /* do barrier between local and external */
-        int external_rank = comm_ptr->ch.external_rank;
-        int *external_ranks = comm_ptr->ch.external_ranks;
-        
-        /* wait for local procs to reach barrier */
-        if (local_size > 1)
-            while (barrier_vars->sig0 == 0)
-                BUSY_WAIT();
-
-        /* now do a barrier with external processes */
-        mpi_errno = msg_barrier (comm_ptr, external_rank, external_size, external_ranks);
+        /* no barrier_vars left -- revert to safe but inefficient
+           implementation: do a barrier using messages with local
+           procs, then with external procs, then again with local
+           procs. */
+        /* FIXME: need a better solution here.  e.g., allocate
+           some barrier_vars on the first barrier for the life of
+           the communicator (as is the case now), others must be
+           allocated for each barrier, then released.  If we run
+           out of barrier_vars after that, then use msg_barrier.
+        */
+        mpi_errno = msg_barrier (comm_ptr, local_rank, local_size, local_ranks);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-        
-        /* reset ctr and release local procs */
-        if (local_size > 1)
+
+        if (local_rank == 0)
         {
-            barrier_vars->sig0 = 0;
-            barrier_vars->cnt = 0;
-	    MPID_NEM_WRITE_BARRIER();
-	    barrier_vars->sig = 1 - barrier_vars->sig;
+            mpi_errno = msg_barrier (comm_ptr, external_rank, external_size, external_ranks);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
         }
+
+        mpi_errno = msg_barrier (comm_ptr, local_rank, local_size, local_ranks);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
     else
     {
-        /* just do the local barrier -- Decrement a counter.  If
-           counter is 1 (i.e., only root is left), set sig0 to signal
-           root.  Then, wait on signal variable. */
-        int prev;
-        int sense;
-        sense = barrier_vars->sig;
-	MPID_NEM_READ_BARRIER();
+        /* barrier_vars != NULL, we can perform an efficient local barrier */
 
-        prev = MPID_NEM_FETCH_AND_INC (&barrier_vars->cnt);
-        if (prev == local_size - 2)  /* - 2 because it's the value before we added 1 and we're not waiting for root */
-	{
-	    MPID_NEM_WRITE_BARRIER();
-	    barrier_vars->sig0 = 1;
-	}
+        if (external_size == 1)
+        {
+            /* there are only local procs -- do shared memory barrier only */
+            mpi_errno = MPIDU_Shm_barrier_simple(&barrier_vars->barrier, local_size, local_rank);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+            goto fn_exit;
+        }
+        else {
+            /* there are both local and external processes */
+            mpi_errno = MPIDU_Shm_barrier_enter(&barrier_vars->barrier, local_size, local_rank, 0);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-        while (barrier_vars->sig == sense)
-            BUSY_WAIT();
+            if (local_rank == 0)
+            {
+                /* we are the boss proc and therefore responsible for calling
+                   MPIDU_Shm_barrier_release() to wakeup the other procs */
+
+                /* Other procs are waiting in MPIDU_Shm_barrier_enter() above.
+                   Conduct a message barrier with external processes. */
+                mpi_errno = msg_barrier (comm_ptr, external_rank, external_size, external_ranks);
+                if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+                mpi_errno = MPIDU_Shm_barrier_release(&barrier_vars->barrier, local_size, local_rank, 0);
+            }
+        }
     }
 
  fn_exit:
@@ -369,29 +319,7 @@ static int barrier (MPID_Comm *comm_ptr)
 
 
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_barrier_vars_init
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_barrier_vars_init (MPID_nem_barrier_vars_t *barrier_region)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int i;
-
-    if (MPID_nem_mem_region.local_rank == 0)
-        for (i = 0; i < MPID_NEM_NUM_BARRIER_VARS; ++i)
-        {
-            barrier_region[i].context_id = NULL_CONTEXT_ID;
-            barrier_region[i].usage_cnt = 0;
-            barrier_region[i].cnt = 0;
-            barrier_region[i].sig0 = 0;
-            barrier_region[i].sig = 0;
-        }
-
-    return mpi_errno;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_barrier_vars_init
+#define FUNCNAME MPID_nem_coll_barrier_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_coll_barrier_init ()

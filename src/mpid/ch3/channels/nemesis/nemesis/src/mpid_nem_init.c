@@ -7,6 +7,7 @@
 #include "mpid_nem_pre.h"
 #include "mpid_nem_impl.h"
 #include "mpid_nem_nets.h"
+#include "mpiatomic.h"
 #include <errno.h>
 
 #ifdef MEM_REGION_IN_HEAP
@@ -27,6 +28,8 @@ static int intcompar (const void *a, const void *b) { return *(int *)a - *(int *
 char *MPID_nem_asymm_base_addr = 0;
 
 static int get_local_procs (int rank, int num_procs, int *num_local, int **local_procs, int *local_rank, int *num_nodes, int **node_ids);
+
+static int barrier_init(volatile void *element);
 
 int
 MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
@@ -50,6 +53,8 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     int   *local_procs     = NULL;
     int    local_rank      = -1;
     int    global_size;
+    int    local_size;
+    int    barrier_vars_size;
     int    index, index2, size;
     int    i;
     char  *publish_bc_orig = NULL;
@@ -58,6 +63,8 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     int    num_nodes = 0;
     int   *node_ids = 0;    
     MPIU_CHKPMEM_DECL(4);
+    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_INIT);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_INIT);
 
     /* Make sure the nemesis packet is no larger than the generic
        packet.  This is needed because we no longer include channel
@@ -124,14 +131,32 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 	}
     }
 
-    /* Global size for the segment */
-    /* Data cells + Header Qs + control blocks + Net data cells + POBoxes */
-    global_size = ((num_local * (((MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t))  +
-				 (2 * sizeof(MPID_nem_queue_t))            +
-				 (sizeof(int))                       +
-				 ((MPID_NEM_NUM_CELLS) * sizeof(MPID_nem_cell_t))))+   
-		   (MAX((num_local * ((num_local-1) * sizeof(MPID_nem_fastbox_t))) , MPID_NEM_ASYMM_NULL_VAL)) +
-		   sizeof (MPID_nem_barrier_t) + MPID_NEM_NUM_BARRIER_VARS * sizeof (MPID_nem_barrier_vars_t));
+    /* FIXME This global_size  section is a bug waiting to happen... it very
+       much violates the DRY principle and is not maintainable. I'm not sure
+       what the right way to do this is without ripping up all of the code, but
+       we need to keep it in the back of our brains to fix later.  */
+
+    /* size of one set of local shared data structures, simplifies the
+       global_size expression below  */
+    local_size = /* data cells */
+                 (MPID_NEM_NUM_CELLS * sizeof(MPID_nem_cell_t)) +
+                 /* header Qs */
+                 (2 * sizeof(MPID_nem_queue_t)) +
+                 /* control block */
+                 sizeof(int) +
+                 /* net data cells */
+                 (MPID_NEM_NUM_CELLS * sizeof(MPID_nem_cell_t));
+
+    barrier_vars_size = MPIDU_Alloc_calc_size(MPID_NEM_NUM_BARRIER_VARS, sizeof(MPIDU_Shm_barrier_t));
+
+    /* Global size for the shared memory segment */
+    global_size = (num_local * local_size) +   
+                  /* fasboxes */
+                  (MAX((num_local * ((num_local-1) * sizeof(MPID_nem_fastbox_t))) , MPID_NEM_ASYMM_NULL_VAL)) +
+                  /* barrier for channel init */
+                  sizeof (MPIDU_Shm_barrier_t) +
+                  /* barriers for communicator use */
+                  barrier_vars_size;
 
 #ifdef FORCE_ASYM
     {
@@ -204,20 +229,27 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* Barrier data */
-    size = sizeof(MPID_nem_barrier_t);
+    size = sizeof(MPIDU_Shm_barrier_t);
     mpi_errno = MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[5]), size);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* Shared Collectives Barrier vars */
-    size = MPID_NEM_NUM_BARRIER_VARS * sizeof(MPID_nem_barrier_vars_t);
-    mpi_errno = MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[6]), size);
+    mpi_errno = MPID_nem_seg_alloc (&(MPID_nem_mem_region.memory), &(MPID_nem_mem_region.seg[5]), barrier_vars_size);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-    mpi_errno = MPID_nem_barrier_vars_init ((MPID_nem_barrier_vars_t *)(MPID_nem_mem_region.seg[6].addr));
-    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-    MPID_nem_mem_region.barrier_vars = (MPID_nem_barrier_vars_t *)(MPID_nem_mem_region.seg[6].addr);
+
+    if (MPID_nem_mem_region.local_rank == 0) {
+        mpi_errno = MPIDU_Alloc_create_pool(MPID_nem_mem_region.seg[5].addr,
+                                            barrier_vars_size,
+                                            sizeof(MPID_nem_barrier_vars_t),
+                                            &barrier_init,
+                                            &MPID_nem_mem_region.barrier_pool);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+    }
+
     
     /* set up barrier region */
-    mpi_errno = MPID_nem_barrier_init ((MPID_nem_barrier_t *)(MPID_nem_mem_region.seg[5].addr));	
+    MPID_nem_mem_region.barrier = (MPIDU_Shm_barrier_t *)(MPID_nem_mem_region.seg[5].addr);
+    mpi_errno = MPIDU_Shm_barrier_init(MPID_nem_mem_region.barrier);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     pmi_errno = PMI_Barrier();
@@ -227,13 +259,13 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     MPID_NEM_MEMCPY (&(((pid_t *)(MPID_nem_mem_region.seg[0].addr))[local_rank]), &my_pid, sizeof(pid_t));
    
     /* syncro part */  
-    mpi_errno = MPID_nem_barrier (num_local, local_rank);   
+    mpi_errno = MPIDU_Shm_barrier_simple (MPID_nem_mem_region.barrier, num_local, local_rank);   
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     for (index = 0 ; index < num_local ; index ++)
     {
 	MPID_nem_mem_region.pid[index] = (((pid_t *)MPID_nem_mem_region.seg[0].addr)[index]);
     }
-    mpi_errno = MPID_nem_barrier (num_local, local_rank);   
+    mpi_errno = MPIDU_Shm_barrier_simple (MPID_nem_mem_region.barrier, num_local, local_rank);   
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* SHMEM QS */
@@ -314,7 +346,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     MPID_nem_mem_region.my_recvQ = MPID_nem_mem_region.RecvQ[MPID_nem_mem_region.rank];
     
     
-    mpi_errno = MPID_nem_barrier (num_local, local_rank);   
+    mpi_errno = MPIDU_Shm_barrier_simple (MPID_nem_mem_region.barrier, num_local, local_rank);   
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     /* POboxes stuff */
@@ -348,11 +380,11 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 
     MPIU_Free(publish_bc_orig);
 
-    mpi_errno = MPID_nem_barrier (num_local, local_rank);   
+    mpi_errno = MPIDU_Shm_barrier_simple (MPID_nem_mem_region.barrier, num_local, local_rank);   
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     mpi_errno = MPID_nem_mpich2_init (ckpt_restart);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-    mpi_errno = MPID_nem_barrier (num_local, local_rank);   
+    mpi_errno = MPIDU_Shm_barrier_simple (MPID_nem_mem_region.barrier, num_local, local_rank);   
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
 #ifdef ENABLED_CHECKPOINTING
@@ -366,6 +398,7 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 
     MPIU_CHKPMEM_COMMIT();
  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_INIT);
     return mpi_errno;
  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
@@ -730,4 +763,23 @@ MPID_nem_get_business_card (int my_rank, char *value, int length)
 int MPID_nem_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc)
 {
     return MPID_nem_net_module_connect_to_root (business_card, new_vc);
+}
+
+/* Used as a callback by MPIDU_Shm_barrier_init to initialize MPID_nem_barrier_vars_t
+   entries. */
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_barrier_init
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int barrier_init(volatile void *element) {
+    int mpi_errno = MPI_SUCCESS;
+    MPID_nem_barrier_vars_t *b = (MPID_nem_barrier_vars_t *)element;
+
+    b->usage_cnt = 0;
+    mpi_errno = MPIDU_Shm_barrier_init(&(b->barrier));
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+fn_fail:
+fn_exit:
+    return mpi_errno;
 }

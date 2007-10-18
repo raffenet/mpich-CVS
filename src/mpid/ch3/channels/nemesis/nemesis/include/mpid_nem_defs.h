@@ -10,6 +10,7 @@
 #include "mpid_nem_datatypes.h"
 #include "mpi.h"
 #include "pmi.h"
+#include "mpiatomic.h"
 
 #define MPID_NEM_MAX_KEY_VAL_LEN 256
 #define MPID_NEM_MAX_FNAME_LEN 256
@@ -58,13 +59,6 @@ static inline MPID_nem_cell_rel_ptr_t MPID_NEM_ABS_TO_REL (MPID_nem_cell_ptr_t a
 #define MPID_NEM_ABS_TO_REL(ptr) (ptr)
 #endif /*MPID_NEM_SYMMETRIC_QUEUES */
 
-typedef struct MPID_nem_barrier
-{
-    volatile int val;
-    volatile int wait;
-}
-MPID_nem_barrier_t;
-
 typedef struct MPID_nem_seg
 {
   /* Sizes */
@@ -93,13 +87,8 @@ typedef struct MPID_nem_seg_info
 #define MPID_NEM_NUM_BARRIER_VARS 16
 typedef struct MPID_nem_barrier_vars
 {
-    volatile int context_id;
     volatile int usage_cnt;
-    volatile int cnt;
-    char padding0[MPID_NEM_CACHE_LINE_LEN - sizeof(int)];
-    volatile int sig0;
-    volatile int sig;
-    char padding1[MPID_NEM_CACHE_LINE_LEN - 2* sizeof(int)];
+    MPIDU_Shm_barrier_t barrier;
 }
 MPID_nem_barrier_vars_t;
 
@@ -124,10 +113,10 @@ typedef struct MPID_nem_mem_region
     MPID_nem_queue_ptr_t       *FreeQ;
     MPID_nem_queue_ptr_t       *RecvQ;
     MPID_nem_cell_ptr_t         net_elements;
-    MPID_nem_barrier_t         *barrier;
+    MPIDU_Shm_barrier_t        *barrier;
     MPID_nem_queue_ptr_t        my_freeQ;
     MPID_nem_queue_ptr_t        my_recvQ;
-    MPID_nem_barrier_vars_t    *barrier_vars;
+    MPIDU_Alloc_pool           *barrier_pool;
     int                         rank;
     struct MPID_nem_mem_region *next;
 } MPID_nem_mem_region_t, *MPID_nem_mem_region_ptr_t;
