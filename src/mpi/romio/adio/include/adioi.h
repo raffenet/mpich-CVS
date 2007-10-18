@@ -184,13 +184,13 @@ struct ADIOI_Fns_struct {
 #define ADIOI_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ADIOI_MAX(a, b) ((a) > (b) ? (a) : (b))
 
-#define ADIOI_PREALLOC_BUFSZ      4194304    /* buffer size used to 
+#define ADIOI_PREALLOC_BUFSZ      16777216    /* buffer size used to 
                                                 preallocate disk space */
 
 
 /* default values for some hints */
-    /* buffer size for collective I/O = 4MB */
-#define ADIOI_CB_BUFFER_SIZE_DFLT         "4194304"
+    /* buffer size for collective I/O = 16 MB */
+#define ADIOI_CB_BUFFER_SIZE_DFLT         "16777216"
     /* buffer size for data sieving in independent reads = 4MB */
 #define ADIOI_IND_RD_BUFFER_SIZE_DFLT     "4194304"
     /* buffer size for data sieving in independent writes = 512KB. default is
@@ -547,27 +547,12 @@ int MPIOI_File_iread(MPI_File fh,
 
 #else
 
-#ifdef ADIOI_MPE_LOGGING
-#   define ADIOI_WRITE_LOCK(fd, offset, whence, len) do { \
-        MPE_Log_event( ADIOI_MPE_writelock_a, 0, NULL ); \
-        ADIOI_Set_lock((fd)->fd_sys, F_SETLKW, F_WRLCK, offset, whence, len); \
-        MPE_Log_event( ADIOI_MPE_writelock_b, 0, NULL ); } while( 0 )
-#   define ADIOI_READ_LOCK(fd, offset, whence, len) \
-        MPE_Log_event( ADIOI_MPE_readlock_a, 0, NULL ); do { \
-        ADIOI_Set_lock((fd)->fd_sys, F_SETLKW, F_RDLCK, offset, whence, len); \
-        MPE_Log_event( ADIOI_MPE_readlock_b, 0, NULL ); } while( 0 )
-#   define ADIOI_UNLOCK(fd, offset, whence, len) do { \
-        MPE_Log_event( ADIOI_MPE_unlock_a, 0, NULL ); \
-        ADIOI_Set_lock((fd)->fd_sys, F_SETLK, F_UNLCK, offset, whence, len); \
-        MPE_Log_event( ADIOI_MPE_unlock_b, 0, NULL ); } while( 0 )
-#else
 #   define ADIOI_WRITE_LOCK(fd, offset, whence, len) \
           ADIOI_Set_lock((fd)->fd_sys, F_SETLKW, F_WRLCK, offset, whence, len)
 #   define ADIOI_READ_LOCK(fd, offset, whence, len) \
           ADIOI_Set_lock((fd)->fd_sys, F_SETLKW, F_RDLCK, offset, whence, len)
 #   define ADIOI_UNLOCK(fd, offset, whence, len) \
           ADIOI_Set_lock((fd)->fd_sys, F_SETLK, F_UNLCK, offset, whence, len)
-#endif
 
 #endif
 
@@ -618,31 +603,6 @@ int ADIOI_Snprintf( char *str, size_t size, const char *format, ... )
 #endif
 
 #include "adioi_error.h"
-
-/*  MPE logging variables  */
-
-#ifdef ADIOI_MPE_LOGGING
-#include "mpe.h"
-
-int  ADIOI_MPE_open_a;
-int  ADIOI_MPE_open_b;
-int  ADIOI_MPE_read_a;
-int  ADIOI_MPE_read_b;
-int  ADIOI_MPE_write_a;
-int  ADIOI_MPE_write_b;
-int  ADIOI_MPE_lseek_a;
-int  ADIOI_MPE_lseek_b;
-int  ADIOI_MPE_close_a;
-int  ADIOI_MPE_close_b;
-int  ADIOI_MPE_writelock_a;
-int  ADIOI_MPE_writelock_b;
-int  ADIOI_MPE_readlock_a;
-int  ADIOI_MPE_readlock_b;
-int  ADIOI_MPE_unlock_a;
-int  ADIOI_MPE_unlock_b;
-int  ADIOI_MPE_postwrite_a;
-int  ADIOI_MPE_postwrite_b;
-#endif
 
 #endif
 
