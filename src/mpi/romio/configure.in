@@ -707,15 +707,60 @@ fi
 #
 AC_C_INLINE
 
+# get size of intrinsic C types
+AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
+AC_CHECK_SIZEOF(long,$CROSS_SIZEOF_LONG)
+CROSS_SIZEOF_LONG_LONG=${CROSS_SIZEOF_LONG_LONG:-0}
+AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
+AC_CHECK_SIZEOF(void *,$CROSS_SIZEOF_VOID_P)
+
 # Header files
 # Find the CPP before the header check
 AC_PROG_CPP
-AC_CHECK_HEADERS(unistd.h fcntl.h malloc.h stddef.h)
+AC_CHECK_HEADERS(sys/types.h unistd.h fcntl.h malloc.h stddef.h stdlib.h)
+
+#
+# check for int64_t (which is required by pvfs2)
+#
+# one some systems the header files are broken in that if sys/types.h is
+# included before stdint.h/stdlib.h then int64_t may not be defined.
+# if the system headers files do not define int64_t then we attempt to
+# construct one using an equivalent intrinsic C type.
+#
+AC_CACHE_CHECK([for int64_t],pac_cv_int64_t,[
+AC_COMPILE_IFELSE([
+#include <sys/types.h>
+#include <stdlib.h>
+int main(int argc, char ** argv)
+{
+    int64_t a = 0;
+}
+],pac_cv_int64_t=yes,pac_cv_int64_t=no)])
+# if the system header files do not define int64_t, try to define one
+if test "$pac_cv_int64_t" = "no" ; then
+    AC_CACHE_CHECK([for int64_t compatible type],pac_cv_int64_t_ctype,[
+    if test "$ac_cv_sizeof_int" -eq 8 ; then
+	pac_cv_int64_t_ctype="int"
+    elif test "$ac_cv_sizeof_long" -eq 8 ; then
+	pac_cv_int64_t_ctype="long"
+    elif test "$ac_cv_sizeof_long_long" -eq 8 ; then
+	pac_cv_int64_t_ctype="long long"
+    else
+        pac_cv_int64_t_ctype="none"
+	pac_define_int64_t=""
+    fi])
+    if test "$pac_cv_int64_t_ctype" != "none" ; then
+        AC_DEFINE_UNQUOTED(ROMIO_INT64_T,$pac_cv_int64_t_ctype,[Define for the 64 bit integer type])
+	pac_define_int64_t="typedef $pac_cv_int64_t_ctype int64_t;"
+    fi
+else
+    AC_DEFINE(HAVE_INT64_T,1,[Define if int64_t is supported by the C compiler])
+    pac_define_int64_t=""
+fi
+
 #
 CROSS_SIZEOF_INT=${CROSS_SIZEOF_INT:-0}
 CROSS_SIZEOF_VOID_P=${CROSS_SIZEOF_VOID_P:-0}
-AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
-AC_CHECK_SIZEOF(void *,$CROSS_SIZEOF_VOID_P)
 AC_CACHE_CHECK([for int large enough for pointers],
 pac_cv_int_hold_pointer,[
 if test "$ac_cv_sizeof_int" = "0" -o \
@@ -738,8 +783,6 @@ dnl is a partial reworking using the autoconf2 sizeof macros, and allowing
 dnl for the standardized CROSS_xxx varaibles for cross-compilation environments
 # LL is the printf-style format name for output of a MPI_Offset.
 # We have to match this to the type that we use for MPI_Offset.
-CROSS_SIZEOF_LONG_LONG=${CROSS_SIZEOF_LONG_LONG:-0}
-AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
 if test "$ac_cv_sizeof_long_long" != 0 ; then
     if test "$ac_cv_sizeof_long_long" = "8" ; then
        AC_DEFINE(HAVE_LONG_LONG_64,1,[Define if long long is 64 bits])
@@ -1063,6 +1106,19 @@ if test "$PVFS2_CONFIG" = "notfound" -a -n "$with_pvfs2" ; then
 	AC_MSG_ERROR([pvfs2-config not found in $with_pvfs2])
 fi
 
+if test -n "$file_system_pvfs2" -a "$pac_cv_int64_t" = "no" -a \
+    "$pac_cv_int64_t_ctype" = "none" ; then
+    pac_msg="PVFS2 requires int64_t but it is not defined and a suitable"
+    pac_msg="$pac_msg substitute could not be found."
+    if test -n "$with_pvfs2" ; then
+	AC_MSG_ERROR([$pac_msg])
+    else
+	pac_msg="  The PVFS2 file system is being disabled."
+	AC_MSG_WARN([$pac_msg])
+	file_system_pvfs2=""
+    fi
+fi
+
 #
 # Print list of configured file systems
 #
@@ -1184,29 +1240,37 @@ fi
 # Verify presence of pvfs2.h
 #
 if test -n "$file_system_pvfs2"; then
-    CPPFLAGS="$CPPFLAGS $CFLAGS"
+    save_CFLAGS=$CFLAGS
+    if test "$pac_cv_int64_t" = "no" -a "$pac_cv_int64_t_ctype" != "none" ; then
+        CFLAGS="$CFLAGS -Dint64_t=ROMIO_INT64_T"
+    fi
     AC_CHECK_HEADERS(pvfs2.h,
 	AC_DEFINE(ROMIO_PVFS2,1,[Define for ROMIO with PVFS2])
 	AC_DEFINE(HAVE_PVFS2_SUPER_MAGIC, 1, [Define if PVFS2_SUPER_MAGIC defined.]),
         AC_MSG_ERROR([PVFS2 support requested but cannot find pvfs2.h header file])                                        
     )
+    CFLAGS=$save_CFLAGS
 fi
 
 # layout change after pvfs-2.6.3:
 if test -n "$file_system_pvfs2"; then
+    AC_CACHE_CHECK([for pvfs2_create layout change],pac_cv_pvfs2_create_layout,[
     AC_COMPILE_IFELSE(
        [  
+#include <sys/types.h>
 #include <stdlib.h>
+$pac_define_int64_t
 #include "pvfs2.h"
           int main(int argc, char **argv) { 
 	      PVFS_object_ref ref;
 	      PVFS_sys_attr attr;
 	      PVFS_sys_create(NULL, ref, attr, NULL, NULL, NULL, NULL); 
 	  return 0; }
-       ],
-       , AC_DEFINE(HAVE_PVFS2_CREATE_WITHOUT_LAYOUT, 1, 
-       		[Define if PVFS_sys_create does not have layout parameter])
-       )
+       ],pac_cv_pvfs2_create_layout=yes, pac_cv_pvfs2_create_layout=no)])
+    if test "$pac_cv_pvfs2_create_layout" = "no" ; then
+        AC_DEFINE(HAVE_PVFS2_CREATE_WITHOUT_LAYOUT, 1, 
+       		  [Define if PVFS_sys_create does not have layout parameter])
+    fi
 fi
 
 

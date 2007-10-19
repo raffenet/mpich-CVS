@@ -71,9 +71,6 @@
 
 #include "mpi.h"
 #include "mpio.h"
-#ifdef HAVE_STDINT_H
-#include "stdint.h"
-#endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -95,6 +92,13 @@
 #define FDTYPE HANDLE
 #else
 #define FDTYPE int
+#endif
+
+#if !defined(HAVE_INT64_T)
+#if defined(ROMIO_INT64_T)
+typedef ROMIO_INT64_T int64_t;
+#define HAVE_INT64_T
+#endif
 #endif
 
 #ifdef MPI_OFFSET_IS_INT

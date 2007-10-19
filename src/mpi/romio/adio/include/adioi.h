@@ -99,6 +99,19 @@ typedef struct ADIOI_Fl_node {
 } ADIOI_Flatlist_node;
 
 #ifdef ROMIO_PVFS2
+/* pvfs2 requires that int64_t be defined, however some systems have broken
+   system header files that only define int64_t if stdint.h is included before
+   sys/types.h.  since it is quite difficult to guarantee header file order, we
+   attempt to define int64_t here with an appropriately sized intrinsic C type
+   determined at configure time. */
+#if !defined(HAVE_INT64_T)
+#if defined(ROMIO_INT64_T)
+typedef ROMIO_INT64_T int64_t;
+#define HAVE_INT64_T
+#else
+#error 'Configure did not find a 64-bit integer type'
+#endif
+#endif
 #include <pvfs2.h>
 #endif
 typedef struct ADIOI_AIO_req_str {
