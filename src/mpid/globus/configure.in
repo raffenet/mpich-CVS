@@ -1049,7 +1049,7 @@ MPIG_RENAME_SYMBOLS=${MPIG_RENAME_SYMBOLS}
 if test "${MPIG_RENAME_SYMBOLS}" = "yes" ; then
     grep '^MPIX\?_' ${srcdir}/mpig_symbol_map.txt | sed -e 's/^/#define /' >.mpig_symbol_map_public.h
     grep '^PMPIX\?_' ${srcdir}/mpig_symbol_map.txt | sed -e 's/^/#define /' >>.mpig_symbol_map_public.h
-    [grep '^\#[[:space:]]*define[[:space:]]\+P\?MPI_[[:alnum:]_]\+[[:space:]]\+MPI[RD][[:alnum:]_]\+' \
+    [grep '^\#[[:space:]]*define[[:space:]]\+P\?MPIX\?_[[:alnum:]_]\+[[:space:]]\+MPI[^_X][[:alnum:]_]\+' \
 	$master_top_srcdir/src/include/mpi.h.in | sed -e 's/.*[[:space:]]\(.*\)/^\1[ ]/' >.mpig_symbol_map_public_extras.txt]
     if test -s .mpig_symbol_map_public_extras.txt ; then
         grep -f .mpig_symbol_map_public_extras.txt ${srcdir}/mpig_symbol_map.txt | \
@@ -1060,8 +1060,8 @@ if test "${MPIG_RENAME_SYMBOLS}" = "yes" ; then
        echo '#define main(argc_, argv_) mpig_app_main(argc_, argv_)' >>.mpig_symbol_map_public.h
        echo '#endif' >>.mpig_symbol_map_public.h
     fi
-    grep -v '^P\?MPI_' ${srcdir}/mpig_symbol_map.txt | grep -v -f .mpig_symbol_map_public_extras.txt \
-        ${srcdir}/mpig_symbol_map.txt | sed -e 's/^/#define /' >.mpig_symbol_map_internal.h
+    grep -v '^P\?MPIX\?_' ${srcdir}/mpig_symbol_map.txt | grep -v -f .mpig_symbol_map_public_extras.txt | \
+        sed -e 's/^/#define /' >.mpig_symbol_map_internal.h
 fi
 ])
 
