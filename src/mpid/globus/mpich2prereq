@@ -446,7 +446,7 @@ fi
 # if dependency generation is enabled, then make appropriate adjustments to the compiler settings
 #
 case "${enable_dependencies}" in
-    default)
+    default|"")
         enable_dependencies="no"
         ;;
     yes)
