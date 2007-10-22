@@ -12,7 +12,7 @@
 #include "mpiimpl.h"
 
 /* NOTE: MPIG_FAKING_HETERO should be set to FALSE for normal operations */
-#if TRUE || !defined(MPID_HAS_HETERO)
+#if FALSE || !defined(MPID_HAS_HETERO)
 #define MPIG_FAKING_HETERO (FALSE)
 #else
 #define MPIG_FAKING_HETERO (TRUE)

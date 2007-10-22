@@ -49,7 +49,7 @@ static int mpig_cm_self_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t * vc
 
 static void mpig_cm_self_destruct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t * vc);
 
-static int mpig_cm_self_select_comm_method(mpig_cm_t * cm, mpig_vc_t * vc, bool_t * selected);
+static int mpig_cm_self_select_comm_method(mpig_cm_t * cm, mpig_vc_t * vc);
 
 #if FALSE
 static int mpig_cm_self_get_vc_compatability(mpig_cm_t * cm, const mpig_vc_t * vc1, const mpig_vc_t * vc2,
@@ -363,13 +363,13 @@ static void mpig_cm_self_destruct_vc_contact_info(mpig_cm_t * const cm, mpig_vc_
 
 
 /*
- * <mpi_errno> mpig_cm_self_select_comm_method([IN/MOD] vc, [OUT] selected)
+ * <mpi_errno> mpig_cm_self_select_comm_method([IN/MOD] vc)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_self_select_comm_method
-static int mpig_cm_self_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * const vc, bool_t * const selected)
+static int mpig_cm_self_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * const vc)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     bool_t vc_was_inuse;
@@ -381,19 +381,15 @@ static int mpig_cm_self_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * con
     MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_self_select_comm_method);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc)));
 
-    *selected = FALSE;
+    MPIU_Assert(mpig_vc_get_cm(vc) == NULL);
 
     /* determine if communication is possible */
-    if (mpig_vc_get_cm(vc) != NULL) goto fn_return;
     if (vc->cms.self.hostname == NULL || strcmp(vc->cms.self.hostname, mpig_process.my_hostname) != 0) goto fn_return;
     if (vc->cms.self.pid != (unsigned long) mpig_process.my_pid) goto fn_return;
 
     /* initialize the CM self fields in the VC object */
     mpig_vc_set_cm(vc, cm);
     mpig_vc_set_vtable(vc, &mpig_cm_self_vc_vtable);
-
-    /* set the selected flag to indicate that the "self" communication module has accepted responsibility for the VC */
-    *selected = TRUE;
 
     /* store a copy of the VC, adjusting the VC and PG reference counts as necessary */
     mpig_cm_self_vc = vc;
@@ -404,8 +400,8 @@ static int mpig_cm_self_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * con
     }
     
   fn_return:
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mmpi_errno=" MPIG_ERRNO_FMT,
-	MPIG_PTR_CAST(vc), MPIG_BOOL_STR(*selected), mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mpi_errno=" MPIG_ERRNO_FMT,
+        MPIG_PTR_CAST(vc), MPIG_BOOL_STR(mpig_vc_get_cm(vc) != NULL), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_self_select_comm_method);
     return mpi_errno;
 }

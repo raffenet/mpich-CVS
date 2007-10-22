@@ -64,7 +64,7 @@ static int mpig_cm_xio_net_construct_vc_contact_info(mpig_cm_t * cm, struct mpig
 
 /* static void mpig_cm_xio_net_destruct_vc_contact_info(mpig_cm_t * cm, struct mpig_vc * vc); */
 
-static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * cm, struct mpig_vc * vc, bool_t * selected);
+static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * cm, struct mpig_vc * vc);
 
 static int mpig_cm_xio_net_get_vc_compatability(mpig_cm_t * cm, const mpig_vc_t * vc1, const mpig_vc_t * vc2,
     unsigned levels_in, unsigned * levels_out);
@@ -854,13 +854,13 @@ static int mpig_cm_xio_net_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t *
 
 
 /*
- * <mpi_errno> mpig_cm_xio_net_select_comm_method([IN] cm, [IN/MOD] vc, [OUT] selected)
+ * <mpi_errno> mpig_cm_xio_net_select_comm_method([IN] cm, [IN/MOD] vc)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_net_select_comm_method
-static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * const vc, bool_t * const selected)
+static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * const vc)
 {
     static const char fcname[] = MPIG_QUOTE(FUNCNAME);
     char key[MPIG_CM_XIO_NET_MAX_KEY_NAME_SIZE];
@@ -872,6 +872,7 @@ static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * 
     char * driver_name = NULL;
     int version;
     bool_t found;
+    char * cs;
     int rc;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_net_select_comm_method);
@@ -882,12 +883,13 @@ static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * 
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "entering: cm=" MPIG_PTR_FMT
 	", cm_name=%s, vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm), MPIG_PTR_CAST(vc)));
 
-    *selected = FALSE;
-    
+    MPIU_Assert(mpig_vc_get_cm(vc) == NULL || mpig_vc_get_cm(vc) == cm);
+
     if(cm->cmu.xio.available == FALSE)
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "communication method disabled; skipping the selection "
 	    "process: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
+        MPIU_Assert(mpig_vc_get_cm(vc) == NULL);
 	goto fn_return;
     }
     
@@ -897,6 +899,7 @@ static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * 
     {
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "communication method of remote VC is not compatible; "
 	    "skipping the selection process: cm=" MPIG_PTR_FMT ", cm_name=%s", MPIG_PTR_CAST(cm), mpig_cm_get_name(cm)));
+        MPIU_Assert(mpig_vc_get_cm(vc) == NULL);
 	goto fn_return;
     }
     
@@ -927,32 +930,36 @@ static int mpig_cm_xio_net_select_comm_method(mpig_cm_t * const cm, mpig_vc_t * 
 	mpig_vc_set_cm(vc, cm);
     }
 
-    if (mpig_vc_get_cm_module_type(vc) == MPIG_CM_TYPE_XIO)
+    /* Get the contact string */
+    MPIU_Snprintf(key, MPIG_CM_XIO_NET_MAX_KEY_NAME_SIZE, "MPIG_XIO_%s_CONTACT_STRING", cm->cmu.xio.key_name);
+    mpi_errno = mpig_bc_get_contact(bc, key, &contact_str, &found);
+    MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_get_contact", "**mpig|bc_get_contact %s", key);
+    if (!found) goto fn_return;
+
+    /* add the contact string to the VC */
+    cs = MPIU_Strdup(contact_str);
+    MPIU_ERR_CHKANDJUMP1((cs == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "XIO contact string");
+    mpig_cm_xio_vc_set_contact_string(vc, cs);
+
+    /* if the VC is already connected then post a receive and start sending any queued messages */
+    if (mpig_cm_xio_vc_get_state(vc) == MPIG_CM_XIO_VC_STATE_CONNECTED)
     {
-	char * cs;
-	
-	/* Get the contact string */
-	MPIU_Snprintf(key, MPIG_CM_XIO_NET_MAX_KEY_NAME_SIZE, "MPIG_XIO_%s_CONTACT_STRING", cm->cmu.xio.key_name);
-	mpi_errno = mpig_bc_get_contact(bc, key, &contact_str, &found);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|bc_get_contact", "**mpig|bc_get_contact %s", key);
-	if (!found) goto fn_return;
+        mpi_errno = mpig_cm_xio_recv_next_msg(vc);
+        MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|recv_next_msg",
+            "**mpig|cm_xio|recv_next_msg %p", vc);
 
-	/* add the contact string to the VC */
-	cs = MPIU_Strdup(contact_str);
-	MPIU_ERR_CHKANDJUMP1((cs == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "XIO contact string");
-	mpig_cm_xio_vc_set_contact_string(vc, cs);
-
-	/* set the selected flag to indicate that the XIO communication module has accepted responsibility for the VC */
-	*selected = TRUE;
+        mpi_errno = mpig_cm_xio_send_next_sreq(vc);
+        MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_next_sreq",
+            "**mpig|cm_xio|send_next_sreq %p", vc);
     }
 
   fn_return:
     if (version_str != NULL) mpig_bc_free_contact(version_str);
     if (contact_str != NULL) mpig_bc_free_contact(contact_str);
     
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting:  cm=" MPIG_PTR_FMT
-	", cm_name=%s, vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
-	MPIG_PTR_CAST(vc), mpi_errno));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_CM | MPIG_DEBUG_LEVEL_CEMT, "exiting: cm=" MPIG_PTR_FMT
+	", cm_name=%s, vc=" MPIG_PTR_FMT ", selected=%s, mpi_errno=" MPIG_ERRNO_FMT, MPIG_PTR_CAST(cm), mpig_cm_get_name(cm),
+        MPIG_PTR_CAST(vc), MPIG_BOOL_STR(mpig_vc_get_cm(vc) != NULL), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_net_select_comm_method);
     return mpi_errno;
 

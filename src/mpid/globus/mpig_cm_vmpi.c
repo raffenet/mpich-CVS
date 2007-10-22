@@ -76,7 +76,7 @@ static int mpig_cm_vmpi_add_contact_info(mpig_cm_t * cm, mpig_bc_t * bc);
 
 static int mpig_cm_vmpi_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t * vc);
 
-static int mpig_cm_vmpi_select_comm_method(mpig_cm_t * cm, mpig_vc_t * vc, bool_t * selected);
+static int mpig_cm_vmpi_select_comm_method(mpig_cm_t * cm, mpig_vc_t * vc);
 
 static int mpig_cm_vmpi_get_vc_compatability(mpig_cm_t * cm, const mpig_vc_t * vc1, const mpig_vc_t * vc2,
     unsigned levels_in, unsigned * levels_out);
@@ -878,13 +878,13 @@ static int mpig_cm_vmpi_construct_vc_contact_info(mpig_cm_t * cm, mpig_vc_t * co
 
 
 /*
- * <mpi_errno> mpig_cm_vmpi_select_comm_method([IN/MOD] vc, [OUT] selected)
+ * <mpi_errno> mpig_cm_vmpi_select_comm_method([IN/MOD] vc)
  *
  * see documentation in mpidpre.h.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_vmpi_select_comm_method
-static int mpig_cm_vmpi_select_comm_method(mpig_cm_t * cm, mpig_vc_t * const vc, bool_t * const selected)
+static int mpig_cm_vmpi_select_comm_method(mpig_cm_t * cm, mpig_vc_t * const vc)
 {
 #   if defined(MPIG_VMPI)
     {
@@ -897,10 +897,9 @@ static int mpig_cm_vmpi_select_comm_method(mpig_cm_t * cm, mpig_vc_t * const vc,
 	MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_vmpi_select_comm_method);
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "entering: vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc)));
 
-	*selected = FALSE;
+	MPIU_Assert(mpig_vc_get_cm(vc) == NULL);
 
-	/* if the VC is not in the same subjob, or has already been selected by another module, then return */
-	if (mpig_vc_get_cm(vc) != NULL) goto fn_return;
+	/* if the VC is not in the same subjob then return */
 	if (mpig_uuid_compare(&vc->cms.vmpi.job_id, &mpig_cm_vmpi_job_id) == FALSE) goto fn_return;
     
 	/* initialize the CM VMPI fields in the VC object */
@@ -911,18 +910,14 @@ static int mpig_cm_vmpi_select_comm_method(mpig_cm_t * cm, mpig_vc_t * const vc,
 	mpig_cm_vmpi_comm_set_remote_vrank(MPIR_Process.comm_world, mpig_vc_get_pg_rank(vc), vc->cms.vmpi.cw_rank);
 	mpig_cm_vmpi_comm_set_remote_mrank(MPIR_Process.comm_world, vc->cms.vmpi.cw_rank, mpig_vc_get_pg_rank(vc));
 
-	/* set the selected flag to indicate that the "vmpi" communication module has accepted responsibility for the VC */
-	*selected = TRUE;
-    
       fn_return:
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mpi_errno=" MPIG_ERRNO_FMT,
-	    MPIG_PTR_CAST(vc), MPIG_BOOL_STR(*selected), mpi_errno));
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC, "exiting: vc=" MPIG_PTR_FMT ", selected=%s, mpi_errno=" MPIG_ERRNO_FMT,
+            MPIG_PTR_CAST(vc), MPIG_BOOL_STR(mpig_vc_get_cm(vc) != NULL), mpi_errno));
 	MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_vmpi_select_comm_method);
 	return mpi_errno;
     }
 #   else
     {
-	*selected = FALSE;
 	return MPI_SUCCESS;
     }
 #   endif
@@ -4230,11 +4225,7 @@ int mpig_cm_vmpi_cancel_recv_any_source(MPID_Request * const ras_req, bool_t * c
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     bool_t cancelled = FALSE;
-    int vcompleted;
-    int vcancelled;
-    mpig_vmpi_status_t vstatus;
     int vrc;
-    int vrc_test;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_cm_vmpi_cancel_recv_any_source);
 
@@ -4256,6 +4247,11 @@ int mpig_cm_vmpi_cancel_recv_any_source(MPID_Request * const ras_req, bool_t * c
 	ras_req->cms.vmpi.cancelling = TRUE;
 
 #if FALSE
+        int vrc_test;
+        mpig_vmpi_status_t vstatus;
+        int vcompleted;
+        int vcancelled;
+        
 	/* do a quick check to see if the request has already completed */
 	vrc_test = mpig_vmpi_test(mpig_cm_vmpi_request_get_vreq_ptr(ras_req), &vcompleted, &vstatus);
 	if (vrc_test && mpig_vmpi_request_is_null(mpig_cm_vmpi_request_get_vreq(ras_req)) == FALSE)

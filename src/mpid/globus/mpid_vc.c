@@ -1395,8 +1395,8 @@ void mpig_vc_destruct_contact_info(mpig_vc_t * vc)
 int mpig_vc_select_comm_method(mpig_vc_t * vc)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    mpig_cm_t * cm;
     int cm_n = 0;
-    bool_t selected = FALSE;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_vc_select_comm_method);
 
@@ -1405,36 +1405,62 @@ int mpig_vc_select_comm_method(mpig_vc_t * vc)
     MPIG_FUNC_ENTER(MPID_STATE_mpig_vc_select_comm_method);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VC, "entering: vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(vc)));
 
-    while (selected == FALSE && cm_n < mpig_cm_table_num_entries)
+    cm = mpig_vc_get_cm(vc);
+    if (cm == NULL)
     {
-	mpig_cm_t * cm = mpig_cm_table[cm_n];
+        for (cm_n = 0 ; cm_n < mpig_cm_table_num_entries; cm_n++)
+        {
+            cm = mpig_cm_table[cm_n];
 	
-	if (mpig_cm_get_vtable(cm)->select_comm_method != NULL)
-	{
-	    mpi_errno = mpig_cm_get_vtable(cm)->select_comm_method(cm, vc, &selected);
-	    if (mpi_errno)
-	    {   /* --BEGIN ERROR HANDLING-- */
-		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: selection of communication method "
-		    "failed: vc=" MPIG_PTR_FMT "pg_id=%s, pg_rank=%d, cm=%s", MPIG_PTR_CAST(vc), mpig_vc_get_pg_id(vc),
-		    mpig_vc_get_pg_rank(vc), mpig_cm_get_name(cm)));
-		MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|cm|select_comm_method",
-		    "**mpig|cm|select_comm_method %s %s %d", mpig_cm_get_name(cm), mpig_vc_get_pg_id(vc),
-		    mpig_vc_get_pg_rank(vc));
-		goto fn_fail;
-	    }   /* --END ERROR HANDLING-- */
-	}
+            if (mpig_cm_get_vtable(cm)->select_comm_method != NULL)
+            {
+                mpi_errno = mpig_cm_get_vtable(cm)->select_comm_method(cm, vc);
+                if (mpi_errno)
+                {   /* --BEGIN ERROR HANDLING-- */
+                    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: selection of communication method "
+                        "failed: vc=" MPIG_PTR_FMT "pg_id=%s, pg_rank=%d, cm=%s", MPIG_PTR_CAST(vc), mpig_vc_get_pg_id(vc),
+                        mpig_vc_get_pg_rank(vc), mpig_cm_get_name(cm)));
+                    MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|cm|select_comm_method",
+                        "**mpig|cm|select_comm_method %s %s %d", mpig_cm_get_name(cm), mpig_vc_get_pg_id(vc),
+                        mpig_vc_get_pg_rank(vc));
+                    goto fn_fail;
+                }   /* --END ERROR HANDLING-- */
+            }
 	
-	cm_n += 1;
+            if (mpig_vc_get_cm(vc) != NULL) break;
+        }
+        
+        if (mpig_vc_get_cm(vc) == NULL)
+        {   /* --BEGIN ERROR HANDLING-- */
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: no communication method accepted the VC: vc="
+                MPIG_PTR_FMT "pg_id=%s, pg_rank=%d", MPIG_PTR_CAST(vc), mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc)));
+            MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cm|select_comm_method_none",
+                "**mpig|cm|select_comm_method_none %s %d", mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc));
+            goto fn_fail;
+        }   /* --END ERROR HANDLING-- */
     }
-
-    if (!selected)
-    {   /* --BEGIN ERROR HANDLING-- */
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: no communication method accepted the VC: vc="
-	    MPIG_PTR_FMT "pg_id=%s, pg_rank=%d", MPIG_PTR_CAST(vc), mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc)));
-	MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cm|select_comm_method_none",
-	    "**mpig|cm|select_comm_method_none %s %d", mpig_vc_get_pg_id(vc), mpig_vc_get_pg_rank(vc));
-	goto fn_fail;
-    }   /* --END ERROR HANDLING-- */
+    else
+    {
+        /* a CM was selected out-of-band, likely by an incoming connection that was handled asynchronously by the CM.  call that
+           CM's select_comm_method to finalize an intialization not possible before the arrival of the business card. */
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC, "CM selected out-of-band: vc=" MPIG_PTR_FMT ", cm=" MPIG_PTR_FMT,
+            MPIG_PTR_CAST(vc), MPIG_PTR_CAST(cm)));
+        
+        if (mpig_cm_get_vtable(cm)->select_comm_method != NULL)
+        {
+            mpi_errno = mpig_cm_get_vtable(cm)->select_comm_method(cm, vc);
+            if (mpi_errno)
+            {   /* --BEGIN ERROR HANDLING-- */
+                MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_VC, "ERROR: selection of communication method "
+                    "failed: vc=" MPIG_PTR_FMT "pg_id=%s, pg_rank=%d, cm=%s", MPIG_PTR_CAST(vc), mpig_vc_get_pg_id(vc),
+                    mpig_vc_get_pg_rank(vc), mpig_cm_get_name(cm)));
+                MPIU_ERR_SETANDSTMT3(mpi_errno, MPI_ERR_OTHER, {;}, "**mpig|cm|select_comm_method",
+                    "**mpig|cm|select_comm_method %s %s %d", mpig_cm_get_name(cm), mpig_vc_get_pg_id(vc),
+                    mpig_vc_get_pg_rank(vc));
+                goto fn_fail;
+            }   /* --END ERROR HANDLING-- */
+        }
+    }
 
   fn_return:
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_VC, "exiting: vc=" MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT,

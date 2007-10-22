@@ -103,7 +103,7 @@ struct mpig_recvq_ras_op;
 #endif
 
 /* tell MPICH2 framework that the device supports heterogeneous environments */
-#if FALSE
+#if TRUE
 #define MPID_HAS_HETERO
 #endif
 /**********************************************************************************************************************************
@@ -339,11 +339,10 @@ typedef int (*mpig_cm_construct_vc_contact_info_fn_t)(struct mpig_cm * cm, struc
 typedef void (*mpig_cm_destruct_vc_contact_info_fn_t)(struct mpig_cm * cm, struct mpig_vc * vc);
 
 /*
- * <mpi_errno> mpig_cm_select_comm_method([IN] cm, [IN/MOD] vc, [OUT] selected)
+ * <mpi_errno> mpig_cm_select_comm_method([IN] cm, [IN/MOD] vc)
  *
  * determine if the current process can use the communication method to communicate with the process associated with the supplied
- * VC.  if it can, then the VC will be initialized accordingly.  if the VC has already been selected by another communication
- * method, the routine will return with 'selected' equal to FALSE.
+ * VC.  if it can, then the CM field in the VC with be set and any CM specific fields in the VC will be initialized.
  *
  * Parameters:
  *
@@ -351,13 +350,11 @@ typedef void (*mpig_cm_destruct_vc_contact_info_fn_t)(struct mpig_cm * cm, struc
  *
  *   vc [IN] - vc object to initialize if the communication method is capable of performing communication with the process
  *
- *   selected [OUT] - TRUE if the communication method can communicate with the remote process; otherwise FALSE
- *
  * Returns: a MPI error code
  *
  * NOTE: this routine assumes the that mpig_cm_extract_contact_info() has be called
  */
-typedef int (*mpig_cm_select_comm_method_fn_t)(struct mpig_cm * cm, struct mpig_vc * vc, bool_t * selected);
+typedef int (*mpig_cm_select_comm_method_fn_t)(struct mpig_cm * cm, struct mpig_vc * vc);
 
 /*
  * <mpi_errno> mpig_cm_get_vc_compatability([IN] cm, [IN] vc1, [IN] vc2, [IN] levels_in, [OUT] levels_out)

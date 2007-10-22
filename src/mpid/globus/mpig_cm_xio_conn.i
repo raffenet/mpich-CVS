@@ -860,6 +860,7 @@ static int mpig_cm_xio_server_handle_recv_open_proc_req(mpig_vc_t * tmp_vc, mpig
 	    if (mpig_vc_get_cm(proc_vc) == NULL)
 	    {
 		mpig_cm_xio_vc_construct(proc_vc);
+                mpig_vc_set_cm(proc_vc, mpig_vc_get_cm(tmp_vc));
 		mpig_vc_set_endian(proc_vc, mpig_vc_get_endian(tmp_vc));
 	    }
 
@@ -1212,24 +1213,34 @@ static void mpig_cm_xio_server_handle_send_open_proc_resp_ack(
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_CEMT,
 	    "change state of proc VC to connected; starting communication: proc_vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(proc_vc)));
 	proc_vc_cmu->handle = handle;
-	mpig_vc_set_cm(proc_vc, cm);
+	/* mpig_vc_set_cm(proc_vc, cm); -- now set in mpig_cm_xio_server_handle_recv_open_proc_req() */
+        MPIU_Assert(mpig_vc_get_cm(proc_vc) == cm);
 	mpig_vc_set_endian(proc_vc, endian);
 	mpig_cm_xio_vc_set_state(proc_vc, MPIG_CM_XIO_VC_STATE_CONNECTED);
 	mpig_cm_xio_vc_list_add(proc_vc);
 
-	/* start receiving messages on the proc VC.  note: it was not necesary to transfer the receive buffer from the temp VC to
-	   the proc VC since we know that the buffer was depleted by mpig_cm_xio_server_handle_recv_open_proc_req(). */
-	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC | MPIG_DEBUG_LEVEL_CEMT,
-	    "connection established; starting communication engines: vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(proc_vc)));
-		
-	mpi_errno = mpig_cm_xio_recv_next_msg(proc_vc);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|recv_next_msg",
-	    "**mpig|cm_xio|recv_next_msg %p", proc_vc);
+        /* if the VC has been fully initialized then post a receive and start sending any queued messages, otherwise delay
+           starting these processes until the CM's select_comm_method() has been called. */
+        if (mpig_cm_xio_vc_get_contact_string(proc_vc) != NULL)
+        {
+            /* start receiving and sending messages on the proc VC.  NOTE: the temp VC receive buffer does not need to be
+               transferred to the proc VC since it is always depeled by mpig_cm_xio_server_handle_recv_open_proc_req(). */
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC | MPIG_DEBUG_LEVEL_CEMT,
+                "connection established; starting communication engines: vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(proc_vc)));
 
-	/* if the proc VC has any sends queued up, start send them */
-	mpi_errno = mpig_cm_xio_send_next_sreq(proc_vc);
-	MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_next_sreq",
-	    "**mpig|cm_xio|send_next_sreq %p", proc_vc);
+            mpi_errno = mpig_cm_xio_recv_next_msg(proc_vc);
+            MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|recv_next_msg",
+                "**mpig|cm_xio|recv_next_msg %p", proc_vc);
+
+            mpi_errno = mpig_cm_xio_send_next_sreq(proc_vc);
+            MPIU_ERR_CHKANDJUMP1((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_next_sreq",
+                "**mpig|cm_xio|send_next_sreq %p", proc_vc);
+        }
+        else
+        {
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_VC | MPIG_DEBUG_LEVEL_CEMT, "connection established; delaying start of "
+                "communication engines until VC is fully initialized: vc=" MPIG_PTR_FMT, MPIG_PTR_CAST(proc_vc)));
+        }
 
 	/* we must release the internal reference to the VC.  mpig_vc_dec_ref_count() is used in favor of the internal routine,
 	   mpig_cm_xio_vc_dec_ref_count(), because we want to the disconnect process to be initiated if the VC is no longer
