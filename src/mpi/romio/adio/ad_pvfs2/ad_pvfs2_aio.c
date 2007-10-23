@@ -106,11 +106,11 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
 		&(aio_req->resp_io), &(aio_req->op_id), NULL);
 #ifdef ADIOI_MPE_LOGGING
 	MPE_Log_event( ADIOI_MPE_iwrite_b, 0, NULL );
-#endif
+#endif 
+    } 
 
-} 
     /* --BEGIN ERROR HANDLING-- */
-    if (ret != 0 ) {
+    if (ret < 0 ) {
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
 					   MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__,
@@ -120,14 +120,22 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
     }
     /* --END ERROR HANDLING-- */
 
-    if (ADIOI_PVFS2_greq_class == 0) {
-	MPIX_Grequest_class_create(ADIOI_GEN_aio_query_fn, 
-		ADIOI_PVFS2_aio_free_fn, MPIU_Greq_cancel_fn,
-		ADIOI_PVFS2_aio_poll_fn, ADIOI_PVFS2_aio_wait_fn,
-		&ADIOI_PVFS2_greq_class);
+    /* posted. defered completion */
+    if (ret == 0) { 
+	if (ADIOI_PVFS2_greq_class == 0) {
+	    MPIX_Grequest_class_create(ADIOI_GEN_aio_query_fn, 
+		    ADIOI_PVFS2_aio_free_fn, MPIU_Greq_cancel_fn,
+		    ADIOI_PVFS2_aio_poll_fn, ADIOI_PVFS2_aio_wait_fn,
+		    &ADIOI_PVFS2_greq_class);
+	}
+	MPIX_Grequest_class_allocate(ADIOI_PVFS2_greq_class, aio_req, request);
+	memcpy(&(aio_req->req), request, sizeof(request));
     }
-    MPIX_Grequest_class_allocate(ADIOI_PVFS2_greq_class, aio_req, request);
-    memcpy(&(aio_req->req), request, sizeof(request));
+
+    /* immediate completion */
+    if (ret == 1) {
+	MPIO_Completed_request_create(&fd, len, error_code, request);
+    }
 
     if (file_ptr_type == ADIO_INDIVIDUAL) {
 	fd->fp_ind += len;
