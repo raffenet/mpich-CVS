@@ -992,7 +992,14 @@ and \texttt{pfs\_svr\_buf} (on PFS only).
 
 \addcontentsline{toc}{section}{References}
 \bibliographystyle{plain}
-%\bibliography{/home/beumer/THAKUR/TM234/papers}
-\bibliography{/home/thakur/tex/bib/papers}
+%% these are the "full" bibliography databases
+%\bibliography{/homes/thakur/tex/bib/papers,/homes/robl/projects/papers/pario}
+% this is the pared-down one containing only those references used in
+% users-guide.tex
+% to regenerate, uncomment the full databases above, then run 
+%   ~gropp/bin/citetags users-guide.tex | sort | uniq | \
+%        ~gropp/bin/citefind - /homes/thakur/tex/bib/papers.bib \
+%                      /homes/robl/projects/papers/pario
+\bibliography{romio}
 
 \end{document}
