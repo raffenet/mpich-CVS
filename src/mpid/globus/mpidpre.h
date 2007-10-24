@@ -492,6 +492,7 @@ typedef struct mpig_comm
     /* data structures for tracking active communicators to prevent MPID_Finalize from returning before all outstanding
        communication has completed. */
     bool_t app_ref;
+    bool_t is_localcomm;
     mpig_genq_entry_t active_list;
 }
 mpig_comm_t;
@@ -550,8 +551,6 @@ mpig_comm_t;
 						     BEGIN DATATYPE SECTION
 **********************************************************************************************************************************/
 #if defined(MPID_HAS_HETERO)
-#define MPIG_PACK_HEADER_SIZE (MPIG_DATATYPE_MAX_BASIC_TYPES + MPIG_CTYPE_LAST + 2)
-
 #define MPID_DEV_HAS_MPID_PACK_HEADER_SIZE
 #define MPID_Pack_header_size(status_) (MPIG_PACK_HEADER_SIZE)
 #define MPID_DEV_HAS_MPID_PACK

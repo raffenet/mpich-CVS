@@ -479,12 +479,14 @@ int MPID_Finalize()
 
     mpig_usage_finalize();
 
-    /* MPIR_Comm_free() is never called for MPI_COMM_WORLD and MPI_COMM_SELF, so the reference count is decremented and
+    /* MPI_Comm_free() is never called for MPI_COMM_WORLD and MPI_COMM_SELF, so the reference count is decremented and
        mpig_comm_free_hook() is called here to release the application reference to the predefined (builtin) communicators */
-    MPIU_Object_release_ref(MPIR_Process.comm_world, &n);
-    MPIU_Object_release_ref(MPIR_Process.comm_self, &n);
     mpig_comm_free_hook(MPIR_Process.comm_world);
     mpig_comm_free_hook(MPIR_Process.comm_self);
+    /* 
+     * MPIU_Object_release_ref(MPIR_Process.comm_world, &n);
+     * MPIU_Object_release_ref(MPIR_Process.comm_self, &n);
+     */
 
     /*
      * shutdown the communicator tracking module, waiting for all posted operations to complete on all communicators

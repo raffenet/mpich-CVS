@@ -60,36 +60,77 @@ int mpig_comm_finalize(void)
     comm_q_entry = mpig_genq_peek_head_entry(&mpig_comm_active_list);
     while (comm_q_entry != NULL)
     {
+        const char * msg;
+        
         comm = mpig_genq_entry_get_value(comm_q_entry);
+        
         MPIU_Assert(HANDLE_GET_KIND(comm->handle) != HANDLE_KIND_INVALID);
 
         /* the call to MPIR_Comm_release() below may cause the communicator object containing the genq entry to be destroyed.
            therefore, the next entry in the queue must be acquired before MPIR_Comm_release() is called. */
         comm_q_entry = mpig_genq_entry_get_next(comm_q_entry);
 	
-        if (comm->dev.app_ref && HANDLE_GET_KIND(comm->handle) != HANDLE_KIND_BUILTIN)
+        if (comm->dev.app_ref)
         {
-            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM, "releasing communicator not freed by application: comm=" MPIG_HANDLE_FMT
-                ",commp=" MPIG_PTR_FMT, comm->handle, MPIG_PTR_CAST(comm)));
             comm->dev.app_ref = FALSE;
-            MPIR_Comm_release(comm, FALSE);
+            
+
+            if (HANDLE_GET_KIND(comm->handle) == HANDLE_KIND_BUILTIN)
+            {
+                /* we cannot release a built in communicator since MPIR_Comm_release() is not designed to handle them.  instead,
+                   built in communicators are cleaned up MPID_Finalize() and MPI_Finalize() as appropriate.  the app_ref flag is
+                   reset here only to indicate that the application can no longer make further use of the communicator, although
+                   outstanding operations associated with that communicator may still exist. */
+                msg = "builtin communicator; reseting app_ref";
+            }
+            if (comm->dev.is_localcomm == FALSE)
+            {
+                msg = "releasing communicator not freed by application";
+                
+                MPIR_Comm_release(comm, FALSE);
+            }
+            else /* if (comm->dev.is_localcomm != FALSE) */
+            {
+                /* the local communicator is released during the MPIR_Comm_release() of parent intercommunicator */
+                msg = "local communicator not freed by application; reseting app_ref";
+            }
         }
+        else
+        {
+            msg = "communicator application reference already released";
+        }
+
+        /* 
+         * printf("[%d], %s: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT ", ref_count=%d, is_localcomm=%d\n",
+         *     mpig_process.my_pg_rank, msg, comm->handle, MPIG_PTR_CAST(comm), comm->ref_count, comm->dev.is_localcomm);
+         */
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM, "%s: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT ", ref_count=%d"
+            ", is_localcomm=%s", msg, comm->handle, MPIG_PTR_CAST(comm), comm->ref_count, MPIG_BOOL_STR(comm->dev.is_localcomm)));
     }
     
     /* wait for all requests on all communicators to complete */
     while (mpig_genq_is_empty(&mpig_comm_active_list) == FALSE)
     {
 	MPID_Progress_state pe_state;
-	
+        bool_t is_builtin;
+
         comm_q_entry = mpig_genq_peek_head_entry(&mpig_comm_active_list);
         comm = mpig_genq_entry_get_value(comm_q_entry);
+        is_builtin = (HANDLE_GET_KIND(comm->handle) == HANDLE_KIND_BUILTIN) ? TRUE : FALSE;
         
 	MPID_Progress_start(&pe_state);
 	{
-	    while(mpig_genq_peek_head_entry(&mpig_comm_active_list) == comm_q_entry && comm->ref_count > 0)
+	    while(mpig_genq_peek_head_entry(&mpig_comm_active_list) == comm_q_entry &&
+                (is_builtin == FALSE || comm->ref_count > 1))
 	    {
-		MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM, "waiting for operations on communicator to complete: comm="
-		    MPIG_HANDLE_FMT ",commp=" MPIG_PTR_FMT, comm->handle, MPIG_PTR_CAST(comm)));
+                /* 
+                 * printf("[%d] waiting for operations on communicator to complete: comm=" MPIG_HANDLE_FMT ",commp=" MPIG_PTR_FMT
+                 *     ", ref_count=%d, is_builtin=%d\n", mpig_process.my_pg_rank, MPIG_HANDLE_VAL(comm), MPIG_PTR_CAST(comm),
+                 *     comm->ref_count, is_builtin);
+                 */
+                MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COMM, "waiting for operations on communicator to complete: comm="
+                    MPIG_HANDLE_FMT ",commp=" MPIG_PTR_FMT, MPIG_HANDLE_VAL(comm), MPIG_PTR_CAST(comm)));
+                
 		mpi_errno = MPID_Progress_wait(&pe_state);
 		if (mpi_errno)
 		{   /* --BEGIN ERROR HANDLING-- */
@@ -101,14 +142,16 @@ int mpig_comm_finalize(void)
 	}
 	MPID_Progress_end(&pe_state);
 
-	/* MPIR_Comm_release() is never called for the predefined communicators, so mpig_comm_destruct() is called here to
-	   release any device related resources still held by the communicator and remove the communicator from the list of
-	   active communicators. */
-	if (mpig_genq_peek_head_entry(&mpig_comm_active_list) == comm_q_entry &&
-            HANDLE_GET_KIND(comm->handle) == HANDLE_KIND_BUILTIN)
+        if (is_builtin)
 	{
+            /* 
+             * printf("[%d] destructing device portion of builtin communicator: comm=" MPIG_HANDLE_FMT ",commp=" MPIG_PTR_FMT
+             * ", ref_count=%d\n", mpig_process.my_pg_rank, MPIG_HANDLE_VAL(comm), MPIG_PTR_CAST(comm), comm->ref_count);
+             */
+            MPIU_Assert(mpig_genq_peek_head_entry(&mpig_comm_active_list) == comm_q_entry);
 	    mpig_comm_destruct(comm);
 	}
+
     }
     
     mpig_genq_destruct(&mpig_comm_active_list, NULL);
@@ -149,6 +192,7 @@ int mpig_comm_construct(MPID_Comm * const comm)
 	"*globus|topology_comm_construct %C", comm->handle);
 
     comm->dev.app_ref = TRUE;
+    comm->dev.is_localcomm = FALSE;
     mpig_genq_entry_construct(&comm->dev.active_list);
     mpig_genq_entry_set_value(&comm->dev.active_list, comm);
     mpig_genq_enqueue_tail_entry(&mpig_comm_active_list, &comm->dev.active_list);
@@ -195,10 +239,13 @@ int mpig_comm_construct(MPID_Comm * const comm)
  * int mpig_intercomm_construct_localcomm([IN/MOD] comm)
  *
  * comm [IN/MOD] - communicator being created
+ *
+ * NOTE: a local intracommunicator may be attached to an intercommunicator.  this intracommunicator is created locally (meaning
+ * not collectively) by MPIR_Setup_intercomm_localcomm() when needed.
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_intercomm_construct_localcomm
-int mpig_intercomm_construct_localcomm(MPID_Comm * const localcomm)
+int mpig_intercomm_construct_localcomm(MPID_Comm * const comm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
     int mpi_errno = MPI_SUCCESS;
@@ -208,15 +255,13 @@ int mpig_intercomm_construct_localcomm(MPID_Comm * const localcomm)
     
     MPIG_FUNC_ENTER(MPID_STATE_mpig_intercomm_construct_localcomm);
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
-	"entering: localcomm=" MPIG_HANDLE_FMT ", localcommp=" MPIG_PTR_FMT, localcomm->handle, MPIG_PTR_CAST(localcomm)));
+	"entering: localcomm=" MPIG_HANDLE_FMT ", localcommp=" MPIG_PTR_FMT, comm->handle, MPIG_PTR_CAST(comm)));
 
-    /* a local intracommunicator may be attached to an intercommunicator.  this intracommunicator is created locally (meaning not
-       collectively) by MPIR_Setup_intercomm_localcomm() when needed.  we set the value of queue entry's pointer to the
-       communicator object to NULL so that we can detect when one of these local intracommuncators is being destroyed and skip
-       parts of the destruction process. */
-    localcomm->dev.app_ref = FALSE;
-    mpig_genq_entry_construct(&localcomm->dev.active_list);
-    mpig_genq_entry_set_value(&localcomm->dev.active_list, NULL);
+    comm->dev.app_ref = TRUE;
+    comm->dev.is_localcomm = TRUE;
+    mpig_genq_entry_construct(&comm->dev.active_list);
+    mpig_genq_entry_set_value(&comm->dev.active_list, comm);
+    mpig_genq_enqueue_tail_entry(&mpig_comm_active_list, &comm->dev.active_list);
 
 #   if defined(MPID_HAS_HETERO)
     {
@@ -224,20 +269,20 @@ int mpig_intercomm_construct_localcomm(MPID_Comm * const localcomm)
         {
             int p;
             
-            localcomm->is_hetero = FALSE;
-            for (p = 0; p < localcomm->remote_size; p++)
+            comm->is_hetero = FALSE;
+            for (p = 0; p < comm->remote_size; p++)
             {
-                mpig_vc_t * vc = mpig_comm_get_remote_vc(localcomm, p);
+                mpig_vc_t * vc = mpig_comm_get_remote_vc(comm, p);
             
                 if (mpig_dfd_is_hetero(&vc->dfd))
                 {
-                    localcomm->is_hetero = TRUE;
+                    comm->is_hetero = TRUE;
                 }
             }
         }
 #       else
         {
-            localcomm->is_hetero = TRUE;
+            comm->is_hetero = TRUE;
         }
 #       endif
     }
@@ -245,7 +290,7 @@ int mpig_intercomm_construct_localcomm(MPID_Comm * const localcomm)
     
     /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: localcomm=" MPIG_HANDLE_FMT ", localcommp="
-        MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, localcomm->handle, MPIG_PTR_CAST(localcomm), mpi_errno));
+        MPIG_PTR_FMT ", mpi_errno=" MPIG_ERRNO_FMT, comm->handle, MPIG_PTR_CAST(comm), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_intercomm_construct_localcomm);
     return mpi_errno;
 }
@@ -261,7 +306,6 @@ int mpig_intercomm_construct_localcomm(MPID_Comm * const localcomm)
 int mpig_comm_destruct(MPID_Comm * const comm)
 {
     const char fcname[] = MPIG_QUOTE(FUNCNAME);
-    bool_t is_localcomm = (mpig_genq_entry_get_value(&comm->dev.active_list) == NULL) ? TRUE : FALSE;
     int mrc;
     int mpi_errno = MPI_SUCCESS;
     MPIG_STATE_DECL(MPID_STATE_mpig_comm_destruct);
@@ -272,19 +316,24 @@ int mpig_comm_destruct(MPID_Comm * const comm)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM,
 	"entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT, comm->handle, MPIG_PTR_CAST(comm)));
 
-    /* if this communicator was created by MPIR_Setup_intercomm_localcomm(), then skip the rest of the destruction process.  see
-       the comments above in mpig_intercomm_construct_localcomm(). */
-    if (is_localcomm)
+    /* if this communicator was created by MPIR_Setup_intercomm_localcomm(), then no topology information exists, so skip calling
+       the topology destructor */
+    if (comm->dev.is_localcomm == FALSE)
     {
-        mpig_genq_entry_destruct(&comm->dev.active_list);
-        goto fn_return;
+        mrc = mpig_topology_comm_destruct(comm);
+        if (mrc)
+        {   /* --BEGIN ERROR HANDLING-- */
+            MPIU_ERR_ADD(mpi_errno, mrc);
+            MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|topology_comm_destruct", "*globus|topology_comm_destruct %C",
+                comm->handle);
+        }   /* --BEGIN ERROR HANDLING-- */
     }
     
     /* call the VMPI CM's hook, allowing it to free the associated vendor communicators */
 #   if defined(MPIG_VMPI)
     {
-	mpig_cm_vmpi_comm_destruct_hook(comm);
-	/* FIXME: convert this into a generic CM function table list/array so that any CM can register hooks */
+        mpig_cm_vmpi_comm_destruct_hook(comm);
+        /* FIXME: convert this into a generic CM function table list/array so that any CM can register hooks */
     }
 #   endif /* #if defined(MPIG_VMPI) */
 
@@ -292,15 +341,7 @@ int mpig_comm_destruct(MPID_Comm * const comm)
     mpig_genq_remove_entry(&mpig_comm_active_list, &comm->dev.active_list);
     mpig_genq_entry_destruct(&comm->dev.active_list);
     
-    mrc = mpig_topology_comm_destruct(comm);
-    if (mrc)
-    {   /* --BEGIN ERROR HANDLING-- */
-	MPIU_ERR_ADD(mpi_errno, mrc);
-	MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**mpig|topology_comm_destruct", "*globus|topology_comm_destruct %C",
-	    comm->handle);
-    }   /* --BEGIN ERROR HANDLING-- */
-
-  fn_return:
+    /* fn_return: */
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT
 	", mpi_errno=" MPIG_ERRNO_FMT, comm->handle, MPIG_PTR_CAST(comm), mpi_errno));
     MPIG_FUNC_EXIT(MPID_STATE_mpig_comm_destruct);
@@ -330,6 +371,10 @@ int mpig_comm_free_hook(MPID_Comm * comm)
     
     /* clear the application reference flag to indicate that the application no longer holds a reference to this communicator */
     comm->dev.app_ref = FALSE;
+    if (comm->comm_kind == MPID_INTERCOMM && comm->local_comm != NULL)
+    {
+        comm->local_comm->dev.app_ref = FALSE;
+    }
 
     /* call the VMPI CM's hook, allowing it to free the associated vendor communicators */
 #   if defined(MPIG_VMPI)
