@@ -741,8 +741,8 @@ static void mpig_vmpi_atexit_handler(void)
     {
 #	if 0
 	{
-	    /* this assertion is correct if the program runs to completion, but it happens to call exit before deactivating all
-	       conents using the vendor MPI, then the assertion erroneous */
+	    /* this assertion is correct if the program runs to completion, but the program happens to call exit before
+               deactivating all of the components using the vendor MPI, then the assertion erroneous */
 	    if (mpig_vmpi_module_ref_count != 1)
 	    {
 		int pid = (int) getpid();
@@ -753,6 +753,10 @@ static void mpig_vmpi_atexit_handler(void)
 		MPI_Abort(MPI_COMM_WORLD, 1);
 	    }
 	}
+#       else
+        {
+            mpig_vmpi_module_ref_count = 1;
+        }
 #	endif
 	
 	mpig_vmpi_finalize();
