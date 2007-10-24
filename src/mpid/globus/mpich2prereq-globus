@@ -496,5 +496,6 @@ fi
 # evaluated int the context the of the source data format
 #
 MPIG_GMW_DATA_FORMAT_DESC_STRUCT="char gdc_format;"
+MPIG_GMW_PACK_HEADER_SIZE=1
 
 rm -f ${MPIG_GLOBUS_SETTINGS_MK}

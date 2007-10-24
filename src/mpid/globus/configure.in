@@ -914,6 +914,8 @@ else
 fi
 AC_SUBST(MPIG_DEBUG_DEFINED)
 
+AC_DEFINE_UNQUOTED(MPIG_PACK_HEADER_SIZE, ${MPIG_PACK_HEADER_SIZE}, "size of the header needed for MPI_Pack")
+
 dnl AC_DEFINE_UNQUOTED(TYPEOF_MPIG_ALIGNED_T,${TYPEOF_MPIG_ALIGNED_T:?},[type to use insure proper memory alignment for all types])
 dnl AC_DEFINE_UNQUOTED(SIZEOF_MPIG_ALIGNED_T,${SIZEOF_MPIG_ALIGNED_T:?},[size of the type used for aligning memory accesses])
 dnl AC_DEFINE_UNQUOTED(MEMALIGN_MPIG_ALIGNED_T,${MEMALIGN_MPIG_ALIGNED_T:?},[memory alignment of MPIG_ALIGNED_T])
