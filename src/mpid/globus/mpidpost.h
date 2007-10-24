@@ -558,13 +558,10 @@ void mpig_debug_create_state_key(void);
     }										\
 }
 
-#define	mpig_debug_uprintf(a_)							\
-{										\
-    if (mpig_debug_handle.levels)						\
-    {										\
-	mpig_debug_save_state(__FILE__, MPIU_QUOTE(FUNCNAME), __LINE__);	\
-	mpig_debug_uprintf_fn a_;						\
-    }										\
+#define	mpig_debug_uprintf(a_)                                          \
+{                                                                       \
+    mpig_debug_save_state(__FILE__, MPIU_QUOTE(FUNCNAME), __LINE__);    \
+    mpig_debug_uprintf_fn a_;                                           \
 }
 
 #undef MPIU_DBG_PRINTF
