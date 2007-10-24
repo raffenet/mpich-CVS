@@ -226,6 +226,26 @@ extern const char * const mpig_ctype_strings[];
         memcmp((dfd1_)->mpi_ctype_map, (dfd2_)->mpi_ctype_map, MPIG_DATATYPE_MAX_BASIC_TYPES) == 0 &&   \
         memcmp((dfd1_)->sizeof_ctypes, (dfd2_)->sizeof_ctypes, MPIG_CTYPE_LAST) == 0)
 
+#define mpig_dfd_print(dfd_, name_)                                                                                     \
+{                                                                                                                       \
+    int mpig_dfd_print_idx__;                                                                                           \
+                                                                                                                        \
+    printf("[%d] %s: hetero=%s\n", mpig_process.my_pg_rank, (name_), MPIG_BOOL_STR((dfd_)->hetero));                    \
+    printf("[%d] %s: endian=%s\n", mpig_process.my_pg_rank, (name_), MPIG_ENDIAN_STR((dfd_)->endian));                  \
+    printf("[%d] %s: gdc_format=%d\n", mpig_process.my_pg_rank, (name_), (dfd_)->gdc_format);                           \
+    printf("[%d] %s: mpi_ctype_map=", mpig_process.my_pg_rank, (name_));                                                \
+    for (mpig_dfd_print_idx__ = 0; mpig_dfd_print_idx__ < MPIG_DATATYPE_MAX_BASIC_TYPES; mpig_dfd_print_idx__++)        \
+    {                                                                                                                   \
+        printf("%02d ", (dfd_)->mpi_ctype_map[mpig_dfd_print_idx__]);                                                   \
+    }                                                                                                                   \
+    printf("\n[%d] %s: sizeof_ctypes=", mpig_process.my_pg_rank, (name_));                                              \
+    for (mpig_dfd_print_idx__ = 0; mpig_dfd_print_idx__ < MPIG_CTYPE_LAST; mpig_dfd_print_idx__++)                      \
+    {                                                                                                                   \
+        printf("%02d ", (dfd_)->sizeof_ctypes[mpig_dfd_print_idx__]);                                                   \
+    }                                                                                                                   \
+    printf("\n");                                                                                                       \
+}
+
 #if MPIG_FAKING_HETERO
 #define mpig_dfd_is_hetero(dfd_) (TRUE)
 #else
