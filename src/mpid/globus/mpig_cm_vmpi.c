@@ -240,7 +240,7 @@ static int mpig_cm_vmpi_pe_table_inc_size(void);
     for (mpig_cm_vmpi_comm_destruct_ctxoff__ = 0; mpig_cm_vmpi_comm_destruct_ctxoff__ < MPIG_COMM_NUM_CONTEXTS;			 \
 	 mpig_cm_vmpi_comm_destruct_ctxoff__++)											 \
     {																 \
-	/* MPIU_Assert(mpig_vmpi_comm_is_null(mpig_cm_vmpi_comm_get_vcomm((comm_), mpig_cm_vmpi_comm_destruct_ctxoff__)));					 \
+	/* MPIU_Assert(mpig_vmpi_comm_is_null(mpig_cm_vmpi_comm_get_vcomm((comm_), mpig_cm_vmpi_comm_destruct_ctxoff__)));       \
 	 *															 \
 	 * the above may not be true if the application did not free or disconnect the communicator before finalize.  since	 \
 	 * MPI_Comm_free() is a collective operation, we cannot free the communicators here because the ordering of communicator \
@@ -1795,6 +1795,29 @@ int mpig_cm_vmpi_pe_test(void)
 /**********************************************************************************************************************************
 						   BEGIN VC CORE API FUNCTIONS
 **********************************************************************************************************************************/
+#define mpig_cm_vmpi_datatype_handle_packed(dt_, vbuf_, vcnt_, vdt_, vrank_, vtag_, vcomm_)                                      \
+{                                                                                                                                \
+    if ((dt_) == MPI_PACKED)                                                                                                     \
+    {                                                                                                                            \
+        mpig_data_format_descriptor_t mpig_cm_vmpi_datatype_handle_packed_dfd__;                                                 \
+                                                                                                                                 \
+        mpig_dfd_unpack_header(&mpig_cm_vmpi_datatype_handle_packed_dfd__, (vbuf_));                                             \
+        if (mpig_dfd_is_hetero(&mpig_cm_vmpi_datatype_handle_packed_dfd__) && (MPIG_FAKING_HETERO == FALSE ||                    \
+            mpig_dfd_compare(&mpig_cm_vmpi_datatype_handle_packed_dfd__, &mpig_process.my_dfd) == FALSE))                        \
+        {                                                                                                                        \
+            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: cannot use vendor MPI to send a "        \
+                "packed message with an incompatible data format" MPIG_VMPI_DATATYPE_FMT ", vrank=%d, vtag=%d, vcomm="           \
+                MPIG_VMPI_COMM_FMT, MPIG_VMPI_DATATYPE_CAST(vdt_), (vrank_), (vtag_), MPIG_VMPI_COMM_CAST(vcomm_)));             \
+	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|packed_incompat");                                            \
+	    goto fn_fail;                                                                                                        \
+        }                                                                                                                        \
+                                                                                                                                 \
+        /* XXX: right now, we assume that the vendor MPI_Pack just serializes the data into a byte stream with no header */      \
+        (vbuf_) = (char *) (vbuf_) + MPIG_PACK_HEADER_SIZE;                                                                      \
+        (vcnt_) -= MPIG_PACK_HEADER_SIZE;                                                                                        \
+    }                                                                                                                            \
+}
+
 #define mpig_cm_vmpi_send_macro(send_op_, send_op_name_, isend_op_name_, buf_, cnt_, dt_, rank_, tag_, comm_, ctxoff_,           \
     sreqp_, mpi_errno_p_)                                                                                                        \
 {                                                                                                                                \
@@ -1808,27 +1831,8 @@ int mpig_cm_vmpi_pe_test(void)
     int mpig_cm_vmpi_send_dt_size__ = 0;                                                                                         \
                                                                                                                                  \
     mpig_cm_vmpi_datatype_get_vdt((dt_), &mpig_cm_vmpi_send_vdt__);                                                              \
-                                                                                                                                 \
-    if ((dt_) == MPI_PACKED)                                                                                                     \
-    {                                                                                                                            \
-        mpig_data_format_descriptor_t mpig_cm_vmpi_send_dfd__;                                                                   \
-                                                                                                                                 \
-        mpig_dfd_unpack_header(&mpig_cm_vmpi_send_dfd__, (buf_));                                                                \
-        if (mpig_dfd_is_hetero(&mpig_cm_vmpi_send_dfd__) ||                                                                      \
-            (MPIG_FAKING_HETERO == TRUE && mpig_dfd_compare(&mpig_cm_vmpi_send_dfd__, &mpig_process.my_dfd) == FALSE))           \
-        {                                                                                                                        \
-            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: cannot use vendor MPI to send a "        \
-                "packed message with an incompatible data format" MPIG_VMPI_DATATYPE_FMT ", vrank=%d, vtag=%d, vcomm="           \
-                MPIG_VMPI_COMM_FMT, MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_send_vdt__), mpig_cm_vmpi_send_vrank__,                 \
-                mpig_cm_vmpi_send_vtag__, MPIG_VMPI_COMM_CAST(mpig_cm_vmpi_send_vcomm__)));                                      \
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|packed_incompat");                                          \
-	    goto fn_fail;                                                                                                        \
-        }                                                                                                                        \
-                                                                                                                                 \
-        /* XXX: right now, we assume that the vendor MPI_Pack just serialize the data into a byte stream with no header */       \
-        mpig_cm_vmpi_send_vbuf__ = (char *) mpig_cm_vmpi_send_vbuf__ + MPIG_PACK_HEADER_SIZE;                                    \
-        mpig_cm_vmpi_send_vcnt__ -= MPIG_PACK_HEADER_SIZE;                                                                       \
-    }                                                                                                                            \
+    mpig_cm_vmpi_datatype_handle_packed((dt_), mpig_cm_vmpi_send_vbuf__, mpig_cm_vmpi_send_vcnt__,                               \
+        mpig_cm_vmpi_send_vdt__, mpig_cm_vmpi_send_vrank__, mpig_cm_vmpi_send_vtag__, mpig_cm_vmpi_send_vcomm__);                \
                                                                                                                                  \
     /* NOTE: a blocking send may only be used when no other communication module requires polling to make progress, or no        \
        other module have outstanding requests. */                                                                                \
@@ -1871,8 +1875,8 @@ int mpig_cm_vmpi_pe_test(void)
 	    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: attempt to register a request with the " \
 		"VMPI process engine failed: sreq" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT, mpig_cm_vmpi_send_sreq__->handle,    \
 		MPIG_PTR_CAST(mpig_cm_vmpi_send_sreq__)));                                                                       \
-	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|pe_table_add_req",                                         \
-		"**mpig|cm_vmpi|pe_table_add_req %R %p", mpig_cm_vmpi_send_sreq__->handle, mpig_cm_vmpi_send_sreq__);          \
+	    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|pe_table_add_req",                                           \
+		"**mpig|cm_vmpi|pe_table_add_req %R %p", mpig_cm_vmpi_send_sreq__->handle, mpig_cm_vmpi_send_sreq__);            \
 	    goto fn_fail;                                                                                                        \
 	}                                                                                                                        \
                                                                                                                                  \
@@ -1899,27 +1903,8 @@ int mpig_cm_vmpi_pe_test(void)
     int mpig_cm_vmpi_isend_dt_size__ = 0;											\
                                                                                                                                 \
     mpig_cm_vmpi_datatype_get_vdt((dt_), &mpig_cm_vmpi_isend_vdt__);                                                            \
-                                                                                                                                \
-    if ((dt_) == MPI_PACKED)                                                                                                    \
-    {                                                                                                                           \
-        mpig_data_format_descriptor_t mpig_cm_vmpi_isend_dfd__;                                                                 \
-                                                                                                                                \
-        mpig_dfd_unpack_header(&mpig_cm_vmpi_isend_dfd__, (buf_));                                                              \
-        if (mpig_dfd_is_hetero(&mpig_cm_vmpi_isend_dfd__) ||                                                                    \
-            (MPIG_FAKING_HETERO == TRUE && mpig_dfd_compare(&mpig_cm_vmpi_isend_dfd__, &mpig_process.my_dfd) == FALSE))         \
-        {                                                                                                                       \
-            MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: cannot use vendor MPI to send a "       \
-                "packed message with an incompatible data format" MPIG_VMPI_DATATYPE_FMT ", vrank=%d, vtag=%d, vcomm="          \
-                MPIG_VMPI_COMM_FMT, MPIG_VMPI_DATATYPE_CAST(mpig_cm_vmpi_isend_vdt__), mpig_cm_vmpi_isend_vrank__,              \
-                mpig_cm_vmpi_isend_vtag__, MPIG_VMPI_COMM_CAST(mpig_cm_vmpi_isend_vcomm__)));                                   \
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**mpig|cm_vmpi|packed_incompat");                                         \
-	    goto fn_fail;                                                                                                       \
-        }                                                                                                                       \
-                                                                                                                                \
-        /* XXX: right now, we assume that the vendor MPI_Pack just serialize the data into a byte stream with no header */      \
-        mpig_cm_vmpi_isend_vbuf__ = (char *) mpig_cm_vmpi_isend_vbuf__ + MPIG_PACK_HEADER_SIZE;                                 \
-        mpig_cm_vmpi_isend_vcnt__ -= MPIG_PACK_HEADER_SIZE;                                                                     \
-    }                                                                                                                           \
+    mpig_cm_vmpi_datatype_handle_packed((dt_), mpig_cm_vmpi_isend_vbuf__, mpig_cm_vmpi_isend_vcnt__,                            \
+        mpig_cm_vmpi_isend_vdt__, mpig_cm_vmpi_isend_vrank__, mpig_cm_vmpi_isend_vtag__, mpig_cm_vmpi_isend_vcomm__);           \
                                                                                                                                 \
     /* create a new send request */												\
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PT2PT, "creating a new send request"));							\
@@ -3462,6 +3447,7 @@ int mpig_cm_vmpi_comm_free_hook(MPID_Comm * const comm)
 	}
     }
 
+    /* if this is an intercommunicator, then free the local communicators used by the collective operations (if they exist) */
     if (comm->comm_kind == MPID_INTERCOMM && mpig_cm_vmpi_comm_get_remote_vsize(comm->local_comm) > 0)
     {
 	for (ctxoff = 0; ctxoff < MPIG_COMM_NUM_CONTEXTS; ctxoff++)
@@ -3500,10 +3486,6 @@ void mpig_cm_vmpi_comm_destruct_hook(MPID_Comm * const comm)
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "entering: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT,
 	comm->handle, MPIG_PTR_CAST(comm)));
 
-    if (comm->comm_kind == MPID_INTERCOMM)
-    {
-	mpig_cm_vmpi_comm_destruct(comm->local_comm);
-    }
     mpig_cm_vmpi_comm_destruct(comm);
     
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_COMM, "exiting: comm=" MPIG_HANDLE_FMT ", commp=" MPIG_PTR_FMT,
