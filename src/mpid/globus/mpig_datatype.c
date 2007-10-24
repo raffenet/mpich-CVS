@@ -176,6 +176,10 @@ int mpig_datatype_init(void)
         mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_UNSIGNED_LONG_LONG, sizeof(unsigned long long));
     }
 #   endif
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_INT8, 1);
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_INT16, 2);
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_INT32, 4);
+    mpig_datatype_set_local_sizeof_ctype(MPIG_CTYPE_INT64, 8);
 
     /* set the number of C types needed to represent each MPI datatype */
     for (i = 0; i < MPIG_DATATYPE_MAX_BASIC_TYPES; i++)
