@@ -179,7 +179,7 @@ we want to run multiple processes job in the "installcheck-all".
     mkdir <build_spec_dir>
     cd <build_spec_dir>
     <mpe2_src_dir>/cross_spec/configure  CC=blrts_xlc F77=blrts_xlf         \
-                                         MPI_CC=mpxlc MPI_F77=mpxlf         \
+                                         MPI_CC=mpixlc MPI_F77=mpixlf77     \
                                          --host=powerpc-unknown-linux-gnu   \
                                          --build=powerpc-pc-linux-gnu
     make run
