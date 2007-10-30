@@ -59,7 +59,7 @@ int MPIR_Gather (
     int curr_cnt=0, relative_rank, nbytes, is_homogeneous;
     int mask, sendtype_size, recvtype_size, src, dst, relative_src;
     int recvblks;
-    int tmp_buf_size, diff;
+    int tmp_buf_size, missing;
     void *tmp_buf=NULL;
     MPI_Status status;
     MPI_Aint   extent=0;            /* Datatype extent */
@@ -90,7 +90,7 @@ int MPIR_Gather (
     /* Use binomial tree algorithm. */
     
     relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
-    
+
     if (rank == root) 
         MPID_Datatype_get_extent_macro(recvtype, extent);
 
@@ -109,38 +109,24 @@ int MPIR_Gather (
             nbytes = sendtype_size * sendcnt;
         }
 
-
-	/* Find the accurate size of the temporary buffer needed */
+	/* Find the number of missing nodes in my sub-tree compared to
+	 * a balanced tree */
 	for (mask = 1; mask < comm_size; mask <<= 1);
-	diff = mask-- - comm_size;
+	--mask;
+	while (relative_rank & mask) mask >>= 1;
+	missing = (relative_rank | mask) - comm_size + 1;
+	if (missing < 0) missing = 0;
+	tmp_buf_size = (mask - missing);
 
-	/* Setup temporary buffer size needed by assuming a balanced tree */
-	for (tmp_buf_size = 1; mask; mask >>= 1)
-	    if (!(relative_rank & mask)) {
-	        tmp_buf_size = mask + 1;
-		break;
-	    }
+	/* If the message is smaller than the threshold, we will copy
+	 * our message in there too */
+	if (nbytes < MPIR_GATHER_VSMALL_MSG) tmp_buf_size++;
 
-	/* If my sub-tree is unbalanced, reduce my count by diff */
-	do {
-	    if (relative_rank & 1) break;
+	tmp_buf_size *= nbytes;
 
-	    mask = 1;
-	    while (((mask | relative_rank) != relative_rank) && (mask < comm_size))
-		mask <<= 1;
-
-	    if ((relative_rank | (mask - 1)) < comm_size) break;
-	    tmp_buf_size -= diff;
-	} while (0);
-
+	/* For zero-ranked root, we don't need any temporary buffer */
 	if ((rank == root) && (!root || (nbytes >= MPIR_GATHER_VSMALL_MSG)))
 	    tmp_buf_size = 0;
-
-	/* If there is only one element, we'll directly send it from
-	 * the send buffer. We won't need the temporary buffer in this
-	 * case. */
-	if (tmp_buf_size == 1) tmp_buf_size = 0;
-	else tmp_buf_size *= nbytes;
 
 	if (tmp_buf_size) {
 	    tmp_buf = MPIU_Malloc(tmp_buf_size);
@@ -152,7 +138,6 @@ int MPIR_Gather (
 	    }
 	    /* --END ERROR HANDLING-- */
 	}
-
 
         if (rank == root)
 	{
@@ -224,13 +209,18 @@ int MPIR_Gather (
 		    }
                     else /* Intermediate nodes store in temporary buffer */
 		    {
+			int offset;
+
 			/* Estimate the amount of data that is going to come in */
 			recvblks = mask;
 			relative_src = ((src - root) < 0) ? (src - root + comm_size) : (src - root);
 			if (relative_src + mask > comm_size)
 			    recvblks -= (relative_src + mask - comm_size);
 
-			mpi_errno = MPIC_Recv(((char *)tmp_buf + mask * nbytes),
+			if (nbytes < MPIR_GATHER_VSMALL_MSG)
+			    offset = mask * nbytes;
+			else offset = 0;
+			mpi_errno = MPIC_Recv(((char *)tmp_buf + offset),
 					      recvblks * nbytes, MPI_BYTE, src,
 					      MPIR_GATHER_TAG, comm,
 					      &status);
@@ -255,11 +245,17 @@ int MPIR_Gather (
 					  MPIR_GATHER_TAG, comm);
 		}
 		else {
+		    int offset;
+
+		    if (nbytes < MPIR_GATHER_VSMALL_MSG)
+			offset = nbytes;
+		    else offset = 0;
+
 		    blocks[0] = sendcnt;
 		    struct_displs[0] = (MPI_Aint) sendbuf;
 		    types[0] = sendtype;
 		    blocks[1] = curr_cnt - nbytes;
-		    struct_displs[1] = (MPI_Aint) ((char*) tmp_buf + nbytes);
+		    struct_displs[1] = (MPI_Aint) ((char*) tmp_buf + offset);
 		    types[1] = MPI_BYTE;
 
 		    NMPI_Type_create_struct(2, blocks, struct_displs, types, &tmp_type);
@@ -406,6 +402,7 @@ int MPIR_Gather (
         MPIU_Free(tmp_buf);
     }
 #endif /* FALSE && defined(MPID_HAS_HETERO) */
+
 #if defined(MPID_HAS_HETERO)
     else
     {
@@ -444,11 +441,191 @@ int MPIR_Gather (
         }
     }
 #endif
-    
+
+#if FALSE && defined(MPID_HAS_HETERO)
+    else
+    {
+#       define MPIR_GATHER_TREE_NUM_CHILDREN 2
+        /* FIXME: rather than packing and unpacking data, it would be more efficient to create an intermediate receive datatype
+           which is as contiguous as posssible.  then data could be sent and received directly, eliminating the overhead of pack
+           and unpack. */
+        const int rel_rank = (rank - root + comm_size) % comm_size;
+        int child;
+        int n_children;
+        int child_rank;
+        int real_child_rank;
+        int parent_rank;
+        int real_parent_rank;
+        int pbuf_sizes[MPIR_GATHER_TREE_NUM_CHILDREN];
+        int total_pbuf_size;
+        char * pbuf;
+        char * pbuf_ptr;
+        MPI_Request rreqs[MPIR_GATHER_TREE_NUM_CHILDREN];
+        int position;
+        char * rbuf_ptr;
+
+        total_pbuf_size = 0;
+        
+        for (child = 0; child < MPIR_GATHER_TREE_NUM_CHILDREN; child++)
+        {
+            int min_child_rank;
+            int max_child_rank;
+            
+            min_child_rank = rel_rank * MPIR_GATHER_TREE_NUM_CHILDREN + 1 + child;
+            max_child_rank = min_child_rank;
+
+            if (min_child_rank >= comm_size)
+            {
+                break;
+            }
+            
+            pbuf_sizes[child] = 0;
+            
+            do
+            {
+                if (max_child_rank >= comm_size)
+                {
+                    max_child_rank = comm_size - 1;
+                }
+                
+                /* 
+                 * printf("[%d:%d:%d] children: child=%d, min_child_rank=%d, max_child_rank=%d\n", MPIR_Process.comm_world->rank,
+                 *     rel_rank, __LINE__, child, min_child_rank, max_child_rank);
+                 */
+                for (child_rank = min_child_rank ; child_rank <= max_child_rank; child_rank++)
+                {
+                    real_child_rank = (child_rank + root) % comm_size;
+                    MPID_Pack_size(sendcnt, sendtype, real_child_rank, comm_ptr, &nbytes);
+                    pbuf_sizes[child] += nbytes;
+                    /* 
+                     * printf("[%d:%d:%d] pack_size: child=%d, child_rank=%d, real_child_rank=%d, nbytes=%d, pbuf_sizes[%d]=%d\n",
+                     *     MPIR_Process.comm_world->rank, rel_rank, __LINE__, child, child_rank, real_child_rank, nbytes, child,
+                     *     pbuf_sizes[child]);
+                     */
+                }
+                
+                min_child_rank = min_child_rank * MPIR_GATHER_TREE_NUM_CHILDREN + 1;
+                max_child_rank = max_child_rank * MPIR_GATHER_TREE_NUM_CHILDREN + MPIR_GATHER_TREE_NUM_CHILDREN;
+            }
+            while (min_child_rank < comm_size);
+
+            total_pbuf_size += pbuf_sizes[child];
+        }
+
+        n_children = child;
+
+        /* 
+         * printf("[%d:%d:%d] n_children=%d, total_pbuf_size=%d\n", MPIR_Process.comm_world->rank, rel_rank, __LINE__, n_children,
+         *     total_pbuf_size);
+         */
+
+        if (rel_rank != 0)
+        {
+            NMPI_Pack_size(sendcnt, sendtype, comm, &nbytes);
+            total_pbuf_size += nbytes;
+            /* 
+             * printf("[%d:%d:%d] my pack size: nbytes=%d, total_pbuf_size=%d\n", MPIR_Process.comm_world->rank, rel_rank,
+             *     __LINE__, nbytes, total_pbuf_size);
+             */
+        }
+
+        pbuf = MPIU_Malloc(total_pbuf_size);
+        MPIU_ERR_CHKANDJUMP((pbuf == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem");
+        pbuf_ptr = pbuf;
+        /* 
+         * printf("[%d:%d:%d] malloc: pbuf_ptr=" MPIG_PTR_FMT ",total_pbuf_size=%d\n", MPIR_Process.comm_world->rank, rel_rank,
+         *     __LINE__, MPIG_PTR_CAST(pbuf_ptr), total_pbuf_size);
+         */
+
+        if (rel_rank != 0)
+        {
+            position = 0;
+            NMPI_Pack(sendbuf, sendcnt, sendtype, pbuf_ptr, nbytes, &position, comm);
+            pbuf_ptr += nbytes;
+            /* 
+             * printf("[%d:%d:%d] my pack: pbuf_ptr=" MPIG_PTR_FMT ",position=%d, nbytes=%d\n", MPIR_Process.comm_world->rank,
+             *     rel_rank, __LINE__, MPIG_PTR_CAST(pbuf_ptr), position, nbytes);
+             */
+        }
+            
+        for (child = 0; child < n_children; child++)
+        {
+            child_rank = rel_rank * MPIR_GATHER_TREE_NUM_CHILDREN + child + 1;
+            real_child_rank = (child_rank + root) % comm_size;
+            /* 
+             * printf("[%d:%d:%d] posting recv: child=%d, child_rank=%d, real_child_rank=%d, pbuf_ptr=" MPIG_PTR_FMT
+             *     ", pbuf_sizes[%d]=%d\n", MPIR_Process.comm_world->rank, rel_rank, __LINE__, child, child_rank, real_child_rank,
+             *     MPIG_PTR_CAST(pbuf_ptr), child, pbuf_sizes[child]);
+             */
+            mpi_errno = MPIC_Irecv(pbuf_ptr, pbuf_sizes[child], MPI_BYTE, real_child_rank, MPIR_GATHER_TAG, comm, &rreqs[child]);
+            if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+            pbuf_ptr += pbuf_sizes[child];
+        }
+
+        for (child = 0; child < n_children; child++)
+        {
+            /* printf("[%d:%d:%d] wait recv: child=%d\n", MPIR_Process.comm_world->rank, rel_rank, __LINE__, child); */
+            mpi_errno = NMPI_Wait(&rreqs[child], MPI_STATUS_IGNORE);
+            if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+        }
+        
+        if (rel_rank == 0)
+        {
+            if (sendbuf != MPI_IN_PLACE)
+            {
+                rbuf_ptr = (char *) recvbuf + rank * extent * recvcnt;
+                /* 
+                 * printf("[%d:%d:%d] root copy: recvcnt=%d, extent=%d, rbuf_ptr=" MPIG_PTR_FMT "\n",
+                 *     MPIR_Process.comm_world->rank, rel_rank, __LINE__, recvcnt, extent, MPIG_PTR_CAST(rbuf_ptr));
+                 */
+                mpi_errno = MPIR_Localcopy(sendbuf, sendcnt, sendtype, rbuf_ptr, recvcnt, recvtype);
+                if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+            }
+
+            pbuf_ptr = pbuf;
+            for (child_rank = 1; child_rank < comm_size; child_rank++)
+            {
+                real_child_rank = (child_rank + root) % comm_size;
+                mpi_errno = MPID_Pack_size(recvcnt, recvtype, real_child_rank, comm, &nbytes);
+                /* 
+                 * printf("[%d:%d:%d] pack_size: child_rank=%d, real_child_rank=%d, nbytes=%d\n",
+                 *     MPIR_Process.comm_world->rank, rel_rank, __LINE__, child_rank, real_child_rank, nbytes);
+                 */
+                if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
+                position = 0;
+                rbuf_ptr = (char *) recvbuf + real_child_rank * extent * recvcnt;
+                /* 
+                 * printf("[%d:%d:%d] unpack: child_rank=%d, real_child_rank=%d, pbuf_ptr=" MPIG_PTR_FMT ", recvcnt=%d, extent=%d"
+                 *     ", rbuf_ptr=" MPIG_PTR_FMT "\n", MPIR_Process.comm_world->rank, rel_rank, __LINE__, child_rank,
+                 *     real_child_rank, MPIG_PTR_CAST(pbuf_ptr), recvcnt, extent, MPIG_PTR_CAST(rbuf_ptr));
+                 */
+                mpi_errno = NMPI_Unpack(pbuf_ptr, nbytes, &position, rbuf_ptr, recvcnt, recvtype, comm);
+                if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
+                pbuf_ptr += nbytes;
+            }
+        }
+        else
+        {
+            parent_rank = (rel_rank - 1) / MPIR_GATHER_TREE_NUM_CHILDREN;
+            real_parent_rank = (parent_rank + root) % comm_size;
+            /* 
+             * printf("[%d:%d:%d] send: parent_rank=%d, real_parent_rank=%d, pbuf=" MPIG_PTR_FMT ", total_pbuf_size]=%d\n",
+             *     MPIR_Process.comm_world->rank, rel_rank, __LINE__, parent_rank, real_parent_rank, MPIG_PTR_CAST(pbuf),
+             *     total_pbuf_size);
+             */
+            mpi_errno = MPIC_Send(pbuf, total_pbuf_size, MPI_BYTE, real_parent_rank, MPIR_GATHER_TAG, comm);
+            if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+        }
+
+        MPIU_Free(pbuf);
+    }
+#endif
+
  fn_fail:
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
-    
     return (mpi_errno);
 }
 /* end:nested */
