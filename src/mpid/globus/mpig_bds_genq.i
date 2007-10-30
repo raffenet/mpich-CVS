@@ -17,6 +17,8 @@ typedef void (*mpig_genq_destroy_entry_fn_t)(mpig_genq_entry_t * entry);
 
 typedef bool_t (*mpig_genq_compare_values_fn_t)(const void * value1, const void * value2);
 
+bool_t mpig_genq_compare_ptrs(const void * ptr1, const void * ptr2);
+
 #endif /* !defined(MPIG_EMIT_INLINE_FUNCS) */
 
 #if defined(MPIG_INLINE_HDECL)
