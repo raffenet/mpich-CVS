@@ -1138,13 +1138,33 @@ static int mpig_cm_xio_stream_rreq_unpack(MPID_Request * const rreq)
 		}
 		else if (rreq_cmu->stream_pos + mpig_databuf_get_remaining_bytes(rreq_cmu->databuf) == rreq_cmu->stream_max_pos)
 		{
-		    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; pos + buf = maxpos; skipping IOV reload: rreq=" MPIG_HANDLE_FMT
-                        ", rreqp=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", buf_data=" MPIG_SIZE_FMT ", max_pos" MPIG_SIZE_FMT
-                        ", stream_size=" MPIG_SIZE_FMT, buf_desc, rreq->handle, MPIG_PTR_CAST(rreq), rreq_cmu->stream_pos,
-                        mpig_databuf_get_remaining_bytes(rreq_cmu->databuf), rreq_cmu->stream_max_pos, rreq_cmu->stream_size));
+                    if (rreq_cmu->stream_max_pos < rreq_cmu->stream_size)
+                    {
+                        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; pos + buf = maxpos; skipping IOV reload: rreq="
+                            MPIG_HANDLE_FMT ", rreqp=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", buf_data=" MPIG_SIZE_FMT
+                            ", max_pos" MPIG_SIZE_FMT ", stream_size=" MPIG_SIZE_FMT, buf_desc, rreq->handle, MPIG_PTR_CAST(rreq),
+                            rreq_cmu->stream_pos, mpig_databuf_get_remaining_bytes(rreq_cmu->databuf), rreq_cmu->stream_max_pos,
+                            rreq_cmu->stream_size));
 		    
-		    reload_iov = FALSE;
-		}
+                        reload_iov = FALSE;
+                    }
+                    else
+                    {
+                        /* all of the data is available but mpig_segment_unpack() did process all of it.  this could mean that
+                           the remote and local datatype signatures didn't match, but it generally means that a truncation error
+                           has occurred.  call the truncation handler to report the error. */
+                        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "%s; position did not advance to end of buffer; reporting "
+                            "truncation: rreq=" MPIG_HANDLE_FMT ", rreq_p=" MPIG_PTR_FMT ", pos=" MPIG_SIZE_FMT ", max_pos="
+                            MPIG_SIZE_FMT ", size=" MPIG_SIZE_FMT, buf_desc, rreq->handle, MPIG_PTR_CAST(rreq),
+                            rreq_cmu->stream_pos, rreq_cmu->stream_max_pos, rreq_cmu->stream_size));
+		    
+                        mpi_errno = mpig_cm_xio_stream_rreq_handle_truncation(rreq,
+                            mpig_databuf_get_remaining_bytes(rreq_cmu->databuf));
+                        MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|stream_trunc");
+		    
+                        reload_iov = FALSE;
+                    }
+                }
 	    }
 	    else
 	    {
