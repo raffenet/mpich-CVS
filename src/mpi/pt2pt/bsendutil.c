@@ -247,7 +247,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 		      BsendKind_t kind, MPID_Request **request )
 {
     BsendData_t *p;
-    int packsize, mpi_errno, pass;
+    int packsize, mpi_errno = MPI_SUCCESS, pass;
     MPIU_THREADPRIV_DECL;
 
     /* Find a free segment and copy the data into it.  If we could 
@@ -289,12 +289,18 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    p->msg.count = 0;
 	    (void)NMPI_Pack( buf, count, dtype, p->msg.msgbuf, packsize, 
 			     &p->msg.count, comm_ptr->handle );
-	    /* Try to send the message.  We must use MPID_Isend
-	       because this call must not block */
+	    /* Try to send the message.  We must use MPID_Isend because this
+               call must not block.  Normally, MPID_Isend would not alter the
+               value of the request pointer if an error occurred; however, if
+               the error is that no request objects were available, the device
+               may signal the condition by setting the request point to NULL.
+               Therefore, the request pointer is set to a non-NULL value before
+               calling MPID_Isend so that the condition can be detected. */
+            p->request = (void *) ~0;
 	    mpi_errno = MPID_Isend(p->msg.msgbuf, p->msg.count, MPI_PACKED, 
 				   dest, tag, comm_ptr,
 				   MPID_CONTEXT_INTRA_PT2PT, &p->request );
-	    if (p->request) {
+	    if (mpi_errno == MPI_SUCCESS && p->request) {
 		MPIU_DBG_MSG_FMT(BSEND,TYPICAL,
 		    (MPIU_DBG_FDEST,"saving request %p in %p",p->request,p));
 		/* An optimization is to check to see if the 
@@ -307,13 +313,14 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    }
 	    else {
 		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno) {
+		/* If the error is "request not available", we should put this
+                   on the pending list.  The device can signal such an error
+                   by returning from MPID_Isend() with the request pointer set
+                   to NULL. */
+		if (p->request != NULL) {
 		    MPIU_Internal_error_printf ("Bsend internal error: isend returned err = %d", mpi_errno );
 		}
 		/* --END ERROR HANDLING-- */
-		/* If the error is "request not available", we should 
-		   put this on the pending list.  This will depend on
-		   how we signal failure to send. */
 	    }
 	    break;
 	}
@@ -336,12 +343,12 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	MPIU_DBG_MSG(BSEND,TYPICAL,"Could not find space; dumping arena" );
 	MPIU_DBG_STMT(BSEND,TYPICAL,MPIR_Bsend_dump());
 
-	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_isend", __LINE__, MPI_ERR_BUFFER, "**bufbsend", 
-				     "**bufbsend %d %d", packsize, 
-				     BsendBuffer.buffer_size );
+	return MPIR_Err_create_code( mpi_errno, MPIR_ERR_RECOVERABLE,
+            "MPIR_Bsend_isend", __LINE__, MPI_ERR_BUFFER, "**bufbsend", 
+            "**bufbsend %d %d", packsize, BsendBuffer.buffer_size );
     }
     else {
-	return MPI_SUCCESS;
+	return mpi_errno;
     }
 }
 
