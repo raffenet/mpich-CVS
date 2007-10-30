@@ -427,15 +427,13 @@ void ADIOI_Calc_others_req(ADIO_File fd, int count_my_req_procs,
 	}
     }
 
-    statuses = (MPI_Status *) ADIOI_Malloc((1 + 2* \
-                   (count_my_req_procs+count_others_req_procs)) * \
-                       sizeof(MPI_Status));
-/* +1 to avoid a 0-size malloc */
-
-    MPI_Waitall(j, requests, statuses);
+    if (j) {
+	statuses = (MPI_Status *) ADIOI_Malloc(j * sizeof(MPI_Status));
+	MPI_Waitall(j, requests, statuses);
+	ADIOI_Free(statuses);
+    }
 
     ADIOI_Free(requests);
-    ADIOI_Free(statuses);
     ADIOI_Free(count_others_req_per_proc);
 
     *count_others_req_procs_ptr = count_others_req_procs;
