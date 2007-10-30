@@ -568,6 +568,7 @@ mpig_comm_t;
     (size_) = mpig_dfd_get_datatype_size(mpig_status_get_dfd(status_), (dt_));  \
 }
 #else
+#undef MPIG_PACK_HEADER_SIZE
 #define MPIG_PACK_HEADER_SIZE (0)
 #endif
 
