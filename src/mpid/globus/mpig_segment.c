@@ -693,8 +693,8 @@ MPI_Aint mpig_segment_sizeof_source_basic_datatype(MPI_Datatype dt, void * v_par
     MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DT, "dt=" MPIG_HANDLE_FMT ", src_ctype=%s, src_sizeof_ctype=%d, mult=%d, size="
         MPIG_AINT_FMT, dt, mpig_ctype_get_string(src_ctype), src_sizeof_ctype, mult, size));
     
-    MPIU_Assert(src_ctype > MPIG_CTYPE_INVALID && src_ctype < MPIG_CTYPE_LAST);
-    MPIU_Assert(size >= 0);
+    MPIG_DEBUG_ASSERT(src_ctype > MPIG_CTYPE_INVALID && src_ctype < MPIG_CTYPE_LAST);
+    MPIG_DEBUG_ASSERT(size >= 0);
 
     return size;
 }

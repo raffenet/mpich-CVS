@@ -762,7 +762,7 @@ static int mpig_cm_self_adi3_irecv(
 						  by the receive cancel routine */
 	
 	sreq = rreq->partner_request;
-	MPIU_Assertp(sreq != NULL);
+	MPIU_Assert(sreq != NULL);
 
 	if (rreq->status.MPI_ERROR == MPI_SUCCESS)
 	{
@@ -1016,7 +1016,7 @@ static int mpig_cm_self_vc_recv_any_source(mpig_vc_t * const vc, MPID_Request * 
 	MPIG_PTR_CAST(rreq), rreq->comm->handle, MPIG_PTR_CAST(rreq->comm)));
 	
     sreq = rreq->partner_request;
-    MPIU_Assertp(sreq != NULL);
+    MPIU_Assert(sreq != NULL);
 
     if (rreq->status.MPI_ERROR == MPI_SUCCESS)
     {

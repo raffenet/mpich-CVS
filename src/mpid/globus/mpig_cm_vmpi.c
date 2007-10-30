@@ -1154,7 +1154,7 @@ static int mpig_cm_vmpi_pe_table_inc_size(void)
     }																\
 																\
     /* add the new request to the last end of the table */									\
-    MPIU_Assert(mpig_vmpi_request_is_null(mpig_cm_vmpi_request_get_vreq(mreq_)) == FALSE);					\
+    MPIG_DEBUG_ASSERT(mpig_vmpi_request_is_null(mpig_cm_vmpi_request_get_vreq(mreq_)) == FALSE);                                \
     mpig_cm_vmpi_pe_table_vreqs[mpig_cm_vmpi_pe_info.active_ops] = mpig_cm_vmpi_request_get_vreq(mreq_);			\
     mpig_cm_vmpi_pe_table_mreqs[mpig_cm_vmpi_pe_info.active_ops] = (mreq_);							\
     (mreq_)->cms.vmpi.pe_table_index = mpig_cm_vmpi_pe_info.active_ops;								\
@@ -1204,7 +1204,7 @@ static int mpig_cm_vmpi_pe_table_inc_size(void)
 
 #define mpig_cm_vmpi_pe_table_remove_entry(pe_table_index_)									\
 {																\
-    MPIU_Assert(mpig_vmpi_request_is_null(mpig_cm_vmpi_pe_table_vreqs[pe_table_index_]));					\
+    MPIG_DEBUG_ASSERT(mpig_vmpi_request_is_null(mpig_cm_vmpi_pe_table_vreqs[pe_table_index_]));					\
 																\
     /* move the last request in the table to the location of the request that completed */					\
     mpig_cm_vmpi_pe_info.active_ops -= 1;											\
@@ -1266,10 +1266,10 @@ void mpig_cm_vmpi_request_status_vtom(MPID_Request * const mreq, mpig_vmpi_statu
 	char verror_str[MPIG_VMPI_MAX_ERROR_STRING + 1];
 
 	vrc = mpig_vmpi_error_class(verror, &verror_class);
-	MPIU_Assert(vrc == MPI_SUCCESS && "ERROR: vendor MPI_Error_class failed");
+        MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Error_class", &mreq->status.MPI_ERROR);
 
 	vrc = mpig_vmpi_error_string(verror, verror_str, &verror_str_len);
-	MPIU_Assert(vrc == MPI_SUCCESS && "ERROR: vendor MPI_Error_string failed");
+        MPIG_ERR_VMPI_CHKANDSET(vrc, "MPI_Error_string", &mreq->status.MPI_ERROR);
 
 	MPIU_ERR_SET1(mreq->status.MPI_ERROR, mpig_cm_vmpi_error_class_vtom(verror_class),
 	    "**mpig|vmpi_req_failed", "**mpig|vmpi_req_failed %s", verror_str);
@@ -1347,7 +1347,7 @@ static void mpig_cm_vmpi_pe_complete_reqs(const int num_reqs_completed, const bo
 	MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_PROGRESS | MPIG_DEBUG_LEVEL_REQ, "vendor request has completed: req=" MPIG_HANDLE_FMT
 	    ", reqp=" MPIG_PTR_FMT, mreq->handle, MPIG_PTR_CAST(mreq)));
 	    
-	MPIU_Assert(mreq->cms.vmpi.pe_table_index == i);
+	MPIG_DEBUG_ASSERT(mreq->cms.vmpi.pe_table_index == i);
 
 	/* *sigh* the following should be not be needed as all requests should be reset to MPIG_VMPI_REQUEST_NULL when they are
 	   completed, but some implementations of MPI fail to reset the request under some circumstances, like when the request
@@ -1467,7 +1467,7 @@ static void mpig_cm_vmpi_pe_complete_reqs(const int num_reqs_completed, const bo
 																\
 	mpig_cm_vmpi_err_testwait_chkandjump_vrc__ = mpig_vmpi_error_class((vrc_tw_),						\
 	    &mpig_cm_vmpi_err_testwait_chkandjump_vrc_tw_class__);								\
-	MPIU_Assert(mpig_cm_vmpi_err_testwait_chkandjump_vrc__ == MPI_SUCCESS && "vendor MPI_Error_class failed");		\
+        MPIG_ERR_VMPI_CHKANDJUMP(mpig_cm_vmpi_err_testwait_chkandjump_vrc__, "MPI_Test_cancelled", &mpi_errno);                 \
 	if (mpig_cm_vmpi_err_testwait_chkandjump_vrc_tw_class__ != MPIG_VMPI_ERR_IN_STATUS)					\
 	{															\
 	    MPIG_ERR_VMPI_SET((vrc_tw_), vfcname_, &mpi_errno);									\
