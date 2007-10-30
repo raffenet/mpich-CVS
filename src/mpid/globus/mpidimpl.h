@@ -465,22 +465,27 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
 
 #define mpig_request_get_remote_req_id(req_) ((req_)->dev.remote_req_id)
 
-#define mpig_request_add_comm_ref(req_, comm_)	\
-{						\
-    if ((req_)->comm == NULL)			\
-    {						\
-	(req_)->comm = (comm_);			\
-	MPIR_Comm_add_ref(comm_);		\
-    }						\
+#define mpig_request_add_comm_ref(req_, comm_)                                                                                  \
+{                                                                                                                               \
+    if ((req_)->comm == NULL)                                                                                                   \
+    {                                                                                                                           \
+	(req_)->comm = (comm_);                                                                                                 \
+	MPIR_Comm_add_ref(comm_);                                                                                               \
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_COMM, "comm - increment ref count: comm=" MPIG_HANDLE_FMT  \
+        ", commp=" MPIG_PTR_FMT ", ref_count=%d", (comm_)->handle, MPIG_PTR_CAST(comm_), (comm_)->ref_count));                  \
+    }                                                                                                                           \
 }
 
-#define mpig_request_release_comm_ref(req_)	\
-{						\
-    if (req->comm != NULL)			\
-    {						\
-	MPIR_Comm_release(req->comm, FALSE);    \
-        req->comm = NULL;			\
-    }						\
+#define mpig_request_release_comm_ref(req_)                                                                                     \
+{                                                                                                                               \
+    if ((req_)->comm != NULL)                                                                                                   \
+    {                                                                                                                           \
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_COMM, "comm - decrement ref count: comm=" MPIG_HANDLE_FMT  \
+            ", commp=" MPIG_PTR_FMT ", old_ref_count=%d", (req_)->comm->handle, MPIG_PTR_CAST((req_)->comm),                    \
+            (req_)->comm->ref_count));                                                                                          \
+	MPIR_Comm_release(req->comm, FALSE);                                                                                    \
+        (req_)->comm = NULL;                                                                                                    \
+    }                                                                                                                           \
 }    
 
 #define mpig_request_add_dt_ref(req_, dt_)											\
@@ -489,16 +494,22 @@ const char * mpig_request_type_get_string(mpig_request_type_t req_type);
     {																\
 	MPID_Datatype_get_ptr((dt_), (req_)->dev.dtp);										\
 	MPID_Datatype_add_ref((req_)->dev.dtp);											\
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_DT, "datatype - increment ref count: dt=" MPIG_HANDLE_FMT  \
+            ", dtp=" MPIG_PTR_FMT ", ref_count=%d", (req_)->dev.dtp->handle, MPIG_PTR_CAST((req_)->dev.dtp),                    \
+            (req_)->dev.dtp->ref_count));                                                                                       \
     }																\
 }
 
-#define mpig_request_release_dt_ref(req_)	\
-{						\
-    if (req->dev.dtp != NULL)			\
-    {						\
-	MPID_Datatype_release(req->dev.dtp);	\
-        req->dev.dtp = NULL;			\
-    }						\
+#define mpig_request_release_dt_ref(req_)                                                                                       \
+{                                                                                                                               \
+    if ((req_)->dev.dtp != NULL)                                                                                                \
+    {                                                                                                                           \
+	MPID_Datatype_release(req->dev.dtp);                                                                                    \
+        MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_COUNT | MPIG_DEBUG_LEVEL_DT, "datatype - decrement ref count: dt=" MPIG_HANDLE_FMT  \
+            ", dtp=" MPIG_PTR_FMT ", old_ref_count=%d", (req_)->dev.dtp->handle, MPIG_PTR_CAST((req_)->dev.dtp),                \
+            (req_)->dev.dtp->ref_count));                                                                                       \
+        (req_)->dev.dtp = NULL;                                                                                                 \
+    }                                                                                                                           \
 }
 
 #define mpig_request_get_type(req_) ((req_)->dev.type)
