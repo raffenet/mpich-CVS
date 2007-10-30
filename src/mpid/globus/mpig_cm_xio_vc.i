@@ -778,7 +778,7 @@ static int mpig_cm_xio_adi3_iprobe(
 
 
 /*
- * int mpig_cm_xio_adi3_cancel_send([IN/MOD] sreq)
+ * int mpig_cm_xio_adi3_cancel_recv([IN/MOD] sreq)
  */
 int mpig_cm_xio_adi3_cancel_recv(MPID_Request * rreq)
 {
@@ -879,23 +879,32 @@ static int mpig_cm_xio_adi3_cancel_send(MPID_Request * const sreq)
 		mpi_errno = mpig_cm_xio_send_enq_cancel_send_msg(vc, sreq->comm->rank, tag, send_ctx, sreq->handle);
 		MPIU_ERR_CHKANDJUMP((mpi_errno), mpi_errno, MPI_ERR_OTHER, "**mpig|cm_xio|send_enq_cancel_send_msg");
 	
-		/* adjust the request's completion counters and reference count to insure the request lives until the response is
-		   received is received from the remote process */
+		/* increment the request's XIO completion counter to keep the request from disappearing before the response to
+                   the cancel send request message is received */
 		mpig_cm_xio_request_inc_cc(sreq, &sreq_was_complete);
 		if (sreq_was_complete)
 		{
-		    mpig_request_inc_cc(sreq, &sreq_was_complete);
-		    if (sreq_was_complete)
-		    {
-			mpig_request_inc_ref_count(sreq, &sreq_was_inuse);
-			if (sreq_was_inuse == FALSE)
-			{   /* --BEGIN ERROR HANDLING-- */
-			    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: attempt to cancel "
-				"completed request; likely a dangling handle, sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(sreq)));
-			    MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cancel_completed_sreq",
-				"**mpig|cancel_completed_sreq %R %p", sreq->handle, sreq);
-			    MPID_Abort(NULL, mpi_errno, 13, NULL);
-			}   /* --END ERROR HANDLING-- */
+                    /* if the request has already been completed by the XIO progress engine, then increment the request's primary
+                       completion counter and possibly the as well reference count to keep the request alive.  inform the
+                       progress engine that the request is active again so that any actions required to process the response
+                       message will occur. */
+                    if (mpig_cm_xio_rcq_remove_req(sreq) == FALSE)
+                    {
+                        mpig_request_inc_cc(sreq, &sreq_was_complete);
+                        if (sreq_was_complete)
+                        {
+                            mpig_request_inc_ref_count(sreq, &sreq_was_inuse);
+                            if (sreq_was_inuse == FALSE)
+                            {   /* --BEGIN ERROR HANDLING-- */
+                                MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_ERROR | MPIG_DEBUG_LEVEL_PT2PT, "ERROR: attempt to cancel "
+                                    "completed request; likely a dangling handle, sreqp=" MPIG_PTR_FMT, MPIG_PTR_CAST(sreq)));
+                                MPIU_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**mpig|cancel_completed_sreq",
+                                    "**mpig|cancel_completed_sreq %R %p", sreq->handle, sreq);
+                                MPID_Abort(NULL, mpi_errno, 13, NULL);
+                            }   /* --END ERROR HANDLING-- */
+                        }
+                        
+                        mpig_cm_xio_pe_start_op();
 		    }
 		}
 	    }
@@ -1232,8 +1241,6 @@ static bool_t mpig_cm_xio_sendq_empty(mpig_vc_t * vc);
 
 static bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request * sreq);
 
-static bool_t mpig_cm_xio_sendq_compare_sreqs(const void * sreq1, const void * sreq2);
-
 
 #define mpig_cm_xio_sendq_construct(vc_)	\
 {						\
@@ -1336,7 +1343,7 @@ static bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request * sreq
 		       "entering: vc=" MPIG_PTR_FMT ", sreq=" MPIG_HANDLE_FMT ", sreqp=" MPIG_PTR_FMT,
 		       MPIG_PTR_CAST(vc), sreq->handle, MPIG_PTR_CAST(sreq)));
 
-    sendq_entry = mpig_genq_find_entry(&vc->cmu.xio.sendq, sreq, mpig_cm_xio_sendq_compare_sreqs);
+    sendq_entry = mpig_genq_find_entry(&vc->cmu.xio.sendq, sreq, mpig_genq_compare_ptrs);
     if (sendq_entry)
     {
         mpig_genq_remove_entry(&vc->cmu.xio.sendq, sendq_entry);
@@ -1359,11 +1366,6 @@ static bool_t mpig_cm_xio_sendq_find_and_deq(mpig_vc_t * vc, MPID_Request * sreq
     return sreq_found;
 }
 /* mpig_cm_xio_sendq_find_and_deq() */
-
-static bool_t mpig_cm_xio_sendq_compare_sreqs(const void * const sreq1, const void * const sreq2)
-{
-    return (sreq1 == sreq2) ? TRUE : FALSE;
-}
 
 #endif /* MPIG_CM_XIO_INCLUDE_DEFINE_FUNCTIONS */
 /**********************************************************************************************************************************

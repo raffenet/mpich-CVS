@@ -267,6 +267,8 @@ static int mpig_cm_xio_rcq_deq_wait(MPID_Request ** req);
 
 static int mpig_cm_xio_rcq_deq_test(MPID_Request ** req);
 
+static bool_t mpig_cm_xio_rcq_remove_req(MPID_Request * req);
+
 #if FALSE
 static void mpig_cm_xio_rcq_wakeup(void);
 #endif
@@ -507,9 +509,44 @@ static int mpig_cm_xio_rcq_deq_test(MPID_Request ** reqp)
 }
 /* end mpig_cm_xio_rcq_deq_test() */
 
+/*
+ * bool_t mpig_cm_xio_rcq_remove_req([IN/MOD] req)
+ */
+#undef FUNCNAME
+#define FUNCNAME mpig_cm_xio_rcq_remove_req
+static bool_t mpig_cm_xio_rcq_remove_req(MPID_Request * req)
+{
+    static const char fcname[] = MPIG_QUOTE(FUNCNAME);
+    mpig_genq_entry_t * rcq_entry;
+    bool_t found = FALSE;
+    MPIG_STATE_DECL(MPID_STATE_mpig_cm_xio_rcq_remove_req);
+
+    MPIG_UNUSED_VAR(fcname);
+
+    MPIG_FUNC_ENTER(MPID_STATE_mpig_cm_xio_rcq_remove_req);
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "entering: req=" MPIG_HANDLE_FMT ", reqp=" MPIG_PTR_FMT,
+        req->handle, MPIG_PTR_CAST(req)));
+    mpig_mutex_lock(&mpig_cm_xio_rcq_mutex);
+    {
+        rcq_entry = mpig_genq_find_entry(&mpig_cm_xio_rcq, req, mpig_genq_compare_ptrs);
+        if (rcq_entry)
+        {
+            MPIU_Assert(mpig_genq_entry_get_value(rcq_entry) == req);
+            mpig_genq_remove_entry(&mpig_cm_xio_rcq, rcq_entry);
+            mpig_genq_entry_destroy(rcq_entry);
+            found = TRUE;
+        }
+    }
+    mpig_mutex_unlock(&mpig_cm_xio_rcq_mutex);
+
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_FUNC | MPIG_DEBUG_LEVEL_PROGRESS, "exiting: found=%s", MPIG_BOOL_STR(found)));
+    MPIG_FUNC_EXIT(MPID_STATE_mpig_cm_xio_rcq_remove_req);
+    return found;
+}
+
 #if FALSE
 /*
- * void mpig_cm_xio_rcq_wakeup([IN/MOD] req)
+ * void mpig_cm_xio_rcq_wakeup(void)
  */
 #undef FUNCNAME
 #define FUNCNAME mpig_cm_xio_rcq_wakeup
