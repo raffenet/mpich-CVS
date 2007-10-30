@@ -14,6 +14,7 @@ mpig_enable_globus_duroc=default
 mpig_enable_globus_rendezvous=default
 mpig_enable_globus_usage=default
 mpig_enable_globus_xio=default
+mpig_user_enabled_romio=no
 
 for arg in ${ac_configure_args} ; do
     arg=`echo ${arg} | sed -e 's/^'"'"'\(.*\)'"'"'$/\1/'`
@@ -45,6 +46,9 @@ for arg in ${ac_configure_args} ; do
         --enable-globus-xio)
         mpig_enable_globus_xio=yes
         ;;
+	--enable-romio)
+	mpig_user_enabled_romio=yes
+	;;
     esac
 done
 
@@ -499,3 +503,16 @@ MPIG_GMW_DATA_FORMAT_DESC_STRUCT="char gdc_format;"
 MPIG_GMW_PACK_HEADER_SIZE=1
 
 rm -f ${MPIG_GLOBUS_SETTINGS_MK}
+
+#
+# XXX: right now the datatype/loop processing code in ROMIO doesn't support heterogeneity, so we have to disable ROMIO
+#
+if test "$mpig_user_enabled_romio" = "yes" ; then
+    mpig_msg_warn $LINENO "at present, ROMIO does not support heterogeneous data and may not produce the expected" \
+        "results.  We highly recommend disabling it."
+elif test "$enable_romio" != "no" ; then
+    mpig_msg_info $LINENO "at present, ROMIO does not support heterogeneous data.  To prevent confusion and frustration," \
+       "it has been disabled."
+    enable_romio=yes
+    ac_configure_args="${ac_configure_args} --disable-romio"
+fi
