@@ -137,11 +137,19 @@ int sctp_open_dgm_socket2(int num_stream, int block_mode,
   addr.sin_family = AF_INET;
 
   char* env;
-  env = getenv("MPICH_INTERFACE_HOSTNAME");
-  if (env != NULL && *env != '\0') {
-    addr.sin_addr.s_addr = inet_addr(env);
-  } else 
+  env = getenv("MPICH_SCTP_BINDALL");
+  if (env != NULL) {
+    /* let SCTP handle the multihoming */
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  } else {
+    env = getenv("MPICH_INTERFACE_HOSTNAME");
+    if (env != NULL && *env != '\0') {
+      addr.sin_addr.s_addr = inet_addr(env);
+    } else {
+      /* MPICH_INTERFACE_HOSTNAME should be set by mpd, so this shouldn't happen.. */
+      addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    }
+  }
   
   addr.sin_port = htons((unsigned short) port);
   rc = bind(*fd, (struct sockaddr *) &addr, sizeof(addr));
