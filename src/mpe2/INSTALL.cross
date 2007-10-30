@@ -182,7 +182,7 @@ we want to run multiple processes job in the "installcheck-all".
                                          MPI_CC=mpixlc MPI_F77=mpixlf77     \
                                          --host=powerpc-unknown-linux-gnu   \
                                          --build=powerpc-pc-linux-gnu
-    make run
+    make
     cqsub -n 1 -t 5 cross_cc
     cqsub -n 1 -t 5 cross_f2c
     cross_env
@@ -208,6 +208,47 @@ we want to run multiple processes job in the "installcheck-all".
     make
     make install
     make installcheck
+
+    instructions for BlueGene P (BG/P)
+    -------------------------------------
+
+    **** Cross-Spec build ****
+    mkdir <build_spec_dir>
+    cd <build_spec_dir>
+    <mpe2_src_dir>/cross_spec/configure  CC=bgxlc_r F77=bgxlf_r             \
+                                         MPI_CC=mpixlc_r MPI_F77=mpixlf77_r \
+                                         --host=powerpc-unknown-linux-gnu   \
+                                         --build=powerpc-pc-linux-gnu
+
+    ** the "_r" is used to enable thread support in the compiler **
+    ** mpixlc_r/mpixlf_r are in /bgsys/drivers/ppcfloor/comm/bin **
+
+    make
+    cqsub -n 1 -t 5 cross_cc
+    cqsub -n 1 -t 5 cross_f2c
+    cross_env
+
+    Here --host is set to powerpc-unknown-linux-gnu even BG/P is not linux
+    Since we don't know what is the correct host-type for BG/P, --host
+    is arbitary set to  powerpc-unknown-linux-gnu and should be different
+    from --build value so the configure knows we are doing cross-compilation.
+    Also make sure that "cqsub ... cross_cc" is finished __before__
+    "cqsub ... cross_f2c", otherwise the cross_spec.txt may have overlapped
+    output from both cross_cc and cross_f2c at the same time.
+
+    **** MPE2 build ****
+    mkdir <build_mpe2_for_backend>
+    cd <build_mpe2_for_backend>
+    <mpe2_src_dir>/configure --prefix=<mpe2_install_dir>                      \ 
+                             --host=powerpc-unknown-linux-gnu                 \
+                             --build=powerpc-pc-linux-gnu                     \
+                             --with-cross-spec=<build_spec_dir>/cross_spec.txt\
+                             --disable-misc --disable-graphics                \
+                             --disable-sample --disable-rlog
+    make
+    make install
+    make installcheck
+
 
 
     instructions for Cray X1E (Phoenix)
