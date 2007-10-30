@@ -650,6 +650,12 @@ void mpig_debug_create_state_key(void);
 
 #undef MPIU_Assertp
 #define MPIU_Assertp(a_) MPIG_Assertp(a_)
+
+#if defined(MPIG_DEBUG)
+#define MPIG_DEBUG_ASSERT(a_) MPIG_Assert(a_)
+#else
+#define MPIG_DEBUG_ASSERT(a_)
+#endif
 /**********************************************************************************************************************************
 						  END DEBUGGING OUTPUT SECTION
 **********************************************************************************************************************************/
