@@ -23,7 +23,7 @@ REAL_SRC = $(API_SRC:%.c=$(SRC_DIR)/%.c)
 REAL_TXT = $(INC_TXT:%.txt=$(SRC_DIR)/%.txt)
 
 #  The utilities property
-DOCTEXT = /home/gropp/bin/linux-rh73/doctext
+DOCTEXT = /homes/balaji/projects/sowing/sowing-install/bin/doctext
 DOC_OPT = -heading MPE
 
 all:	man html
