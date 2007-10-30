@@ -229,7 +229,7 @@ MPIU_Size_t mpig_dfd_get_datatype_size(const mpig_data_format_descriptor_t * dfd
     mpig_status_copy_my_dfd(status_);           \
 }
 
-#define MPID_DEV_STATUS_SET_PROC_NULL_HOOK(status_)     \
+#define MPID_DEV_STATUS_SET_PROCNULL_HOOK(status_)      \
 {                                                       \
     mpig_status_copy_my_dfd(status_);                   \
 }
