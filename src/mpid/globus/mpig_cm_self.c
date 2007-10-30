@@ -1094,9 +1094,9 @@ static int mpig_cm_self_send(
     MPIU_Assert(rank == comm->rank);
     
     mpig_request_create_isreq(type, 2, 1, (void *) buf, cnt, dt, rank, tag, send_ctx, comm, mpig_cm_self_vc, &sreq);
-    if (dt == MPI_PACKED)
+    if (dt == MPI_PACKED && cnt > 0)
     {
-        mpig_dfd_unpack_header(&sreq->status.mpig_src_dfd, buf);
+        mpig_dfd_unpack_header(mpig_request_get_dfd(sreq), buf);
     }
     
     mpi_errno = mpig_recvq_deq_posted_or_enq_unexp(NULL, rank, tag, recv_ctx, &rreq_found, &rreq);
