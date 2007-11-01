@@ -1781,6 +1781,7 @@ int MPIDI_CH3_Connection_terminate (MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
 
+    //fprintf(stderr, "%s: vc->state=%d\n", __FUNCTION__, vc->state); // sson1
     if (((MPIDI_CH3I_VC *)vc->channel_private)->is_local)
         mpi_errno = MPID_nem_vc_terminate(vc);
     else
@@ -1806,6 +1807,8 @@ fn_fail:
 int MPIDI_CH3I_Posted_recv_enqueued (MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    return mpi_errno; /* FIXME: just do nothing here and return: sson1 */
 
     /* don't enqueue for anysource */
     if (rreq->dev.match.rank < 0)
@@ -1833,6 +1836,8 @@ int MPIDI_CH3I_Posted_recv_enqueued (MPID_Request *rreq)
 int MPIDI_CH3I_Posted_recv_dequeued (MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    return mpi_errno; /* FIXME: just do nothing here and return: sson1 */
     
     if (rreq->dev.match.rank < 0)
 	goto fn_exit;

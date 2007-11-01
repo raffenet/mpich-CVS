@@ -46,6 +46,8 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
     int mpi_errno = MPI_SUCCESS;
     ssize_t bytes_recvd;
 
+    MPIDI_FUNC_ENTER(FUNCNAME);
+
     if (((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active == NULL)
     {
         /* receive a new message */
@@ -57,14 +59,16 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
 
             if (bytes_recvd == 0)
             {
-                MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**sock_closed");
+		MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "ERROR: sock (fd=%d) is closed: bytes_recvd == 0", sc->fd );
+                MPIU_ERR_SETANDJUMP2(mpi_errno, MPI_ERR_OTHER, "**sock_closed", "** fd=%d, pg_rank=%d ", sc->fd, sc->pg_rank); // sson1
             }
             else
                 MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", strerror(errno));
         }
     
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "New recv %d", bytes_recvd);
-
+        //MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "New recv %d", bytes_recvd); // sson1
+	MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "New recv %d (fd=%d, vc=%p, sc=%p)", bytes_recvd, sc->fd, sc->vc, sc)); // sson1
+	
         mpi_errno = MPID_nem_handle_pkt(sc->vc, recv_buf, bytes_recvd);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
@@ -138,6 +142,7 @@ int MPID_nem_newtcp_module_recv_handler (struct pollfd *pfd, sockconn_t *sc)
     }
 
  fn_exit:
+    MPIDI_FUNC_EXIT(FUNCNAME);
     return mpi_errno;
  fn_fail:
     goto fn_exit;

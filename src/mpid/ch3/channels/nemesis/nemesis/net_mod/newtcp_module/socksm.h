@@ -60,8 +60,10 @@ typedef enum {
     M_(CONN_STATE_TC_C_CNTING),                 \
     M_(CONN_STATE_TC_C_CNTD),                   \
     M_(CONN_STATE_TC_C_RANKSENT),               \
+    M_(CONN_STATE_TC_C_TMPVCSENT),               \
     M_(CONN_STATE_TA_C_CNTD),                   \
     M_(CONN_STATE_TA_C_RANKRCVD),               \
+    M_(CONN_STATE_TA_C_TMPVCRCVD),               \
     M_(CONN_STATE_TS_COMMRDY),                  \
     M_(CONN_STATE_TS_D_DCNTING),                \
     M_(CONN_STATE_TS_D_REQSENT),                \
@@ -115,7 +117,9 @@ typedef int (*handler_func_t) (pollfd_t *const plfd, sockconn_t *const conn);
 struct MPID_nem_new_tcp_module_sockconn{
     int fd;
     int index;
-    int is_same_pg;  /* TRUE/FALSE -  */
+    int is_same_pg;  /* TRUE/FALSE  */
+    int is_tmpvc;  /* sson1 ***** */
+    int port_name_tag; /* sson1 */ /* This should be used when need_tmpvc == TRUE */
 /*     FIXME: see whether this can be removed, by using only pg_id = NULL or non-NULL */
 /*      NULL = if same_pg and valid pointer if different pgs. */
 
@@ -140,7 +144,10 @@ typedef enum MPIDI_nem_newtcp_module_pkt_type {
     MPIDI_NEM_NEWTCP_MODULE_PKT_ID_NAK,
     MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_REQ,
     MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_ACK,
-    MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_NAK
+    MPIDI_NEM_NEWTCP_MODULE_PKT_DISC_NAK,
+    MPIDI_NEM_NEWTCP_MODULE_PKT_TMPVC_INFO, 
+    MPIDI_NEM_NEWTCP_MODULE_PKT_TMPVC_ACK,
+    MPIDI_NEM_NEWTCP_MODULE_PKT_TMPVC_NAK
 } MPIDI_nem_newtcp_module_pkt_type_t;
     
 typedef struct MPIDI_nem_newtcp_module_header {
@@ -157,6 +164,11 @@ typedef struct MPIDI_nem_newtcp_module_idinfo {
 /*      in the future), datalen of header itself is enough to find the offset of pg_id      */
 /*      in the packet to be sent. */
 } MPIDI_nem_newtcp_module_idinfo_t;
+
+/* FIXME: bc actually contains port_name info */
+typedef struct MPIDI_nem_newtcp_module_portinfo {
+    int port_name_tag;
+} MPIDI_nem_newtcp_module_portinfo_t;
 
 
 #define MPID_nem_newtcp_module_vc_is_connected(vc) (VC_FIELD(vc, sc) && VC_FIELD(vc, sc)->state.cstate == CONN_STATE_TS_COMMRDY)

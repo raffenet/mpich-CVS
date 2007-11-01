@@ -152,6 +152,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect )
 	       expected behavior for most user programs that
 	       use MPI_Comm_disconnect */
 	    if (isDisconnect && vc->ref_count == 1) {
+		//fprintf(stderr, "%s: isDisconnect, vc->state=%d\n", __FUNCTION__, vc->state); // sson1
 		MPIDI_VC_release_ref(vc, &in_use);
 	    }
 
@@ -170,8 +171,9 @@ int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect )
 		}
 		
 		/* FIXME: the correct test is ACTIVE or REMOTE_CLOSE */
-		if (vc->state != MPIDI_VC_STATE_INACTIVE) {
+		if (vc->state != MPIDI_VC_STATE_INACTIVE) { 
 		    /* printf( "Sending close to vc[%d]\n", i ); */
+		    //fprintf(stderr, "%s, vc->state=%d\n", __FUNCTION__, vc->state); // sson1
 		    MPIDI_CH3U_VC_SendClose( vc, i );
 		}
 		else
@@ -674,7 +676,7 @@ int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
     vc->rndvSend_fn           = MPIDI_CH3_RndvSend;
     vc->rndvRecv_fn           = MPIDI_CH3_RecvRndv;
     vc->eager_max_msg_sz      = MPIDI_CH3_EAGER_MAX_MSG_SIZE;
-    vc->sendNoncontig_fn      = MPIDI_CH3_SendNoncontig;
+    vc->sendEagerNoncontig_fn = MPIDI_CH3_SendEagerNoncontig;
     MPIU_CALL(MPIDI_CH3,VC_Init( vc ));
     MPIU_DBG_PrintVCState(vc);
 

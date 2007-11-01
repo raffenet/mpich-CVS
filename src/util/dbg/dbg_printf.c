@@ -597,6 +597,7 @@ static int MPIU_DBG_ProcessEnv( void )
     if (s) {
 	filePattern = MPIU_Strdup( s );
     }
+    //printf("MPICH_DBG_FILENAME=%s\n", s); // sson1
 
     s = getenv( "MPICH_DBG_RANK" );
     if (s) {

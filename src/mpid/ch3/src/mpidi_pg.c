@@ -194,7 +194,7 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     pg->connInfoToString   = 0;
     pg->connInfoFromString = 0;
     pg->freeConnInfo       = 0;
-    
+
     for (p = 0; p < vct_sz; p++)
     {
 	/* Initialize device fields in the VC object */
@@ -1033,8 +1033,10 @@ int MPIDI_PG_Close_VCs( void )
 		continue;
 	    }
 
+	    //fprintf(stderr, "%s: vc->state=%d\n", __FUNCTION__, vc->state); // sson1
 	    if (vc->state == MPIDI_VC_STATE_ACTIVE || 
-		vc->state == MPIDI_VC_STATE_REMOTE_CLOSE
+		vc->state == MPIDI_VC_STATE_REMOTE_CLOSE ||
+		vc->state == MPIDI_VC_STATE_INACTIVE
 #if defined(MPIDI_CH3_USES_SSHM) && 0
 		/* FIXME: Remove this IFDEF */
 		/* sshm queues are uni-directional.  A VC that is connected 

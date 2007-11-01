@@ -209,6 +209,9 @@ static int MPIDI_Create_inter_root_communicator_accept(const char *port_name,
     *comm_pptr = tmp_comm;
     *vc_pptr = new_vc;
 
+    MPIU_DBG_MSG_FMT(CH3_CONNECT,VERBOSE,(MPIU_DBG_FDEST,
+		  "new_vc=%p", new_vc));
+
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_ACCEPT);
     return mpi_errno;

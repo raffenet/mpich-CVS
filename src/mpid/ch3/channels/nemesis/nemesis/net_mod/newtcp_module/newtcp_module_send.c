@@ -189,7 +189,7 @@ int MPID_nem_newtcp_module_send_finalize()
 }
 
 /* MPID_nem_newtcp_module_conn_est -- this function is called when the
-   connection is finally extablished to send any pending sends */
+   connection is finally established to send any pending sends */
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_newtcp_module_conn_est
 #undef FCNAME
@@ -198,7 +198,7 @@ int MPID_nem_newtcp_module_conn_est (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
 
-/*     printf ("*** connected *** %d\n", VC_FIELD(vc, sc)->fd); //DARIUS */
+    //printf ("*** connected *** %d\n", VC_FIELD(vc, sc)->fd); //DARIUS 
 
     if (!SENDQ_EMPTY (VC_FIELD(vc, send_queue)))
     {
@@ -222,6 +222,8 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * sreq = NULL;
     MPIDI_msg_sz_t offset = 0;
+    sockconn_t *sc =  NULL; // sson1 *****
+    sc = VC_FIELD(vc, sc); // sson1 *****
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_ISTARTCONTIGMSG);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_ISTARTCONTIGMSG);
@@ -230,6 +232,7 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
     
     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "newtcp_iStartContigMsg");
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)hdr);
+    //fprintf(stderr, "%s: vc->state=%d, sc->state=%d\n", __FUNCTION__, vc->state, sc->state.cstate); // sson1
     if (MPID_nem_newtcp_module_vc_is_connected(vc))
     {
         if (SENDQ_EMPTY(VC_FIELD(vc, send_queue)))
@@ -262,6 +265,7 @@ int MPID_nem_newtcp_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hd
     }
     else
     {
+	//fprintf(stderr, "%s: vc->state=%d: calling MPID_nem_newtcp_module_connect()\n", __FUNCTION__, vc->state); // sson1
         mpi_errno = MPID_nem_newtcp_module_connect(vc);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
@@ -332,13 +336,17 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_msg_sz_t offset = 0;
+    sockconn_t *sc = NULL; // sson1 *****
+    sc = VC_FIELD(vc, sc);
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIGMSG);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_ISENDCONTIGMSG);
     
     MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
     
+    //sc = VC_FIELD(vc, sc); // sson1
     MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "newtcp_iSendContig");
+    //MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "vc=%p, fd=%d", vc, sc->fd)); /* sson1 */
 
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)hdr);
     if (MPID_nem_newtcp_module_vc_is_connected(vc))
@@ -445,10 +453,10 @@ int MPID_nem_newtcp_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, M
 
 
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_newtcp_SendNoncontig
+#define FUNCNAME MPID_nem_newtcp_SendEagerNoncontig
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_newtcp_SendNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void *header, MPIDI_msg_sz_t hdr_sz)
+int MPID_nem_newtcp_SendEagerNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void *header, MPIDI_msg_sz_t hdr_sz)
 {
     int mpi_errno = MPI_SUCCESS;
     int iov_n;
@@ -457,7 +465,7 @@ int MPID_nem_newtcp_SendNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void *head
     MPIDI_msg_sz_t offset;
     int complete;
 
-    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "newtcp_SendNoncontig");
+    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "newtcp_SendEagerNoncontig");
     MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_PktGeneric_t));
     
     iov[0].MPID_IOV_BUF = header;

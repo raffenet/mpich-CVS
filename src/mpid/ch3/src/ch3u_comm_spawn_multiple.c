@@ -153,6 +153,11 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	total_num_processes = 0;
 	for (i=0; i<count; i++) {
 	    total_num_processes += maxprocs[i];
+	    /* when comm_spawn() is called, ext_procs is also increased */
+	    /* FIXME, which one is correct one? */
+	    //MPID_nem_mem_region.ext_procs += maxprocs[i]; /* FIXME */
+	    MPID_nem_mem_region.ext_procs++; 
+	    //fprintf(stderr, "%s: %s: ext_procs=%d\n", __FILE__, __FUNCTION__, MPID_nem_mem_region.ext_procs); /* sson1 */
 	}
 	pmi_errcodes = (int*)MPIU_Malloc(sizeof(int) * total_num_processes);
 	if (pmi_errcodes == NULL) {

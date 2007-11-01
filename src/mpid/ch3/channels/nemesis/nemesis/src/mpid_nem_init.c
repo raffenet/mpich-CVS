@@ -28,10 +28,11 @@ char *MPID_nem_asymm_base_addr = 0;
 
 static int get_local_procs (int rank, int num_procs, int *num_local, int **local_procs, int *local_rank, int *num_nodes, int **node_ids);
 
+/* sson1 ****: pass has_parent parameter */
 int
-MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
+MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int has_parent)
 {
-    return  _MPID_nem_init (rank, pg_p, 0);
+    return  _MPID_nem_init (rank, pg_p, 0, has_parent);
 }
 
 #undef FUNCNAME
@@ -39,7 +40,7 @@ MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-_MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
+_MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart, int has_parent)
 {
     int    mpi_errno       = MPI_SUCCESS;
     int    pmi_errno;
@@ -89,6 +90,11 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 #ifdef MEM_REGION_IN_HEAP
     MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region_ptr, MPID_nem_mem_region_t *, sizeof(MPID_nem_mem_region_t), mpi_errno, "mem_region");
 #endif /* MEM_REGION_IN_HEAP */
+
+    if (has_parent) {
+	//fprintf(stderr, "%s: num_procs=%d\n", __FUNCTION__, num_procs); // sson1
+	num_procs++; // sson1 ***** FIXME
+    }
     
     MPID_nem_mem_region.num_seg        = 7;
     MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region.seg, MPID_nem_seg_info_ptr_t, MPID_nem_mem_region.num_seg * sizeof(MPID_nem_seg_info_t), mpi_errno, "mem_region segments");
@@ -102,6 +108,8 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
     MPID_nem_mem_region.local_rank     = local_rank;
     MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region.local_ranks, int *, num_procs * sizeof(int), mpi_errno, "mem_region local ranks");
     MPID_nem_mem_region.ext_procs      = num_procs - num_local ; 
+
+    //fprintf(stderr, "%s: %s: has_parent=%d, ext_procs=%d\n", __FILE__, __FUNCTION__, has_parent, MPID_nem_mem_region.ext_procs); // sson1
     MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region.ext_ranks, int *, MPID_nem_mem_region.ext_procs * sizeof(int), mpi_errno, "mem_region ext ranks");
     MPID_nem_mem_region.next           = NULL;
     
@@ -592,7 +600,8 @@ get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
+//MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
+MPID_nem_vc_init (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
@@ -630,7 +639,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc_ch->recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
 
         /* override nocontig send function */
-        vc->sendNoncontig_fn = MPIDI_CH3I_SendNoncontig;
+        vc->sendEagerNoncontig_fn = MPIDI_CH3I_SendEagerNoncontig;
 
         /* local processes use the default method */
         vc_ch->iStartContigMsg = NULL;
@@ -649,8 +658,6 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
         vc_ch->lmt_queue.tail      = NULL;        
         vc_ch->lmt_active_lmt      = NULL;
         vc_ch->lmt_enqueued        = FALSE;
-
-        vc->eager_max_msg_sz = MPID_NEM_MPICH2_DATA_LEN - sizeof(MPIDI_CH3_Pkt_t);
     }
     else
     {
@@ -669,14 +676,15 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
         vc_ch->iStartContigMsg = NULL;
         vc_ch->iSendContig     = NULL;
         
-        mpi_errno = MPID_nem_net_module_vc_init (vc, business_card);
+        //mpi_errno = MPID_nem_net_module_vc_init (vc, business_card);
+	mpi_errno = MPID_nem_net_module_vc_init (vc);
 	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
 /* FIXME: DARIUS -- enable this assert once these functions are implemented */
-/*         /\* iStartContigMsg iSendContig and sendNoncontig_fn must */
+/*         /\* iStartContigMsg iSendContig and sendEagerNoncontig_fn must */
 /*            be set for nonlocal processes.  Default functions only */
 /*            support shared-memory communication. *\/ */
-/*         MPIU_Assert(vc_ch->iStartContigMsg && vc_ch->iSendContig && vc->sendNoncontig_fn); */
+/*         MPIU_Assert(vc_ch->iStartContigMsg && vc_ch->iSendContig && vc->sendEagerNoncontig_fn); */
 
     }
 
@@ -689,7 +697,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
        to NULL */
     vc_ch->sendq_head = NULL;
     
-     MPIU_CHKPMEM_COMMIT();
+    MPIU_CHKPMEM_COMMIT();
 fn_exit:
     MPIDI_FUNC_EXIT (MPID_STATE_MPID_NEM_VC_INIT);
     return mpi_errno;

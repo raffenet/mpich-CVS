@@ -36,7 +36,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
     */
     MPIU_Assert (sizeof(MPIDI_CH3_Pkt_t) >= 32 && sizeof(MPIDI_CH3_Pkt_t) <= 40);
     
-    mpi_errno = MPID_nem_init (pg_rank, pg_p);
+    mpi_errno = MPID_nem_init (pg_rank, pg_p, has_parent); // sson1 *** has_parent added
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     nemesis_initialized = 1;
@@ -119,10 +119,7 @@ int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc )
     ((MPIDI_CH3I_VC *)vc->channel_private)->recv_active = NULL;
     vc->state = MPIDI_VC_STATE_ACTIVE;
 
-    mpi_errno = vc->pg->getConnInfo (vc->pg_rank, bc, MPID_NEM_MAX_KEY_VAL_LEN, vc->pg);
-    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-
-    mpi_errno = MPID_nem_vc_init (vc, bc);
+    mpi_errno = MPID_nem_vc_init (vc);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
  fn_exit:
@@ -164,7 +161,7 @@ int MPIDI_CH3_Connect_to_root (const char *port_name, MPIDI_VC_t **new_vc)
     ((MPIDI_CH3I_VC *)vc->channel_private)->recv_active = NULL;
     vc->state = MPIDI_VC_STATE_ACTIVE;
 
-    mpi_errno = MPID_nem_vc_init (vc, port_name);
+    mpi_errno = MPID_nem_vc_init (vc);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
     mpi_errno = MPID_nem_connect_to_root (port_name, vc);
