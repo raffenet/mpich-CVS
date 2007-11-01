@@ -488,11 +488,11 @@ optimization flag by default. If you want to build the MPICH2 library
 with a specific optimization level, set the environment variable
 \texttt{CFLAGS} to that level before running configure. If you do not want this
 \texttt{CFLAGS} value to be included in the mpicc script, set the environment
-variable \texttt{MPI\_CFLAGS} to \texttt{MPI\_CFLAGS\_EMPTY}. For example, to build a
+variable \texttt{MPI\_CFLAGS} to \texttt{MPI\_FLAGS\_EMPTY}. For example, to build a
 ``production'' MPICH2 in a GNU environment, you may want to do:
 \begin{verbatim}
      setenv CFLAGS -O3
-     setenv MPI_CFLAGS MPI_CFLAGS_EMPTY
+     setenv MPI_CFLAGS MPI_FLAGS_EMPTY
 \end{verbatim}
 before running configure. This will cause the MPICH2 library to be
 built with -O3, but -O3 will not be included in the mpicc script.
