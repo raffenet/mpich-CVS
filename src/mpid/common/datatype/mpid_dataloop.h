@@ -81,6 +81,7 @@
 
 /* assert function */
 #define DLOOP_Assert MPIU_Assert
+#define DLOOP_Assertp MPIU_Assertp
 
 /* Include dataloop_parts.h at the end to get the rest of the prototypes
  * and defines, in terms of the prefixes and types above.

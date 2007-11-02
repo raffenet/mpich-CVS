@@ -204,7 +204,13 @@ int PREPEND_PREFIX(Segment_init)(const DLOOP_Buffer buf,
 	branch_detected = elmp->may_require_reloading;
 
 	if (i < depth-1) {
-	    DLOOP_Assert(!(dlp->kind & DLOOP_FINAL_MASK));
+            /* XXX: the creation of heterogeneous struct dataloops has a bug in
+               it which causes the assertion below to fail for very complex
+               datatypes.  the assertion has been changed to a persistent
+               assertion in order to catch these erroneous dataloops even when
+               full optimization is enabled.  this change should be undone once
+               the dataloop problem is fixed. [BRT] */
+	    DLOOP_Assertp(!(dlp->kind & DLOOP_FINAL_MASK));
 
 	    switch (dlp->kind & DLOOP_KIND_MASK) {
 		case DLOOP_KIND_CONTIG:
