@@ -430,6 +430,12 @@ int mpig_pm_gk_abort(mpig_pm_t * const pm, int exit_code)
 	abort();
     }
 
+    /* flush stdout and stderr.  the sleep is an attempt to allow Globus to obtain the output before the subjobs begin fighting
+       over who is going to kill who first. */
+    fflush(stdout);
+    fflush(stderr);
+    sleep(1);
+    
     /* loop to cancel all subjobs in the process group except the subjob to which this process belongs.  that subjob is treated
        as a special case below.  XXX: should we use the nonblocking (register) cancel to obtain some parallelism, thus cancelling
        the subjobs more quickly and hopefully reducing the amount of error output caused by severed communication links. */
@@ -454,6 +460,7 @@ int mpig_pm_gk_abort(mpig_pm_t * const pm, int exit_code)
     }
 #   endif
 
+    /* make one more attempt flush any pending output */
     fclose(stdout);
     fclose(stderr);
     
