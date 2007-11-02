@@ -1287,10 +1287,17 @@ static void mpig_cm_self_buffer_copy(
 	sdata_local_size = rdata_local_size;
         sdata_source_size = mpig_dfd_get_datatype_size(sdfd, rdt) * rcnt - rpack_adjust;
     }
-    
+
+    if (rcnt == 0)
+    {
+	*rsz = 0;
+	goto fn_return;
+    }
+
     if (rdt == MPI_PACKED)
     {
         MPIU_Assert(rdt_contig);
+        MPIU_Assert(rdata_local_size > 0);
         mpig_dfd_pack_header(sdfd, (void *)((MPI_Aint) rbuf + rdt_true_lb));
     }
     

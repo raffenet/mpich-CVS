@@ -673,7 +673,7 @@ static int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
     rreq_cmu->buf_size = cnt * dt_size;
     rreq_cmu->buf_true_lb = dt_true_lb;
 
-    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "hetero=%s, buf_size=" MPIG_SIZE_FMT, MPIG_BOOL_STR(hetero)));
+    MPIG_DEBUG_PRINTF((MPIG_DEBUG_LEVEL_DATA, "hetero=%s, buf_size=" MPIG_SIZE_FMT, MPIG_BOOL_STR(hetero), rreq_cmu->buf_size));
     
     /* rreq_cmu->stream_size -- must be set prior to calling this routine */
     rreq_cmu->stream_pos = 0;
@@ -691,7 +691,7 @@ static int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
 	rreq_cmu->buf_type = MPIG_CM_XIO_APP_BUF_TYPE_CONTIG;
 
         /* if the request datatype is MPI_PACKED, then add a message header to the buffer */
-        if (mpig_request_get_dt(rreq) == MPI_PACKED)
+        if (mpig_request_get_dt(rreq) == MPI_PACKED && cnt > 0)
         {
             if (cnt > MPIG_PACK_HEADER_SIZE)
             {
@@ -704,7 +704,7 @@ static int mpig_cm_xio_stream_rreq_init(MPID_Request * const rreq)
                    avoids complicating the stream state. */
                 rreq_cmu->buf_size -= MPIG_PACK_HEADER_SIZE;
                 rreq_cmu->buf_true_lb += MPIG_PACK_HEADER_SIZE;
-                rreq->status.count += MPIG_PACK_HEADER_SIZE;
+                /* rreq->status.count += MPIG_PACK_HEADER_SIZE; */
             }
             else if (cnt != 0)
             {   /* --BEGIN ERROR HANDLING-- */

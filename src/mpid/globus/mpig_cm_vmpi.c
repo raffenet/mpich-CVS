@@ -1797,7 +1797,7 @@ int mpig_cm_vmpi_pe_test(void)
 **********************************************************************************************************************************/
 #define mpig_cm_vmpi_datatype_handle_packed(dt_, vbuf_, vcnt_, vdt_, vrank_, vtag_, vcomm_)                                      \
 {                                                                                                                                \
-    if ((dt_) == MPI_PACKED)                                                                                                     \
+    if ((dt_) == MPI_PACKED && (vcnt_) > 0)                                                                                      \
     {                                                                                                                            \
         mpig_data_format_descriptor_t mpig_cm_vmpi_datatype_handle_packed_dfd__;                                                 \
                                                                                                                                  \
@@ -2188,7 +2188,7 @@ static int mpig_cm_vmpi_adi3_recv(
 
     /* if the message is to be received as packed data, then we must add the pack header to the beginning of the message and
        adjust the buffer and count appropriately. */
-    if (dt == MPI_PACKED)
+    if (dt == MPI_PACKED && vcnt > 0)
     {
         mpig_dfd_pack_header(&mpig_process.my_dfd, buf);
         vbuf = (char *) vbuf + MPIG_PACK_HEADER_SIZE;
@@ -2322,7 +2322,7 @@ static int mpig_cm_vmpi_adi3_irecv(
 
     /* if the message is to be received as packed data, then we must add the pack header to the beginning of the message and
        adjust the buffer and count appropriately. */
-    if (dt == MPI_PACKED)
+    if (dt == MPI_PACKED && vcnt > 0)
     {
         mpig_dfd_pack_header(&mpig_process.my_dfd, buf);
         vbuf = (char *) vbuf + MPIG_PACK_HEADER_SIZE;
@@ -4320,7 +4320,7 @@ int mpig_cm_vmpi_register_recv_any_source(const mpig_msg_op_params_t * const ras
     
     /* if the message is to be received as packed data, then we must add the pack header to the beginning of the message and
        adjust the buffer and count appropriately. */
-    if (ras_params->dt == MPI_PACKED)
+    if (ras_params->dt == MPI_PACKED && vcnt > 0)
     {
         mpig_dfd_pack_header(&mpig_process.my_dfd, ras_params->buf);
         vbuf = (char *) vbuf + MPIG_PACK_HEADER_SIZE;
